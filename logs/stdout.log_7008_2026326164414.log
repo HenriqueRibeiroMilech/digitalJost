@@ -1,0 +1,61 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:23571
+Press CTRL+C to quit
+127.0.0.1 - - [26/Mar/2026 13:44:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:17] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:21] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:22] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:25] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:26] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:26] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:26] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:27] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:27] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:27] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:27] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:29] "GET /desvios/detalhes?id=2026-0031 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:29] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:29] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:29] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:29] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:29] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:30] "GET /desvios/gerar?editar=2026-0031-0 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:30] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:30] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:31] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:32] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:33] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:33] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:35] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:37] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:43] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:44] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:44] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:45] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:45] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:46] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:49] "POST /desvios/gerar?cmd=2&editar=2026-0031-0 HTTP/1.1" 302 -
+127.0.0.1 - - [26/Mar/2026 13:44:49] "GET /denied HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:49] "GET /static/css/style_module.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:49] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:49] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:51] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/Mar/2026 13:44:53] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:53] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [26/Mar/2026 13:44:53] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [26/Mar/2026 13:44:54] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -

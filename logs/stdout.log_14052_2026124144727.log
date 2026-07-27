@@ -1,0 +1,27 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:25748
+Press CTRL+C to quit
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:34] "POST /monitoramento/oee?ct=M02 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:36] "POST /monitoramento/oee?ct=M12 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:37] "POST /monitoramento/oee?ct=M17 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:37] "POST /monitoramento/oee?ct=M21 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:37] "POST /monitoramento/oee?ct=L02 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:38] "POST /monitoramento/oee?ct=T08 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:38] "POST /monitoramento/oee?ct=D01 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:38] "POST /monitoramento/oee?ct=P05 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:39] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:39] "POST /monitoramento/oee?ct=L01 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:39] "POST /monitoramento/oee?ct=P03 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:39] "POST /monitoramento/oee?ct=P02 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:39] "POST /monitoramento/oee?ct=SR03 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jan/2026 11:47:40] "POST /monitoramento/oee?ct=S17 HTTP/1.1" 200 -

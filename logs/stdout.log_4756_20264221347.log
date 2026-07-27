@@ -1,0 +1,35 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:28978
+Press CTRL+C to quit
+127.0.0.1 - - [22/Apr/2026 10:04:10] "GET /op/plano HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:10] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:10] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /op/plano/area/1 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/js/operation.planning/getData.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:11] "GET /static/js/operation.planning/chartMotive1.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:15] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:15] "GET /lab/dimensional/gerenciar HTTP/1.1" 302 -
+127.0.0.1 - - [22/Apr/2026 10:04:15] "GET /login?next=http://digitaljost.randon.com.br/lab/dimensional/gerenciar HTTP/1.1" 302 -
+127.0.0.1 - - [22/Apr/2026 10:04:15] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:16] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:18] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:18] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:18] "GET /static/css/default/overlay.css HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:18] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:20] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:22] "POST /op/plano/area/1?type=graph&year=2026&week=16 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:22] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:22] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:31] "POST /op/plano/area/2?type=graph&year=2026&week=16 HTTP/1.1" 200 -

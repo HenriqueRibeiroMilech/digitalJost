@@ -1,0 +1,1647 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:15017
+Press CTRL+C to quit
+127.0.0.1 - - [14/Apr/2026 08:33:24] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:25] "GET /op/plano/historico/1835 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:27] "GET /op/plano/historico/1835/2322/files HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /monitoramento/paradas?preload=0123456 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /op/qualidade HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /op/ssma HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "HEAD /static/uploads/cockpit/video8.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "HEAD /static/uploads/cockpit/video7.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /op/producao HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "POST /op/qualidade?month=4&year=2026 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "POST /op/ssma?month=4&year=2026 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:49] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:50] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:51] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:33:56] "POST /op/producao?year=2026&month=4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:33:56] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:07] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:09] "POST /op/logistica/delete HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:10] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:10] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:11] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:13] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:28] "GET /desvios/detalhes/fisico?id=2025-0084-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:28] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:28] "GET /static/css/style_dev.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:34:28] "GET /static/images/jost_logo_white.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:34:28] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:30] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:31] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:33] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:34:33] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:34:33] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:33] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:36] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:36] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:36] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:36] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:36] "GET /static/videos/des.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:40] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:43] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:43] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:34:43] "GET /static/css/style_documentos.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:43] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:43] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:45] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:45] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:46] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:48] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:50] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:52] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:34:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:34:58] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:00] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:00] "GET /op/logistica/edit HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:00] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:00] "POST /op/logistica/edit?copy=false HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:00] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:00] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "POST /op/plano/area/5?type=graph&year=2026&week=15 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:01] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:02] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:02] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:02] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:02] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:03] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:03] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:03] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:11] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:11] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:13] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:13] "GET /oee/paradas?preload=5&year=2026&week=15&area=1 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:16] "POST /oee/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:16] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:17] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:20] "POST /oee/paradas/excel HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:24] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:25] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:25] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:25] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:25] "GET /op/logistica/edit HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:26] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:26] "POST /op/logistica/edit?copy=false HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:26] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:26] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:30] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:32] "GET /op/logistica/edit HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:32] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:32] "POST /op/logistica/edit?copy=false HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:32] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:32] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:33] "GET /op/logistica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:33] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:33] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:34] "GET /op/logistica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:34] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:34] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:34] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:35] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:35] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:36] "GET /op/logistica/edit HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:36] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:35:36] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:36] "POST /op/logistica/edit?copy=false HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:36] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 08:35:47,824] ERROR in app: Exception on /desvios/consultar [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+pyodbc.DataError: ('22007', '[22007] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value. (242) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1099, in dev_view_post
+    data = engine_run_query(query, 'jdt', params=params)
+  File "I:\IIS\Digital_Jost\app\utils\db_utils.py", line 76, in engine_run_query
+    return pd.read_sql(text(query), cnnx, params=params) if params else pd.read_sql(text(query), cnnx)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 736, in read_sql
+    return pandas_sql.read_query(
+           ~~~~~~~~~~~~~~~~~~~~~^
+        sql,
+        ^^^^
+    ...<6 lines>...
+        dtype=dtype,
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 1848, in read_query
+    result = self.execute(sql, params)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 1672, in execute
+    return self.con.execute(sql, *args)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1415, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1637, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1842, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1982, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2351, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.DataError: (pyodbc.DataError) ('22007', '[22007] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value. (242) (SQLExecDirectW)')
+[SQL: 
+    SELECT
+        LEFT(T1.deviationId, 9) AS deviationId,
+        T1.revision,
+        T1.name AS requesterName,
+        T1.motive,
+        T1.workCenter,
+        T1.families,
+        T1.finalDate,
+        T1.status
+    FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T1
+    WHERE T1.deviationId = (
+        SELECT MAX(T2.deviationId)
+        FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T2
+        WHERE LEFT(T1.deviationId, 10) = LEFT(T2.deviationId, 10)
+    )
+      AND T1.openDate BETWEEN ? AND ?
+    ORDER BY T1.deviationId DESC
+    ]
+[parameters: ('0002-01-01 00:00', '2026-04-14 23:59')]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+127.0.0.1 - - [14/Apr/2026 08:35:47] "POST /desvios/consultar HTTP/1.1" 500 -
+[2026-04-14 08:35:47,918] ERROR in app: Exception on /desvios/consultar [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+pyodbc.DataError: ('22007', '[22007] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value. (242) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1099, in dev_view_post
+    data = engine_run_query(query, 'jdt', params=params)
+  File "I:\IIS\Digital_Jost\app\utils\db_utils.py", line 76, in engine_run_query
+    return pd.read_sql(text(query), cnnx, params=params) if params else pd.read_sql(text(query), cnnx)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 736, in read_sql
+    return pandas_sql.read_query(
+           ~~~~~~~~~~~~~~~~~~~~~^
+        sql,
+        ^^^^
+    ...<6 lines>...
+        dtype=dtype,
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 1848, in read_query
+    result = self.execute(sql, params)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 1672, in execute
+    return self.con.execute(sql, *args)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1415, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1637, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1842, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1982, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2351, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.DataError: (pyodbc.DataError) ('22007', '[22007] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value. (242) (SQLExecDirectW)')
+[SQL: 
+    SELECT
+        LEFT(T1.deviationId, 9) AS deviationId,
+        T1.revision,
+        T1.name AS requesterName,
+        T1.motive,
+        T1.workCenter,
+        T1.families,
+        T1.finalDate,
+        T1.status
+    FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T1
+    WHERE T1.deviationId = (
+        SELECT MAX(T2.deviationId)
+        FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T2
+        WHERE LEFT(T1.deviationId, 10) = LEFT(T2.deviationId, 10)
+    )
+      AND T1.openDate BETWEEN ? AND ?
+    ORDER BY T1.deviationId DESC
+    ]
+[parameters: ('0020-01-01 00:00', '2026-04-14 23:59')]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+[2026-04-14 08:35:48,021] ERROR in app: Exception on /desvios/consultar [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+pyodbc.DataError: ('22007', '[22007] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value. (242) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1099, in dev_view_post
+    data = engine_run_query(query, 'jdt', params=params)
+  File "I:\IIS\Digital_Jost\app\utils\db_utils.py", line 76, in engine_run_query
+    return pd.read_sql(text(query), cnnx, params=params) if params else pd.read_sql(text(query), cnnx)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 736, in read_sql
+    return pandas_sql.read_query(
+           ~~~~~~~~~~~~~~~~~~~~~^
+        sql,
+        ^^^^
+    ...<6 lines>...
+        dtype=dtype,
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 1848, in read_query
+    result = self.execute(sql, params)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\io\sql.py", line 1672, in execute
+    return self.con.execute(sql, *args)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1415, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1637, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1842, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1982, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2351, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.DataError: (pyodbc.DataError) ('22007', '[22007] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value. (242) (SQLExecDirectW)')
+[SQL: 
+    SELECT
+        LEFT(T1.deviationId, 9) AS deviationId,
+        T1.revision,
+        T1.name AS requesterName,
+        T1.motive,
+        T1.workCenter,
+        T1.families,
+        T1.finalDate,
+        T1.status
+    FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T1
+    WHERE T1.deviationId = (
+        SELECT MAX(T2.deviationId)
+        FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T2
+        WHERE LEFT(T1.deviationId, 10) = LEFT(T2.deviationId, 10)
+    )
+      AND T1.openDate BETWEEN ? AND ?
+    ORDER BY T1.deviationId DESC
+    ]
+[parameters: ('0202-01-01 00:00', '2026-04-14 23:59')]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+127.0.0.1 - - [14/Apr/2026 08:35:48] "POST /desvios/consultar HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 08:35:48] "POST /desvios/consultar HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 08:35:48] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:52] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:54] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:35:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:56] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:57] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:35:57] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:12] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:16] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:22] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:25] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:26] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:33] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:36:34] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:35] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:43] "POST /op/logistica/edit?copy=false HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:36:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:36:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:36:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:06] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:08] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:11] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:13] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:31] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:36] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:39] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:37:39] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:43] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:52] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:37:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:37:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:37:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:00] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:04] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:14] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:38] "GET /desvios/detalhes?id=2025-0097 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:38] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:38:38] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:38:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:53] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:38:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:38:56] "GET /desvios/renovar?id=2025-0097 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:56] "GET /static/css/style_module.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:38:56] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:39:00] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:02] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 08:39:03,636] ERROR in app: Exception on /desvios/renovar [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('Invalid parameter type.  param-index=2 param-type=numpy.int64', 'HY105')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 816, in dev_renew
+    cnnx.execute(
+    ~~~~~~~~~~~~^
+        text("""INSERT INTO JDT_REQUEST_DEV (
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<33 lines>...
+        }
+        ^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1415, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1637, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1842, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1982, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2351, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.ProgrammingError: (pyodbc.ProgrammingError) ('Invalid parameter type.  param-index=2 param-type=numpy.int64', 'HY105')
+[SQL: INSERT INTO JDT_REQUEST_DEV (
+                        deviationId, userId, sectorId, unit, workCenter, prodCode, families,
+                        prodDescription, workInstruction, documents, initDate, finalDate, revision,
+                        traceability, motive, imagesMotive, riskAnalisys, procedures, imagesProcedures,
+                        openDate, status, notifyCostumer, notifySupplier, attachment, special1, special2, ssma
+                    ) VALUES (
+                        ?, ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?, ?,
+                        GETDATE(), 0, NULL, NULL, '', ?, ?, ?
+                    )]
+[parameters: ('2025-0097-4', 'costi', np.int64(5), np.int64(0), '["S02-SOLDA-AL"]', '["Todos"]', '["AL"]', 'Conjunto Manivela e Forca - 70000137219', '["100000693828"]', '100000693828', '2026-04-01', '2026-05-16', 4, np.int64(2), 'Durante o processo de fabricação do conjunto da manivela do aparelho de levantamento, foi identificado que o dispositivo Poka-Yoke de verificação dim ... (327 characters truncated) ... realizado o teste funcional utilizando um eixo maciço de diâmetro 25,3 garantindo a verificação prática do encaixe e da movimentação do conjunto.\r\n', 'img_0.jfif||', 'Uso de tubo fora de especificação dimensional;\r\nAquecimento residual no conjunto após solda;\r\nQueda ou impacto do tubo de teste;\r\nUso contínuo do desvio sem revisão;\r\n', 'Procedimento\r\n\r\nApós o processo de solda, realizar a verificação funcional utilizando um eixo maciço de diâmetro 25,3 mm, em substituição ao Poka ... (566 characters truncated) ...  condição nominal do Poka Yoke.\r\n\r\nCaso o eixo não passe, comunicar imediatamente à liderança e à engenharia de processo para análise e correção.', 'img_0.png||', np.False_, np.True_, np.False_)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [14/Apr/2026 08:39:03] "POST /desvios/renovar?id=2025-0097 HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 08:39:03] "GET /static/css/style_module.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:39:03] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:39:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:07] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:39:07] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:39:07] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:39:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:13] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:14] "POST /op/logistica/edit?copy=false HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:15] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:15] "POST /op/logistica/check HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:15] "POST /op/logistica/edit?copy=true HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:15] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:16] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:16] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:16] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:16] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:16] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:17] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:17] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:17] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:17] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:17] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:39:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:39:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:39:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:16] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:40:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:40:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:40:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:03] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:41:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:08] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:41:08] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:41:08] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:41:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:28] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:41:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:41:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:41:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:42:00] "POST /op/logistica/edit?copy=false HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:18] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:44] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:44] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:44] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:42:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:42:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:42:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:43:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:43:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:43:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:44:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:20] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:38] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:38] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:38] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:44:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:44] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:44:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:44:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:44:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:45:09] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:45:11] "GET /monitoramento HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:15] "GET /monitoramento/oee?ct=M03 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:15] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:45:17] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:45:18] "POST /monitoramento/oee?ct=M03 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:18] "GET /static/images/medal4.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:45:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:44] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:45:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:45:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:45:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:45] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:46:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:46:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:47:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:23] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:47:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:47:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:47:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:45] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:48:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:48:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:49:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:06] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:49:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:25] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:33] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:49:33] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:49:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:33] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:33] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:33] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:33] "GET /static/videos/des.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:49:34] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:36] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:49:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:49:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:49:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:50:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:26] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:48] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:50:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:50:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:50:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:50:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:01] "GET /lab HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:01] "GET /static/css/default/static_buttons.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:21] "GET /lab/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:21] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:51:21] "POST /lab/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:27] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:51:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /lab/dimensional/detalhes/202600003 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /static/css/default/overlay.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /lab/dimensional/detalhes/202600003/dados HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /lab/dimensional/detalhes/202600003/comentarios HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /lab/dimensional/detalhes/202600003/arquivos?type=draw HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /lab/dimensional/detalhes/202600003/logs HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:51:56] "GET /lab/dimensional/detalhes/202600003/arquivos?type=reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:28] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:52:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:52:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:52:55] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:53:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:29] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:53:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:53:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:54:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:54:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:54:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:55:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:55:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:55:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:55:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:44] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:56:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:56:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:56:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:57:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:53] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:57:53] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:57:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:57:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:57:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:58:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:41] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:58:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:49] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:58:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:58:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:58:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:59:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:19] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:44] "GET /desvios/consultar HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:59:44] "GET /login?next=http://digitaljost.randon.com.br/desvios/consultar HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 08:59:44] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:44] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:48] "GET /desvios/detalhes?id=2026-0032 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:48] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:59:48] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:59:48] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:59:49] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "GET /desvios/detalhes/fisico?id=2026-0032-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "GET /static/images/jost_logo_white.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "GET /static/css/style_dev.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "GET /static/uploads/deviation/request/2026-0032-0/motive/img_0.msg HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "GET /static/uploads/deviation/request/2026-0032-0/procedure/img_0.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 08:59:52] "GET /static/uploads/deviation/request/2026-0032-0/motive/img_0.msg HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:59:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:59:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 08:59:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 08:59:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /op/ssma HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /op/qualidade HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /monitoramento/paradas?preload=0123456 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "HEAD /static/uploads/cockpit/video7.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "HEAD /static/uploads/cockpit/video8.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /op/producao HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "POST /op/ssma?month=4&year=2026 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "POST /op/qualidade?month=4&year=2026 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:00] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /op/qualidade HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /op/ssma HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "HEAD /static/uploads/cockpit/video8.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /monitoramento/paradas?preload=0123456 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /op/producao HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "HEAD /static/uploads/cockpit/video7.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "POST /op/qualidade?month=4&year=2026 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "POST /op/ssma?month=4&year=2026 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:01] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:07] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:08] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:10] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:10] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:10] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:13] "POST /op/producao?year=2026&month=4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:13] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:14] "POST /op/producao?year=2026&month=4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:15] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:20] "GET /desvios/detalhes?id=2026-0032 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:20] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:00:20] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:20] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:20] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:00:21] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:21] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:23] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:23] "GET /desvios/gerar?editar=2026-0032-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:23] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:00:23] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:00:23] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:32] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:32] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:41] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:41] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:58] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:00:58] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:00:58] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:58] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:58] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:58] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:00:58] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:00:59] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:01] "GET /lab HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:01] "GET /static/css/default/static_buttons.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:02] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:02] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:05] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:01:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:05] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:05] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:01:05] "GET /static/css/default/overlay.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:21] "GET /desvios/aprovacoes HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:01:21] "GET /login?next=http://digitaljost.randon.com.br/desvios/aprovacoes HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:01:21] "GET /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:21] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:01:21] "POST /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:32] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:32] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:36] "POST /desvios/atualizar?aprovar=1&id=2026-0033-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:36] "GET /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:36] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:01:36] "POST /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:01:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:01:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:02:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:02] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:02] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:03] "PATCH /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:06] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:02:06] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:02:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:09] "PATCH /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:14] "PATCH /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:32] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:32] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /desvios/detalhes/fisico?id=2026-0032-0 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /login?next=http://digitaljost.randon.com.br/desvios/detalhes/fisico?id%3D2026-0032-0 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /desvios/detalhes/fisico?id=2026-0032-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /static/css/style_dev.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /static/images/jost_logo_white.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /static/uploads/deviation/request/2026-0032-0/motive/img_0.msg HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "GET /static/uploads/deviation/request/2026-0032-0/procedure/img_0.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:02:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:02:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:03:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:02] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:02] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:08] "POST /monitoramento/geral HTTP/1.1" 200 -

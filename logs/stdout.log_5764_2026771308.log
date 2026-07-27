@@ -1,0 +1,51 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8257
+Press CTRL+C to quit
+127.0.0.1 - - [07/Jul/2026 10:00:12] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:12] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:12] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:12] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:12] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:12] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:12] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:19] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:22] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:23] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:23] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:23] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:24] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:26] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:26] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:26] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:26] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:26] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:31] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:31] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:31] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:31] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:31] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:38] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:38] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:39] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:39] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:39] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:39] "POST /op/logistica/update HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:40] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:41] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:44] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:44] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:44] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [07/Jul/2026 10:00:49] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:50] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:52] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:53] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:53] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:53] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:53] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:53] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:53] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Jul/2026 10:00:56] "POST /monitoramento/paradas HTTP/1.1" 200 -

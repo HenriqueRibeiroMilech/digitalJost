@@ -1,0 +1,40 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\__main__.py", line 3, in <module>
+    main()
+    ~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\cli.py", line 1131, in main
+    cli.main()
+    ~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\click\core.py", line 1363, in main
+    rv = self.invoke(ctx)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\click\core.py", line 1830, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\click\core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\click\core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\click\decorators.py", line 93, in new_func
+    return ctx.invoke(f, obj, *args, **kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\click\core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\cli.py", line 979, in run_command
+    raise e from None
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\cli.py", line 963, in run_command
+    app: WSGIApplication = info.load_app()  # pyright: ignore
+                           ~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\cli.py", line 349, in load_app
+    app = locate_app(import_name, name)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\cli.py", line 245, in locate_app
+    __import__(module_name)
+    ~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\main.py", line 18, in <module>
+    from app.routes.operation.planning import operation_planning_bp
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 468
+    	split = result_df['WEEK'].str.split('/', expand=True)
+    ^
+TabError: inconsistent use of tabs and spaces in indentation

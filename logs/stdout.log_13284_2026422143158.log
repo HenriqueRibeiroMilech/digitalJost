@@ -1,0 +1,146 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:13423
+Press CTRL+C to quit
+127.0.0.1 - - [22/Apr/2026 11:32:01] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:01] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:05] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:07] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 11:32:07] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 11:32:07] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 11:32:07] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:07] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:10] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:11] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:11] "POST /monitoramento/paradas HTTP/1.1" 200 -
+[2026-04-22 11:32:11,726] ERROR in app: Exception on /op/ssma [GET]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\security.py", line 140, in security_get
+    return render_template(
+        'operation.ssma/op_sec_cross.html',
+    ...<2 lines>...
+        dias_ano=dias_ano
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "I:\IIS\Digital_Jost\app\templates\operation.ssma\op_sec_cross.html", line 1, in top-level template code
+    {% extends 'home.html' %}
+  File "I:\IIS\Digital_Jost\app\templates\home.html", line 179, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\operation.ssma\op_sec_cross.html", line 54, in block 'content'
+    {% include 'operation.ssma/op_sec_cross.js' %}
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\operation.ssma\op_sec_cross.js", line 86, in top-level template code
+    var year = Number({{ year | tojson }});
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\filters.py", line 1721, in do_tojson
+    return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\utils.py", line 669, in htmlsafe_json_dumps
+    dumps(obj, **kwargs)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\json\provider.py", line 179, in dumps
+    return json.dumps(obj, **kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Python13\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ~~~~~~^^^^^
+  File "C:\Python13\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "C:\Python13\Lib\json\encoder.py", line 261, in iterencode
+    return _iterencode(o, 0)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\json\provider.py", line 121, in _default
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+TypeError: Object of type Undefined is not JSON serializable
+127.0.0.1 - - [22/Apr/2026 11:32:11] "GET /op/ssma HTTP/1.1" 500 -
+127.0.0.1 - - [22/Apr/2026 11:32:11] "GET /static/css/style_module.css HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:11] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:15] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:15] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 11:32:15] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 11:32:15] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:15] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:15] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:32:16] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:20] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:21] "GET /oee/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:22] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:22] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:28] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:40] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:43] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:45] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:50] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:52] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:52] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:58] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:32:59] "POST /oee/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:05] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:07] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:10] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:12] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:15] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:16] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:18] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:20] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:22] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:22] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:28] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:34] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:33:34] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:33:37] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:33:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:37] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 11:33:40] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:45] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:50] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:52] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 11:33:52] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -

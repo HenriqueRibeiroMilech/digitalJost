@@ -1,0 +1,34 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:3584
+Press CTRL+C to quit
+127.0.0.1 - - [19/Feb/2026 13:03:16] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:17] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:17] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:18] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "POST /cockpit?tipo=1 HTTP/1.1" 302 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /cockpit HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video11.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video13.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video12.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video11.mp4 HTTP/1.1" 404 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video13.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video12.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video12.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:19] "GET /static/uploads/cockpit/video12.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [19/Feb/2026 13:03:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:22] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [19/Feb/2026 13:03:22] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Feb/2026 13:03:25] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -

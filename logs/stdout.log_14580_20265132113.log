@@ -1,0 +1,11 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:18180
+Press CTRL+C to quit
+127.0.0.1 - - [13/May/2026 18:01:07] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 18:01:07] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 18:01:07] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 18:01:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 18:01:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 18:01:08] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -

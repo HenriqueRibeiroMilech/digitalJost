@@ -1,0 +1,624 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:20918
+Press CTRL+C to quit
+127.0.0.1 - - [14/Apr/2026 09:03:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:31] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:31] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:31] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:43] "POST /desvios/gerar?cmd=2&editar=2026-0032-0 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:03:43] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:43] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:03:43] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:03:43] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:03:43] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:03:43] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:03:44] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:03:47] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:47] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:03:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:03:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:03:58] "GET /desvios/detalhes?id=2026-0032 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:03:58] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:03:58] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:03:58] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:04:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "GET /desvios/detalhes/fisico?id=2026-0032-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "GET /static/css/style_dev.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "GET /static/images/jost_logo_white.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "GET /static/uploads/deviation/request/2026-0032-0/motive/img_0.msg HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "GET /static/uploads/deviation/request/2026-0032-0/procedure/img_0.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "GET /static/uploads/deviation/request/2026-0032-0/motive/img_0.msg HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:04:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:05] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:15] "GET /cockpit/fabrica HTTP/1.1" 200 -
+[2026-04-14 09:04:15,621] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:04:15] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:04:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:22] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:04:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:31] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:04:45,628] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:04:45] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:04:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:04:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:04:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:04:57] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:04:59] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:05:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:05:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:05:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:06:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:05] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:06:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:06:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:06:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:05] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:21] "GET /cockpit/fabrica HTTP/1.1" 200 -
+[2026-04-14 09:07:21,861] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:07:21] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:07:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:34] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:07:34] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:07:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+[2026-04-14 09:07:52,171] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:07:52] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:07:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:07:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:07:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:07:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:02] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:08:21,906] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:08:21] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:08:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:24] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:47] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:08:47] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+[2026-04-14 09:08:51,864] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:08:51] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:08:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:08:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:08:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:08:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:02] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:09:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:07] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:09:08] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:09:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:09:21,878] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:09:21] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:09:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:09:51,862] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:09:51] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:09:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:09:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:09:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:09:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:09:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:05] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:10:21,888] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:10:21] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:10:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:41] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:10:41] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+[2026-04-14 09:10:51,873] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:10:51] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:10:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:10:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:10:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:10:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:10:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:11:21,875] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:11:21] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:11:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:11:51,865] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:11:51] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:11:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:11:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:11:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:11:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:11:57] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:12:21,867] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:12:21] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:12:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:28] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:12:51,868] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:12:51] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:12:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:12:54] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:12:55] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:12:55] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:12:55] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:12:56] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:12:58] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:00] "GET /op/producao HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:05] "GET /lab/dimensional/gerenciar HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /monitoramento/oee?ct=SR02 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /login?next=http://digitaljost.randon.com.br/monitoramento/oee?ct%3DSR02 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /desvios HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /login?next=http://digitaljost.randon.com.br/desvios HTTP/1.1" 302 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:08] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:09] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:09] "POST /op/producao?year=2026&month=4 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:11] "GET /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:11] "POST /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:11] "POST /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:12] "GET /static/images/medal4.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:15] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:15] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:16] "GET /desvios/detalhes?id=2026-0033 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:16] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:16] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:16] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:16] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:16] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:17] "GET /desvios/detalhes/fisico?id=2026-0033-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:17] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:17] "GET /static/css/style_dev.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:17] "GET /static/uploads/deviation/request/2026-0033-0/motive/img_0.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:18] "GET /static/images/jost_logo_white.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:18] "GET /monitoramento HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:19] "GET /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:19] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-04-14 09:13:21,867] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:13:21] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:13:22] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:24] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:30] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:32] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:38] "GET /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:39] "POST /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:40] "POST /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:49] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:51] "GET /desvios/detalhes?id=2026-0033 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:51] "GET /static/css/style_module_dsv.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:51] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:51] "GET /static/css/img.png HTTP/1.1" 304 -
+[2026-04-14 09:13:51,869] ERROR in app: Exception on /cockpit/fabrica [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\jdt\communication.py", line 247, in cockpit_factory_post
+    device = str(value['device'])
+                 ~~~~~^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+127.0.0.1 - - [14/Apr/2026 09:13:51] "POST /cockpit/fabrica HTTP/1.1" 500 -
+127.0.0.1 - - [14/Apr/2026 09:13:52] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /desvios/detalhes/fisico?id=2026-0033-0 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /static/images/jost_logo_white.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /static/css/style_dev.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /static/uploads/deviation/request/2026-0033-0/motive/img_0.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:13:54] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [14/Apr/2026 09:13:59] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:00] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [14/Apr/2026 09:14:11] "POST /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -

@@ -1,0 +1,716 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:3938
+Press CTRL+C to quit
+127.0.0.1 - - [24/Mar/2026 15:28:15] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:16] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:17] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:18] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:18] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:21] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:24] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:25] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:25] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:25] "GET /static/css/style_documentos.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:25] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:27] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:27] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:30] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:30] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:30] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:30] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:30] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:31] "GET /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:31] "POST /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:34] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:34] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:34] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:34] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:35] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:38] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:43] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:43] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:46] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:46] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:47] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:47] "GET /desvios/aprovadores HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:47] "POST /desvios/aprovadores HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:47] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:48] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:50] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:50] "GET /static/css/style_documentos.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:50] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:50] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:50] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:51] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:54] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:55] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:55] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:57] "GET /desvios/detalhes?id=2026-0028 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:57] "GET /static/css/style_module_dsv.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:57] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:28:57] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:28:59] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:28:59] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:02] "GET /desvios/detalhes?id=2025-0091 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:02] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:02] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:02] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:04] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:04] "POST /desvios/excluir HTTP/1.1" 404 -
+127.0.0.1 - - [24/Mar/2026 15:29:05] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:08] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:10] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:10] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:13] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:13] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:16] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:17] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:17] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:18] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:18] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:21] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:24] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:36] "GET /desvios HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:29:36] "GET /login?next=http://digitaljost.randon.com.br/desvios HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:29:36] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:36] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:36] "GET /static/css/style_documentos.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:36] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:37] "GET /desvios/aprovacoes HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:29:37] "GET /login?next=http://digitaljost.randon.com.br/desvios/aprovacoes HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:29:37] "GET /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:37] "POST /desvios/aprovacoes HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:38] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:38] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:38] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:43] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:43] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:44] "GET /desvios/detalhes?id=2026-0028 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:44] "GET /static/css/style_module_dsv.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:44] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:44] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:44] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:46] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+[2026-03-24 15:29:46,305] ERROR in app: Exception on /desvios/detalhes/fisico [GET]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1474, in dev_detail_physical
+    return render_template(
+        'request.processDeviation/dev_detail_physical.html',
+    ...<3 lines>...
+        df_result=aprovadores.to_json()
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.html", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 966 more times]
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 23, in top-level template code
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_dev.css') }}">
+    ^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 922, in build
+    rv = self._partial_build(endpoint, values, method, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 801, in _partial_build
+    rv = self._partial_build(
+        endpoint, values, self.default_method, append_unknown
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 814, in _partial_build
+    build_rv = rule.build(values, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\rules.py", line 850, in build
+    return self._build_unknown(**values)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<werkzeug routing>", line 1, in <builder:'/static/<path:filename>'>
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\converters.py", line 45, in to_url
+    return quote(str(value), safe="!$&'()*+,/:;=@")
+  File "C:\Python13\Lib\urllib\parse.py", line 927, in quote
+    return quote_from_bytes(string, safe)
+RecursionError: maximum recursion depth exceeded
+127.0.0.1 - - [24/Mar/2026 15:29:46] "GET /desvios/detalhes/fisico?id=2026-0028-0 HTTP/1.1" 500 -
+127.0.0.1 - - [24/Mar/2026 15:29:46] "GET /static/css/style_module.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:46] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:46] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:47] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:47] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:48] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:49] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:49] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:49] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:49] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:49] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:29:51] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:54] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:55] "GET /lab HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:55] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:56] "GET /lab/dimensional/solicitar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:56] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:56] "GET /static/css/default/overlay.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:58] "GET /lab/dimensional/solicitar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:29:58] "GET /static/css/default/overlay.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:29:58] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:30:04] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:05] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:08] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:30:08] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:13] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:13] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:16] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:17] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:18] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:18] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:21] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:24] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:32] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:32] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:30:32] "GET /static/videos/code.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:30:32] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:30:32] "GET /static/videos/code.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:30:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:35] "GET /monitoramento HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:36] "GET /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:38] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:43] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:43] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:46] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:46] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:47] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:47] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:49] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:51] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:30:54] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:00] "GET /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:00] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:31:00] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:04] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:04] "GET /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:04] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:31:04] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:05] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:08] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:13] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:13] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:16] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:17] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:18] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:18] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:21] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:24] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:34] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:35] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:35] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:37] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /desvios/detalhes?id=2026-0027 HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /login?next=http://digitaljost.randon.com.br/desvios/detalhes?id%3D2026-0027 HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /desvios/detalhes?id=2026-0027 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /static/css/style_module_dsv.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:38] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+[2026-03-24 15:31:39,779] ERROR in app: Exception on /desvios/detalhes/fisico [GET]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1474, in dev_detail_physical
+    return render_template(
+        'request.processDeviation/dev_detail_physical.html',
+    ...<3 lines>...
+        df_result=aprovadores.to_json()
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.html", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 966 more times]
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 23, in top-level template code
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_dev.css') }}">
+    ^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 922, in build
+    rv = self._partial_build(endpoint, values, method, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 801, in _partial_build
+    rv = self._partial_build(
+        endpoint, values, self.default_method, append_unknown
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 814, in _partial_build
+    build_rv = rule.build(values, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\rules.py", line 850, in build
+    return self._build_unknown(**values)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<werkzeug routing>", line 1, in <builder:'/static/<path:filename>'>
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\converters.py", line 45, in to_url
+    return quote(str(value), safe="!$&'()*+,/:;=@")
+  File "C:\Python13\Lib\urllib\parse.py", line 927, in quote
+    return quote_from_bytes(string, safe)
+RecursionError: maximum recursion depth exceeded
+127.0.0.1 - - [24/Mar/2026 15:31:39] "GET /desvios/detalhes/fisico?id=2026-0027-0 HTTP/1.1" 500 -
+127.0.0.1 - - [24/Mar/2026 15:31:40] "GET /static/css/style_module.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:40] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:43] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:43] "POST /monitoramento/paradas HTTP/1.1" 200 -
+[2026-03-24 15:31:44,824] ERROR in app: Exception on /desvios/detalhes/fisico [GET]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1474, in dev_detail_physical
+    return render_template(
+        'request.processDeviation/dev_detail_physical.html',
+    ...<3 lines>...
+        df_result=aprovadores.to_json()
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.html", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 966 more times]
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 23, in top-level template code
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_dev.css') }}">
+    ^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 922, in build
+    rv = self._partial_build(endpoint, values, method, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 801, in _partial_build
+    rv = self._partial_build(
+        endpoint, values, self.default_method, append_unknown
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 814, in _partial_build
+    build_rv = rule.build(values, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\rules.py", line 850, in build
+    return self._build_unknown(**values)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<werkzeug routing>", line 1, in <builder:'/static/<path:filename>'>
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\converters.py", line 45, in to_url
+    return quote(str(value), safe="!$&'()*+,/:;=@")
+  File "C:\Python13\Lib\urllib\parse.py", line 927, in quote
+    return quote_from_bytes(string, safe)
+RecursionError: maximum recursion depth exceeded
+127.0.0.1 - - [24/Mar/2026 15:31:45] "GET /desvios/detalhes/fisico?id=2026-0027-0 HTTP/1.1" 500 -
+127.0.0.1 - - [24/Mar/2026 15:31:45] "GET /static/css/style_module.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:31:45] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:45] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:31:45] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:31:46] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:46] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:47] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:47] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:48] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:51] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:54] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:56] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:31:57] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:03] "GET /desvios/detalhes?id=2026-0027 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:03] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:03] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:03] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:03] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:32:03] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [24/Mar/2026 15:32:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:04] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:04] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:04] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:04] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:04] "GET /static/videos/code.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:04] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:05] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+[2026-03-24 15:32:05,018] ERROR in app: Exception on /desvios/detalhes/fisico [GET]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1474, in dev_detail_physical
+    return render_template(
+        'request.processDeviation/dev_detail_physical.html',
+    ...<3 lines>...
+        df_result=aprovadores.to_json()
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.html", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 966 more times]
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 23, in top-level template code
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_dev.css') }}">
+    ^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 922, in build
+    rv = self._partial_build(endpoint, values, method, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 801, in _partial_build
+    rv = self._partial_build(
+        endpoint, values, self.default_method, append_unknown
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 814, in _partial_build
+    build_rv = rule.build(values, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\rules.py", line 850, in build
+    return self._build_unknown(**values)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<werkzeug routing>", line 1, in <builder:'/static/<path:filename>'>
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\converters.py", line 45, in to_url
+    return quote(str(value), safe="!$&'()*+,/:;=@")
+  File "C:\Python13\Lib\urllib\parse.py", line 927, in quote
+    return quote_from_bytes(string, safe)
+RecursionError: maximum recursion depth exceeded
+127.0.0.1 - - [24/Mar/2026 15:32:05] "GET /desvios/detalhes/fisico?id=2026-0027-0 HTTP/1.1" 500 -
+127.0.0.1 - - [24/Mar/2026 15:32:05] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:05] "GET /static/css/style_module.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:05] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:05] "GET /static/videos/code.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:06] "GET /op/plano HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:08] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /op/plano/area/0 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/plotly-latest.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/js/operation.planning/getData.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/js/operation.planning/chartMotive0.js HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /desvios/detalhes?id=2026-0027 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:13] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:14] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:14] "GET /desvios/detalhes?id=2026-0027 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:14] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:15] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:15] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:15] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+[2026-03-24 15:32:16,368] ERROR in app: Exception on /desvios/detalhes/fisico [GET]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1474, in dev_detail_physical
+    return render_template(
+        'request.processDeviation/dev_detail_physical.html',
+    ...<3 lines>...
+        df_result=aprovadores.to_json()
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.html", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 966 more times]
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 23, in top-level template code
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_dev.css') }}">
+    ^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 922, in build
+    rv = self._partial_build(endpoint, values, method, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 801, in _partial_build
+    rv = self._partial_build(
+        endpoint, values, self.default_method, append_unknown
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 814, in _partial_build
+    build_rv = rule.build(values, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\rules.py", line 850, in build
+    return self._build_unknown(**values)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<werkzeug routing>", line 1, in <builder:'/static/<path:filename>'>
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\converters.py", line 45, in to_url
+    return quote(str(value), safe="!$&'()*+,/:;=@")
+  File "C:\Python13\Lib\urllib\parse.py", line 927, in quote
+    return quote_from_bytes(string, safe)
+RecursionError: maximum recursion depth exceeded
+127.0.0.1 - - [24/Mar/2026 15:32:16] "GET /desvios/detalhes/fisico?id=2026-0027-0 HTTP/1.1" 500 -
+127.0.0.1 - - [24/Mar/2026 15:32:16] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:16] "GET /static/css/style_module.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:16] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:16] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:17] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:17] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:18] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:18] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:21] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:22] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:24] "POST /op/plano/area/0?type=graph&year=2026&week=12 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:24] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:34] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:38] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:43] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:43] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:46] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:46] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:47] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:47] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:48] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:51] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:51] "GET /desvios HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:51] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:51] "GET /static/css/style_documentos.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:51] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:51] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:51] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:54] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:54] "GET /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:54] "POST /desvios/consultar HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:58] "GET /desvios/detalhes?id=2026-0027 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Mar/2026 15:32:58] "GET /static/css/style_module_dsv.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:32:58] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:32:58] "GET /static/css/img.png HTTP/1.1" 304 -
+[2026-03-24 15:32:59,795] ERROR in app: Exception on /desvios/detalhes/fisico [GET]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\request\processDeviation.py", line 1474, in dev_detail_physical
+                return jsonify({"message": f"Erro ao excluir desvio: {e}"}), 500
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+            APP_PATH, "app", "static", "uploads", "deviation", "request",
+    
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.html", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 146, in top-level template code
+    {% include 'request.processDeviation/dev_detail_physical.js' %}
+    ^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 966 more times]
+  File "I:\IIS\Digital_Jost\app\templates\request.processDeviation\dev_detail_physical.js", line 23, in top-level template code
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_dev.css') }}">
+    ^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 922, in build
+    rv = self._partial_build(endpoint, values, method, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 801, in _partial_build
+    rv = self._partial_build(
+        endpoint, values, self.default_method, append_unknown
+    )
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\map.py", line 814, in _partial_build
+    build_rv = rule.build(values, append_unknown)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\rules.py", line 850, in build
+    return self._build_unknown(**values)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "<werkzeug routing>", line 1, in <builder:'/static/<path:filename>'>
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\werkzeug\routing\converters.py", line 45, in to_url
+    return quote(str(value), safe="!$&'()*+,/:;=@")
+  File "C:\Python13\Lib\urllib\parse.py", line 927, in quote
+    return quote_from_bytes(string, safe)
+RecursionError: maximum recursion depth exceeded
+127.0.0.1 - - [24/Mar/2026 15:32:59] "GET /desvios/detalhes/fisico?id=2026-0027-0 HTTP/1.1" 500 -
+127.0.0.1 - - [24/Mar/2026 15:32:59] "GET /static/css/style_module.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Mar/2026 15:33:00] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [24/Mar/2026 15:33:03] "POST /op/plano/area/0?type=graph&year=2026&week=10 HTTP/1.1" 200 -

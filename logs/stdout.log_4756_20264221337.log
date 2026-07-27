@@ -1,0 +1,67 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:28782
+Press CTRL+C to quit
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:12] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:15] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:16] "POST /oee/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:16] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:16] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:16] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:03:16] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:03:16] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:16] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:20] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:21] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:21] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:21] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:21] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:21] "GET /static/videos/net1.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:21] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:22] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:22] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:26] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:27] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:27] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:28] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:29] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:40] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:41] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [22/Apr/2026 10:03:41] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [22/Apr/2026 10:03:41] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:41] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:41] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:41] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:42] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [22/Apr/2026 10:03:42] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:45] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:46] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:50] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:52] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:52] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:03:58] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:04] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Apr/2026 10:04:04] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:04] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:04] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [22/Apr/2026 10:04:04] "GET /static/videos/des.mp4 HTTP/1.1" 206 -

@@ -1,0 +1,48 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:31692
+Press CTRL+C to quit
+127.0.0.1 - - [17/Jul/2026 14:29:37] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:37] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:37] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:38] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:40] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:40] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:40] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:41] "GET /static/uploads/cockpit/video7.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:41] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:43] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:45] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:46] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:46] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:47] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:47] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:47] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:47] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:49] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:50] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:50] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:51] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:51] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:29:55] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:55] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:56] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:56] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:57] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:29:57] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:30:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:30:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:30:01] "GET /static/uploads/cockpit/video10.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [17/Jul/2026 14:30:02] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:30:04] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:30:06] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:30:07] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:30:07] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:30:08] "POST /monitoramento/geral HTTP/1.1" 200 -

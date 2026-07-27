@@ -1,0 +1,278 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:24836
+Press CTRL+C to quit
+127.0.0.1 - - [03/Feb/2026 14:12:42] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:42] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:43] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:45] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:49] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:50] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:51] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:51] "GET /op/plano/area/1 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:51] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:51] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:51] "GET /static/js/operation.planning/getData.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "GET /static/js/operation.planning/chartMotive1.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:52] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:12:54] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:12:56] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [03/Feb/2026 14:12:56] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [03/Feb/2026 14:12:58] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+[2026-02-03 14:13:00,931] ERROR in app: Exception on /op/plano/area/1 [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 464, in planning_area_post
+    result_df[['Year', 'Week']] = result_df['WEEK'].str.split('/', expand=True).astype(int)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4304, in __setitem__
+    self._setitem_array(key, value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4346, in _setitem_array
+    check_key_length(self.columns, key, value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexers\utils.py", line 390, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+127.0.0.1 - - [03/Feb/2026 14:13:00] "POST /op/plano/area/1?type=graph&year=2026&week=6 HTTP/1.1" 500 -
+127.0.0.1 - - [03/Feb/2026 14:13:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:02] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:03] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:03] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:04] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:04] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:07] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:10] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:13] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:13] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:15] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:18] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [03/Feb/2026 14:13:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:19] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:20] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:21] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:21] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:21] "POST /monitoramento/oee?ct=S23 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:21] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:22] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:23] "POST /monitoramento/oee?ct=S18 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:23] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:24] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:32] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:33] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:33] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:34] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:35] "GET /op/plano/area/1 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:35] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:35] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:35] "GET /static/js/operation.planning/getData.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:36] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:36] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:36] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:36] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:36] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:36] "GET /static/js/operation.planning/chartMotive1.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:37] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:40] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:41] "GET /op/plano/area/1 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:41] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:41] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:41] "GET /static/js/operation.planning/getData.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:42] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:42] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:42] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:42] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:42] "GET /static/js/operation.planning/chartMotive1.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:42] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:42] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:13:43] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:45] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+[2026-02-03 14:13:47,196] ERROR in app: Exception on /op/plano/area/1 [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 464, in planning_area_post
+    result_df[['Year', 'Week']] = result_df['WEEK'].str.split('/', expand=True).astype(int)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4304, in __setitem__
+    self._setitem_array(key, value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4346, in _setitem_array
+    check_key_length(self.columns, key, value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexers\utils.py", line 390, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+127.0.0.1 - - [03/Feb/2026 14:13:47] "POST /op/plano/area/1?type=graph&year=2026&week=6 HTTP/1.1" 500 -
+127.0.0.1 - - [03/Feb/2026 14:13:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:50] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:51] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:51] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:52] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-02-03 14:13:52,690] ERROR in app: Exception on /op/plano/area/1 [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 464, in planning_area_post
+    result_df[['Year', 'Week']] = result_df['WEEK'].str.split('/', expand=True).astype(int)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4304, in __setitem__
+    self._setitem_array(key, value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4346, in _setitem_array
+    check_key_length(self.columns, key, value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexers\utils.py", line 390, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+127.0.0.1 - - [03/Feb/2026 14:13:52] "POST /op/plano/area/1?type=graph&year=2026&week=5 HTTP/1.1" 500 -
+127.0.0.1 - - [03/Feb/2026 14:13:54] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:13:58] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:02] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:02] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:03] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:04] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:04] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:07] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:10] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:13] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:13] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:15] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:19] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:20] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:21] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:21] "POST /monitoramento/oee?ct=S23 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:21] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:21] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:22] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:23] "POST /monitoramento/oee?ct=S18 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:23] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:24] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:28] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [03/Feb/2026 14:14:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:33] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:33] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:33] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:34] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:40] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:43] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:45] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:49] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:50] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:51] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:52] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:54] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:14:58] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:00] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:00] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:01] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:02] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:03] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:03] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:04] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:04] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:07] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:10] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:13] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:13] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:15] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:19] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:20] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:21] "POST /monitoramento/oee?ct=S23 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:21] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:21] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:22] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:22] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:23] "POST /monitoramento/oee?ct=S18 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:24] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:25] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:30] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:30] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:31] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:33] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:33] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:34] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:34] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:36] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:37] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:37] "GET /static/uploads/cockpit/video8.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [03/Feb/2026 14:15:39] "GET /op/plano/area/1 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:39] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:39] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:39] "GET /static/js/operation.planning/getData.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "GET /static/js/operation.planning/chartMotive1.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:40] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [03/Feb/2026 14:15:43] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Feb/2026 14:15:45] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -

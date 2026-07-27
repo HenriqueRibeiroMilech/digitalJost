@@ -1,0 +1,34 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:28253
+Press CTRL+C to quit
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:48] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:50] "POST /monitoramento/oee?ct=M02 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:52] "POST /monitoramento/oee?ct=S07 HTTP/1.1" 200 -
+127.0.0.1 - - [21/May/2026 16:24:53] "POST /monitoramento/oee?ct=M04 HTTP/1.1" 200 -

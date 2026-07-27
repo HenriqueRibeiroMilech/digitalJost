@@ -1,0 +1,439 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:27203
+Press CTRL+C to quit
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /lab/dimensional/detalhes/202500646 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /cockpit/tv?id=0&group=3&ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /oee/paradas HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /lab/dimensional/detalhes/202500646 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /lab/dimensional/detalhes/202500646 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:29:54] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/videos/docs.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /login?next=http://digitaljost.randon.com.br/oee/paradas HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/css/default/static_buttons.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/css/default/overlay.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /lab/dimensional/detalhes/202500646/dados HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /lab/dimensional/detalhes/202500646/arquivos?type=draw HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /lab/dimensional/detalhes/202500646/comentarios HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /lab/dimensional/detalhes/202500646/arquivos?type=reports HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/videos/video.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /lab/dimensional/detalhes/202500646/logs HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/images/jost_white1.png HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "GET /static/css/img.png HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:55] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "GET /oee/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:56] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:57] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:29:57] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:59] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:29:59] "GET /static/images/medal3.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:02] "POST /lab/dimensional/detalhes/202500646/arquivos?type=reports&extra=download HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:08] "GET /op/plano HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /op/plano/area/5 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/js/operation.planning/getData.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:09] "GET /static/js/operation.planning/chartMotive5.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:22] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:30:23] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:23] "POST /monitoramento/geral HTTP/1.1" 200 -
+[2026-02-04 15:30:24,713] ERROR in app: Exception on /op/plano/area/5 [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 463, in planning_area_post
+    result_df[['Year', 'Week']] = result_df['WEEK'].str.split('/', expand=True).astype(int)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4304, in __setitem__
+    self._setitem_array(key, value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4346, in _setitem_array
+    check_key_length(self.columns, key, value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexers\utils.py", line 390, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+127.0.0.1 - - [04/Feb/2026 15:30:24] "POST /op/plano/area/5?type=graph&year=2026&week=5 HTTP/1.1" 500 -
+127.0.0.1 - - [04/Feb/2026 15:30:25] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:30] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:30:34] "GET /static/images/jost_icon.ico HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:38] "GET /op/plano HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /op/plano/area/5 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/plotly-latest.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/js/operation.planning/getData.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/js/operation.planning/chartMotive5.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:39] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+[2026-02-04 15:30:50,048] ERROR in app: Exception on /op/plano/area/5 [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 463, in planning_area_post
+    result_df[['Year', 'Week']] = result_df['WEEK'].str.split('/', expand=True).astype(int)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4304, in __setitem__
+    self._setitem_array(key, value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4346, in _setitem_array
+    check_key_length(self.columns, key, value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexers\utils.py", line 390, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+127.0.0.1 - - [04/Feb/2026 15:30:50] "POST /op/plano/area/5?type=graph&year=2026&week=4 HTTP/1.1" 500 -
+127.0.0.1 - - [04/Feb/2026 15:30:53] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:53] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:30:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:00] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:23] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:23] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:25] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:30] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /op/plano/area/5 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/plotly-latest.min.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/js/operation.planning/getData.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/js/operation.planning/chartMotive5.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:38] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:46] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:31:46] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:31:46] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+[2026-02-04 15:31:49,928] ERROR in app: Exception on /op/plano/area/5 [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 463, in planning_area_post
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4304, in __setitem__
+    self._setitem_array(key, value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4346, in _setitem_array
+    check_key_length(self.columns, key, value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexers\utils.py", line 390, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+127.0.0.1 - - [04/Feb/2026 15:31:49] "POST /op/plano/area/5?type=graph&year=2026&week=5 HTTP/1.1" 500 -
+127.0.0.1 - - [04/Feb/2026 15:31:53] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:53] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:56] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:31:56] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:56] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:31:56] "GET /static/videos/net0.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:31:56] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:00] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:03] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:32:04] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:04] "GET /login?next=/ HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:32:04] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:04] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:04] "GET /static/css/img.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:04] "GET /static/videos/code.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:32:04] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:05] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:05] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:07] "GET /static/images/jost_white1.png HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:08] "GET /op/plano HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /op/plano/area/5 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/plotly-latest.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/images/new_jost_logo.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/js/operation.planning/getData.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/js/operation.planning/slidesController.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/js/operation.planning/actionPlan.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/js/operation.planning/barchart.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/js/operation.planning/percentageChart.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/js/operation.planning/chartMotive5.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:13] "GET /static/js/operation.planning/chart0.js HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:23] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:23] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:23] "GET /static/videos/net2.mov HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:32:25] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+[2026-02-04 15:32:26,426] ERROR in app: Exception on /op/plano/area/5 [POST]
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\app\routes\operation\planning.py", line 463, in planning_area_post
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4304, in __setitem__
+    self._setitem_array(key, value)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\frame.py", line 4346, in _setitem_array
+    check_key_length(self.columns, key, value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexers\utils.py", line 390, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+127.0.0.1 - - [04/Feb/2026 15:32:26] "POST /op/plano/area/5?type=graph&year=2026&week=5 HTTP/1.1" 500 -
+127.0.0.1 - - [04/Feb/2026 15:32:27] "GET /oee/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:30] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:35] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:35] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:47] "GET /static/videos/des.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [04/Feb/2026 15:32:48] "GET /monitoramento/geral HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:32:48] "GET /login?next=http://digitaljost.randon.com.br/monitoramento/geral HTTP/1.1" 302 -
+127.0.0.1 - - [04/Feb/2026 15:32:48] "GET /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:48] "GET /static/images/jost_icon.ico HTTP/1.1" 304 -
+127.0.0.1 - - [04/Feb/2026 15:32:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:53] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [04/Feb/2026 15:32:53] "POST /monitoramento/geral HTTP/1.1" 200 -

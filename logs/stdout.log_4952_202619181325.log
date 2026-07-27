@@ -1,0 +1,444 @@
+ * Serving Flask app 'I:\IIS\Digital_Jost\main.py'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:28218
+Press CTRL+C to quit
+127.0.0.1 - - [09/Jan/2026 15:13:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:28] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:30] "POST /monitoramento/oee?ct=E04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:30] "POST /monitoramento/oee?ct=M06 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:30] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:30] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:31] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /monitoramento/oee?ct=M12 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /monitoramento/oee?ct=P05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /monitoramento/oee?ct=M05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /monitoramento/oee?ct=M17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /monitoramento/oee?ct=S07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:32] "POST /monitoramento/oee?ct=S17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=L01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=P02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=S20 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=S15 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=M21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=S20 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=S23 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=L02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /monitoramento/oee?ct=M03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "GET /static/uploads/cockpit/video9.mp4 HTTP/1.1" 206 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:33] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=SR03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=C10 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=C08 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=M18 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=M04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=T03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=P03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:34] "POST /monitoramento/oee?ct=T08 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /monitoramento/oee?ct=T03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /monitoramento/oee?ct=T07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /monitoramento/oee?ct=D01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /monitoramento/oee?ct=S21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /monitoramento/oee?ct=SM01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /monitoramento/oee?ct=S21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:35] "POST /monitoramento/oee?ct=M04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:36] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:36] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:36] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:36] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:36] "POST /monitoramento/oee?ct=M19 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:36] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:36] "POST /monitoramento/oee?ct=M11 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /monitoramento/oee?ct=C07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /monitoramento/oee?ct=C09 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /monitoramento/oee?ct=P02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:37] "POST /monitoramento/oee?ct=P05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:38] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:38] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:38] "POST /monitoramento/oee?ct=SM04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:38] "POST /monitoramento/oee?ct=T07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:39] "POST /monitoramento/oee?ct=S17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:40] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:40] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:40] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:41] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:42] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /monitoramento/oee?ct=M18 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /monitoramento/oee?ct=M02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:44] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:44] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:44] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:45] "POST /monitoramento/oee?ct=C04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:45] "POST /monitoramento/oee?ct=C04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:45] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:45] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:46] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:47] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:48] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:48] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /monitoramento/oee?ct=SM02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /monitoramento/oee?ct=L01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:49] "POST /monitoramento/oee?ct=M12 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:50] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:50] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:51] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:51] "POST /monitoramento/oee?ct=M05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:51] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:51] "POST /monitoramento/oee?ct=M19 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:52] "POST /monitoramento/oee?ct=L02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:52] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:52] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:52] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:53] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:53] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:53] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:53] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:54] "POST /monitoramento/oee?ct=SR03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:55] "POST /monitoramento/oee?ct=M08 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:56] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:57] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:57] "POST /monitoramento/oee?ct=M02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:57] "POST /monitoramento/oee?ct=P03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:58] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:13:58] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+Detalhes do erro:
+ Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexes\range.py", line 413, in get_loc
+    return self._range.index(new_key)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+ValueError: 0 is not in range
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\app\routes\jdt\monitoring.py", line 686, in monitoring_oee_post
+    'workcenter': str(status_data['Workcenter'][0])
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\series.py", line 1130, in __getitem__
+    return self._get_value(key)
+           ~~~~~~~~~~~~~~~^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\series.py", line 1246, in _get_value
+    loc = self.index.get_loc(label)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexes\range.py", line 415, in get_loc
+    raise KeyError(key) from err
+KeyError: 0
+
+127.0.0.1 - - [09/Jan/2026 15:13:59] "POST /monitoramento/oee?ct=E01 HTTP/1.1" 500 -
+127.0.0.1 - - [09/Jan/2026 15:14:00] "POST /monitoramento/oee?ct=M06 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:00] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:00] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:01] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:01] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:01] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /monitoramento/oee?ct=M12 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /monitoramento/oee?ct=L01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /monitoramento/oee?ct=M11 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /monitoramento/oee?ct=S07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /monitoramento/oee?ct=M05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:02] "POST /monitoramento/oee?ct=M17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=P05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=S17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=M21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=L02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=P02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=S15 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=S20 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:03] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=SR03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=M10 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=M10 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=M21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=C10 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=T08 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=D01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=T03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:04] "POST /monitoramento/oee?ct=M19 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /monitoramento/oee?ct=T07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /monitoramento/oee?ct=M03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /monitoramento/oee?ct=S23 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /monitoramento/oee?ct=S21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:05] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:06] "POST /monitoramento/oee?ct=M04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:06] "POST /monitoramento/oee?ct=M11 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:06] "POST /monitoramento/oee?ct=P03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:06] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:06] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:06] "POST /monitoramento/oee?ct=M18 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:07] "POST /monitoramento/oee?ct=C07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:07] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:07] "POST /monitoramento/oee?ct=C09 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:07] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:07] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:07] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:08] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:08] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:08] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:09] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:09] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:10] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:10] "POST /monitoramento/oee?ct=T05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:12] "POST /monitoramento/oee?ct=E02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:12] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:12] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:13] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:13] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:13] "POST /monitoramento/oee?ct=M02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:13] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:14] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:14] "POST /monitoramento/oee?ct=S07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:14] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:14] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:14] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:15] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:15] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:16] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:17] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:17] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:17] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:18] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:18] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:19] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:19] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:19] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:19] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:19] "POST /monitoramento/oee?ct=S15 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:20] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:21] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:21] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:22] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:22] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:22] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:23] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:23] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:23] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:24] "POST /monitoramento/oee?ct=M17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:25] "POST /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:25] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:25] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:25] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:26] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:27] "POST /monitoramento/oee?ct=E04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:28] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:28] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:30] "POST /monitoramento/oee?ct=M06 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:30] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:31] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:31] "POST /cockpit/fabrica HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:31] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /monitoramento/oee?ct=M12 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /monitoramento/oee?ct=L01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /monitoramento/oee?ct=S07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /monitoramento/oee?ct=M05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:32] "POST /monitoramento/oee?ct=SR02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=M17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=S20 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=M21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=L02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=S15 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=S17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=P02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=S20 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=P05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=T07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=S34 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=S23 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /monitoramento/oee?ct=SR03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:33] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=T08 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=D01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=M04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=C10 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=M03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=M18 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=C08 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=P03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=T03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=M19 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:34] "POST /monitoramento/oee?ct=T03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /monitoramento/oee?ct=S21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /monitoramento/oee?ct=SM01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:35] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /monitoramento/oee?ct=S21 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /monitoramento/oee?ct=M04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /monitoramento/oee?ct=M11 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /monitoramento/oee?ct=M01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /monitoramento/oee?ct=C07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:36] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:37] "POST /monitoramento/oee?ct=C09 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:37] "POST /monitoramento/oee?ct=P02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:37] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:38] "POST /monitoramento/oee?ct=P05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:38] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:38] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:38] "POST /monitoramento/oee?ct=SM04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:38] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:39] "POST /monitoramento/oee?ct=T07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:39] "POST /monitoramento/oee?ct=S17 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:40] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:40] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:40] "POST /monitoramento/oee?ct=M07 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:41] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:42] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /monitoramento/oee?ct=M18 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /monitoramento/oee?ct=M02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:43] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:44] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:44] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:44] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:45] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:45] "POST /monitoramento/oee?ct=C04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:45] "POST /monitoramento/oee?ct=C04 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:45] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:46] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:47] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:47] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:48] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:48] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /monitoramento/oee?ct=SM02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /cockpit/tv?id=10&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /monitoramento/oee?ct=L01 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:49] "POST /monitoramento/oee?ct=M12 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:50] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:50] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:51] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:51] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:51] "POST /monitoramento/oee?ct=M05 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:51] "POST /monitoramento/paradas HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:51] "POST /monitoramento/oee?ct=M19 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:52] "POST /monitoramento/oee?ct=L02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:52] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:52] "POST /monitoramento/geral HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:52] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:53] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:53] "POST /monitoramento/oee?ct=S02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:53] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:53] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:54] "POST /monitoramento/oee?ct=SR03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:55] "POST /monitoramento/oee?ct=M08 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:55] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:56] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:57] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:57] "POST /monitoramento/oee?ct=M02 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:57] "POST /monitoramento/oee?ct=P03 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:58] "POST /cockpit/tv?id=9&group=2 HTTP/1.1" 200 -
+127.0.0.1 - - [09/Jan/2026 15:14:58] "POST /cockpit/tv?id=0&group=3 HTTP/1.1" 200 -
+Detalhes do erro:
+ Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexes\range.py", line 413, in get_loc
+    return self._range.index(new_key)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+ValueError: 0 is not in range
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "I:\IIS\Digital_Jost\app\routes\jdt\monitoring.py", line 686, in monitoring_oee_post
+    'workcenter': str(status_data['Workcenter'][0])
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\series.py", line 1130, in __getitem__
+    return self._get_value(key)
+           ~~~~~~~~~~~~~~~^^^^^
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\series.py", line 1246, in _get_value
+    loc = self.index.get_loc(label)
+  File "I:\IIS\Digital_Jost\.venv\Lib\site-packages\pandas\core\indexes\range.py", line 415, in get_loc
+    raise KeyError(key) from err
+KeyError: 0
+
+127.0.0.1 - - [09/Jan/2026 15:14:59] "POST /monitoramento/oee?ct=E01 HTTP/1.1" 500 -
