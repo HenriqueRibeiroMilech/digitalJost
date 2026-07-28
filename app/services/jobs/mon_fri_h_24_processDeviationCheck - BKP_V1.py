@@ -1,0 +1,482 @@
+# mon_fri_h_24_processDeviationCheck.py
+from datetime import datetime
+from typing import Optional, List
+import pyodbc
+import pandas as pd
+
+from app.services.run_h_24_scheduler import env
+from app.utils.constants import CNNX_JDT
+from app.utils.email_utils import send_email_with_attachment
+
+
+# ====================== Utilidades existentes ======================
+
+def base_dev(dev_id: str) -> str:
+    """
+    Retorna a base do desvio (AAAA-NNNN) sem a revisão; evita usar slicing[:-2].
+    Ex.: 2026-0001-3 -> 2026-0001
+    """
+    try:
+        a, n, *_ = str(dev_id).split("-")
+        return f"{a}-{n}"
+    except Exception:
+        return str(dev_id)
+
+
+def get_digital_user_id(cnnx) -> str:
+    """
+    Busca o id do usuário 'Digital JOST' por e-mail institucional.
+    Caso não exista, retorna o fallback 'Digital.jost' para não quebrar a execução.
+    """
+    try:
+        df = pd.read_sql(
+            "SELECT TOP 1 id FROM JDT_USER_DETAILS WHERE companyEmail = ?",
+            cnnx,
+            params=['noreply.digitaljost@randon.com.br']
+        )
+        if not df.empty:
+            return str(df['id'].iloc[0])
+    except Exception:
+        pass
+    return 'Digital.jost'
+
+
+# ====================== NOVOS HELPERS — FILTRAGEM DE DESTINATÁRIOS ======================
+
+def _filter_active_emails(cnnx, emails: List[str]) -> List[str]:
+    """
+    Retorna apenas e-mails de usuários ATIVOS (JDT_USER_DETAILS.active=1).
+    Remove duplicados e vazios.
+    """
+    emails = [e for e in (emails or []) if e]
+    if not emails:
+        return []
+    placeholders = ",".join(["?"] * len(emails))
+    try:
+        df = pd.read_sql(
+            f"""
+            SELECT companyEmail
+            FROM JDT_USER_DETAILS
+            WHERE companyEmail IN ({placeholders})
+              AND ISNULL(active, 1) = 1
+            """,
+            cnnx, params=emails
+        )
+        return df['companyEmail'].dropna().astype(str).tolist()
+    except Exception:
+        # fallback conservador
+        return list(dict.fromkeys(emails))
+
+
+def get_active_approver_emails_for_deviation_sector(cnnx, deviation_id: str, approver_sector: str) -> List[str]:
+    """
+    Retorna e-mails dos aprovadores ATIVOS vinculados ao SETOR (e opcionalmente à UNIDADE) do desvio.
+    1) Tenta via VIEW JDT_VIEW_REQUEST_DEV_APPROVERS (mais simples).
+    2) Caso falhe/ausente, tenta via JOIN direto (ajustar nomes conforme o seu schema).
+    """
+    emails: List[str] = []
+
+    # (A) Usando VIEW de aprovadores
+    try:
+        df = pd.read_sql(
+            """
+            SELECT U.companyEmail
+            FROM JDT_VIEW_REQUEST_DEV_APPROVERS A
+            JOIN JDT_USER_DETAILS U       ON U.companyEmail = A.companyEmail
+            JOIN JDT_REQUEST_DEV     D    ON D.deviationId  = ?
+            WHERE A.sector = ?
+              AND ISNULL(U.active, 1) = 1
+              -- Se a VIEW tiver coluna de unidade e você quiser filtrar pela mesma unidade do desvio, descomente:
+              -- AND (A.unit IS NULL OR A.unit = D.unit)
+            """,
+            cnnx, params=[deviation_id, approver_sector]
+        )
+        if not df.empty:
+            emails = df['companyEmail'].dropna().astype(str).tolist()
+    except Exception:
+        emails = []
+
+    # (B) Fallback por JOINs diretos (ajuste o nome da tabela de aprovadores se for diferente no seu schema)
+    if not emails:
+        try:
+            df = pd.read_sql(
+                """
+                SELECT U.companyEmail
+                FROM JDT_REQUEST_DEV D
+                JOIN JDT_REQUEST_DEV_SECTORS S    ON S.id = D.sectorId
+                JOIN JDT_REQUEST_DEV_APPROVERS A  ON A.sectorId = S.id          -- ajuste se necessário
+                JOIN JDT_USER_DETAILS U           ON U.id = A.userId
+                WHERE D.deviationId = ?
+                  AND S.sector = ?
+                  AND ISNULL(U.active, 1) = 1
+                """,
+                cnnx, params=[deviation_id, approver_sector]
+            )
+            if not df.empty:
+                emails = df['companyEmail'].dropna().astype(str).tolist()
+        except Exception:
+            emails = []
+
+    return [e for e in dict.fromkeys(emails) if e]
+
+
+# ====================== Helpers de gestores (AJUSTADOS p/ ATIVOS) ======================
+
+def get_manager_email_by_person(cnnx, responsible_email: str) -> Optional[str]:
+    """
+    Gestor direto da pessoa (apenas se o gestor estiver ATIVO).
+    """
+    if not responsible_email:
+        return None
+    try:
+        df = pd.read_sql(
+            """
+            SELECT TOP 1 M.companyEmail AS managerEmail
+            FROM JDT_USER_DETAILS U
+            JOIN JDT_USER_DETAILS M ON M.companyEmail = U.managerEmail
+            WHERE U.companyEmail = ?
+              AND M.companyEmail IS NOT NULL
+              AND LEN(M.companyEmail) > 3
+              AND ISNULL(M.active, 1) = 1
+            """,
+            cnnx, params=[responsible_email]
+        )
+        if not df.empty:
+            return df['managerEmail'].iloc[0]
+    except Exception:
+        pass
+    return None
+
+
+def get_manager_email_by_sector_of_deviation(cnnx, deviation_id: str) -> Optional[str]:
+    """
+    Gestor do SETOR do desvio (apenas se o gestor estiver ATIVO).
+    """
+    try:
+        df = pd.read_sql(
+            """
+            SELECT TOP 1 M.companyEmail AS managerEmail
+            FROM JDT_REQUEST_DEV D
+            JOIN JDT_REQUEST_DEV_SECTORS S ON S.id = D.sectorId
+            LEFT JOIN JDT_USER_DETAILS M ON M.companyEmail = S.managerEmail
+            WHERE D.deviationId = ?
+              AND S.managerEmail IS NOT NULL
+              AND LEN(S.managerEmail) > 3
+              AND ISNULL(M.active, 1) = 1
+            """,
+            cnnx, params=[deviation_id]
+        )
+        if not df.empty:
+            return df['managerEmail'].iloc[0]
+    except Exception:
+        pass
+    return None
+
+
+def resolve_manager_for_action(cnnx, responsible_email: str, deviation_id: str) -> List[str]:
+    """
+    Opção C (misto): retorna a lista de destinatários de escalonamento de atraso.
+    - responsável SEMPRE (se ativo)
+    - gestor da pessoa (se houver e ativo)
+    - gestor do setor do desvio (se houver e ativo)
+    Sem duplicações e sem vazios.
+    """
+    emails: List[str] = []
+    if responsible_email:
+        emails.append(responsible_email)
+    # gestor direto da pessoa (ativo)
+    mgr_person = get_manager_email_by_person(cnnx, responsible_email)
+    if mgr_person:
+        emails.append(mgr_person)
+    # gestor do setor do desvio (ativo)
+    mgr_sector = get_manager_email_by_sector_of_deviation(cnnx, deviation_id)
+    if mgr_sector:
+        emails.append(mgr_sector)
+
+    # Somente ativos e sem duplicidade
+    emails = _filter_active_emails(cnnx, list(dict.fromkeys(emails)))
+    return emails
+
+
+# ============================== JOB ==============================
+
+def default(logger):
+    # Conexão pyodbc
+    cnnx = pyodbc.connect(CNNX_JDT)
+    cursor = cnnx.cursor()
+
+    # ------------- Helpers de atualização -----------------
+    def deviation_automatic_start(row):
+        cursor.execute(
+            """
+            UPDATE JDT_REQUEST_DEV
+            SET initDate = GETDATE(),
+                status = 5
+            WHERE deviationId = ?
+            """,
+            (row['deviationId'],)
+        )
+
+    def deviation_automatic_end(row):
+        cursor.execute(
+            """
+            UPDATE JDT_REQUEST_DEV
+            SET status = 6
+            WHERE deviationId = ?
+            """,
+            (row['deviationId'],)
+        )
+
+    def deviation_automatic_refusal(row):
+        cursor.execute(
+            """
+            UPDATE JDT_REQUEST_DEV
+            SET status = 2
+            WHERE deviationId = ?
+            """,
+            (row['deviationId'],)
+        )
+
+    def approvers_automatic_refusal(row, digital_id):
+        """
+        Marca como reprovado o setor sem retorno após 48h.
+        """
+        cursor.execute(
+            """
+            UPDATE JDT_REQUEST_DEV_CONFIG_STATUS
+            SET approverId = ?,
+                status = 2,
+                textDenied = 'Reprovado automaticamente devido ao não retorno após 48h.'
+            WHERE deviationId = ?
+              AND sectorId = ?
+            """,
+            (digital_id, row['deviationId'], int(row['sectorId']))
+        )
+
+    # ------------- Envio de e-mails -----------------------
+
+    def send_email_revision(row):
+        # e-mail do solicitante (somente se ATIVO)
+        try:
+            df_user = pd.read_sql(
+                """
+                SELECT companyEmail
+                FROM JDT_USER_DETAILS
+                WHERE id = ?
+                  AND ISNULL(active,1) = 1
+                """,
+                cnnx, params=[row['userId']]
+            )
+            user_mail = df_user['companyEmail'].dropna().astype(str).tolist()
+        except Exception:
+            user_mail = []
+
+        if not user_mail:
+            return  # solicitante inativo/ausente -> sem envio
+
+        template = env.get_template('request.processDeviation/dev_email_revision.html')
+        msg_html = template.render(id=base_dev(row['deviationId']))
+
+        send_email_with_attachment(
+            subject=f"Desvio de processo - Nº {row['deviationId']}",
+            body=msg_html,
+            to=user_mail,
+            sender_name='Transformação Digital JOST',
+            sender_email='noreply.digitaljost@randon.com.br'
+        )
+
+    def send_email_scheduled(row):
+        """
+        Lembrete aos APROVADORES do setor do desvio (apenas ATIVOS e pertinentes).
+        """
+        approver_sector = str(row.get('approverSector') or row.get('sector') or '')
+        user_mail = get_active_approver_emails_for_deviation_sector(
+            cnnx,
+            str(row['deviationId']),
+            approver_sector
+        )
+        if not user_mail:
+            return
+
+        template = env.get_template('request.processDeviation/dev_email_scheduled.html')
+        msg_html = template.render(id=base_dev(row['deviationId']), solicitante=row.get('name', ''))
+
+        send_email_with_attachment(
+            subject=f"Desvio de processo - Nº {row['deviationId']}",
+            body=msg_html,
+            to=user_mail,  # já filtrado
+            sender_name='Transformação Digital JOST',
+            sender_email='noreply.digitaljost@randon.com.br'
+        )
+
+    # ------------- Relógio de referência ------------------
+    now = datetime.now()
+
+    # ------------- Pendências por setor (VIEW MANAGE) -----
+    try:
+        df_manage = pd.read_sql("SELECT * FROM JDT_VIEW_REQUEST_DEV_MANAGE", cnnx)
+    except Exception as e:
+        logger.error("Falha ao ler VIEW MANAGE: %s", e)
+        df_manage = pd.DataFrame()
+
+    if not df_manage.empty:
+        # datas robustas
+        df_manage['openDate'] = pd.to_datetime(df_manage.get('openDate'), errors='coerce', dayfirst=True)
+
+        # máscaras
+        mask_valid_date = df_manage['openDate'].notna()
+        mask_over_48h   = (now - df_manage['openDate']) >= pd.Timedelta(hours=48)
+        mask_status_zero = df_manage.get('status', 0).eq(0)
+
+        # reprova automaticamente setores sem retorno em 48h
+        digital_id = get_digital_user_id(cnnx)
+        df_manage[mask_valid_date & mask_over_48h & mask_status_zero] \
+            .apply(lambda r: approvers_automatic_refusal(r, digital_id), axis=1)
+
+        # lembrete aos aprovadores (somente após 4h para evitar spam básico)
+        mask_over_4h = (now - df_manage['openDate']) >= pd.Timedelta(hours=4)
+
+        # só para quem está sem 'approverName' e ainda pendente
+        mask_no_approver_name = df_manage.get('approverName').isna() if 'approverName' in df_manage.columns else mask_status_zero
+
+        df_manage[mask_valid_date & mask_over_4h & mask_no_approver_name] \
+            .apply(send_email_scheduled, axis=1)
+
+    # ------------- Atualizações por desvio (tabela principal) -------------
+    try:
+        df = pd.read_sql("SELECT * FROM JDT_REQUEST_DEV", cnnx)
+    except Exception as e:
+        logger.error("Falha ao ler JDT_REQUEST_DEV: %s", e)
+        df = pd.DataFrame()
+
+    if not df.empty:
+        # datas robustas
+        for col in ('initDate', 'finalDate', 'openDate'):
+            df[col] = pd.to_datetime(df.get(col), errors='coerce', dayfirst=True)
+
+        # e-mail de revisão (faltando 5 dias para vencer ou já vencido) — status 5/6
+        mask_valid_final   = df['finalDate'].notna()
+        mask_within_5_days = (now - df['finalDate']) >= pd.Timedelta(days=-5)
+        mask_status_56     = df['status'].isin([5, 6])
+
+        df[mask_valid_final & mask_within_5_days & mask_status_56].apply(send_email_revision, axis=1)
+
+        # recusa automática se aberto há 48h e status geral = 0
+        mask_valid_open     = df['openDate'].notna()
+        mask_over_48h_gen   = (now - df['openDate']) >= pd.Timedelta(hours=48)
+        mask_status_0       = df['status'].eq(0)
+
+        df[mask_valid_open & mask_over_48h_gen & mask_status_0].apply(deviation_automatic_refusal, axis=1)
+
+        # aprovado (1) e com initDate já alcançada -> EM ANDAMENTO (5)
+        mask_valid_init = df['initDate'].notna()
+        df[df['status'].eq(1) & mask_valid_init & (df['initDate'] <= now)] \
+            .apply(deviation_automatic_start, axis=1)
+
+        # em andamento (5) e passou do finalDate -> VENCIDO (6)
+        df[df['status'].eq(5) & mask_valid_final & (df['finalDate'] < now)] \
+            .apply(deviation_automatic_end, axis=1)
+
+    # ------------- AÇÕES DO PLANO (lembretes e atraso) -------------
+    try:
+        df_actions = pd.read_sql(
+            """
+            SELECT P.id, P.deviationId, P.text, P.userId AS responsibleEmail, P.deadline,
+                   ISNULL(P.status, 0) AS status,
+                   P.lastReminderAt, P.overdueNotifiedAt
+            FROM JDT_REQUEST_DEV_PLAN P
+            WHERE ISNULL(P.status, 0) = 0 -- apenas abertas
+            """,
+            cnnx
+        )
+    except Exception as e:
+        logger.error("Falha ao ler JDT_REQUEST_DEV_PLAN: %s", e)
+        df_actions = pd.DataFrame()
+
+    if not df_actions.empty:
+        # datas robustas
+        df_actions['deadline']        = pd.to_datetime(df_actions['deadline'], errors='coerce', dayfirst=True)
+        df_actions['lastReminderAt']  = pd.to_datetime(df_actions['lastReminderAt'], errors='coerce')
+        df_actions['overdueNotifiedAt'] = pd.to_datetime(df_actions['overdueNotifiedAt'], errors='coerce')
+
+        def render_template_html(name: str, **kwargs):
+            tpl = env.get_template(f'request.processDeviation/{name}.html')
+            return tpl.render(**kwargs)
+
+        def send_to(recipients: List[str], subject: str, html: str):
+            """
+            Dispara e-mail apenas para perfis ATIVOS (sem duplicados).
+            """
+            if not recipients:
+                return
+            recipients = _filter_active_emails(cnnx, list(dict.fromkeys(recipients)))
+            if not recipients:
+                return
+            send_email_with_attachment(
+                subject=subject,
+                body=html,
+                to=recipients,
+                sender_name='Transformação Digital JOST',
+                sender_email='noreply.digitaljost@randon.com.br'
+            )
+
+        for _, r in df_actions.iterrows():
+            # Ignora registros sem deadline válido
+            if pd.isna(r['deadline']):
+                continue
+
+            base = base_dev(r['deviationId'])
+            prazo_fmt = r['deadline'].strftime('%d/%m/%Y')
+            delta = r['deadline'] - now
+
+            # Flags de lembrete
+            is_d5   = (pd.Timedelta(days=1) < delta <= pd.Timedelta(days=5))
+            is_d1   = (pd.Timedelta(days=0) < delta <= pd.Timedelta(days=1))
+            is_today = (r['deadline'].date() == now.date())
+
+            # Anti-spam: 1 lembrete por dia
+            already_reminded_today = pd.notna(r['lastReminderAt']) and r['lastReminderAt'].date() == now.date()
+
+            try:
+                # D-5 / D-1 / HOJE (apenas ao responsável; filtro de ativo em send_to)
+                if (is_d5 or is_d1 or is_today) and not already_reminded_today:
+                    if is_today:
+                        html = render_template_html('dev_email_action_today', id=base, acao=r['text'], prazo=prazo_fmt)
+                        send_to([r['responsibleEmail']], f"Prazo HOJE — Desvio {base}", html)
+                    else:
+                        html = render_template_html('dev_email_action_reminder', id=base, acao=r['text'], prazo=prazo_fmt)
+                        assunto = f"Lembrete (D-5) — Desvio {base}" if is_d5 else f"Lembrete (D-1) — Desvio {base}"
+                        send_to([r['responsibleEmail']], assunto, html)
+
+                    # Marca lembrete do dia
+                    cursor.execute("UPDATE JDT_REQUEST_DEV_PLAN SET lastReminderAt = GETDATE() WHERE id = ?", (int(r['id']),))
+            except Exception as e:
+                logger.error("Falha ao enviar lembrete de ação id=%s: %s", r['id'], e)
+
+            # Atraso (deadline < agora) — envia 1x para responsável + gestores ATIVOS
+            is_late = r['deadline'] < now
+            already_overdue_notified = pd.notna(r['overdueNotifiedAt'])
+
+            if is_late and not already_overdue_notified:
+                try:
+                    recipients = resolve_manager_for_action(cnnx, r['responsibleEmail'], r['deviationId'])
+                    if recipients:
+                        html = render_template_html(
+                            'dev_email_action_overdue',
+                            id=base, acao=r['text'], prazo=prazo_fmt, responsavel=r['responsibleEmail']
+                        )
+                        send_to(recipients, f"AÇÃO EM ATRASO — Desvio {base}", html)
+                        cursor.execute("UPDATE JDT_REQUEST_DEV_PLAN SET overdueNotifiedAt = GETDATE() WHERE id = ?", (int(r['id']),))
+                except Exception as e:
+                    logger.error("Falha ao notificar atraso de ação id=%s: %s", r['id'], e)
+
+    # ------------- Persistência ---------------------------
+    try:
+        cnnx.commit()
+    except Exception as e:
+        logger.error("Falha no commit do job h_24: %s", e)
+    finally:
+        try:
+            cnnx.close()
+        except Exception:
+            pass
