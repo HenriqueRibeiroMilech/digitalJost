@@ -1,0 +1,294 @@
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style_module_dsv.css') }}">
+        <link rel="stylesheet"
+              href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+              integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+              crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap"
+              rel="stylesheet">
+    </head>
+
+    <video autoplay muted loop id="myVideo">
+        <source src="/static/videos/docs.mp4" type="video/mp4">
+    </video>
+    
+    <body class="page_body">
+
+        <!-- =====================================================
+             POPUP DE ANEXOS
+             ===================================================== -->
+        <div class="attachment_box" id="box" style="display:none; opacity:0;">
+            <a style="z-index: 6;" id="select_back2" onclick="closeAttachments()">&times;</a>
+
+            <a class="title" style="margin:0">
+                Anexos são responsabilidade do solicitante.
+            </a>
+
+            <div id="lab-container">
+                <table></table>
+            </div>
+    
+            <form method="post"
+                  action="/"
+                  id="lab_form"
+                  enctype="multipart/form-data"
+                  style="display:none">
+
+                <div id="admin2">
+                    <label id="placehold_1"
+                           class="edit_img_label"
+                           for="input_1">
+                        Adicione documentos...
+                    </label>
+
+                    <input required
+                           class="img_input"
+                           id="input_1"
+                           type="file"
+                           name="anexos"
+                           autocomplete="off"
+                           multiple="multiple"
+                           accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*">
+
+                    <input type="submit"
+                           class="edit_label"
+                           id="edit_ask1">
+
+                    <br>
+
+                    <a class="img_lbl" id="label_1">
+                        Arquivos selecionados:
+                    </a>
+
+                    <div class="list" id="lista_1"></div>
+                </div>
+            </form>
+        </div>
+
+        <!-- =====================================================
+             TOPO DA PÁGINA
+             ===================================================== -->
+        <div class="topnav">
+            <a id="select_back2" href="/desvios/acoes">&times;</a>
+
+            <a class="title">
+                Desvio N° {{ deviationId }} - Ação {{ actionNumber }}
+            </a>
+        </div>
+
+        <!-- =====================================================
+             CONTEÚDO PRINCIPAL
+             ===================================================== -->
+        <div class="blur_wrap">
+            <div class="select_div">
+
+                <p class="desc_detail" style="width: 30%" id="descricao">
+                    <b>RESPONSÁVEL: </b>{{ responsibleName }}
+                </p>
+
+                <p class="desc_detail" style="width: 30%;" id="lider">
+                    <b>CRIADOR: </b>{{ creatorName }}
+                </p>
+
+                <p class="desc_detail" style="width: 30%;" id="prazo">
+                    <b>PRAZO: </b>{{ deadline }}
+                </p>
+
+                <br>
+            </div>
+
+            <div id="table-container" style="width: 95vw; margin-left: 2.5vw;">
+            </div>
+        </div>
+        
+    </body>
+
+    <!-- JS principal da tela -->
+    <script>
+        {% include 'request.processDeviation/dev_action_detail.js' %}
+    </script>
+
+    <!-- Hints de hover -->
+    <style>
+      .dj-tip {
+        position: fixed;
+        z-index: 2147483000;
+        pointer-events: none;
+        background: #fff;
+        color: #333;
+        border: 1px solid #e6e9f2;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        padding: 10px 12px;
+        max-width: 280px;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity .15s ease, transform .15s ease;
+        font-family: inherit;
+      }
+
+      .dj-tip.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .dj-tip .t-title {
+        font-weight: 700;
+        color: #163A8A;
+        margin-bottom: 4px;
+      }
+
+      .dj-tip .t-text {
+        font-size: .95em;
+        color: #444;
+        line-height: 1.35;
+      }
+    </style>
+
+    <script>
+      (function () {
+        const tip = document.createElement('div');
+        tip.className = 'dj-tip';
+        tip.innerHTML = '<div class="t-title"></div><div class="t-text"></div>';
+        document.body.appendChild(tip);
+
+        let activeEl = null;
+
+        function showTip(e, title, text) {
+          tip.querySelector('.t-title').textContent = title || '';
+          tip.querySelector('.t-text').textContent  = text  || '';
+          moveTip(e);
+          tip.classList.add('show');
+        }
+
+        function hideTip() {
+          tip.classList.remove('show');
+          activeEl = null;
+        }
+
+        function moveTip(e) {
+          const offset = 14;
+
+          let x = e.clientX + offset;
+          let y = e.clientY + offset;
+
+          const rect = tip.getBoundingClientRect();
+
+          if (x + rect.width > window.innerWidth - 8) {
+            x = e.clientX - rect.width - offset;
+          }
+
+          if (y + rect.height > window.innerHeight - 8) {
+            y = e.clientY - rect.height - offset;
+          }
+
+          tip.style.left = x + 'px';
+          tip.style.top  = y + 'px';
+        }
+
+        const fixedHints = [
+          {
+            sel: '.attachment_box .title',
+            title: 'Anexos',
+            text: 'Envio/gestão de evidências é responsabilidade do solicitante.'
+          },
+          {
+            sel: '#lab_form .edit_img_label',
+            title: 'Adicionar documentos',
+            text: 'Formatos aceitos: DOC, XLS, PPT, TXT, PDF, imagens.'
+          },
+          {
+            sel: '#lab_form #edit_ask1',
+            title: 'Enviar anexos',
+            text: 'Confirma o upload dos arquivos selecionados.'
+          }
+        ];
+
+        fixedHints.forEach(({ sel, title, text }) => {
+          document.querySelectorAll(sel).forEach(el => {
+            el.addEventListener('mouseenter', (e) => {
+              activeEl = el;
+              showTip(e, title, text);
+            });
+
+            el.addEventListener('mousemove', moveTip);
+            el.addEventListener('mouseleave', hideTip);
+            el.addEventListener('blur', hideTip);
+          });
+        });
+
+        document.addEventListener('mouseover', function (e) {
+          const el = e.target.closest('button.table_btn, button.remove, .fa-download');
+
+          if (!el) return;
+
+          const label = (el.textContent || '').trim().toLowerCase();
+
+          let title = '';
+          let text = '';
+
+          if (label.includes('ação')) {
+            title = 'Detalhe da ação';
+            text  = 'Mostra a ação dentro do desvio relacionado.';
+          } else if (label === 'anexos') {
+            title = 'Anexos';
+            text  = 'Clique para visualizar, baixar ou enviar anexos desta ação.';
+          } else if (label === 'finalizar') {
+            title = 'Finalizar ação';
+            text  = 'Conclui a ação. É necessário anexar uma evidência.';
+          } else if (label.startsWith('download')) {
+            title = 'Download de anexo';
+            text  = 'Baixa o arquivo selecionado para seu computador.';
+          } else if (label.includes('sem ação')) {
+            title = 'Sem ação disponível';
+            text  = 'Não há nenhuma ação disponível para o status atual.';
+          } else if (el.classList.contains('remove')) {
+            title = 'Remover anexo';
+            text  = 'Remove o anexo selecionado.';
+          } else if (label.includes('prazo')) {
+            title = 'Alterar prazo';
+            text  = 'Alterar a data limite para conclusão da ação.';
+          } else if (label.includes('vencido')) {
+            title = 'Alterar prazo vencido';
+            text  = 'Alterar a data limite para conclusão da ação vencida.';  
+          } else {
+            title = 'Excluir';
+            text  = 'Exclui a ação.'
+          }
+
+          activeEl = el;
+          showTip(e, title, text);
+        });
+
+        document.addEventListener('mousemove', function (e) {
+          if (activeEl) {
+            moveTip(e);
+          }
+        });
+
+        document.addEventListener('mouseout', function (e) {
+          if (!e.relatedTarget || !activeEl) return;
+
+          if (!e.relatedTarget.closest || !e.relatedTarget.closest('.dj-tip')) {
+            hideTip();
+          }
+        });
+      })();
+    </script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</html>

@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0b3d91; /* Fundo azul forte */
+            color: #fff; /* Cor do texto branca */
+            overflow-y: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 95vh;
+            padding: 20px;
+            
+        }
+        .title {
+            font-size: calc(1vw + 1vh);
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #fff; /* Título em branco */
+        }
+        .carousel {
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            width: 95%;
+            height: 70%;
+            background-color: #f0f0f0; /* Cor de fundo do carrossel */
+            border-radius: 10px;
+            position: relative; /* Adicionado para posicionar os botões dentro do carrossel */
+        }
+        .carousel-inner {
+            display: flex;
+            transition: transform 0.5s ease;
+            align-items: center; /* Centraliza verticalmente o conteúdo do carrossel */
+            width: 100%;
+        }
+        .carousel-item {
+            min-width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .intro-container,
+        .form-container {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 30%;
+        }
+        .intro-text {
+            font-size: 18px;
+            color: #333;
+        }
+        .description {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #555;
+        }
+        .video-container {
+            margin-left:2vw;
+            width: 30%;
+        }
+        .video-container video, .video-container img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .file-input-container input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            font-size: 20px;
+        }
+        .file-input-container .file-input-label {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .submit-btn {
+            padding: 10px 20px;
+            background-color: #0b3562;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .submit-btn:hover {
+            background-color: #000000;
+        }
+        .carousel-controls {
+            display: flex;
+            justify-content: flex-end; /* Alinha os botões à direita */
+            position: absolute; /* Posiciona os botões dentro do carrossel */
+            bottom: 10px; /* Margem inferior para os botões */
+            right: 20px; /* Margem direita para os botões */
+        }
+        .carousel-controls-direct {
+            left:10px;
+            top:20px;
+            display: flex;
+            justify-content: flex-end; /* Alinha os botões à direita */
+            flex-direction: column;
+            position: absolute; 
+        }
+
+        .carousel-controls-direct button, .carousel-controls button, .change-btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px; /* Espaço entre os botões */
+            transition: background-color 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .carousel-controls-direct button:hover, .carousel-controls button:hover, .change-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            text-decoration: none;
+            color: #fff;
+            font-size: 16px;
+        }
+        .back-btn {
+            padding: 10px 20px;
+            background-color: #000000; /* Cor preta */
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-top: 2vh;
+        }
+        .back-btn:hover {
+            background-color: #333333;
+        }
+        .sub-title {
+            color: black;
+        }
+        .url-input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .url-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-around;
+            width: 100%;
+        }
+        .tv-input {
+            width: 30%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-input {
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tv-label {
+            margin-bottom: 5px;
+            color: black;
+            font-weight: bold;
+        }
+        /* Overlay de carregamento */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 24px;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 90%;
+        }
+
+        .dropbtn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            width: 100%;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #3e8e41;
+        }
+    </style>
+</head>
+<body>
+<div class="loading-overlay" id="loading-overlay">Carregando...</div>
+<div class="container">
+    <div class="title" style="font-size: 3vw;margin-bottom: 0;">Comunicação Interna</div>
+    <div class="title">Transformação Digital</div>
+    <div style="width: 95%;">
+        <button onclick="changeCarousel(0)" class="change-btn" id="change-btn-0" style="float:left;margin:0">Informação Principal</button>
+        <button onclick="changeCarousel(1)" class="change-btn" id="change-btn-1" style="float:right">Programação Cockpit</button>
+        <button onclick="changeCarousel(2)" class="change-btn" id="change-btn-2" style="float:right">Programação Pessoas e Cultura</button>
+        <button onclick="changeCarousel(3)" class="change-btn" id="change-btn-3" style="float:right">Programação Tela OEE</button>
+    </div>
+    <div class="carousel" id="fixed">
+
+        <div class="carousel-controls-direct" id="select_slide_0" style='z-index: 100;'>
+            <button onclick="getSlide(1, this)">Cockpit Fabrica</button>
+            <button onclick="getSlide(2, this)">Qualidade</button>
+            <button onclick="getSlide(3, this)">Excelência Operacional</button>
+            <button onclick="getSlide(4, this)">Comunicação 1</button>
+            <button onclick="getSlide(5, this)">Comunicação 2</button>
+            <button onclick="getSlide(6, this)">Gincana</button>
+            <button onclick="getSlide(7, this)">MES</button>
+            <button onclick="getSlide(8, this)">Engenharia de Processos</button>
+        </div>
+        
+        <div class="carousel-inner" id="slide_0">
+            <div class="carousel-item">
+                <div class="intro-container" style="width: 50%;">
+                    <h1 class='sub-title'>Informação Principal</h1>
+                    <p class="intro-text">
+                        Atualize as informações no cockpit da fábrica e nas televisões de comunicação da empresa.<br><br>
+                        Mude de tela para atualizar.
+                    </p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                    <form action="/cockpit?tipo=0" method="post" onsubmit="showLoading()">
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div><br>
+                        <input type="submit" value="Atualizar" class="submit-btn">
+                    </form>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container">
+                    <h1 class='sub-title'>Qualidade</h1>
+                    <div class="description">ID de acesso 7</div>
+                    <form action="/cockpit?tipo=1" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="file-input-container">
+                            <input required type="file" id="video_1" name="video_1" accept="video/mp4">
+                            <span class="file-input-label">Escolher arquivo</span>
+                        </div><br>
+                        <input type="submit" value="Enviar Vídeo" class="submit-btn">
+                    </form>
+                </div>
+                <div class="video-container">
+                    <video controls>
+                        <source src="/static/uploads/cockpit/video7.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeos HTML5.
+                    </video>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container">
+                    <h1 class='sub-title'>Excelência Operacional</h1>
+                    <div class="description">ID de acesso 8</div>
+                    <form action="/cockpit?tipo=2" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="file-input-container">
+                            <input required type="file" id="video_2" name="video_2" accept="video/mp4">
+                            <span class="file-input-label">Escolher arquivo</span>
+                        </div><br>
+                        <input type="submit" value="Enviar Vídeo" class="submit-btn">
+                    </form>
+                </div>
+                <div class="video-container">
+                    <video controls>
+                        <source src="/static/uploads/cockpit/video8.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeos HTML5.
+                    </video>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container">
+                    <h1 class='sub-title'>Comunicação 1</h1>
+                    <div class="description">ID de acesso 9</div>
+                    <form action="/cockpit?tipo=3" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="file-input-container">
+                            <input required type="file" id="video_3" name="video_3" accept="video/mp4">
+                            <span class="file-input-label">Escolher arquivo</span>
+                        </div><br>
+                        <input type="submit" value="Enviar Vídeo" class="submit-btn">
+                    </form>
+                </div>
+                <div class="video-container">
+                    <video controls>
+                        <source src="/static/uploads/cockpit/video9.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeos HTML5.
+                    </video>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container">
+                    <h1 class='sub-title'>Comunicação 2</h1>
+                    <div class="description">ID de acesso 10</div>
+                    <form action="/cockpit?tipo=4" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="file-input-container">
+                            <input required type="file" id="video_4" name="video_4" accept="video/mp4">
+                            <span class="file-input-label">Escolher arquivo</span>
+                        </div><br>
+                        <input type="submit" value="Enviar Vídeo" class="submit-btn">
+                    </form>
+                </div>
+                <div class="video-container">
+                    <video controls>
+                        <source src="/static/uploads/cockpit/video10.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeos HTML5.
+                    </video>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container">
+                    <h1 class='sub-title'>Gincana</h1>
+                    <div class="description">ID de acesso 11</div>
+                    <form action="/cockpit?tipo=5" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="file-input-container">
+                            <input required type="file" id="video_5" name="video_5" accept=".mp4,.jpg">
+                            <span class="file-input-label">Escolher arquivo</span>
+                        </div><br>
+                        <input type="submit" value="Enviar Vídeo" class="submit-btn">
+                    </form>
+                </div>
+                <div class="video-container">
+                    <img src="/static/uploads/cockpit/video11.jpg">
+                    <video controls>
+                        <source src="/static/uploads/cockpit/video11.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeos HTML5.
+                    </video>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container">
+                    <h1 class='sub-title'>Sistema MES</h1>
+                    <div class="description">ID de acesso 12</div>
+                    <form action="/cockpit?tipo=6" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="file-input-container">
+                            <input required type="file" id="video_6" name="video_6" accept="video/mp4">
+                            <span class="file-input-label">Escolher arquivo</span>
+                        </div><br>
+                        <input type="submit" value="Enviar Vídeo" class="submit-btn">
+                    </form>
+                </div>
+                <div class="video-container">
+                    <video controls>
+                        <source src="/static/uploads/cockpit/video12.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeos HTML5.
+                    </video>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="form-container">
+                    <h1 class='sub-title'>Engenharia de Processos</h1>
+                    <div class="description">ID de acesso 13</div>
+                    <form action="/cockpit?tipo=7" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="file-input-container">
+                            <input required type="file" id="video_7" name="video_7" accept="video/mp4">
+                            <span class="file-input-label">Escolher arquivo</span>
+                        </div><br>
+                        <input type="submit" value="Enviar Vídeo" class="submit-btn">
+                    </form>
+                </div>
+                <div class="video-container">
+                    <video controls>
+                        <source src="/static/uploads/cockpit/video13.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeos HTML5.
+                    </video>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-controls">
+            <button onclick="prevSlide()">Anterior</button>
+            <button onclick="nextSlide()">Próximo</button>
+        </div>
+
+
+    </div>
+    <div class="carousel" id="scheduled_1">
+        <div class="carousel-inner" id="slide_1">
+            <div class="carousel-item">
+                <div class="intro-container" style="width: 50%;">
+                    <h1 class='sub-title'>Programação Cockpit</h1>
+                    <p class="intro-text">
+                        Programe atualizações nas telas de comunicação interna.<br><br>
+                        Mude de tela para atualizar.
+                    </p>
+                </div>
+            </div>
+            <form class="carousel-item" action="/cockpit?id=0" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=1" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=2" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=3" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=4" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=5" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=6" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=7" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas cockpit</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">TV 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_3">TV 3</label>
+                                <input type="text" class="url-input" id="page_3" name="page_3" placeholder="URL ou página de vídeo 3" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_4">TV 4</label>
+                                <input type="text" class="url-input" id="page_4" name="page_4" placeholder="URL ou página de vídeo 4" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_5">TV 5</label>
+                                <input type="text" class="url-input" id="page_5" name="page_5" placeholder="URL ou página de vídeo 5" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_6">TV 6</label>
+                                <input type="text" class="url-input" id="page_6" name="page_6" placeholder="URL ou página de vídeo 6" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+        </div>
+        <div class="carousel-controls">
+            <button onclick="prevSlide()">Anterior</button>
+            <button onclick="nextSlide()">Próximo</button>
+        </div>
+
+        <div class="carousel-controls-direct" id="select_slide_1">
+            <button onclick="getSlide(1, this)">Cockpit 1</button>
+            <button onclick="getSlide(2, this)">Cockpit 2</button>
+            <button onclick="getSlide(3, this)">Cockpit 3</button>
+            <button onclick="getSlide(4, this)">Cockpit 4</button>
+            <button onclick="getSlide(5, this)">Cockpit 5</button>
+            <button onclick="getSlide(6, this)">Cockpit 6</button>
+            <button onclick="getSlide(7, this)">Cockpit 7</button>
+            <button onclick="getSlide(8, this)">Cockpit 8</button>
+        </div>
+    </div>
+    <div class="carousel" id="scheduled_2">
+        <div class="carousel-inner" id="slide_2">
+            <div class="carousel-item">
+                <div class="intro-container" style="width: 50%;">
+                    <h1 class='sub-title'>Programação Pessoas e Cultura</h1>
+                    <p class="intro-text">
+                        Programe atualizações nas telas de comunicação interna.<br><br>
+                        Mude de tela para atualizar.
+                    </p>
+                </div>
+            </div>
+            <form class="carousel-item" action="/cockpit?id=8" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 1</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=9" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 2</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=10" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 3</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=11" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 4</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=12" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 5</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=13" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 6</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=14" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 7</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=15" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Páginas Pessoas e Cultura 8</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">Comunicação 1</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_2">Comunicação 2</label>
+                                <input type="text" class="url-input" id="page_2" name="page_2" placeholder="URL ou página de vídeo 2" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+        </div>
+        <div class="carousel-controls">
+            <button onclick="prevSlide()">Anterior</button>
+            <button onclick="nextSlide()">Próximo</button>
+        </div>
+
+        <div class="carousel-controls-direct" id="select_slide_2">
+            <button onclick="getSlide(1, this)">Pessoas e Cultura 1</button>
+            <button onclick="getSlide(2, this)">Pessoas e Cultura 2</button>
+            <button onclick="getSlide(3, this)">Pessoas e Cultura 3</button>
+            <button onclick="getSlide(4, this)">Pessoas e Cultura 4</button>
+            <button onclick="getSlide(5, this)">Pessoas e Cultura 5</button>
+            <button onclick="getSlide(6, this)">Pessoas e Cultura 6</button>
+            <button onclick="getSlide(7, this)">Pessoas e Cultura 7</button>
+            <button onclick="getSlide(8, this)">Pessoas e Cultura 8</button>
+        </div>
+    </div>
+    <div class="carousel" id="scheduled_3">
+        <div class="carousel-inner" id="slide_3">
+            <div class="carousel-item">
+                <div class="intro-container" style="width: 50%;">
+                    <h1 class='sub-title'>Programação Tela OEE</h1>
+                    <p class="intro-text">
+                        Programe atualizações nas telas de OEE de toda a fábrica.<br><br>
+                        Mude de tela para atualizar.
+                    </p>
+                </div>
+            </div>
+            <form class="carousel-item" action="/cockpit?id=16" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 1</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=17" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 2</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=18" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 3</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=19" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 4</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=20" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 5</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=21" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 6</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=22" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 7</h1>
+                        <div class="url-input-container">
+                            <div class="tv-input">
+                                <label class="tv-label" for="page_1">TV</label>
+                                <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                            </div>
+                        </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+            <form class="carousel-item" action="/cockpit?id=23" method="post" onsubmit="showLoading()">
+                <div class="form-container" style="width: 40%;">
+                    <h1 class='sub-title'>Tela OEE 8</h1>
+                    <div class="url-input-container">
+                        <div class="tv-input">
+                            <label class="tv-label" for="page_1">TV</label>
+                            <input type="text" class="url-input" id="page_1" name="page_1" placeholder="URL ou página de vídeo 1" list="pages">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-container" style="width: 20%;margin-left:2vw">
+                    <div class="url-input-container" style="flex-direction: column;align-items: center;">
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Dias da semana</button>
+                            <div class="dropdown-content">
+                                <label><input type="checkbox" name="date_7" value="7"> Domingo</label>
+                                <label><input type="checkbox" name="date_1" value="1"> Segunda-feira</label>
+                                <label><input type="checkbox" name="date_2" value="2"> Terça-feira</label>
+                                <label><input type="checkbox" name="date_3" value="3"> Quarta-feira</label>
+                                <label><input type="checkbox" name="date_4" value="4"> Quinta-feira</label>
+                                <label><input type="checkbox" name="date_5" value="5"> Sexta-feira</label>
+                                <label><input type="checkbox" name="date_6" value="6"> Sabado</label>
+                            </div>
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_4">Horário de Início</label>
+                            <input type="time" class="url-input" id="prog_1" name="prog_1">
+                        </div>
+                        <div class="time-input">
+                            <label class="tv-label" for="page_5">Horário de Fim</label>
+                            <input type="time" class="url-input" id="prog_2" name="prog_2">
+                        </div>
+                    </div><br>
+                    <label style="color:black;margin-right: 2vw;"><input type="checkbox" value="1" name="activated"> Ativo</label>
+                    <input type="submit" value="Atualizar" class="submit-btn">
+                </div>
+            </form>
+        </div>
+        <div class="carousel-controls">
+            <button onclick="prevSlide()">Anterior</button>
+            <button onclick="nextSlide()">Próximo</button>
+        </div>
+
+        <div class="carousel-controls-direct" id="select_slide_3">
+            <button onclick="getSlide(1, this)">Tela OEE 1</button>
+            <button onclick="getSlide(2, this)">Tela OEE 2</button>
+            <button onclick="getSlide(3, this)">Tela OEE 3</button>
+            <button onclick="getSlide(4, this)">Tela OEE 4</button>
+            <button onclick="getSlide(5, this)">Tela OEE 5</button>
+            <button onclick="getSlide(6, this)">Tela OEE 6</button>
+            <button onclick="getSlide(7, this)">Tela OEE 7</button>
+            <button onclick="getSlide(8, this)">Tela OEE 8</button>
+        </div>
+    </div>
+    <button class="back-btn" onclick="window.location.href='/'">Voltar</button>
+</div>
+
+<datalist id="pages">
+    <option value="ID_ACESSO 7"></option>
+    <option value="ID_ACESSO 8"></option>
+    <option value="ID_ACESSO 9"></option>
+    <option value="ID_ACESSO 10"></option>
+    <option value="ID_ACESSO 11"></option>
+</datalist>
+
+<script>
+
+    // Convertendo a string JSON de volta para um objeto JavaScript
+    const cockpitData = {{ cockpit_values | tojson | safe }};
+    const scheduleData = {{ schedule_values | tojson | safe }};
+
+    // Iterando sobre os dados com forEach
+    cockpitData.forEach(data => {
+        document.getElementById('page_' + data[0]).value = data[1]
+
+    });
+
+    scheduleData.forEach(item => {
+        item[4] = item[4] === 'True'
+        const form = document.querySelector(`form[action="/cockpit?id=${item[6]}"]`);
+        if (form) {
+            console.log(form)
+            fillForm(form, item);
+        }
+
+        const day = item[0];
+        const startTime = item[1];
+        const endTime = item[2];
+        const isAvailable = item[4];
+        const group = item[5];
+        const id = item[6];
+        
+    });
+
+    function fillForm(form, data) {
+
+        var inputs = form.querySelectorAll('input[name*="page"]');
+        acum = 0 
+        pages = JSON.parse(data[3])
+        console.log(pages)
+        if (pages.length > 0) {
+            inputs.forEach(function(input) {
+                
+                input.value = pages[acum]
+                acum++
+            });
+        }        
+
+        pages = JSON.parse(data[0])
+        pages.forEach(date => {
+            const checkbox = form.querySelector(`input[type="checkbox"][name="date_${date}"]`);
+            checkbox.checked = true;
+        });
+
+        form.querySelector('input[name="prog_1"]').value = data[1];
+        form.querySelector('input[name="prog_2"]').value = data[2];
+        form.querySelector('input[name="activated"]').checked = data[4];
+    }
+
+    let currentSlide = 0;
+    function showSlide(index) {
+        const slides = document.getElementById(actual.split('select_')[1]).querySelectorAll('.carousel-item');
+        const totalSlides = slides.length;
+
+        if (index >= totalSlides) {
+            currentSlide = 0;
+        } else if (index < 0) {
+            currentSlide = totalSlides - 1;
+        } else {
+            currentSlide = index;
+        }
+
+        let div = document.getElementById(actual);
+        let buttons = div.getElementsByTagName("button");
+
+        for (let i = 0; i < buttons.length; i++) {
+            if (i + 1 != currentSlide) {
+                buttons[i].style.backgroundColor = "#007bff";
+            } else {
+                buttons[i].style.backgroundColor = "rgb(0, 0, 0)"
+            }
+        }
+
+
+        const offset = -currentSlide * 100;
+        document.getElementById(actual.split('select_')[1]).style.transform = `translateX(${offset}%)`;
+    }
+    
+    function nextSlide() {
+        showSlide(currentSlide + 1);
+    }
+    
+    function prevSlide() {
+        showSlide(currentSlide - 1);
+    }
+
+    function getSlide(id) {
+        showSlide(id);
+
+    }
+
+    // Mostrar o primeiro slide ao carregar a página
+    document.addEventListener('DOMContentLoaded', () => {
+        showSlide(currentSlide);
+    });
+
+    // Função para mostrar o overlay de carregamento
+    function showLoading() {
+        document.getElementById('loading-overlay').classList.add('active');
+    }
+
+    var actual;
+    function changeCarousel(id) {
+        if (id == 0) {
+            document.getElementById("fixed").style.display = 'flex'
+            document.getElementById("scheduled_1").style.display = 'none'
+            document.getElementById("scheduled_2").style.display = 'none'
+            document.getElementById("scheduled_3").style.display = 'none'
+            document.getElementById("change-btn-0").style.backgroundColor = "rgb(0, 0, 0)"
+            document.getElementById("change-btn-1").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-2").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-3").style.backgroundColor = "#007bff"
+            actual = 'select_slide_0'
+            showSlide(0)
+        } else if (id == 1) {
+            document.getElementById("fixed").style.display = 'none'
+            document.getElementById("scheduled_1").style.display = 'flex'
+            document.getElementById("scheduled_2").style.display = 'none'
+            document.getElementById("scheduled_3").style.display = 'none'
+            document.getElementById("change-btn-0").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-1").style.backgroundColor = "rgb(0, 0, 0)"
+            document.getElementById("change-btn-2").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-3").style.backgroundColor = "#007bff"
+            actual = 'select_slide_1'
+            showSlide(0)
+            
+        } else if (id == 2) {
+            document.getElementById("fixed").style.display = 'none'
+            document.getElementById("scheduled_1").style.display = 'none'
+            document.getElementById("scheduled_2").style.display = 'flex'
+            document.getElementById("scheduled_3").style.display = 'none'
+            document.getElementById("change-btn-0").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-1").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-2").style.backgroundColor = "rgb(0, 0, 0)"
+            document.getElementById("change-btn-3").style.backgroundColor = "#007bff"
+            actual = 'select_slide_2'
+            showSlide(0)
+        } else {
+            document.getElementById("fixed").style.display = 'none'
+            document.getElementById("scheduled_1").style.display = 'none'
+            document.getElementById("scheduled_2").style.display = 'none'
+            document.getElementById("scheduled_3").style.display = 'flex'
+            document.getElementById("change-btn-0").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-1").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-2").style.backgroundColor = "#007bff"
+            document.getElementById("change-btn-3").style.backgroundColor = "rgb(0, 0, 0)"
+            actual = 'select_slide_3'
+            showSlide(0)
+        }
+    }
+
+    changeCarousel(0)
+</script>
+</body>
+</html>

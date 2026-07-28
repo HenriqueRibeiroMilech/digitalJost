@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Estilos Gerais */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1800px;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .container-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            width: 30%;
+        }
+
+        .info-item h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .info-item p {
+            margin: 5px 0;
+        }
+
+        /* Estilo do Fluxo */
+        .flow-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .flow-item {
+            text-align: center;
+            color: #333;
+            position: relative;
+            flex: 1;
+        }
+
+        .flow-item h4 {
+            margin-top: 10px;
+            margin-bottom: 0;
+            text-align: center;
+        }
+
+        .flow-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #2e5b8a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .flow-circle.pulsing {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(255, 165, 0, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 165, 0, 0);
+            }
+        }
+
+        .flow-line {
+            height: 10px;
+            border-radius: 5px;
+            width: 80px;
+            background-color: #2e5b8a;
+            position: absolute;
+            top: 35px;
+            left: calc(100% - 40px);
+        }
+
+        .flow-item:last-child .flow-line {
+            display: none;
+        }
+
+        .approved-mid {
+            color: green;
+        }
+
+        .approved-mid-circle {
+            background-color: green;
+        }
+
+        /* Fluxo Verde/Vermelho para aprovação/rejeição */
+        .approved .flow-circle,
+        .approved .flow-line {
+            background-color: green;
+        }
+
+        .rejected .flow-circle,
+        .rejected .flow-line {
+            background-color: red;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/oee/paradas/alterar/{{back}}'"><i class="fas fa-x"></i></button>
+    </div>
+    
+    <div class="container">
+        <h1>Solicitação {{requestId}} - Alteração de Paradas</h1>
+
+        <div class="container-info">
+            <div class="info-item">
+                <h3>Solicitante:</h3>
+                <p id="requesterName"></p>
+            </div>
+
+            <div class="info-item">
+                <h3>Centro de Trabalho:</h3>
+                <p id="workcenter"></p>
+            </div>
+
+            <div class="info-item">
+                <h3>Motivo Original:</h3>
+                <p id="motive1"></p>
+            </div>
+        </div>
+
+        <div class="container-info">
+            <div class="info-item">
+                <h3>Data da Ocorrência:</h3>
+                <p id="stopDate"></p>
+            </div>
+
+            <div class="info-item">
+                <h3>Duração da Parada:</h3>
+                <p id="logMinutes"></p>
+            </div>
+
+            <div class="info-item">
+                <h3>Motivo Novo Solicitado:</h3>
+                <p id="motive2"></p>
+            </div>
+        </div>
+
+        <div class="container-info">
+            <div class="info-item">
+                <h3>Justificativa da Solicitação:</h3>
+                <p id="requestText"></p>
+            </div>
+
+            <div class="info-item" style='color:red;display: none;' id='deniedTextLabel'>
+                <h3>Justificativa de Recusa:</h3>
+                <p id="deniedText"></p>
+            </div>
+        </div>
+
+        <div class="flow-container">
+            <div class="flow-item">
+                <div class="flow-circle"></div>
+                <div class="flow-line"></div>
+                <h4>Data de Abertura</h4>
+                <p style='margin: 0;' id="openDate"></p>
+            </div>
+    
+            <div class="flow-item">
+                <div class="flow-circle pulsing" id="approver1Circle"></div>
+                <div class="flow-line"></div>
+                <h4 id="approverArea1">Área de</h4>
+                <p style='margin: 0;' id="approver1"></p>
+            </div>
+    
+            <div class="flow-item">
+                <div class="flow-circle pulsing" id="approver2Circle"></div>
+                <div class="flow-line"></div>
+                <h4 id="approverArea2">Área de</h4>
+                <p style='margin: 0;' id="approver2"></p>
+            </div>
+    
+            <div class="flow-item">
+                <div class="flow-circle"></div>
+                <h4>Data de Encerramento</h4>
+                <p style='margin: 0;' id="finalDate">Em andamento</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        const data = {{ data | tojson | safe }}[0];
+        const stop_data = {{stop_data | tojson | safe }}[0]
+
+        document.getElementById('requesterName').innerText = data.requesterName
+        document.getElementById('workcenter').innerText = stop_data.workcenter
+        document.getElementById('motive1').innerText = `${data.motive1} - ${data.motiveDesc1}`
+        document.getElementById('stopDate').innerText = stop_data.startDate
+        document.getElementById('logMinutes').innerText = `${stop_data.logMinutes} minutos`
+        document.getElementById('motive2').innerText = `${data.motive2} - ${data.motiveDesc2}`
+        document.getElementById('requestText').innerText = data.requestText
+        document.getElementById('deniedText').innerText = data.deniedText
+        document.getElementById('openDate').innerText = data.openDate
+        document.getElementById('approver1').innerText = data.approver1
+        document.getElementById('approver2').innerText = data.approver2
+        document.getElementById('approverArea1').innerText = data.approverArea1
+        document.getElementById('approverArea2').innerText = data.approverArea2
+
+        const flowContainer = document.querySelector('.flow-container');
+
+        if ([data.approverStatus1, data.approverStatus2].includes("2")) {
+            flowContainer.classList.add("rejected")
+            
+        } else if (data.approverStatus1 == "1" && data.approverStatus2 == "1") {
+            flowContainer.classList.add("approved")            
+
+        } else if (data.approverStatus1 == "1") {
+            document.getElementById("approver1").classList.add("approved-mid")
+            document.getElementById("approver1Circle").classList.remove("pulsing")
+            document.getElementById("approver1Circle").classList.add("approved-mid-circle")
+
+        } else if (data.approverStatus2 == "1") {
+            document.getElementById("approver2").classList.add("approved-mid")
+            document.getElementById("approver2Circle").classList.remove("pulsing")
+            document.getElementById("approver2Circle").classList.add("approved-mid-circle")
+        }
+        
+        if (data.finalDate !=  "None") {
+            document.getElementById("finalDate").innerHTML = data.finalDate
+        }
+
+        if (data.deniedText != null) {
+            document.getElementById("deniedTextLabel").style.display = "block"
+        }
+
+    </script>
+</body>
+</html>

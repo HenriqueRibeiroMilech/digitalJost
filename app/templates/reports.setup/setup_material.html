@@ -1,0 +1,50 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_native_dash.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/{{video}}" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+</video>
+
+<body id="content" style="overflow-y: hidden">
+
+
+    <div class="dash_headers" style="display: block;">
+        <a id="select_back" href="/dashboards/setup/geral">&times;</a>
+        <p class="dash_title" id="title" style="display: inline-block;margin-bottom:2vh">Consulta Setup - Material</p><br>
+        <p class="dash_desc" style="display: block;margin:0">Material: {{material}}</p>
+        <p class="dash_desc" style="display: block;margin:0">Centro de Trabalho: {{ct}}</p>
+        <div class="dash_filters" id="filters" style="margin:0;">
+            <a class="dash_flbl">Data de Início</a>
+            <input oninput="redefine()" id="start" name="start" required type="date" autocomplete="off" class="dash_filter" value="{{start}}">
+            <a class="dash_flbl">Data do Fim</a>
+            <input oninput="redefine()" id="final" name="final" required type="date" autocomplete="off" class="dash_filter" value="{{end}}">
+        </div>
+    </div>
+
+    <div class="chart_wrapper" style="float:left;margin-left:2.5vw;margin-right:5vw">
+        <div id="setup_tbl" class="chart" style="width:48vw;"></div>
+    </div>
+
+    <div style="float:left;width:37vw">
+        <p class="dash_title" style="display: inline-block;">DADOS GERAIS</p><br><br>
+        <p class="dash_desc" id="data0">UM SETUP PADRÃ0 DURA {{meta_min}} MIN</p>
+        <p class="dash_desc" id="data1">{{total_qtt}} PARADAS DE SETUP REALIZADAS</p>
+        <p class="dash_desc" id="data2">{{total_min}} MINUTOS DE SETUP REALIZADOS</p>
+        <p class="dash_desc" id="data4">{{not_min}}</p>
+    </div>
+
+</body>
+
+<script>
+    {% include 'reports.setup/setup_material.js' %}
+</script>
+
+{% endblock %}

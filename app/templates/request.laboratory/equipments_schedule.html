@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/overlay.css') }}">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sidebar {
+            width: 12vw;
+            min-width: 160px;
+            background-color: #153A8A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+            text-align: center;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: clamp(18px, 1.9vw, 1em);
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .sidebar button {
+            background-color: white;
+            color: #153A8A;
+            padding: clamp(6px, 0.8vw, 10px);
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            margin-bottom: 8px;
+            font-size: clamp(10px, 0.9vw, 14px);
+            width: 90%;
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .sidebar button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .legend {
+            font-size: calc(1vh + 0.3vw);
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .legend-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+
+        /* Main content container */
+        .main-container {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .equipment-dashboard {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-title {
+            color: #153A8A;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .dashboard-title {
+            color: #153A8A;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background-color: #153A8A;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: #2e52a7;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box strong {
+            margin-bottom: 5px;
+            color: #004085;
+        }
+
+        .info-box p {
+            margin-bottom: 1vh;
+            font-size: 13px;
+            color: #004085;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #153A8A;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .primary-button, .secondary-button, .delete-button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .primary-button {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        .primary-button:hover {
+            background-color: #2e52a7;
+        }
+
+        .secondary-button {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 2000;
+        }
+
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading indicator */
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(6vh + 5vw);
+            width: calc(6vh + 5vw);
+            margin: calc(2vh + 2.5vw) auto;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Overlay styles (modais) */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #153A8A;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 95%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .days-selector {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .day-checkbox {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .day-checkbox:hover {
+            border-color: #153A8A;
+            background: #f8f9fa;
+        }
+
+        .day-checkbox input[type="checkbox"] {
+            display: none;
+        }
+
+        .day-checkbox.selected {
+            background: #153A8A;
+            color: white;
+            border-color: #153A8A;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Layout em duas colunas para o modal */
+        .form-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .form-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .column-title {
+            font-weight: bold;
+            color: #153A8A;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #153A8A;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-title">SSLs {{areaName}}<br>Agendamentos Automáticos</div>
+        
+        <div class="legend">
+            <div class="legend-title">Como Funciona</div>
+            <div class="legend-item" style="font-size: 11px; line-height: 1.4;">
+                ⏰ Horários em minutos fechados (19:00, 14:30)
+            </div>
+            <div class="legend-item" style="font-size: 11px; line-height: 1.4;">
+                📅 Escolha dias da semana
+            </div>
+            <div class="legend-item" style="font-size: 11px; line-height: 1.4;">
+                🔄 Detecção automática (1 min)
+            </div>
+            <div class="legend-item" style="font-size: 11px; line-height: 1.4;">
+                ✅ Sem reiniciar serviço
+            </div>
+        </div>
+        
+        <button onclick="window.location.href='/lab/{{area}}/equipamentos'" style="margin-top: auto;">Gerenciar Equipamentos</button>
+        <button onclick="window.location.href='/lab'">Página Inicial</button>
+    </div>
+
+    <div class="main-container">
+        <div class="equipment-dashboard">
+            <div class="dashboard-header">
+                <h2 class="dashboard-title">⏰ Agendamentos Automáticos - {{areaName}}</h2>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="openModal()">
+                        <i class="fas fa-plus"></i> Novo Agendamento
+                    </button>
+                    <button class="action-btn" onclick="loadSchedules()">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p style="margin-bottom:2vh"><strong>ℹ️ Informações Importantes:</strong></p>
+                <p>• Agendamentos são executados em <strong>minutos fechados</strong> (ex: 19:00, 14:30)</p>
+                <p>• Selecione os <strong>dias da semana</strong> que o agendamento deve repetir</p>
+                <p>• O serviço detecta mudanças <strong>automaticamente</strong> - não precisa reiniciar</p>
+                <p>• Equipamentos só mudam se estiverem <strong>disponíveis</strong> no horário de início</p>
+            </div>
+
+            <!-- Filtros -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label style="display: block; font-weight: 500; color: #153A8A; margin-bottom: 5px; font-size: 13px;">🔍 Equipamento</label>
+                    <input type="text" id="filter-equipment" placeholder="Filtrar por nome..." style="width: 100%; padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px;" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 500; color: #153A8A; margin-bottom: 5px; font-size: 13px;">📅 Dia da Semana</label>
+                    <select id="filter-day" style="width: 100%; padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px;" onchange="applyFilters()">
+                        <option value="">Todos os dias</option>
+                        <option value="0">Segunda</option>
+                        <option value="1">Terça</option>
+                        <option value="2">Quarta</option>
+                        <option value="3">Quinta</option>
+                        <option value="4">Sexta</option>
+                        <option value="5">Sábado</option>
+                        <option value="6">Domingo</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 500; color: #153A8A; margin-bottom: 5px; font-size: 13px;">⚡ Status</label>
+                    <select id="filter-active" style="width: 100%; padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px;" onchange="applyFilters()">
+                        <option value="">Todos</option>
+                        <option value="true">Ativos</option>
+                        <option value="false">Inativos</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 500; color: #153A8A; margin-bottom: 5px; font-size: 13px;">📊 Status/Evento</label>
+                    <select id="filter-status" style="width: 100%; padding: 6px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px;" onchange="applyFilters()">
+                        <option value="">Todos</option>
+                        <option value="Indisponível">Indisponível</option>
+                        <option value="Parado">Parado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="loader"></div>
+                <p>Carregando agendamentos...</p>
+            </div>
+
+            <div class="table-container">
+                <table id="schedules-table">
+                    <thead>
+                        <tr>
+                            <th>Equipamento</th>
+                            <th>Horário</th>
+                            <th>Dias</th>
+                            <th>Validade</th>
+                            <th>Status / Evento</th>
+                            <th>Comentários</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedules-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Criação/Edição -->
+    <div id="scheduleModal" class="overlay">
+        <div class="overlay-content" style="width: auto;">
+            <span class="overlay-close">&times;</span>
+            <h3 id="modal-title">Novo Agendamento</h3>
+
+            <form id="scheduleForm">
+                <input type="hidden" id="schedule-id">
+
+                <div class="form-columns">
+                    <!-- Coluna Esquerda: Dados do Equipamento -->
+                    <div class="form-column">
+                        <div class="column-title">📋 Dados do Equipamento</div>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="all-equipments" onchange="toggleAllEquipments()">
+                                Todos os equipamentos da área
+                            </label>
+                        </div>
+
+                        <div class="form-group" id="equipment-select-container">
+                            <label for="equipment">Equipamentos * (Ctrl+Click para múltipla seleção)</label>
+                            <select id="equipment" multiple required style="height: 150px;">
+                                <!-- Populated by JavaScript -->
+                            </select>
+                            <small style="color: #666; font-size: 11px;">Segure Ctrl (Windows) ou Cmd (Mac) e clique para selecionar vários</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="status">Status *</label>
+                            <select id="status" required onchange="updateEventOptions()">
+                                <option value="">Selecione um status</option>
+                                <option value="Indisponível">Indisponível</option>
+                                <option value="Parado">Parado</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="event">Evento *</label>
+                            <select id="event" required disabled>
+                                <option value="">Selecione um status primeiro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="comments">Comentários</label>
+                            <textarea id="comments" placeholder="Informações adicionais sobre o agendamento"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Coluna Direita: Horários e Dias -->
+                    <div class="form-column">
+                        <div class="column-title">🕐 Horários e Repetição</div>
+
+                        <div class="form-group">
+                            <label for="start-time">Horário de Início (HH:MM) *</label>
+                            <input type="time" id="start-time" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="end-time">Horário de Término (HH:MM) *</label>
+                            <input type="time" id="end-time" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="valid-until">Data de Validade (Opcional)</label>
+                            <input type="date" id="valid-until" min="" placeholder="Deixe em branco para agendamento permanente">
+                            <small style="color: #666; font-size: 11px;">Vazio = permanente | Preenchido = expira nesta data</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Dias da Semana *</label>
+                            <div class="days-selector">
+                                <div class="day-checkbox" onclick="toggleDay(this, '0')">
+                                    <input type="checkbox" value="0">
+                                    <span>Seg</span>
+                                </div>
+                                <div class="day-checkbox" onclick="toggleDay(this, '1')">
+                                    <input type="checkbox" value="1">
+                                    <span>Ter</span>
+                                </div>
+                                <div class="day-checkbox" onclick="toggleDay(this, '2')">
+                                    <input type="checkbox" value="2">
+                                    <span>Qua</span>
+                                </div>
+                                <div class="day-checkbox" onclick="toggleDay(this, '3')">
+                                    <input type="checkbox" value="3">
+                                    <span>Qui</span>
+                                </div>
+                                <div class="day-checkbox" onclick="toggleDay(this, '4')">
+                                    <input type="checkbox" value="4">
+                                    <span>Sex</span>
+                                </div>
+                                <div class="day-checkbox" onclick="toggleDay(this, '5')">
+                                    <input type="checkbox" value="5">
+                                    <span>Sáb</span>
+                                </div>
+                                <div class="day-checkbox" onclick="toggleDay(this, '6')">
+                                    <input type="checkbox" value="6">
+                                    <span>Dom</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="secondary-button" onclick="closeModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="primary-button">
+                        Salvar Agendamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Configuração da área (passada pelo Flask)
+        const AREA = '{{ area }}';
+        
+        // Tipos de eventos agrupados por status (passado pelo Flask)
+        const PAUSE_TYPES = {{ pause_types | tojson }};
+
+        // Carregar agendamentos ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchedules();
+            loadEquipments();
+            setupEventListeners();
+        });
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Fechar modais ao clicar no X ou fora do modal
+            document.querySelectorAll('.overlay-close').forEach(closeBtn => {
+                closeBtn.onclick = function() {
+                    this.closest('.overlay').classList.remove('active');
+                };
+            });
+
+            window.onclick = function(event) {
+                if (event.target.classList.contains('overlay')) {
+                    event.target.classList.remove('active');
+                }
+            };
+        }
+
+        // Carregar lista de agendamentos
+        let allSchedules = [];  // Cache global para filtros
+
+        async function loadSchedules() {
+            const loading = document.getElementById('loading');
+            const tbody = document.getElementById('schedules-body');
+
+            loading.classList.add('show');
+            tbody.innerHTML = '';
+
+            try {
+                const response = await fetch(`/lab/${AREA}/agendamentos`);
+                allSchedules = await response.json();  // Armazenar no cache global
+
+                applyFilters();  // Aplicar filtros após carregar
+            } catch (error) {
+                console.error('Erro ao carregar agendamentos:', error);
+                alert('Erro ao carregar agendamentos: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        // Aplicar filtros na tabela
+        function applyFilters() {
+            const tbody = document.getElementById('schedules-body');
+            
+            // Obter valores dos filtros
+            const equipmentFilter = document.getElementById('filter-equipment').value.toLowerCase();
+            const dayFilter = document.getElementById('filter-day').value;
+            const activeFilter = document.getElementById('filter-active').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            // Filtrar agendamentos
+            const filtered = allSchedules.filter(schedule => {
+                // Filtro por equipamento
+                if (equipmentFilter && !schedule.equipmentName.toLowerCase().includes(equipmentFilter)) {
+                    return false;
+                }
+
+                // Filtro por dia da semana
+                if (dayFilter) {
+                    const days = schedule.daysOfWeek || '';
+                    if (days !== '*' && !days.split(',').map(d => d.trim()).includes(dayFilter)) {
+                        return false;
+                    }
+                }
+
+                // Filtro por ativo/inativo
+                if (activeFilter) {
+                    const isActive = activeFilter === 'true';
+                    if (schedule.active !== isActive) {
+                        return false;
+                    }
+                }
+
+                // Filtro por status
+                if (statusFilter && schedule.status !== statusFilter) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Renderizar resultados
+            tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <div>📅</div>
+                            <p>Nenhum agendamento encontrado com os filtros aplicados</p>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                filtered.forEach(schedule => {
+                    tbody.innerHTML += createScheduleRow(schedule);
+                });
+            }
+        }
+
+        // Criar linha da tabela
+        function createScheduleRow(schedule) {
+            const statusBadge = schedule.active 
+                ? '<span class="badge badge-active">Ativo</span>'
+                : '<span class="badge badge-inactive">Inativo</span>';
+
+            const days = formatDays(schedule.daysOfWeek);
+            
+            // Formatar data de validade
+            let validUntilText = 'Permanente';
+            if (schedule.validUntil) {
+                const date = new Date(schedule.validUntil);
+                validUntilText = date.toLocaleDateString('pt-BR');
+                
+                // Verificar se já expirou ou vai expirar em breve
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (date < today) {
+                    validUntilText = `<span style="color: #dc3545;">${validUntilText} (Expirado)</span>`;
+                } else {
+                    const daysUntil = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+                    if (daysUntil <= 7) {
+                        validUntilText = `<span style="color: #ffc107;">${validUntilText} (${daysUntil}d)</span>`;
+                    }
+                }
+            }
+
+            return `
+                <tr>
+                    <td>${schedule.equipmentName}</td>
+                    <td>${schedule.startTime} - ${schedule.endTime}</td>
+                    <td>${days}</td>
+                    <td>${validUntilText}</td>
+                    <td>${schedule.status} / ${schedule.event}</td>
+                    <td>${schedule.comments || '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="action-btn btn-sm" style="background-color: ${schedule.active ? '#ffc107' : '#28a745'};" onclick="toggleSchedule(${schedule.id}, ${!schedule.active})">
+                            <i class="fas fa-${schedule.active ? 'pause' : 'play'}"></i>
+                        </button>
+                        <button class="action-btn btn-sm" style="background-color: #dc3545;" onclick="deleteSchedule(${schedule.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Formatar dias da semana
+        function formatDays(daysStr) {
+            if (!daysStr || daysStr === '*') return 'Todos os dias';
+            
+            const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            const days = daysStr.split(',').map(d => dayNames[parseInt(d.trim())]);
+            return days.join(', ');
+        }
+
+        // Carregar equipamentos da API de gerenciamento
+        let allEquipments = [];  // Cache global de equipamentos
+
+        async function loadEquipments() {
+            try {
+                const response = await fetch(`/lab/${AREA}/equipamentos/status`);
+                const data = await response.json();
+
+                allEquipments = data;  // Armazenar cache
+                renderEquipmentsList(data);
+
+            } catch (error) {
+                console.error('Erro ao carregar equipamentos:', error);
+            }
+        }
+
+        // Renderizar lista de equipamentos
+        function renderEquipmentsList(equipments) {
+            const select = document.getElementById('equipment');
+            select.innerHTML = '';
+            
+            if (equipments.length === 0) {
+                select.innerHTML = '<option value="">Nenhum equipamento encontrado</option>';
+                return;
+            }
+
+            equipments.forEach(eq => {
+                const option = document.createElement('option');
+                option.value = eq.id;
+                option.textContent = eq.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Toggle seleção de todos os equipamentos
+        function toggleAllEquipments() {
+            const checkbox = document.getElementById('all-equipments');
+            const selectContainer = document.getElementById('equipment-select-container');
+            const equipmentSelect = document.getElementById('equipment');
+            
+            if (checkbox.checked) {
+                // Ocultar seleção individual e remover required
+                selectContainer.style.display = 'none';
+                equipmentSelect.removeAttribute('required');
+            } else {
+                // Mostrar seleção individual e adicionar required
+                selectContainer.style.display = 'block';
+                equipmentSelect.setAttribute('required', 'required');
+            }
+        }
+
+        // Abrir modal
+        function openModal() {
+            console.log('teste')
+            document.getElementById('schedule-id').value = '';
+            document.getElementById('scheduleForm').reset();
+            document.querySelectorAll('.day-checkbox').forEach(el => el.classList.remove('selected'));
+            document.getElementById('modal-title').textContent = 'Novo Agendamento';
+            
+            // Resetar campo de evento
+            const eventSelect = document.getElementById('event');
+            eventSelect.disabled = true;
+            eventSelect.innerHTML = '<option value="">Selecione um status primeiro</option>';
+            
+            // Resetar checkbox de todos equipamentos
+            document.getElementById('all-equipments').checked = false;
+            toggleAllEquipments();
+            
+            // Configurar data mínima para hoje
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('valid-until').min = today;
+            
+            document.getElementById('scheduleModal').classList.add('active');
+            console.log('teste2')
+        }
+
+        // Fechar modal
+        function closeModal() {
+            document.getElementById('scheduleModal').classList.remove('active');
+        }
+
+        // Atualizar opções de eventos baseado no status selecionado
+        function updateEventOptions() {
+            const statusSelect = document.getElementById('status');
+            const eventSelect = document.getElementById('event');
+            const selectedStatus = statusSelect.value;
+
+            if (!selectedStatus) {
+                eventSelect.disabled = true;
+                eventSelect.innerHTML = '<option value="">Selecione um status primeiro</option>';
+                return;
+            }
+
+            // Filtrar eventos pelo status selecionado
+            const filteredEvents = PAUSE_TYPES.filter(pt => pt.status === selectedStatus);
+
+            if (filteredEvents.length === 0) {
+                eventSelect.disabled = true;
+                eventSelect.innerHTML = '<option value="">Nenhum evento disponível para este status</option>';
+                return;
+            }
+
+            // Popular dropdown com eventos filtrados
+            eventSelect.disabled = false;
+            eventSelect.innerHTML = '<option value="">Selecione um evento</option>';
+            filteredEvents.forEach(event => {
+                const option = document.createElement('option');
+                option.value = event.name;
+                option.textContent = event.name;
+                eventSelect.appendChild(option);
+            });
+        }
+
+        // Toggle dia da semana
+        function toggleDay(element, value) {
+            element.classList.toggle('selected');
+            const checkbox = element.querySelector('input');
+            checkbox.checked = !checkbox.checked;
+        }
+
+        // Submeter formulário
+        document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const selectedDays = Array.from(document.querySelectorAll('.day-checkbox.selected input'))
+                .map(cb => cb.value);
+
+            if (selectedDays.length === 0) {
+                showNotification('Selecione pelo menos um dia da semana', 'error');
+                return;
+            }
+
+            // Coletar equipamentos selecionados
+            const allEquipmentsChecked = document.getElementById('all-equipments').checked;
+            let equipmentIds = [];
+
+            if (allEquipmentsChecked) {
+                // Todos os equipamentos da área
+                equipmentIds = allEquipments.map(eq => eq.id);
+            } else {
+                // Equipamentos selecionados manualmente
+                const select = document.getElementById('equipment');
+                equipmentIds = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+                
+                if (equipmentIds.length === 0) {
+                    showNotification('Selecione pelo menos um equipamento', 'error');
+                    return;
+                }
+            }
+
+            const validUntil = document.getElementById('valid-until').value || null;
+
+            const data = {
+                equipmentIds: equipmentIds,  // Array de IDs
+                startTime: document.getElementById('start-time').value,
+                endTime: document.getElementById('end-time').value,
+                days: selectedDays.join(','),
+                status: document.getElementById('status').value,
+                event: document.getElementById('event').value,
+                comments: document.getElementById('comments').value,
+                validUntil: validUntil
+            };
+
+            try {
+                const response = await fetch(`/lab/${AREA}/agendamentos`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    showNotification('Agendamento criado com sucesso! Será aplicado automaticamente.');
+                    closeModal();
+                    loadSchedules();
+                } else {
+                    const error = await response.json();
+                    showNotification('Erro: ' + error.error, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao criar agendamento:', error);
+                showNotification('Erro ao criar agendamento: ' + error.message, 'error');
+            }
+        });
+
+        // Ativar/Desativar agendamento
+        async function toggleSchedule(scheduleId, active) {
+            try {
+                const response = await fetch(`/lab/${AREA}/agendamentos/${scheduleId}/toggle`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({active: active})
+                });
+
+                if (response.ok) {
+                    showNotification(`Agendamento ${active ? 'ativado' : 'desativado'} com sucesso!`);
+                    loadSchedules();
+                } else {
+                    const error = await response.json();
+                    showNotification('Erro: ' + error.error, 'error');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showNotification('Erro ao alterar agendamento: ' + error.message, 'error');
+            }
+        }
+
+        // Excluir agendamento
+        async function deleteSchedule(scheduleId) {
+            if (!confirm('⚠️ Deseja realmente excluir este agendamento?')) return;
+
+            try {
+                const response = await fetch(`/lab/${AREA}/agendamentos/${scheduleId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showNotification('Agendamento excluído com sucesso!');
+                    loadSchedules();
+                } else {
+                    const error = await response.json();
+                    showNotification('Erro: ' + error.error, 'error');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showNotification('Erro ao excluir agendamento: ' + error.message, 'error');
+            }
+        }
+
+        // Mostrar notificação
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.backgroundColor = type === 'error' ? '#dc3545' : '#28a745';
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

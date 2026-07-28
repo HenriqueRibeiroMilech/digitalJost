@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/overlay.css') }}">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sidebar {
+            width: 12vw;
+            min-width: 160px;
+            background-color: #153A8A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+            text-align: center;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: clamp(18px, 1.9vw, 1em);
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .sidebar button {
+            background-color: white;
+            color: #153A8A;
+            padding: clamp(6px, 0.8vw, 10px);
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            margin-bottom: 8px;
+            font-size: clamp(10px, 0.9vw, 14px);
+            width: 90%;
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .sidebar button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .legend {
+            font-size: calc(1vh + 0.3vw);
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .legend-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+
+        /* Main content container */
+        .main-container {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .equipment-dashboard {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-title {
+            color: #153A8A;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background-color: #153A8A;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: #2e52a7;
+        }
+
+        .filter-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            align-items: center;
+            position:relative;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-group select, .search-box input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-box {
+            position: absolute;
+            right:0;
+
+        }
+
+        .search-box input {
+            width: 12vw;
+            padding-right: 30px;
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+            position: relative; /* Adicione esta linha */
+
+        }
+
+        .equipment-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border-left: 5px solid #ccc;
+        }
+
+        .equipment-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .equipment-card.Disponível {
+            border-left-color: #28a745;
+        }
+
+        .equipment-card.Indisponível {
+            border-left-color: #6c757d;
+        }
+
+        .equipment-card.Parado {
+            border-left-color: #dc3545;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .equipment-name {
+            font-weight: bold;
+            font-size: 16px;
+            color: #153A8A;
+            margin: 0;
+        }
+
+        .status-indicator {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-Disponível {
+            background-color: #28a745;
+        }
+
+        .status-Indisponível {
+            background-color: #6c757d;
+        }
+
+        .status-Parado {
+            background-color: #dc3545;
+        }
+
+        .card-body {
+            flex: 1;
+        }
+
+        .equipment-info {
+            font-size: 14px;
+            color: #555;
+            margin: 5px 0;
+        }
+
+        .card-footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ssl-count {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .event-tag {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #153A8A;
+        }
+
+        .form-group select, .form-group input, .form-group textarea {
+            width: 95%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .primary-button, .secondary-button, .delete-button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .primary-button {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        .secondary-button {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .equipment-info-box {
+            font-weight: normal;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+
+        /* Detalhes do equipamento */
+        .equipment-details {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .detail-header h4 {
+            margin: 0;
+            color: #153A8A;
+            font-size: 18px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+        }
+
+        .detail-section {
+            margin-bottom: 15px;
+        }
+
+        .detail-section h5 {
+            font-size: 16px;
+            color: #153A8A;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .detail-info p {
+            margin: 5px 0;
+        }
+
+        .ssls-list {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .ssl-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .ssl-item:last-child {
+            border-bottom: none;
+        }
+
+        .no-data {
+            padding: 10px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .status-history {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .history-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-status {
+            font-weight: bold;
+        }
+
+        .history-event {
+            font-style: italic;
+            margin-left: 10px;
+        }
+
+        .history-time {
+            color: #666;
+            font-size: 12px;
+            display: block;
+            margin-top: 4px;
+        }
+
+        /* Loading indicator */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 40px 0;
+            grid-column: span 6;
+        }
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(6vh + 5vw);
+            width: calc(6vh + 5vw);
+            margin: calc(2vh + 2.5vw) auto;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .detail-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Estilos para tabela de dados */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        
+        .data-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            color: #153A8A;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .data-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .loading-cell {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .status-active, .status-inactive {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .status-active {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .status-inactive {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .action-icon {
+            cursor: pointer;
+            margin-right: 8px;
+            color: #153A8A;
+        }
+        
+        .action-icon:hover {
+            color: #2e52a7;
+        }
+        
+        .form-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .pause-types-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-title">SSLs {{areaName}}<br>Gerenciamento de Equipamentos</div>
+        
+        <div class="legend">
+            <div class="legend-title">Status dos Equipamentos</div>
+            <div class="legend-item">
+                <span class="color-box" style="background-color: #28a745;"></span>
+                <span>Disponível</span>
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background-color: #6c757d;"></span>
+                <span>Indisponível</span>
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background-color: #dc3545;"></span>
+                <span>Parado</span>
+            </div>
+        </div>
+        
+        <button onclick="window.location.href='/lab'" style="margin-top: auto;">Página Inicial</button>
+    </div>
+
+    <div class="main-container">
+        <div class="equipment-dashboard">
+            <div class="dashboard-header">
+                <h2 class="dashboard-title">Painel</h2>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="showNewEquipmentModal()">
+                        <i class="fas fa-plus-circle"></i> Novo Equipamento
+                    </button>
+                    <button class="action-btn" onclick="showPauseTypesModal()">
+                        <i class="fas fa-cog"></i> Tipos de Parada
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='/lab/{{area}}/agendamentos/gerenciar'">
+                        <i class="fas fa-clock"></i> Agendamento de Eventos
+                    </button>
+
+                </div>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label>Exibir:</label>
+                    <select id="statusFilter">
+                        <option value="all">Todos</option>
+                        <option value="Disponível">Disponíveis</option>
+                        <option value="Indisponível">Indisponíveis</option>
+                        <option value="Parado">Parados</option>
+                    </select>
+                </div>
+                
+                <div class="search-box">
+                    <input type="text" id="searchEquipment" placeholder="Buscar equipamento...">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            
+            <!-- Grid de equipamentos -->
+            <div class="equipment-grid" id="equipmentGrid">
+                <div class="loading-container">
+                    <div class="loader"></div>
+                    <p>Carregando equipamentos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal para detalhes do equipamento -->
+    <div id="detailsModal" class="overlay">
+        <div class="overlay-content">
+            <span class="overlay-close">&times;</span>
+            <h3>Detalhes do Equipamento</h3>
+            <div class="equipment-details">
+                <div class="detail-header">
+                    <h4 id="detailEquipmentName"></h4>
+                    <span class="status-badge" id="detailStatus"></span>
+                </div>
+                
+                <div class="detail-section">
+                    <h5>Status Atual</h5>
+                    <div class="detail-info">
+                        <p><strong>Desde:</strong> <span id="detailStatusSince"></span></p>
+                        <p><strong>Registrado por:</strong> <span id="detailStatusBy"></span></p>
+                        <p id="detailEventContainer"><strong>Motivo:</strong> <span id="detailEvent"></span></p>
+                        <p id="detailDurationContainer"><strong>Duração:</strong> <span id="detailDuration"></span> minutos</p>
+                        <p id="detailCommentsContainer"><strong>Comentários:</strong> <span id="detailComments"></span></p>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h5>SSLs em Execução</h5>
+                    <div id="detailSSLs" class="ssls-list">
+                        <p class="no-data">Nenhuma SSL em execução neste equipamento.</p>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h5>Histórico de Status</h5>
+                    <div class="status-history" id="detailHistory">
+                        <div class="loading-indicator">Carregando histórico...</div>
+                    </div>
+                </div>
+                
+                <div class="detail-actions">
+                    <button id="editEquipmentButton" class="primary-button">Editar Equipamento</button>
+                    <button id="updateStatusButton" class="primary-button">Atualizar Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para novo equipamento -->
+    <div id="equipmentModal" class="overlay">
+        <div class="overlay-content">
+            <span class="overlay-close">&times;</span>
+            <h3 id="equipmentModalTitle">Novo Equipamento</h3>
+            <form id="equipmentForm">
+                <input type="hidden" id="equipmentFormId">
+                
+                <div class="form-group">
+                    <label>Área:</label>
+                    <p class="equipment-info-box">{{areaName}}</p> <!-- Exibe apenas o nome da área atual -->
+                </div>
+                
+                <div class="form-group">
+                    <label for="equipmentFormName">Nome do Equipamento:</label>
+                    <input type="text" id="equipmentFormName" required>
+                </div>
+                <div class="form-group">
+                    <label for="equipmentFormDescription">Descrição:</label>
+                    <textarea id="equipmentFormDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="equipmentFormStatus">Status Inicial:</label>
+                    <select id="equipmentFormStatus" required>
+                        <option value="Disponível">Disponível</option>
+                        <option value="Indisponível">Indisponível</option>
+                        <option value="Parado">Parado</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="primary-button">Salvar</button>
+                    <button type="button" class="secondary-button equipment-cancel-btn">Cancelar</button>
+                    <button type="button" class="delete-button hidden" id="deleteEquipmentBtn">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para atualizar status -->
+    <div id="statusModal" class="overlay">
+        <div class="overlay-content">
+            <span class="overlay-close">&times;</span>
+            <h3>Atualizar Status do Equipamento</h3>
+            <form id="statusForm">
+                <input type="hidden" id="equipmentId">
+                <div class="form-group">
+                    <label>Nome do Equipamento:</label>
+                    <p id="equipmentName" class="equipment-info-box"></p>
+                </div>
+                <div class="form-group">
+                    <label>Status Atual:</label>
+                    <p id="currentStatus" class="equipment-info-box"></p>
+                </div>
+                <div class="form-group">
+                    <label for="newStatus">Novo Status:</label>
+                    <select id="newStatus" required>
+                        <option value="Disponível">Disponível</option>
+                        <option value="Indisponível">Indisponível</option>
+                        <option value="Parado">Parado</option>
+                    </select>
+                </div>
+                <div id="eventContainer" class="form-group hidden">
+                    <label for="eventType">Motivo:</label>
+                    <select id="eventType">
+                        <!-- Será preenchido dinamicamente com os tipos de parada do banco -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="comments">Comentários:</label>
+                    <textarea id="comments" rows="3"></textarea>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="primary-button">Salvar</button>
+                    <button type="button" class="secondary-button" id="cancelButton">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- Modal para gerenciar tipos de parada -->
+    <div id="pauseTypesModal" class="overlay">
+        <div class="overlay-content">
+            <span class="overlay-close">&times;</span>
+            <h3>Gerenciar Tipos de Parada</h3>
+            
+            <div class="pause-types-list">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Ativo</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pauseTypesList">
+                        <tr>
+                            <td colspan="5" class="loading-cell">Carregando tipos de parada...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="primary-button" onclick="showNewPauseTypeModal()">
+                    <i class="fas fa-plus"></i> Novo Tipo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para novo/editar tipo de parada -->
+    <div id="pauseTypeFormModal" class="overlay">
+        <div class="overlay-content">
+            <span class="overlay-close">&times;</span>
+            <h3 id="pauseTypeFormTitle">Novo Tipo de Parada</h3>
+            <form id="pauseTypeForm">
+                <input type="hidden" id="pauseTypeId">
+                <div class="form-group">
+                    <label for="pauseTypeStatus">Status do Evento:</label>
+                    <select id="pauseTypeStatus" required>
+                        <option value="">Selecione...</option>
+                        <option value="Indisponível">Indisponível</option>
+                        <option value="Parado">Parado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pauseTypeName">Nome do Evento:</label>
+                    <input type="text" id="pauseTypeName" required>
+                </div>
+                <div class="form-group">
+                    <label for="pauseTypeDescription">Descrição:</label>
+                    <textarea id="pauseTypeDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group" id="pauseTypeActiveContainer">
+                    <label for="pauseTypeActive">Ativo:</label>
+                    <select id="pauseTypeActive">
+                        <option value="1">Sim</option>
+                        <option value="0">Não</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="primary-button">Salvar</button>
+                    <button type="button" class="secondary-button" onclick="closePauseTypeForm()">Cancelar</button>
+                    <button type="button" class="delete-button hidden" id="deletePauseTypeBtn">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+
+        let areaId = '{{areaId}}';
+        let equipments = [];
+        let pauseTypes = [];
+
+        // CARREGAMENTO INICIAL
+        window.onload = function () {
+            loadEquipments();
+            loadPauseTypes();
+        };
+
+        // CARREGAR EQUIPAMENTOS
+        function loadEquipments() {
+            const equipmentGrid = document.getElementById('equipmentGrid');
+            equipmentGrid.innerHTML = `
+                <div class="loading-container">
+                    <div class="loader"></div>
+                    <p>Carregando equipamentos...</p>
+                </div>
+            `;
+            
+            // Endpoint para buscar equipamentos e seus status
+            fetch(`/lab/{{area}}/equipamentos/status`)
+                .then(response => response.json())
+                .then(data => {
+                    equipments = data;
+                    renderEquipments(data);
+                    setupEventListeners();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar equipamentos:', error);
+                    equipmentGrid.innerHTML = `<p class="error-message">Erro ao carregar equipamentos. Tente novamente mais tarde.</p>`;
+                });
+        }
+
+        // CARREGAR TIPOS DE PARADA
+        function loadPauseTypes() {
+            fetch(`/lab/{{area}}/paradas/tipos`)
+                .then(response => response.json())
+                .then(data => {
+                    pauseTypes = data;
+                    updatePauseTypeSelect();
+                    renderPauseTypesList();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar tipos de parada:', error);
+                });
+        }
+
+        // CARREGAR SSLs ATIVAS NO EQUIPAMENTO
+        function loadActiveSSLs(equipmentId) {
+            const sslsContainer = document.getElementById('detailSSLs');
+            sslsContainer.innerHTML = '<div class="loading-indicator">Carregando SSLs...</div>';
+            
+            fetch(`/lab/{{area}}/equipamentos/${equipmentId}/ssls`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        sslsContainer.innerHTML = '<p class="no-data">Nenhuma SSL em execução neste equipamento.</p>';
+                        return;
+                    }
+                    
+                    sslsContainer.innerHTML = data.map(ssl => `
+                        <div class="ssl-item">
+                            <span>SSL ${ssl.requestId} - ${ssl.description || 'Sem descrição'}</span>
+                            <a href="/lab/{{area}}/detalhes/${ssl.requestId}" target="_blank">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar SSLs:', error);
+                    sslsContainer.innerHTML = '<p class="error-message">Erro ao carregar SSLs.</p>';
+                });
+        }
+
+        // CARREGAR HISTÓRICO DE STATUS
+        function loadStatusHistory(equipmentId) {
+            const historyContainer = document.getElementById('detailHistory');
+            historyContainer.innerHTML = '<div class="loading-indicator">Carregando histórico...</div>';
+            
+            fetch(`/lab/{{area}}/equipamentos/${equipmentId}/historico`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        historyContainer.innerHTML = '<p class="no-data">Nenhum histórico de status disponível.</p>';
+                        return;
+                    }
+                    
+                    historyContainer.innerHTML = data.map(item => `
+                        <div class="history-item">
+                            <span class="history-status ${item.status}">${getStatusLabel(item.status)}</span>
+                            ${item.event ? `<span class="history-event">${item.event}</span>` : ''}
+                            <span class="history-time">
+                                ${formatDate(item.start_date)} por ${item.register || 'Sistema'}
+                                ${item.comments ? `<br><small>${item.comments}</small>` : ''}
+                            </span>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar histórico:', error);
+                    historyContainer.innerHTML = '<p class="error-message">Erro ao carregar histórico.</p>';
+                });
+        }
+
+
+        // ATUALIZAR SELECT DE TIPOS DE PARADA
+        function updatePauseTypeSelect() {
+            const eventTypeSelect = document.getElementById('eventType');
+            const currentStatus = document.getElementById('newStatus').value;
+            
+            // Limpar opções atuais
+            while (eventTypeSelect.firstChild) {
+                eventTypeSelect.removeChild(eventTypeSelect.firstChild);
+            }
+            
+            // Adicionar opção padrão
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Selecione um evento...';
+            eventTypeSelect.appendChild(defaultOption);
+            
+            // Se status for Disponível, não adicionar eventos
+            if (currentStatus === 'Disponível') {
+                return;
+            }
+            
+            // Filtrar e adicionar tipos de parada para o status selecionado
+            pauseTypes
+                .filter(type => type.active && type.status === currentStatus)
+                .forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.name;
+                    option.textContent = type.name;
+                    eventTypeSelect.appendChild(option);
+                });
+        }
+
+        // RENDERIZAR EQUIPAMENTOS
+        function renderEquipments(equipmentList) {
+            const equipmentGrid = document.getElementById('equipmentGrid');
+            
+            if (!equipmentList || equipmentList.length === 0) {
+                equipmentGrid.innerHTML = `<p class="no-data">Nenhum equipamento encontrado.</p>`;
+                return;
+            }
+            
+            equipmentGrid.innerHTML = equipmentList.map(equip => `
+                <div class="equipment-card ${equip.status}" data-id="${equip.id}">
+                    <div class="card-header">
+                        <h3 class="equipment-name">${equip.name}</h3>
+                        <span class="status-indicator status-${equip.status}">
+                            ${getStatusLabel(equip.status)}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="equipment-info">
+                            <i class="fas fa-clock"></i> Última atualização: ${formatDate(equip.last_update)}
+                        </p>
+                        ${equip.event ? `
+                            <p class="equipment-info">
+                                <i class="fas fa-exclamation-circle"></i> Motivo: ${equip.event}
+                            </p>
+                        ` : ''}
+                    </div>
+                    <div class="card-footer">
+                        <span class="ssl-count">
+                            <i class="fas fa-tasks"></i> ${equip.ssl_count || 0} SSL(s) em execução
+                        </span>
+                        ${equip.event ? `<span class="event-tag">${equip.event}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // RENDERIZAR LISTA DE TIPOS DE PARADA
+        function renderPauseTypesList() {
+            const tbody = document.getElementById('pauseTypesList');
+            
+            if (!pauseTypes || pauseTypes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="loading-cell">Nenhum tipo de parada encontrado.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = pauseTypes.map(type => `
+                <tr>
+                    <td>${type.status || '-'}</td>
+                    <td>${type.name}</td>
+                    <td>${type.description || '-'}</td>
+                    <td>
+                        <span class="status-${type.active ? 'active' : 'inactive'}">
+                            ${type.active ? 'Ativo' : 'Inativo'}
+                        </span>
+                    </td>
+                    <td>
+                        <i class="fas fa-edit action-icon" onclick="editPauseType(${type.id})"></i>
+                        <i class="fas fa-trash-alt action-icon" onclick="confirmDeletePauseType(${type.id})"></i>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // CONFIGURAR EVENT LISTENERS
+        function setupEventListeners() {
+            // Filtro de status
+            document.getElementById('statusFilter').addEventListener('change', filterEquipments);
+            
+            // Busca de equipamentos
+            document.getElementById('searchEquipment').addEventListener('input', filterEquipments);
+            
+            // Clique nos cards de equipamento
+            const equipmentCards = document.querySelectorAll('.equipment-card');
+            equipmentCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const equipmentId = card.dataset.id;
+                    showEquipmentDetails(equipmentId);
+                });
+            });
+
+            // Fechar modais
+            document.querySelectorAll('.overlay-close').forEach(closeBtn => {
+                closeBtn.addEventListener('click', closeAllModals);
+            });
+
+            // Cancelar botões
+            document.getElementById('cancelButton').addEventListener('click', () => {
+                document.getElementById('statusModal').classList.remove('active');
+            });
+
+            document.querySelectorAll('.equipment-cancel-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('equipmentModal').classList.remove('active');
+                });
+            });
+
+
+            // Alternar campos baseados no status selecionado
+            document.getElementById('newStatus').addEventListener('change', toggleEventFields);
+
+            // Botões de ação nos detalhes
+            document.getElementById('updateStatusButton').addEventListener('click', () => {
+                const equipmentId = document.getElementById('detailEquipmentName').dataset.id;
+                showStatusModal(equipmentId);
+            });
+
+            document.getElementById('editEquipmentButton').addEventListener('click', () => {
+                const equipmentId = document.getElementById('detailEquipmentName').dataset.id;
+                showEditEquipmentModal(equipmentId);
+            });
+
+            // Form de atualização de status
+            document.getElementById('statusForm').addEventListener('submit', updateEquipmentStatus);
+
+            // Form de equipamento
+            document.getElementById('equipmentForm').addEventListener('submit', saveEquipment);
+
+            // Botão de exclusão
+            document.getElementById('deleteEquipmentBtn').addEventListener('click', deleteEquipment);
+
+            // Fechar modais ao clicar fora
+            window.addEventListener('click', (event) => {
+                if (event.target.classList.contains('overlay')) {
+                    event.target.classList.remove('active');
+                }
+            });
+
+            // Event listeners para tipos de parada
+            document.getElementById('pauseTypeForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                savePauseType();
+            });
+
+            document.getElementById('deletePauseTypeBtn').addEventListener('click', function() {
+                const typeId = document.getElementById('pauseTypeId').value;
+                if (typeId) {
+                    confirmDeletePauseType(parseInt(typeId));
+                }
+            });
+        }
+
+        // FILTRAR EQUIPAMENTOS
+        function filterEquipments() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchTerm = document.getElementById('searchEquipment').value.toLowerCase();
+            
+            const filteredEquipments = equipments.filter(equip => {
+                const matchesStatus = statusFilter === 'all' || equip.status === statusFilter;
+                const matchesSearch = equip.name.toLowerCase().includes(searchTerm);
+                return matchesStatus && matchesSearch;
+            });
+            
+            renderEquipments(filteredEquipments);
+            setupEventListeners(); // Reconfigurar listeners após renderizar
+        }
+
+        // MOSTRAR DETALHES DO EQUIPAMENTO
+        function showEquipmentDetails(equipmentId) {
+            const modal = document.getElementById('detailsModal');
+            const equipment = equipments.find(e => e.id === parseInt(equipmentId));
+            
+            if (!equipment) return;
+            
+            // Preencher informações básicas
+            document.getElementById('detailEquipmentName').textContent = equipment.name;
+            document.getElementById('detailEquipmentName').dataset.id = equipment.id;
+            
+            const statusBadge = document.getElementById('detailStatus');
+            statusBadge.textContent = getStatusLabel(equipment.status);
+            statusBadge.className = 'status-badge status-' + equipment.status;
+            
+            document.getElementById('detailStatusSince').textContent = formatDate(equipment.last_update);
+            document.getElementById('detailStatusBy').textContent = equipment.updated_by || 'Sistema';
+            
+            // Mostrar ou esconder campos de evento
+            if (equipment.event) {
+                document.getElementById('detailEventContainer').style.display = 'block';
+                document.getElementById('detailEvent').textContent = equipment.event;
+            } else {
+                document.getElementById('detailEventContainer');
+            }
+            
+            // Mostrar ou esconder campos de duração
+            if (equipment.duration) {
+                document.getElementById('detailDurationContainer').style.display = 'block';
+                document.getElementById('detailDuration').textContent = equipment.duration;
+            } else {
+                document.getElementById('detailDurationContainer').style.display = 'none';
+            }
+            
+            // Mostrar ou esconder campos de comentários
+            if (equipment.comments) {
+                document.getElementById('detailCommentsContainer').style.display = 'block';
+                document.getElementById('detailComments').textContent = equipment.comments;
+            } else {
+                document.getElementById('detailCommentsContainer').style.display = 'none';
+            }
+            
+            // Carregar SSLs em execução
+            loadActiveSSLs(equipment.id);
+            
+            // Carregar histórico de status
+            loadStatusHistory(equipment.id);
+            
+            modal.classList.add('active');
+
+        }
+
+        // MOSTRAR MODAL DE TIPOS DE PARADA
+        function showPauseTypesModal() {
+            loadPauseTypes();
+            document.getElementById('pauseTypesModal').classList.add('active');
+        }
+
+        // MOSTRAR MODAL DE NOVO TIPO DE PARADA
+        function showNewPauseTypeModal() {
+            document.getElementById('pauseTypeFormTitle').textContent = 'Novo Tipo de Parada';
+            
+            // Limpar formulário
+            document.getElementById('pauseTypeId').value = '';
+            document.getElementById('pauseTypeStatus').value = '';
+            document.getElementById('pauseTypeName').value = '';
+            document.getElementById('pauseTypeDescription').value = '';
+            
+            // Esconder botão de exclusão e mostrar campo de ativo
+            document.getElementById('deletePauseTypeBtn').classList.add('hidden');
+            document.getElementById('pauseTypeActiveContainer').classList.add('hidden');
+            
+            document.getElementById('pauseTypeFormModal').classList.add('active');
+        }
+
+        // EDITAR TIPO DE PARADA
+        function editPauseType(typeId) {
+            const pauseType = pauseTypes.find(t => t.id === typeId);
+            if (!pauseType) return;
+            
+            document.getElementById('pauseTypeFormTitle').textContent = 'Editar Tipo de Parada';
+            
+            document.getElementById('pauseTypeId').value = pauseType.id;
+            document.getElementById('pauseTypeStatus').value = pauseType.status || '';
+            document.getElementById('pauseTypeName').value = pauseType.name;
+            document.getElementById('pauseTypeName').value = pauseType.name;
+            document.getElementById('pauseTypeDescription').value = pauseType.description || '';
+            document.getElementById('pauseTypeActive').value = pauseType.active ? '1' : '0';
+            
+            // Mostrar botão de exclusão e campo de status
+            document.getElementById('deletePauseTypeBtn').classList.remove('hidden');
+            document.getElementById('pauseTypeActiveContainer').classList.remove('hidden');
+            
+            document.getElementById('pauseTypeFormModal').classList.add('active');
+        }
+
+        // FECHAR FORMULÁRIO DE TIPO DE PARADA
+        function closePauseTypeForm() {
+            document.getElementById('pauseTypeFormModal').classList.remove('active');
+        }
+
+        // CONFIRMAR EXCLUSÃO DE TIPO DE PARADA
+        function confirmDeletePauseType(typeId) {
+            const pauseType = pauseTypes.find(t => t.id === typeId);
+            if (!pauseType) return;
+            
+            if (confirm(`Tem certeza que deseja excluir o tipo de parada "${pauseType.name}"?`)) {
+                deletePauseType(typeId);
+            }
+        }
+
+        // EXCLUIR TIPO DE PARADA
+        function deletePauseType(typeId) {
+            fetch(`/lab/{{area}}/paradas/tipos/${typeId}/excluir`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    showNotification(result.error);
+                    return;
+                }
+                
+                closePauseTypeForm();
+                loadPauseTypes();
+            })
+            .catch(error => {
+                console.error('Erro ao excluir tipo de parada:', error);
+                showNotification('Erro ao processar a solicitação. Por favor, tente novamente.');
+            });
+        }
+
+        // SALVAR TIPO DE PARADA
+        function savePauseType() {
+            const typeId = document.getElementById('pauseTypeId').value;
+            const isEditing = typeId !== '';
+            
+            const data = {
+                status: document.getElementById('pauseTypeStatus').value.trim(),
+                name: document.getElementById('pauseTypeName').value.trim(),
+                description: document.getElementById('pauseTypeDescription').value.trim()
+            };
+            
+            if (!data.status) {
+                showNotification('Selecione o status do equipamento');
+                return;
+            }
+            
+            if (!data.name) {
+                showNotification('Digite o nome do evento');
+                return;
+            }
+            
+            if (isEditing) {
+                data.active = document.getElementById('pauseTypeActive').value === '1';
+            }
+            
+            const url = isEditing
+                ? `/lab/{{area}}/paradas/tipos/${typeId}/atualizar`
+                : `/lab/{{area}}/paradas/tipos`;
+                
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    showNotification(result.error);
+                    return;
+                }
+                
+                closePauseTypeForm();
+                loadPauseTypes();
+            })
+            .catch(error => {
+                console.error('Erro ao salvar tipo de parada:', error);
+                showNotification('Erro ao processar a solicitação. Por favor, tente novamente.');
+            });
+        }
+
+        // MOSTRAR MODAL DE ATUALIZAÇÃO DE STATUS
+        function showStatusModal(equipmentId) {
+            const modal = document.getElementById('statusModal');
+            const equipment = equipments.find(e => e.id === parseInt(equipmentId));
+            
+            if (!equipment) return;
+            
+            document.getElementById('equipmentId').value = equipment.id;
+            document.getElementById('equipmentName').textContent = equipment.name;
+            document.getElementById('currentStatus').textContent = getStatusLabel(equipment.status);
+            document.getElementById('newStatus').value = equipment.status; // Pré-seleciona o status atual
+            document.getElementById('comments').value = '';
+            
+            // Configurar campos de evento baseados no status atual
+            toggleEventFields();
+                
+            modal.classList.add('active');
+        }
+
+        // ALTERNAR CAMPOS BASEADOS NO STATUS
+        function toggleEventFields() {
+            const newStatus = document.getElementById('newStatus').value;
+            const eventContainer = document.getElementById('eventContainer');
+            const eventSelect = document.getElementById('eventType');
+            
+            if (newStatus === 'Disponível') {
+                // Ocultar campo de evento para status Disponível
+                eventContainer.classList.add('hidden');
+                eventSelect.removeAttribute('required');
+            } else {
+                // Mostrar campo de evento para Indisponível, Parado, Manutenção
+                eventContainer.classList.remove('hidden');
+                eventSelect.setAttribute('required', 'required');
+                
+                // Atualizar opções de evento baseado no status selecionado
+                updatePauseTypeSelect();
+            }
+        }
+
+        // ATUALIZAR STATUS DO EQUIPAMENTO
+        function updateEquipmentStatus(event) {
+            event.preventDefault();
+            
+            const equipmentId = document.getElementById('equipmentId').value;
+            const newStatus = document.getElementById('newStatus').value;
+            let eventType = null;
+            const comments = document.getElementById('comments').value.trim();
+            
+            if (newStatus !== 'Disponível') {
+                eventType = document.getElementById('eventType').value;
+            }
+            
+            const data = {
+                equipmentId: parseInt(equipmentId),
+                status: newStatus,
+                event: eventType,
+                comments: comments
+            };
+            
+            fetch(`/lab/{{area}}/equipamentos/atualizar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    // Mostrar a mensagem de erro completa retornada pelo backend
+                    showNotification(result.error);
+                    return;
+                }
+                
+                // Fechar modal e recarregar dados
+                closeAllModals();
+                loadEquipments();
+            })
+            .catch(error => {
+                console.error('Erro ao atualizar status:', error);
+                showNotification('Erro ao processar a solicitação. Por favor, tente novamente.');
+            });
+        }
+
+        // MOSTRAR MODAL DE NOVO EQUIPAMENTO
+        function showNewEquipmentModal() {
+            const modal = document.getElementById('equipmentModal');
+            document.getElementById('equipmentModalTitle').textContent = 'Novo Equipamento';
+            
+            // Limpar formulário
+            document.getElementById('equipmentFormId').value = '';
+            document.getElementById('equipmentFormName').value = '';
+            document.getElementById('equipmentFormDescription').value = '';
+            document.getElementById('equipmentFormStatus').value = 'Disponível';
+
+            // Mostrar o campo de status inicial ao criar novo equipamento
+            const statusGroup = document.getElementById('equipmentFormStatus').closest('.form-group');
+            statusGroup.style.display = 'block';
+            
+            // Esconder botão de exclusão
+            document.getElementById('deleteEquipmentBtn').classList.add('hidden');
+            
+            modal.classList.add('active');
+        }
+
+        // MOSTRAR MODAL DE EDIÇÃO DE EQUIPAMENTO
+        function showEditEquipmentModal(equipmentId) {
+            const modal = document.getElementById('equipmentModal');
+            document.getElementById('equipmentModalTitle').textContent = 'Editar Equipamento';
+            
+            // Carregar dados do equipamento
+            fetch(`/lab/{{area}}/equipamentos/${equipmentId}`)
+                .then(response => response.json())
+                .then(equipment => {
+                    document.getElementById('equipmentFormId').value = equipment.id;
+                    document.getElementById('equipmentFormName').value = equipment.name;
+                    document.getElementById('equipmentFormDescription').value = equipment.description || '';
+                    document.getElementById('equipmentFormStatus').value = equipment.status;
+
+                    // Esconder o campo de status inicial ao editar
+                    const statusGroup = document.getElementById('equipmentFormStatus').closest('.form-group');
+                    statusGroup.style.display = 'none';
+                    
+                    // Mostrar botão de exclusão
+                    document.getElementById('deleteEquipmentBtn').classList.remove('hidden');
+                    
+                    modal.classList.add('active');
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar detalhes do equipamento:', error);
+                    showNotification('Erro ao carregar detalhes do equipamento. Por favor, tente novamente.');
+                });
+        }
+
+        // SALVAR EQUIPAMENTO (NOVO OU EDITADO)
+        function saveEquipment(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('equipmentFormId').value;
+            const data = {
+                name: document.getElementById('equipmentFormName').value.trim()
+                , description: document.getElementById('equipmentFormDescription').value.trim()
+                , area_id: '{{areaId}}'
+                , status: document.getElementById('equipmentFormStatus').value
+            };
+            
+            const isEditing = id !== '';
+            const url = isEditing 
+                ? `/lab/{{area}}/equipamentos/${id}/atualizar` 
+                : `/lab/{{area}}/equipamentos/novo`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    showNotification(result.error);
+                    return;
+                }
+                
+                // Fechar modal e recarregar dados
+                document.getElementById('equipmentModal').classList.remove('active');
+                loadEquipments();
+            })
+            .catch(error => {
+                console.error('Erro ao salvar equipamento:', error);
+                showNotification('Erro ao processar a solicitação. Por favor, tente novamente.');
+            });
+        }
+
+        // EXCLUIR EQUIPAMENTO
+        function deleteEquipment() {
+            const id = document.getElementById('equipmentFormId').value;
+            
+            if (!id) return;
+            
+            if (!confirm('Tem certeza que deseja excluir este equipamento? Esta ação não pode ser desfeita.')) {
+                return;
+            }
+            
+            fetch(`/lab/{{area}}/equipamentos/${id}/excluir`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    showNotification(result.error);
+                    return;
+                }
+                
+                // Fechar modal e recarregar dados
+                document.getElementById('equipmentModal').classList.remove('active');
+                loadEquipments();
+            })
+            .catch(error => {
+                console.error('Erro ao excluir equipamento:', error);
+                showNotification('Erro ao processar a solicitação. Por favor, tente novamente.');
+            });
+        }
+
+        // UTILITÁRIOS
+
+        function closeAllModals() {
+            document.querySelectorAll('.overlay').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'Disponível': 'Disponível',
+                'Indisponível': 'Indisponível',
+                'Parado': 'Parado'
+            };
+            return labels[status] || status;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            
+            const date = new Date(dateString);
+            return new Intl.DateTimeFormat('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(date);
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('active');
+            
+            // Adicionar classe de erro se a mensagem contiver palavras específicas
+            if (message.toLowerCase().includes('erro') || message.toLowerCase().includes('não é permitido')) {
+                notification.classList.add('error');
+                // Para erros, mostrar por mais tempo (5 segundos)
+                setTimeout(() => {
+                    notification.classList.remove('active');
+                    notification.classList.remove('error');
+                }, 5000);
+            } else {
+                // Para mensagens normais, mostrar por 3 segundos
+                setTimeout(() => {
+                    notification.classList.remove('active');
+                }, 3000);
+            }
+        }
+
+    </script>
+</body>
+</html>

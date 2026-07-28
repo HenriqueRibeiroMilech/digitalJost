@@ -1,0 +1,44 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+
+</head>
+
+<body id="gestao_body" onload="loadPage()">
+    <div class="select_div">
+        <a class="title" id="select_back" style="transform:translate(0, -10%);" href="/demandas?area={{area}}">&times;</a>
+        <p class="select_title" id="test" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{area}}</p>
+        <p class="select_desc" style="overflow:hidden;white-space:nowrap;transform: translate(0, -50%);">Tarefas
+            <button class="add_btn" onclick="window.location='/demandas?area={{area}}'">Gestão de demandas</button>
+        </p>
+        
+        <form id="filters" method="post" action="">
+            <input autocomplete="off" type="text" class="filter" id="titulo" name="titulo" onkeyup="myFunction()" placeholder='Filtrar por DEMANDA'>
+            <input autocomplete="off" type="text" class="filter" id="tarefa" name="tarefa" onkeyup="myFunction()" placeholder='Filtrar por TAREFA'>
+            <input autocomplete="off" type="text" class="filter" id="responsavel" name="responsavel" onkeyup="myFunction()" list="opcoes" placeholder="Filtrar por RESPONSÁVEL">
+            <datalist id="opcoes"></datalist>
+            <div id="list1" style="display: inline-block" class="filter">
+                <span class="anchor">Filtrar por STATUS</span>
+                <ul class="items">
+                    <li><input type="checkbox" checked id="andamento" onchange="myFunction()" name="andamento"/> Andamento</li>
+                    <li><input type="checkbox" checked id="atrasado" onclick="myFunction()" name="atrasado"/> Atrasado</li>
+                    <li><input type="checkbox" id="concluido" name="concluido" onclick="myFunction()"/> Concluído</li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <form id="table_form" method="post" action="">
+        <div id="table-container" style="margin-left:2%;margin-right:2%;">
+        </div>
+    </form>
+</body>
+
+<script>
+    {% include 'demands/demands_task_principal.js' %}
+</script>
+{% endblock %}

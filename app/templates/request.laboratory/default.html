@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: normal;
+            margin: 5px 0;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .area {
+            flex: 1;
+            background-color: rgba(240, 240, 240, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            justify-content: center;
+        }
+
+        .area h3 {
+            color: #153A8A;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .area .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centraliza os botões horizontalmente */
+            gap: 10px;
+        }
+
+        .area .button-container button {
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #153A8A;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;  /* Faz todos os botões terem a mesma largura */
+            max-width: 250px;
+        }
+
+        .area .button-container button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .footer-button {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #153A8A;
+            padding: 15px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 1vh;
+        }
+
+        .footer-button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+        
+        /* Estilo para estatísticas do usuário */
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        /* Nova tabela de estatísticas */
+        .stats-table {
+            margin: 10px auto;
+            border-collapse: collapse;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 250px;
+            background-color: white;
+        }
+
+        .stats-table caption {
+            font-weight: bold;
+            padding: 6px;
+            background-color: #153A8A;
+            color: white;
+            font-size: 14px;
+        }
+
+        .stats-table th, .stats-table td {
+            padding: 6px 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 12px;
+        }
+
+        .stats-table th {
+            background-color: #f5f5f5;
+            font-weight: normal;
+            color: #555;
+        }
+
+        .stats-table td:last-child {
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status-0 { color: #dcaa0c; } /* Aguardando Amostra */
+        .status-1 { color: #163A8A; } /* Fila de Espera */
+        .status-2 { color: #3ea93e; } /* Em Desenvolvimento */
+        .status-3 { color: #000000; } /* Aguardando Retirada */
+        .status-4 { color: #228C22; } /* Concluída */
+        .status-5 { color: red; } /* Cancelada */
+        .total { color: #153A8A; } /* Total */
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <h1>Solicitações de Serviço de Laboratório</h1>
+        <h2>Escolha uma área para solicitar serviços ou visualizar o painel de controle.</h2>
+
+        <!-- Primeira linha: Áreas -->
+        <div class="row">
+            <!-- Área Dimensional -->
+            <div class="area">
+                <h3>Dimensional</h3>
+                <div class="button-container">
+                    <button onclick="window.location='/lab/dimensional/solicitar'">Solicitar Serviço</button>
+                    <button onclick="window.location='/lab/dimensional/quadro'">Painel de Visualização</button>
+                    <button onclick="window.location='/lab/dimensional/gerenciar'">Painel de Controle</button>
+                    <button onclick="window.location='/lab/dimensional/equipamentos'">Disponibilidade de Equipamentos</button>
+                    <button onclick="window.location='/lab/dimensional/indicadores'">Indicadores</button>
+                </div>
+            </div>
+
+            <!-- Área Material -->
+            <div class="area">
+                <h3>Material</h3>
+                <div class="button-container">
+                    <button onclick="window.location='/lab/material/solicitar'">Solicitar Serviço</button>
+                    <button onclick="window.location='/lab/material/quadro'">Painel de Visualização</button>
+                    <button onclick="window.location='/lab/material/gerenciar'">Painel de Controle</button>
+                    <button onclick="window.location='/lab/material/equipamentos'">Disponibilidade de Equipamentos</button>
+                    <button onclick="window.location='/lab/material/indicadores'">Indicadores</button>
+                </div>
+            </div>
+
+            <!-- Área Experimental -->
+            <div class="area">
+                <h3>Experimental</h3>
+                <div class="button-container">
+                    <button onclick="window.location='/lab/experimental/solicitar'">Solicitar Serviço</button>
+                    <button onclick="window.location='/lab/experimental/quadro'">Painel de Visualização</button>
+                    <button onclick="window.location='/lab/experimental/gerenciar'">Painel de Controle</button>
+                    <button onclick="window.location='/lab/experimental/equipamentos'">Disponibilidade de Equipamentos</button>
+                    <button onclick="window.location='/lab/experimental/indicadores'">Indicadores</button>
+                </div>
+            </div>
+
+            <!-- Área Minhas Solicitações -->
+            <div class="area">
+                <h3>Minhas Solicitações</h3>
+                <!-- Tabela de estatísticas de SSLs do usuário -->
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Qtd</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Aguardando Amostra</td>
+                            <td class="status-0">{{ stats.status_0 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Fila de Espera</td>
+                            <td class="status-1">{{ stats.status_1 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Em Desenvolvimento</td>
+                            <td class="status-2">{{ stats.status_2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Aguardando Retirada</td>
+                            <td class="status-3">{{ stats.status_3 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Concluídas</td>
+                            <td class="status-4">{{ stats.status_4 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Canceladas</td>
+                            <td class="status-5">{{ stats.status_5 }}</td>
+                        </tr>
+                        <tr style="background-color: #f5f5f5;">
+                            <td><strong>Total</strong></td>
+                            <td class="total">{{ stats.total }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Segunda linha: Geral, Minhas Solicitações e Administrador -->
+        <div class="row">
+            <!-- Área Geral -->
+            <div class="area">
+                <h3>Geral</h3>
+                <div class="button-container">
+                    <button class="footer-button" onclick="window.location='/lab/consultar'">Consultar Solicitações</button>
+                </div>
+            </div>
+
+            <!-- Área Administrador -->
+            <div class="area">
+                <h3>Administrador</h3>
+                <div class="button-container">
+                    <button class="footer-button" onclick="window.location='/lab/motivos'">Motivos de Solicitações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

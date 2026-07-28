@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sidebar {
+            width: 12vw;
+            background-color: #153A8A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar-text {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .sidebar button {
+            background-color: white;
+            color: #153A8A;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 1em;
+            width: 80%;
+        }
+
+        .sidebar button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .legend {
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .legend p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .legend .color-box {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            flex-grow: 1;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .area {
+            flex: 1;
+            padding-top: 0;
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+            overflow-y:hidden;
+
+        }
+
+        .area:first-child {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .area:last-child {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .area-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            width: 100%;
+            position: sticky;
+            top: 0;
+            background-color: #f4f4f4;
+            z-index: 1;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .event-box {
+            width: 86%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .event-box p {
+            margin: 5px 0;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        .border-yellow {
+            border-left: 10px solid yellow;
+        }
+
+        .border-orange {
+            border-left: 10px solid orange;
+        }
+
+        .border-red {
+            border-left: 10px solid red;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 60%;
+            max-width: 700px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .title {
+            margin-bottom: 10px;
+            font-size: 2em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .filter-checkbox {
+            margin: 10px;
+            font-size: 1.5em;
+            width: 45%;
+            text-align: left;
+        }
+
+        .filter-checkbox input {
+            transform: scale(1.5);
+        }
+
+        .apply-button {
+            background-color: white;
+            color: #153A8A;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        .apply-button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+            z-index: 5;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .teams-button {
+            margin-top: auto;
+        }
+
+        .border-processos {
+            border-right: 10px solid #007BFF;
+        }
+
+        .border-qualidade {
+            border-right: 10px solid #DC3545;
+        }
+
+        .border-producao {
+            border-right: 10px solid #6610F2;
+        }
+
+        .border-logistica {
+            border-right: 10px solid #17A2B8;
+        }
+
+        .border-manutencao {
+            border-right: 10px solid #6C757D;
+        }
+
+        .border-sem-justificativa {
+            border-right: 10px solid #FFC107;
+        }
+        
+        .border-transformacao-digital {
+            border-right: 10px solid #28A745;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/monitoramento'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-text">Alerta de<br>Paradas</div>
+        
+        <div class="legend">
+            <p style="width: 100%;text-align: center;margin-top: 2vh;">Método</p>
+            <div id='motive'>
+                <p><span class="color-box" style="background-color: #007BFF;"></span>Processos</p>
+                <p><span class="color-box" style="background-color: #DC3545;"></span>Qualidade</p>
+                <p><span class="color-box" style="background-color: #6610F2;"></span>Produção</p>
+                <p><span class="color-box" style="background-color: #17A2B8;"></span>Logística</p>
+                <p><span class="color-box" style="background-color: #6C757D;"></span>Manutenção</p>
+                <p><span class="color-box" style="background-color: #28A745;"></span>Transf. Digital</p>
+                <p><span class="color-box" style="background-color: #FFC107;"></span>Sem Justificativa</p>
+            </div>
+        </div>
+        <button onclick="openModal('filterModal')">Filtrar Dados</button>
+
+        <button class="teams-button" onclick="window.location='/usuarios/alertas?origin=monitoring'">Paradas via Teams</button>
+    </div>
+
+    <div class="container">
+        <div id="montagem" class="area">
+            <div class="area-title">MONTAGEM</div>
+        </div>
+        <div id="prefabricacao" class="area">
+            <div class="area-title">PRÉ-FABRICAÇÃO</div>
+        </div>
+        <div id="soldagem" class="area">
+            <div class="area-title">SOLDAGEM</div>
+        </div>
+        <div id="usinagem" class="area">
+            <div class="area-title">USINAGEM</div>
+        </div>
+    </div>
+
+    <div id="filterModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('filterModal')" class="close">&times;</span>
+            <p class="title">Selecione as áreas:</p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+                <label class="filter-checkbox"><input type="checkbox" value="Processos"> Processos</label>
+                <label class="filter-checkbox"><input type="checkbox" value="Qualidade"> Qualidade</label>
+                <label class="filter-checkbox"><input type="checkbox" value="Produção"> Produção</label>
+                <label class="filter-checkbox"><input type="checkbox" value="Logística"> Logística</label>
+                <label class="filter-checkbox"><input type="checkbox" value="Manutenção"> Manutenção</label>
+                <label class="filter-checkbox"><input type="checkbox" value="Sem Justificativa"> Sem Justificativa</label>
+                <label class="filter-checkbox"><input type="checkbox" value="Transformação Digital"> Transformação Digital</label>
+            </div>
+            <button class="apply-button" onclick="applyFilters()">Aplicar</button>
+        </div>
+    </div>
+
+    <script>
+        // Função para abrir o modal de filtros
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+    
+        // Função para fechar o modal de filtros, agora verifica se há filtros selecionados
+        function closeModal(id) {
+            const selectedFilters = document.querySelectorAll('.filter-checkbox input:checked').length;
+            if (selectedFilters > 0) {
+                document.getElementById(id).style.display = 'none';
+            }
+        }
+
+        var first = true;
+        var scrollIntervalId; // Variable to store the interval ID
+        function applyFilters() {
+            const statusFilter = ['ERROR'];
+            document.querySelectorAll('.filter-checkbox input:checked').forEach((checkbox) => {
+                if (checkbox.value == 'Produção') {
+                    statusFilter.push('Mão de Obra');
+                    statusFilter.push('Programada');                
+                } else if (checkbox.value == 'Logística') {
+                    statusFilter.push('Material');
+                    statusFilter.push('Movimentação');
+                } else {
+                    statusFilter.push(checkbox.value);
+                }
+            });
+
+    
+            if (statusFilter.length > 1) {
+                updateLegend(statusFilter); // Atualiza a legenda
+                const filterData = JSON.stringify({ statusFilter: statusFilter });
+    
+                // Enviando os filtros para a rota /monitoramento/paradas
+                fetch('/monitoramento/paradas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: filterData
+                }).then(response => response.json()).then(data => {
+                    renderData(data);  // Renderizando os dados recebidos
+                });
+    
+                closeModal('filterModal');
+            }
+
+            if (first) {
+                setInterval(loadData, 30000); // Carrega os dados a cada 30 segundos
+                first = false
+            }
+        }
+
+        function updateLegend(selectedFilters) {
+
+            const legendItems = document.querySelectorAll('#motive p');
+            legendItems.forEach(item => {
+
+                if (item.innerText == 'Produção' && selectedFilters.includes('Mão de Obra')) {
+                    item.style.display = 'block';              
+                } else if (item.innerText == 'Logística' && selectedFilters.includes('Material')) {
+                    item.style.display = 'block';              
+                } else if (selectedFilters.includes(item.innerText)) {
+                    item.style.display = 'block';
+                } else if (item.innerText == 'Transf. Digital' && selectedFilters.includes('Transformação Digital')) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Função para aplicar o efeito de scroll nas áreas
+        function applyScrollEffect() {
+            // Clear any existing scroll interval
+            if (scrollIntervalId) {
+                clearInterval(scrollIntervalId);
+            }
+
+            const areas = document.querySelectorAll('.area');
+
+            areas.forEach(area => {
+                const areaContentHeight = area.scrollHeight;
+                const areaHeight = area.clientHeight;
+
+                if (areaContentHeight > areaHeight) {
+                    const totalScrollHeight = areaContentHeight - areaHeight;
+                    const itemCount = area.querySelectorAll('.event-box').length;
+                    const itemScrollDuration = Math.max(1000, 5000 / itemCount); // Adjust duration based on number of items
+                    const scrollDuration = itemScrollDuration * itemCount;
+                    const scrollPauseDuration = 10000; // 10 segundos de pausa
+
+                    const smoothScroll = (start, end, duration) => {
+                        const startTime = performance.now();
+
+                        const animateScroll = currentTime => {
+                            const elapsedTime = currentTime - startTime;
+                            const progress = Math.min(elapsedTime / duration, 1);
+
+                            area.scrollTop = start + (end - start) * progress;
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animateScroll);
+                            }
+                        };
+
+                        requestAnimationFrame(animateScroll);
+                    };
+
+                    const startScrollEffect = () => {
+                        // Scroll down over calculated duration
+                        smoothScroll(0, totalScrollHeight, scrollDuration);
+
+                        setTimeout(() => {
+                            // Pause at the bottom
+                            setTimeout(() => {
+                                // Scroll back to the top immediately
+                                area.scrollTop = 0;
+                            }, scrollPauseDuration);
+                        }, scrollDuration);
+                    };
+
+                    // Initial pause at the top
+                    setTimeout(startScrollEffect, scrollPauseDuration);
+                }
+            });
+        }
+
+        // Função para renderizar os dados nas áreas corretas
+        function renderData(data) {
+            document.getElementById('montagem').innerHTML = '<div class="area-title">MONTAGEM</div>';
+            document.getElementById('prefabricacao').innerHTML = '<div class="area-title">PRÉ-FABRICAÇÃO</div>';
+            document.getElementById('soldagem').innerHTML = '<div class="area-title">SOLDAGEM</div>';
+            document.getElementById('usinagem').innerHTML = '<div class="area-title">USINAGEM</div>';
+
+            const areas = {
+                'MONTAGEM': document.getElementById('montagem'),
+                'PRÉ-FABRICAÇÃO': document.getElementById('prefabricacao'),
+                'SOLDAGEM': document.getElementById('soldagem'),
+                'USINAGEM': document.getElementById('usinagem')
+            };
+
+            data.forEach(event => {
+                const { Workcenter, Event, Log_Duration, Responsible } = event;
+                const durationParts = Log_Duration.split(':');
+                const durationMinutes = parseInt(durationParts[0]) * 60 + parseInt(durationParts[1]);
+
+                // Define a cor adicional com base no status
+                let statusClass = '';
+                if (Responsible === 'Processos') {
+                    statusClass = 'border-processos';
+                } else if (Responsible === 'Qualidade') {
+                    statusClass = 'border-qualidade';
+                } else if (Responsible === 'Mão de Obra' || Responsible === 'Programada') {
+                    statusClass = 'border-producao';
+                } else if (Responsible === 'Material' || Responsible === 'Movimentação') {
+                    statusClass = 'border-logistica';
+                } else if (Responsible === 'Manutenção') {
+                    statusClass = 'border-manutencao';
+                } else if (Responsible === 'Sem Justificativa') {
+                    statusClass = 'border-sem-justificativa';
+                } else if (Responsible === 'Transformação Digital') {
+                    statusClass = 'border-transformacao-digital';
+                }
+
+                const areaName = event.Workcenter_Group.toUpperCase();
+                if (areas[areaName]) {
+                    const eventBox = document.createElement('div');
+                    eventBox.className = `event-box ${statusClass}`;
+                    eventBox.innerHTML = `
+                        <p>${Workcenter}</p>
+                        <p>${Event}<br>Duração: ${Log_Duration}</p>
+                    `;
+                    areas[areaName].appendChild(eventBox);
+                }
+            });
+
+            applyScrollEffect();
+        }
+
+        // Função para carregar os dados a cada 30 segundos
+        function loadData() {
+            applyFilters(); // Isso chamará renderData dentro dele
+        }
+    
+        // Inicializa o carregamento de dados
+        window.onload = function() {
+            const filter = {{preload | tojson}};
+            if (filter['load'].length != 0) {
+                const labels = document.querySelectorAll('.filter-checkbox');
+                filter['load'].forEach(index => {
+                const label = labels[index];
+                    const checkbox = label.querySelector('input[type="checkbox"]');
+                    checkbox.checked = true;
+                });
+                loadData();
+
+            } else {
+                openModal('filterModal');
+            }
+        };
+    </script>
+    
+</body>
+</html>

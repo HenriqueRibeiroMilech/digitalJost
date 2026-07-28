@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 45%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        table td button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        table td button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 30px;
+            border: none;
+            width: 60%;
+            max-width: 1200px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content .title {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .modal-content label {
+            font-size: 1.2em;
+            display: block;
+            margin-bottom: 10px;
+            color: #E0E0E0;
+        }
+
+        .modal-content input, .modal-content select {
+            width: 70%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .modal-content button {
+            background-color: #E0E0E0;
+            color: #153A8A;
+            border: none;
+            border-radius: 5px;
+            padding: 15px 30px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            margin: 10px;
+        }
+
+        .modal-content button:hover {
+            background-color: #3563c8;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/usuarios'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <h1>Usuários com Pendências</h1>
+        <div class="filter-container">
+            <input type="text" id="filterUserId" placeholder="Filtrar por ID do Usuário" onkeyup="filterTable()">
+            <input type="text" id="filterUserName" placeholder="Filtrar por Nome do Funcionário" onkeyup="filterTable()">
+        </div>
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table>
+                <thead>
+                    <tr>
+                        <th>USUÁRIO</th>
+                        <th>NOME DO FUNCIONÁRIO</th>
+                        <th>EMAIL DA EMPRESA</th>
+                        <th>SOLICITAÇÃO</th>
+                        <th>DATA DE PENDÊNCIA</th>
+                        <th>STATUS DA SOLICITAÇÃO</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Modal Criar Usuário -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('createUserModal')" class="close">&times;</span>
+            <p class="title">Confirmar Criação de Usuário</p>
+            <p>Tem certeza de que deseja criar este usuário?</p>
+            <button onclick="allowUser(1)">Autorizar acesso</button>
+            <button onclick="allowUser(2)">Negar acesso</button>
+        </div>
+    </div>
+
+    <!-- Modal Configurar Departamento -->
+    <div id="configDepartmentModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('configDepartmentModal')" class="close">&times;</span>
+            <p class="title">Configurar Departamento do Usuário</p>
+            <div style='float:left;width: 50%;'>
+                <label for="department">Departamento novo:</label>
+                <input type="text" style="width: 50%;" id="department" readonly>
+                <label for="area">Selecione a área relacionada:</label>
+                <select id="area">
+                    {% for area in areas %}
+                    <option value="{{area.areaId}}">
+                        {{area.name}}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style='float:right;width: 50%;'>
+
+                <div style='height: 30vh;width: 30vw;overflow-y: auto;'>         
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ÁREA</th>
+                                <th>MAT. CHEFE</th>
+                                <th>MAT. LÍDER</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for area in areasBoss %}
+                            <tr>
+                                <td>{{area.name}}</td>
+                                <td>{{area.managerId}}</td>
+                                <td>{{area.leaderId}}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div> 
+            </div>     
+            <button onclick="confirmConfigDepartment()">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const tableData = JSON.parse({{ table | tojson }});
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';  // Limpa o conteúdo anterior
+
+            data.forEach(user => {
+                const row = document.createElement('tr');
+
+                // Coluna USUÁRIO
+                let cell = document.createElement('td');
+                cell.textContent = user['userId'];
+                row.appendChild(cell);
+
+                // Coluna NOME DO FUNCIONÁRIO
+                cell = document.createElement('td');
+                cell.textContent = user['name'];
+                row.appendChild(cell);
+
+                // Coluna EMAIL DA EMPRESA
+                cell = document.createElement('td');
+                cell.textContent = user['companyEmail'];
+                row.appendChild(cell);
+
+                // Coluna SOLICITAÇÃO
+                cell = document.createElement('td');
+                cell.textContent = user['type'] === '0' ? 'Criação de Usuário' : 'Configuração de Departamento';
+                row.appendChild(cell);
+
+                // Coluna DATA DE PENDÊNCIA
+                cell = document.createElement('td');
+                cell.textContent = user['requestDate'];
+                row.appendChild(cell);
+
+                // Coluna STATUS DA SOLICITAÇÃO
+                cell = document.createElement('td');
+                if (user['type'] === '0' && user['status'] === 0) {
+                    const button = document.createElement('button');
+                    button.textContent = 'Autorizar/Negar Acesso';
+                    button.onclick = () => openModal('createUserModal', null, user['userId']);
+                    cell.appendChild(button);
+                } else if (user['type'] === '0' && user['status'] === 1) {
+                    const button = document.createElement('button');
+                    button.textContent = 'Usuário Criado';
+                    button.disabled = true;
+                    cell.appendChild(button);
+                } else if (user['type'] === '0' && user['status'] === 2) {
+                    const button = document.createElement('button');
+                    button.textContent = 'Acesso negado';
+                    button.disabled = true;
+                    cell.appendChild(button);
+                } else if (user['type'] !== '0' && user['status'] === 0) {
+                    const button = document.createElement('button');
+                    button.textContent = 'Configurar Departamento do Usuário';
+                    button.onclick = () => openModal('configDepartmentModal', user['type'], user['userId']);
+                    cell.appendChild(button);
+                } else {
+                    const button = document.createElement('button');
+                    button.textContent = 'Departamento do Usuário Cadastrado';
+                    button.disabled = true;
+                    cell.appendChild(button);
+                }
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        var userId;
+        function openModal(modalId, info, user) {
+            document.getElementById(modalId).style.display = 'flex';
+            userId = user
+            if (info) {
+                document.getElementById("department").value = info
+
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+
+        function allowUser(create) {
+            fetch('/usuarios/configurar?type=allow', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({info: create, userId: userId})
+            })
+            .then(response => {
+                window.location.reload()
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function confirmConfigDepartment() {
+            const departmentName = document.getElementById('department').value;
+            const areaId = document.getElementById('area').value;
+
+            fetch('/usuarios/configurar?type=department', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({info: 1, departmentName: departmentName, areaId: areaId, userId: userId})
+            })
+            .then(response => {
+                window.location.reload()
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });        
+        }
+
+        function filterTable() {
+            const userIdInput = document.getElementById('filterUserId').value.toLowerCase();
+            const userNameInput = document.getElementById('filterUserName').value.toLowerCase();
+            const filteredData = tableData.filter(user => 
+                user['userId'].toLowerCase().includes(userIdInput) &&
+                user['name'].toLowerCase().includes(userNameInput)
+            );
+            populateTable(filteredData);
+        }
+
+        // Inicializa a tabela com os dados ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => populateTable(tableData));
+    </script>
+</body>
+</html>

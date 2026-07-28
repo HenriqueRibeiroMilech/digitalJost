@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2em;
+            margin-bottom: 10px;
+            margin-top: 0;
+            align-items: center;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: normal;
+            margin: 10px 0;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            width: 96%;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .small-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .general-info {
+            width: 60%;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+            height: auto;
+        }
+
+        .general-info h2 {
+            text-align: left;
+            color: #153A8A;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .general-info p {
+            margin: 5px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .left {
+            grid-column: 1;
+        }
+
+        .right {
+            grid-column: 2;
+        }
+
+        .description {
+            grid-column: span 2;
+            max-height: 15vh;
+            overflow: auto;
+        }
+
+        .tables-container {
+            width: 100%;
+            height: 40vh;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5em;
+            color: #153A8A;
+            margin: 0;
+            text-align: left;
+        }
+
+        .section-header input {
+            width: 20%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #153A8A;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+            margin: 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .selected-row {
+            background-color: #dddddd;
+            font-weight: bold;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .form-input, select, textarea {
+            width: calc(100% - 30px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 5px; /* Espaço menor entre o label e o campo */
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px; /* Espaço entre os elementos */
+            align-items: flex-start; /* Mantém o label acima do campo */
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            display: flex;
+            flex-direction: column; /* Coloca o label acima do campo */
+            flex: 1; /* Faz com que os elementos ocupem espaço igual */
+            min-width: 0; /* Previne que inputs fiquem muito grandes */
+        }
+
+        .form-row label {
+            font-size: 0.9em; /* Reduz o tamanho do label para economizar espaço */
+            margin-bottom: 5px; /* Espaço menor entre o label e o campo */
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f9f9f9;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 5px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            font-size: 0.9rem;
+            min-width: 200px;
+            white-space: normal;
+        }
+
+        span:hover .tooltip {
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/op/plano'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="section-header" style="margin: 0;">
+            <h1>Cadastrar - Metas</h1>
+            <h1>Operation Meeting</h1>
+        </div>
+
+        <div class="small-container">
+            <div class="general-info" style="position: relative;">
+                <div class="section-header">
+                    <h2 style="font-weight: bold;">{{areaName}} - Geral</h2>
+                    <button onclick="openModal('modalGeneralGoal')" id="editGeneralGoal">Editar</button>
+                </div>
+                <p>Página para gerenciar as metas de operation meeting.</p>
+                <p>Você também pode adicionar metas especificas para um centro de trabalho.</p>
+
+                <div class="section-header">
+                    <h2>Pré-Fabricação</h2>
+                    <p>Meta: <span id="area3">xx</span></p>
+                </div>
+                <div class="section-header">
+                    <h2>Soldagem</h2>
+                    <p>Meta: <span id="area2">xx</span></p>
+                </div>
+                <div class="section-header">
+                    <h2>Usinagem</h2>
+                    <p>Meta: <span id="area1">xx</span></p>
+                </div>
+                <div class="section-header">
+                    <h2>Montagem</h2>
+                    <p>Meta: <span id="area0">xx</span></p>
+                </div>
+            </div>
+
+            <div class="tables-container">
+                <div class="section-header">
+                    <h2>Metas Especificas</h2>
+                    <input type="text" id="filter1" placeholder="Filtrar - Motivo de Parada" onkeyup="filterTable()">
+                    <input type="text" id="filter2" placeholder="Filtrar - Centro de Trabalho" onkeyup="filterTable()">
+                    <button onclick="openModal('modalAddSpecificGoal')" id="addSpecificGoal">Adicionar Nova Meta</button>
+                </div>
+                <div style="height: 80%;overflow-y: auto;">
+                    <table id="specificTable">
+                        <thead>
+                            <tr>
+                                <th>Motivo de Parada</th>
+                                <th>Centro de Trabalho</th>
+                                <th>Tipo</th>
+                                <th>Meta</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Filled by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalGeneralGoal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span onclick="closeModal('modalGeneralGoal')" class="close">&times;</span>
+            <h1 style="margin-top: 0;color: white;">Editar - Metas Gerais</h1>
+
+            <form id="general-goal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="presentation-area3">Pré-Fabricação</label>
+                        <input step="0.1" class="form-input" type="number" id="presentation-area3" name="presentation-area3" min="0" max="100" placeholder="Informe um valor entre (0, 100)" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="presentation-area2">Soldagem</label>
+                        <input step="0.1" class="form-input" type="number" id="presentation-area2" name="presentation-area2" min="0" max="100" placeholder="Informe um valor entre (0, 100)" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="presentation-area1">Usinagem</label>
+                        <input step="0.1" class="form-input" type="number" id="presentation-area1" name="presentation-area1" min="0" max="100" placeholder="Informe um valor entre (0, 100)" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="presentation-area0">Montagem</label>
+                        <input step="0.1" class="form-input" type="number" id="presentation-area0" name="presentation-area0" min="0" max="100" placeholder="Informe um valor entre (0, 100)" required>
+                    </div>
+                </div>
+                        
+
+                <button type="submit" style="background-color: black;">Editar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalAddSpecificGoal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span onclick="closeModal('modalAddSpecificGoal')" class="close">&times;</span>
+            <h1 style="margin-top: 0;color: white;">Adicionar Meta Especifica</h1>
+
+            <form id="specific-goal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="specific-type">Selecione o Tipo de Meta</label>
+                        <select id="specific-type" required>
+                            <option value="" disabled selected>Selecione um tipo</option>
+                            <option value='0'>Por minutos</option>
+                            <option value='1'>Por porcentagem</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="specific-event">Selecione o Motivo de Parada</label>
+                        <select id="specific-event" required>
+                            <option value="" disabled selected>Selecione um motivo</option>
+                            {% for event in events %}
+                            <option value="{{event.Code}}">{{event.Code}}-{{event.Description}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="specific-workcenter">Selecione o Centro de Trabalho</label>
+                        <select id="specific-workcenter" required>
+                            <option value="" disabled selected>Selecione um centro de trabalho</option>
+                            {% for workcenter in workcenters %}
+                            <option value="{{workcenter.Workcenter_Key}}">{{workcenter.Workcenter_Code}}-{{workcenter.Name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="specific-goal">Meta</label>
+                        <input step="0.1" class="form-input" type="number" id="specific-goal" name="specific-goal" min="0" placeholder="Informe um valor" required>
+                    </div>
+                </div>
+                        
+                <button type="submit" style="background-color: black;" id="addSpecificGoalForm">Adicionar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalEditSpecificGoal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalEditSpecificGoal')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;" id="relateTitle">Relacionar paradas</h2>
+    
+            <div class="filter-container">
+                <div>
+                    <h2 for="workCenter">Centro de trabalho</h2>
+                    <select id="workCenter">
+                        <option disabled value="">Selecione uma opção</option>
+                        {% for workcenter in workcenters %}
+                            <option value="{% if workcenter.Workcenter_Key == 1 %}{{ workcenter.Name }}{% else %}{{ workcenter.Workcenter_Key }}{% endif %}">{{workcenter.Name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div>
+                    <h2 for="motive">Motivo de parada</h2>
+                    <select id="motive">
+                        <option disabled value="">Selecione uma opção</option>
+                        {% for event in events %}
+                            <option value="{{event.Code}}">{{event.Description}}</option>
+                        {% endfor %}
+                    </select>
+                </div>  
+    
+                <div>
+                    <h2 for="initDate">Hora de início</h2>
+                    <input class="form-input" type="datetime-local" id="initDate" value="{{initDateFilter}}">
+                </div>
+    
+                <div>
+                    <h2 for="endDate">Hora de fim </h2>
+                    <input class="form-input" type="datetime-local" id="endDate" value="{{endDateFilter}}">
+                </div>
+
+                <button style="max-width: 10vw;background-color: black;" onclick="populateTable()" id='searchStops'>Pesquisar paradas</button>
+
+            </div>
+    
+            <div style='height: 50vh;overflow-y: auto;'>         
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Centro de trabalho</th>
+                            <th>Motivo de parada</th>
+                            <th>Hora de início</th>
+                            <th>Hora de fim</th>
+                            <th>Duração</th>
+                            <th>Relacionar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stopTable" style="background-color: white;color: black;">
+                        <!-- Conteúdo gerado via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button style="max-width: 10vw;background-color: black;" onclick="relateStops()" id='relateStops'>Atualizar</button>
+        </div>
+    </div>
+
+    <div id="badFill" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+
+        const goalAllData = JSON.parse('{{ goalAll | safe }}');
+        const goalLastData = JSON.parse('{{ goalLast | tojson | safe }}');
+        const goalSpecificData = JSON.parse('{{ goalSpecific | tojson | safe }}');
+        const eventsData = JSON.parse('{{ events | tojson | safe }}');
+
+        const current_user_admin = '{{admin}}'
+        const motive = '{{motiveId}}'
+
+
+        // FUNÇÕES PARA EDITAR INFORMAÇÕES GERAIS
+
+        document.getElementById('general-goal-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const data = {
+                area0: document.getElementById('presentation-area0').value,
+                area1: document.getElementById('presentation-area1').value,
+                area2: document.getElementById('presentation-area2').value,
+                area3: document.getElementById('presentation-area3').value,
+            };
+
+            fetch(`/op/plano/metas/${motive}?type=general`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        infoAlert(`Erro ${response.status}: ${err.error || 'Erro desconhecido'}`)
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                window.location.href = `/op/plano/metas/${motive}`
+            })
+        });
+
+
+        // FUNÇÕES PARA GERENCIAS AS METAS ESPECIFICAS
+
+        document.getElementById('specific-goal-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            
+            document.getElementById('addSpecificGoalForm').disabled = true
+            document.getElementById('addSpecificGoalForm').style.opacity = '0.7'
+            
+            const data = {
+                type: document.getElementById('specific-type').value,
+                event: document.getElementById('specific-event').value,
+                workcenter: document.getElementById('specific-workcenter').value,
+                goal: document.getElementById('specific-goal').value
+            };
+
+            fetch(`/op/plano/metas/${motive}?type=specific`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        infoAlert(`Erro ${response.status}: ${err.error || 'Erro desconhecido'}`)
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                window.location.href = `/op/plano/metas/${motive}`
+            })
+            });
+
+        function displaySpecificGoals(data) {
+
+            const tableBody = document.querySelector("#specificTable tbody");
+            tableBody.innerHTML = '';
+
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+
+                const typeCell = tr.insertCell();
+                typeCell.textContent = eventsData.find(data => data.Code == row.event).Description;
+
+                const textCell = tr.insertCell();
+                textCell.textContent = `${row.Workcenter_Code}-${row.Name}`;
+
+                const nameCell = tr.insertCell();
+                nameCell.textContent = row.type == 1 ? 'Por porcentagem' : 'Por minutos';
+
+                const goalCell = tr.insertCell();
+                goalCell.textContent = row.goal;
+
+                const actionCell = tr.insertCell();
+
+                if (current_user_admin == '1') {
+                    const button = document.createElement('button');
+                    button.textContent = 'Acessar';
+
+                    button.addEventListener('click', () => openModal('modalAction'));
+                    actionCell.appendChild(button);
+                }
+
+
+                tableBody.appendChild(tr);
+            });
+
+        }
+
+        function filterTable() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+
+            const filteredData = goalSpecificData.filter(user => {
+                
+                const filter1Match = eventsData.find(data => data.Code == user.event).Description.toLowerCase().includes(filter1);
+                const filter2Match = `${user.Workcenter_Code}-${user.Name}`.toLowerCase().includes(filter2);
+
+                return filter1Match && filter2Match;
+            });
+
+            displaySpecificGoals(filteredData);
+        }
+        
+        // FUNÇÃO PARA ADICIONAR TABELA DE ALTERAÇÕES
+
+        function displayTooltipWithTable() {
+
+            const spanIds = [0, 1, 2, 3]
+            spanIds.forEach((spanId) => {
+                const span = document.getElementById(`area${spanId}`);
+
+                span.style.cursor = 'help';
+                span.style.position = 'relative';
+
+                // Criação do tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+
+                // Monta a tabela no tooltip
+                let tableContent = `
+                    <table style="border-collapse: collapse; width: 100%; font-size: 0.8rem;">
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 5px;text-align:center" colspan="3">Últimas Alterações</th>
+                        </tr>
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 5px;">Meta</th>
+                            <th style="border: 1px solid #ddd; padding: 5px;">Usuário</th>
+                            <th style="border: 1px solid #ddd; padding: 5px;">Data</th>
+                        </tr>
+                `;
+
+                // Adiciona no máximo 3 linhas à tabela
+                goalAllData.filter(data => data.presentationArea == spanId).slice(0, 3).forEach((goal) => {
+                    tableContent += `
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 5px;">${goal.goal}</td>
+                            <td style="border: 1px solid #ddd; padding: 5px;">${goal.userName}</td>
+                            <td style="border: 1px solid #ddd; padding: 5px;">${new Date(goal.changeDate).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                });
+
+                tableContent += `</table>`;
+
+                tooltip.innerHTML = tableContent;
+                span.appendChild(tooltip);
+            });
+        }
+
+
+        // FUNÇÕES GERAIS
+
+        window.onload = function() {
+
+            goalLastData.forEach((goal, index) => {
+                document.getElementById('area' + index).textContent = parseFloat(goal.goal);
+                document.getElementById('presentation-area' + index).value = parseFloat(goal.goal);
+            });
+
+            displayTooltipWithTable()
+            displaySpecificGoals(goalSpecificData)
+
+            if (current_user_admin == '0') {
+                document.getElementById('editGeneralGoal').style.display = 'none'
+                document.getElementById('addSpecificGoal').style.display = 'none'
+            }
+        }
+
+        function openModal(modalId, row) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function infoAlert(msg) {
+            document.getElementById('badFillMessage').innerHTML = msg;
+            openModal('badFill', null);
+        }
+
+    </script>
+
+</body>
+</html>

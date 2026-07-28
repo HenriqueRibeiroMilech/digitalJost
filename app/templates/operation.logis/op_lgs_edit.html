@@ -1,0 +1,65 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+</head>
+
+<video style="opacity:0.09;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" style="opacity:0.3" type="video/mp4">
+</video>
+
+<body id="op_lgs">
+    <div class="blur_wrap">
+        <a class="title" id="select_back" style="position: fixed; left: 14.8em;" href="/op/logistica">&times;</a>
+        <div class="op_lgs_subtitle">
+            <p class="op_lgs_title" id="reg_title">Registros</p><br>
+            <p class="op_lgs_desc" id="reg_desc"><i class="fa fa-briefcase"></i>Logística</p>
+        </div>
+        <div class="op_lgs_topnav">
+            <button id="area" class="op_lgs_btn" onclick="changeInfo(this.innerHTML)">Entregas</button>
+            <button class="op_lgs_sml_btn" onclick="showInfo()"><i class="fa fa-info-circle"></i></button><br>
+            <input type="date" id="date" oninput="changeDate(this.value)" class="op_lgs_btn" value="{{date}}">
+            <button class="op_lgs_sml_btn" onclick="addLine()"><i class="fa fa-plus"></i></button>
+        </div>
+
+        <div class="op_lgs_filters">
+            <p class="op_lgs_flbl">FRETE</p>
+            <button id="f1" class="op_lgs_good" onclick="filterTbl(0, 0)">MONITORAR</button><br>
+            <button id="f2" class="op_lgs_mid" onclick="filterTbl(0, 1)">ATENÇÃO</button><br>
+            <button id="f3" class="op_lgs_bad" onclick="filterTbl(0, 2)">CRÍTICO</button>
+            <p class="op_lgs_flbl">PERF.</p>
+            <button id="p1" class="op_lgs_good" onclick="filterTbl(4, 0)">MONITORAR</button><br>
+            <button id="p2" class="op_lgs_mid" onclick="filterTbl(4, 1)">ATENÇÃO</button><br>
+            <button id="p3" class="op_lgs_bad" onclick="filterTbl(4, 2)">CRÍTICO</button>
+        </div>
+
+        <div class="op_lgs_filters" style="margin-left:63em;display:none" id='confirmData'>
+            <p class="op_lgs_flbl">Copiar dados da última <br> data preenchida?</p>
+            <button id="p1" class="op_lgs_good" onclick="updateData(1)" style="height: 50%;">SIM</button><br>
+            <button id="p2" class="op_lgs_mid" onclick="updateData(0)" style="height: 50%;">NÃO</button><br>
+        </div>
+
+        <form id="lgs_form">
+            <div id="op_lgs_tbl"></div>
+        </form>
+
+        <br><br>
+    </div>
+
+    <div class="op_lgs_overlay">
+        <p class="op_lgs_title">Informações de uso</p>
+        <p class="op_lgs_desc"><b>1.</b> Clique no botão ao lado esquerdo do botão de informações para alterar a categoria de registro.</p>
+        <p class="op_lgs_desc"><b>2.</b> Clique no botão que possui ícone de calendário para selecionar a data dos registros.</p>
+        <p class="op_lgs_desc"><b>3.</b> Clique no botão <b>"+"</b> para adicionar um novo registro.</p>
+        <p class="op_lgs_desc"><b>4.</b> Clique no botão <b>"&times"</b> para remover um registro.</p>
+        <button class="op_lgs_btn" id="op_lgs_back" onclick="closeInfo()">Voltar</button>
+    </div>
+</body>
+
+<script>
+    {% include 'operation.logis/op_lgs_edit.js' %}
+</script>
+{% endblock %}

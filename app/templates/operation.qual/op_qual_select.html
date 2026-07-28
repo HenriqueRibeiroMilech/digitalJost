@@ -1,0 +1,58 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.09;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="op_qual_body" onload="removeNav()">
+    <div id="header_banner">
+        <h1 id="op_qual_header"><i class="fa fa-bullhorn"></i> Informativo da Qualidade</h1>
+        <div id="hist_filters">
+            <p class="op_btn_wrapper">
+                <a href="/op/qualidade" id="header_view_btn" class="header_btn">Visualizar Pirâmide</a>
+                <a href="/op/qualidade/add" id="header_add_btn" class="header_btn">Adicionar Entrada</a>
+                <a href="/op/qualidade/download" id="header_edit_btn" class="header_btn" style="float:right;margin-right: 15vw;">Extrair Dados</a>
+            </p>
+        </div>
+    </div>
+    
+    <div id="table_header">
+
+        <a id="table_header_title"> Filtrar por data </a>
+        <input type="date" class="filter" name="date" id="date" oninput="myFunction()" style="width: 11vw;transform: translateY(-0.5vh);">
+
+        <a id="table_header_title" style="margin-left: 3vw;"> Local da Ocorrência </a>
+        <select class="filter" id="qual_sel" name="sel" oninput="myFunction()" style="width: 11vw;transform: translateY(-0.5vh);">
+            <option value="">Selecionar</option>
+            <option value="Interno">Interno</option>
+            <option value="Cliente (Não Formal)">Cliente (Não Formal)</option>
+            <option value="Fornecedor">Fornecedor</option>
+            <option value="Cliente (Formal)">Cliente (Formal)</option>
+            <option value="Cliente (Logística)">Cliente (Logística)</option>
+        </select>
+
+        <a id="table_header_title" style="margin-left: 3vw;"> Unidade Jost </a>
+        <select class="filter" id="unit" name="sel" oninput="myFunction()" style="width: 11vw;transform: translateY(-0.5vh);">
+            <option value="">Selecionar</option>
+            <option value="Caxias do Sul">Caxias do Sul</option>
+            <option value="Campinas">Campinas</option>
+        </select>
+
+        <h1 id="table_header_title" style="margin-top:2vh">Entradas disponíveis para {{header}}</h1>
+    </div>
+    
+    <div id="entries_table">
+        <table></table>
+    </div>
+</body>
+
+<script>
+    {% include 'operation.qual/op_qual_select.js' %}
+</script>
+{% endblock %}

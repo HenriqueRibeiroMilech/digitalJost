@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/overlay.css') }}">
+
+    <style>
+        /* Corpo principal e fundo */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .main-layout {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            gap: 20px;
+        }
+
+        .sidebar {
+            width: 350px;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 50px);
+        }
+        .content {
+            flex: 1;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            height: calc(100vh - 50px);
+        }
+
+        /* Container principal */
+        .container {
+            display: flex;
+            width: 95%;
+            max-width: 1400px;
+            height: calc(100vh - 40px);
+            margin: 20px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Header da solicitação */
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .request-title {
+            color: #153A8A;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .request-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #dcaa0c;
+        }
+
+        .status-queue {
+            background-color: #163A8A;
+        }
+
+        .status-in-progress {
+            background-color: #3ea93e;
+        }
+
+        .status-waiting-pickup {
+            background-color: black;
+        }
+
+        .status-concluded {
+            background-color: #228C22;
+        }
+
+        .status-rejected {
+            background-color: #e74c3c;
+        }
+
+
+        /* Detalhes da solicitação */
+        .request-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .info-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #153A8A;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .info-value {
+            display: block;
+            padding: 8px 10px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 20px;
+        }
+
+        /* Seções do formulário */
+        .section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-title {
+            color: #153A8A;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        /* Arquivos */
+        .files-container {
+            margin-top: 20px;
+        }
+
+        .file-link {
+            display: block;
+            padding: 10px;
+            background-color: #f4f6f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            color: #153A8A;
+            text-decoration: none;
+        }
+
+        .file-link:hover {
+            background-color: #e9ecef;
+        }
+
+        .file-icon {
+            margin-right: 10px;
+        }
+
+        /* Comentários */
+        .comments-section {
+            margin-top: 30px;
+        }
+
+        .comment {
+            background-color: #f9f9f9;
+            border-left: 4px solid #153A8A;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .comment-author {
+            font-weight: bold;
+            color: #153A8A;
+        }
+
+        .comment-text {
+            color: #333;
+        }
+
+        /* Botões */
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .button-container button {
+            flex: 1 0 calc(50% - 4px); /* 50% menos metade do gap */
+            min-width: 0;
+            margin-bottom: 1px;
+            padding: 6px 8px;
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        button {
+            background-color: #153A8A;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2e52a7;
+        }
+
+        .primary-button {
+            background-color: #228C22;
+        }
+
+        .primary-button:hover {
+            background-color: #1c7a1c;
+        }
+
+        .primary-button.active {
+            background-color: #153A8A;
+            border: 2px solid #0d2456;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(21, 58, 138, 0.5);
+        }
+
+        .danger-button {
+            background-color: #e74c3c;
+        }
+
+        .danger-button:hover {
+            background-color: #c0392b;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+            border-radius: 4px;
+        }
+
+        /* Status Timeline */
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            margin: 0;
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #ddd;
+            z-index: 1;
+        }
+
+        .timeline-step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-active .step-icon {
+            background-color: #153A8A;
+            border-color: #153A8A;
+            color: white;
+        }
+
+        .step-completed .step-icon {
+            background-color: #228C22;
+            border-color: #228C22;
+            color: white;
+        }
+
+        .step-label {
+            margin-top: 10px;
+            font-size: 0.8em;
+            text-align: center;
+            color: #666;
+        }
+
+        .step-active .step-label {
+            color: #153A8A;
+            font-weight: bold;
+        }
+
+        .step-completed .step-label {
+            color: #228C22;
+            font-weight: bold;
+        }
+
+        .edit-textarea {
+            width: calc(100% - 20px);
+            min-height: 100px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+        }
+
+        .priority-button {
+            background-color: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 3px;
+            margin-bottom: 5px;
+            padding: 2px 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .priority-button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .priority-button.active {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Estilos para análises de material */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 40%, 200px), 1fr));
+            gap: 10px;
+            flex: 100%;
+        }
+
+        .analysis-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .analysis-item input {
+            margin-right: 8px;
+        }
+
+        .analysis-item input[type="checkbox"]:disabled {
+            appearance: none;
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            position: relative;
+            margin-right: 8px;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
+        .analysis-item input[type="checkbox"]:checked:disabled {
+            appearance: none;
+            background-color: #153A8A;
+            border: 2px solid #153A8A;
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            position: relative;
+            margin-right: 8px;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
+        .analysis-item input[type="checkbox"]:checked:disabled::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Responsividade para a timeline */
+        @media (max-width: 700px) {
+            .timeline {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .timeline::before {
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                height: auto;
+                left: 15px;
+            }
+
+            .timeline-step {
+                flex-direction: row;
+                margin-bottom: 20px;
+                width: 100%;
+            }
+
+            .step-label {
+                margin-top: 0;
+                margin-left: 10px;
+                text-align: left;
+            }
+        }
+
+        /* Responsividade */
+        @media (max-width: 700px) {
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+
+            .content {
+                height: auto;
+            }
+
+            .container {
+                height: auto;
+                max-height: none;
+            }
+        }
+    </style>
+    
+</head>
+<body>
+
+    <div class="static-buttons"> 
+        <button onclick="window.history.back()"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="main-layout">
+            <!-- Sidebar fixa à esquerda -->
+            <div class="sidebar">
+                <!-- Cabeçalho da solicitação -->
+                <div class="request-header">
+                    <h1 class="request-title">Detalhes da Solicitação - Análise Material</h1>
+                    <span class="request-status" id="status-badge">Carregando...</span>
+                </div>
+
+                <!-- Timeline de Status -->
+                <div class="timeline" id="timeline">
+                    <div class="timeline-step" id="step-waiting">
+                        <div class="step-icon"><i class="fas fa-hourglass-start"></i></div>
+                        <div class="step-label">Aguardando Amostra</div>
+                    </div>
+                    <div class="timeline-step" id="step-queue">
+                        <div class="step-icon"><i class="fas fa-list"></i></div>
+                        <div class="step-label">Fila de Espera</div>
+                    </div>
+                    <div class="timeline-step" id="step-execution">
+                        <div class="step-icon"><i class="fas fa-microscope"></i></div>
+                        <div class="step-label">Em Execução</div>
+                    </div>
+                    <div class="timeline-step" id="step-pickup">
+                        <div class="step-icon"><i class="fas fa-check"></i></div>
+                        <div class="step-label">Aguardando Retirada</div>
+                    </div>
+                    <div class="timeline-step" id="step-completed">
+                        <div class="step-icon"><i class="fas fa-handshake"></i></div>
+                        <div class="step-label">Concluído</div>
+                    </div>
+                </div>
+
+                <!-- Informações básicas -->
+                <div class="section">
+                    <h2 class="section-title">Informações da Solicitação</h2>
+                    <div class="request-info">
+                        <div class="info-item">
+                            <span class="info-label">Solicitado por:</span>
+                            <span class="info-value" id="requester"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Motivo:</span>
+                            <span class="info-value" id="motive"></span>
+                        </div>
+                        <div class="info-item">
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                <span class="info-label">Prazo estimado:</span>
+                                <button id="priority-toggle-button" class="priority-button" style="display: none; margin-left: 1vh;flex: 0 0 auto;">
+                                    Priorizar
+                                </button>
+                            </div>
+                            <span class="info-value" id="deadline"></span>
+                        </div>
+                    </div>
+
+                    <h2 class="section-title" >Ações</h2>
+                    <div class="button-container" id="button-container">
+                        <!-- Outros botões serão adicionados dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo com rolagem à direita -->
+            <div class="content">
+                <!-- Identificação do Material -->
+                <div class="section">
+                    <h2 class="section-title">Identificação do Material</h2>
+                    <div class="request-info">
+                        <div class="info-item">
+                            <span class="info-label">Código desenho:</span>
+                            <span class="info-value" id="id-draw"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Código material:</span>
+                            <span class="info-value" id="id-mater"></span>
+                        </div>
+                        <div class="info-item" style="flex: 100%;">
+                            <span class="info-label">Descrição desenho:</span>
+                            <span class="info-value" id="descs" style="min-height: 60px;"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Revisão:</span>
+                            <span class="info-value" id="rev"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Família:</span>
+                            <span class="info-value" id="fam"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Quantidade:</span>
+                            <span class="info-value" id="qtd"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fornecedor:</span>
+                            <span class="info-value" id="supplier"></span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Informações do Projeto -->
+                <div class="section">
+                    <h2 class="section-title">Informações do Projeto</h2>
+                    <div class="request-info">
+                        <div class="info-item">
+                            <span class="info-label">Projeto:</span>
+                            <span class="info-value" id="id-proj"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Conta projeto:</span>
+                            <span class="info-value" id="acc-proj"></span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Análise Material -->
+                <div class="section">
+                    <h2 class="section-title">Análise Material</h2>
+                    <div class="request-info">
+                        <div class="info-item">
+                            <span class="info-label">Norma a ser utilizada:</span>
+                            <span class="info-value" id="rules"></span>
+                        </div>
+                        <div class="info-item" style="flex: 100%;">
+                            <span class="info-label">Observações:</span>
+                            <span class="info-value" id="obs" style="min-height: 60px;"></span>
+                        </div>
+                        
+                        <label class="info-label">Tipo de análise:</label>
+                        <div class="analysis-grid">
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="dureza_hb" name="analysis_1" value="Dureza HB">
+                                <label for="dureza_hb">Dureza HB</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="dureza_hrc" name="analysis_2" value="Dureza HRC">
+                                <label for="dureza_hrc">Dureza HRC</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="dureza_hv" name="analysis_3" value="Dureza HV">
+                                <label for="dureza_hv">Dureza HV</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="dureza_shore_a" name="analysis_4" value="Dureza Shore A">
+                                <label for="dureza_shore_a">Dureza Shore A</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="dureza_shore_d" name="analysis_5" value="Dureza Shore D">
+                                <label for="dureza_shore_d">Dureza Shore D</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="composicao_quimica" name="analysis_6" value="Composição Química">
+                                <label for="composicao_quimica">Composição Química</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="fibramento" name="analysis_7" value="Fibramento">
+                                <label for="fibramento">Fibramento</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="metalografia" name="analysis_8" value="Metalografia">
+                                <label for="metalografia">Metalografia</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="macro" name="analysis_9" value="Macrográfia">
+                                <label for="macro">Macrográfia</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="salt_spray" name="analysis_10" value="Salt Spray">
+                                <label for="salt_spray">Salt Spray</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="tracao" name="analysis_11" value="Tração">
+                                <label for="tracao">Tração</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="carga_prova" name="analysis_12" value="Carga de Prova">
+                                <label for="carga_prova">Carga de Prova</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="compressao" name="analysis_13" value="Compressão">
+                                <label for="compressao">Compressão</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="impacto" name="analysis_14" value="Impacto (Charpy)">
+                                <label for="impacto">Impacto (Charpy)</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="sanidade_corte" name="analysis_15" value="Sanidade por corte">
+                                <label for="sanidade_corte">Sanidade por corte</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="sanidade_raio_x" name="analysis_16" value="Sanidade por Raio X">
+                                <label for="sanidade_raio_x">Sanidade por Raio X</label>
+                            </div>
+                            <div class="analysis-item">
+                                <input disabled type="checkbox" id="sanidade_ultrassom" name="analysis_17" value="Sanidade por Ultrassom">
+                                <label for="sanidade_ultrassom">Sanidade por Ultrassom</label>
+                            </div>
+                            <div class="analysis-item">
+                                <span class="info-label">Outros:</span>
+                                <span class="info-value" id="outros" style="flex: 100%;margin-left: 20px;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Arquivos anexados -->
+                <div class="section">
+                    <h2 class="section-title">Documentação</h2>
+                    <div id="files-container">
+                        <div class="info-value" style="text-align: center;">Nenhum arquivo disponível</div>
+                    </div>
+                </div>
+
+                <!-- Relatório de Laboratório (visível apenas quando concluído) -->
+                <div class="section" id="report-section">
+                    <h2 class="section-title">Relatório do Laboratório</h2>
+                    <div id="report-files-container">
+                        <div class="info-value" style="text-align: center;">Nenhum relatório disponível</div>
+                    </div>
+                    {% if check == 1 %}
+                    <form id="draw-upload-form" style="margin-top: 15px; display: flex; gap: 10px;">
+                        <input type="file" id="draw-upload-input" name="files" multiple style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                        <button type="button" onclick="uploadFile(document.getElementById('draw-upload-input'), 'reports')" class="primary-button" style="white-space: nowrap;">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <!-- Cotas não conformes -->
+                <div class="section">
+                    <h2 class="section-title">Peças com Cotas não Conformes</h2>
+                    <div id="quality-container" style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" id="quality-yes-btn" onclick="saveQualityProblem(1)" class="primary-button" style="white-space: nowrap;">
+                            <i class="fas fa-check"></i> Sim
+                        </button>
+                        <button type="button" id="quality-no-btn" onclick="saveQualityProblem(0)" class="primary-button" style="white-space: nowrap;">
+                            <i class="fas fa-times"></i> Não
+                        </button>
+                        <span id="quality-status" style="margin-left: 10px; font-weight: bold;"></span>
+                    </div>
+                </div>
+
+                <!-- Comentários -->
+                <div class="section comments-section">
+                    <h2 class="section-title">Comentários</h2>
+                    <div id="comments-container">
+                        <!-- Os comentários serão inseridos aqui -->
+                    </div>
+                </div>
+
+                <!-- Histórico -->
+                <div class="section">
+                    <h2 class="section-title">Histórico da Solicitação</h2>
+                    <div id="history-container">
+                        <!-- Os labels serão inseridos aqui -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificação -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Overlay de confirmação -->
+    <div class="overlay" id="confirm-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Confirmar Ação</div>
+            <p id="confirm-message">Tem certeza que deseja prosseguir?</p>
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="confirm-cancel">Cancelar</button>
+                <button class="overlay-button confirm-button" id="confirm-submit">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay para adicionar comentário -->
+    <div class="overlay" id="comment-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Adicionar Comentário</div>
+            <textarea id="comment-text" style="width: 100%; min-height: 100px; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="Digite seu comentário aqui..."></textarea>
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="comment-cancel">Cancelar</button>
+                <button class="overlay-button confirm-button" id="comment-submit">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for deadline selection -->
+    <div class="overlay" id="deadline-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Defina um prazo para esta solicitação</div>
+            <p>A solicitação precisa de um prazo para entrar na fila de espera.</p>
+            <input type="date" id="deadline-date" style="width: 100%; padding: 10px; margin-top: 15px; border: 1px solid #ddd; border-radius: 5px;">
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="deadline-cancel">Cancelar</button>
+                <button class="overlay-button confirm-button" id="deadline-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay para seleção de área de execução -->
+    <div class="overlay" id="area-selection-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Selecione a Área de Execução</div>
+            <p>Escolha a área responsável pela execução desta solicitação:</p>
+            <div style="margin-top: 15px;">
+                <select id="execution-area" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <option value="">Selecione uma área</option>
+                    {% for equipment in equipments %}
+                        <option value="{{ equipment.id }}">{{ equipment.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="hidden" id="pending-action-type">
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="area-cancel">Cancelar</button>
+                <button class="overlay-button confirm-button" id="area-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let requestData = null;
+        let currentUserId = null;
+        let isLabUser = false;
+        let requestId = null;
+        let statusToSend = null;
+        const areaName = '{{area}}';
+
+        equipments = {{ equipments | tojson }};
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Obter o ID da solicitação da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            requestId = '{{idReq}}';
+            
+            if (!requestId) {
+                showNotification('ID de solicitação não encontrado.');
+                setTimeout(() => {
+                    window.location.href = '/lab';
+                }, 2000);
+                return;
+            }
+
+            // Carregar os dados da solicitação
+            loadRequestData(requestId);
+
+            document.getElementById('area-cancel').addEventListener('click', function() {
+                closeOverlay('area-selection-overlay');
+            });
+            
+            document.getElementById('deadline-cancel').addEventListener('click', function() {
+                closeOverlay('deadline-overlay');
+            });
+            
+            document.getElementById('deadline-confirm').addEventListener('click', function() {
+                const deadlineDate = document.getElementById('deadline-date').value;
+                
+                if (!deadlineDate) {
+                    showNotification('Por favor, defina um prazo válido.');
+                    return;
+                }
+                
+                // Update the deadline in requestData
+                requestData.deadline = deadlineDate;
+                       
+                // Use the standard pattern - call completeStatusChange with updated requestData
+                completeStatusChange();
+                
+                closeOverlay('deadline-overlay');
+                showNotification('Prazo atualizado com sucesso!');
+            });
+            
+            // Configurar eventos para botões dos overlays
+            document.getElementById('confirm-cancel').addEventListener('click', function() {
+                closeOverlay('confirm-overlay');
+            });
+            
+            document.getElementById('comment-cancel').addEventListener('click', function() {
+                closeOverlay('comment-overlay');
+            });
+            
+            document.getElementById('comment-submit').addEventListener('click', function() {
+                const commentText = document.getElementById('comment-text').value.trim();
+                if (commentText) {
+                    addComment(requestId, commentText);
+                    closeOverlay('comment-overlay');
+                } else {
+                    showNotification('O comentário não pode estar vazio.');
+                }
+            });
+        });
+
+        // Carregar dados da solicitação
+        function loadRequestData(id) {
+            fetch(`/lab/${areaName}/detalhes/${id}/dados`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar os dados da solicitação');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    requestData = data;
+                    currentUserId = data.currentUserId;
+                    isLabUser = data.isLabUser;
+                    
+                    // Preencher os campos com os dados da solicitação
+                    populateRequestData(data);
+                    
+                    // Atualizar interface com base no status
+                    updateInterfaceBasedOnStatus(data);
+                    
+                    // Carregar comentários
+                    loadComments(id);
+                    
+                    loadFiles('draw');
+                    loadFiles('reports');
+
+                    // Carregar histórico de logs
+                    loadHistoryLogs(id);
+
+                }).catch(error => {
+                    console.log(error.message)
+                    showNotification('Erro: ' + error.message);
+                });
+        }
+        
+        // DESATIVADO - pausar
+        function pauseExecution(requestId) {
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/pausar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao pausar execução');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Execução pausada com sucesso!');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+        // DESATIVADO - retomar
+        function resumeExecution(requestId) {
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/pausar`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao retomar execução');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Execução retomada com sucesso!');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+
+        // MANIPULAÇÃO DO FRONT-END
+
+        // Atualizar interface baseado no status da solicitação
+        function updateInterfaceBasedOnStatus(data) {
+
+            // Adicionar botão à interface
+            function addButton(container, text, className, onClick) {
+                const button = document.createElement('button');
+                button.textContent = text;
+                button.type = 'button';
+                if (className) button.className = className;
+                button.addEventListener('click', onClick);
+                container.appendChild(button);
+            }
+
+            const buttonContainer = document.getElementById('button-container');
+            
+            // Limpar botões existentes exceto o botão "Voltar"
+            Array.from(buttonContainer.children).forEach(child => {
+                if (!child.getAttribute('onclick') || !child.getAttribute('onclick').includes('window.history.back()')) {
+                    buttonContainer.removeChild(child);
+                }
+            });
+
+            addButton(buttonContainer, 'Baixar etiqueta', 'primary-button', () => window.location.href = `/lab/${areaName}/detalhes/${requestId}/etiqueta`);
+
+            // Adicionar botões específicos com base no status e permissões do usuário
+            if (isLabUser) {
+
+                const priorityToggleButton = document.getElementById('priority-toggle-button');
+                priorityToggleButton.addEventListener('click', togglePriority);
+                
+                // Update UI state based on current priority
+                updatePriorityUI();
+
+                if (data.statusCode > 0 && data.statusCode < 4) { // Not for Completed or Canceled
+                    addButton(buttonContainer, 'Alterar Prazo', '', () => showDeadlineEditOverlay(requestId));
+                }
+                // Opções para usuários do laboratório
+                if (data.statusCode == 0) { // Aguardando Amostra
+                    addButton(buttonContainer, 'Cancelar Solicitação', 'danger-button', () => showCancelOverlay(requestId));
+                    addButton(buttonContainer, 'Mover para Fila', 'primary-button', () => updateLabRequestStatus(requestId, 1));
+                } else if (data.statusCode == 1) { // Fila de Espera
+                    addButton(buttonContainer, 'Cancelar Solicitação', 'danger-button', () => showCancelOverlay(requestId));
+                    addButton(buttonContainer, 'Iniciar Execução', 'primary-button', () => updateLabRequestStatus(requestId, 2));                
+                } else if (data.statusCode == 2) { // Em Execução
+                    addButton(buttonContainer, 'Cancelar Solicitação', 'danger-button', () => showCancelOverlay(requestId));
+                    addButton(buttonContainer, 'Finalizar Execução', 'primary-button', () => updateLabRequestStatus(requestId, 3));
+                    // addButton(buttonContainer, 'Pausar Execução', '', () => pauseExecution(requestId));
+                } else if (data.statusCode == 3) { // Aguardando Retirada
+                    addButton(buttonContainer, 'Marcar como Concluído', 'primary-button', () => concludeRequest(requestId));
+                } else if (data.statusCode == 4 || data.statusCode == 5) { // Concluído ou Cancelado
+                    addButton(buttonContainer, 'Reativar Solicitação', 'primary-button', () => showReactivateOverlay(requestId));
+                }
+
+                // Botão para adicionar comentário (disponível para todos)
+                addButton(buttonContainer, 'Adicionar Comentário', '', () => showOverlay('comment-overlay'));
+            } else if (data.currentUserId === data.requesterId) {
+                // Opções para o solicitante
+                if (data.statusCode != 4 && data.statusCode != 5) { // Aguardando Amostra ou Fila de Espera
+                    addButton(buttonContainer, 'Cancelar Solicitação', 'danger-button', () => showCancelOverlay(requestId));
+                }
+            }
+        }
+
+        // Preencher os campos com os dados da solicitação
+        function populateRequestData(data) {
+            // Informações da solicitação
+            document.getElementById('requester').textContent = data.requester;
+            document.getElementById('deadline').textContent = data.deadline || 'Não especificado';
+            updateStatusBadge(data.status);
+            
+            // Identificação do Material
+            document.getElementById('id-mater').textContent = data.materId;
+            document.getElementById('id-draw').textContent = data.drawId;
+            document.getElementById('qtd').textContent = data.qtd;
+            document.getElementById('descs').textContent = data.descText;
+            document.getElementById('supplier').textContent = data.supplier;
+            document.getElementById('rev').textContent = data.revId;
+            
+            // Informações do Projeto
+            document.getElementById('id-proj').textContent = data.projId;
+            document.getElementById('acc-proj').textContent = data.accProj;
+            document.getElementById('fam').textContent = data.prodFamily;
+            
+            // Análise Material
+            document.getElementById('obs').textContent = data.obs;
+            // document.getElementById('interest').textContent = data.interest || 'Não especificado';
+            document.getElementById('motive').textContent = data.motive;
+            document.getElementById('rules').textContent = data.rules;
+            JSON.parse(data.analysis).forEach(value => {
+                const checkbox = document.querySelector(`input[type="checkbox"][value="${value}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                } else {
+                    document.getElementById(`outros`).value = value;
+                }
+            });
+            
+            // Atualizar status de qualidade
+            updateQualityProblemUI(data.qualityProblem);
+            
+            // Atualizar timeline
+            updateTimeline(data.statusCode);
+        }
+
+        // Atualizar UI de problema de qualidade
+        function updateQualityProblemUI(qualityProblem) {
+            const yesBtn = document.getElementById('quality-yes-btn');
+            const noBtn = document.getElementById('quality-no-btn');
+            const statusSpan = document.getElementById('quality-status');
+            
+            // Remover classes ativas
+            yesBtn.classList.remove('active');
+            noBtn.classList.remove('active');
+            
+            if (qualityProblem === null || qualityProblem === undefined) {
+                statusSpan.textContent = 'Não definido';
+                statusSpan.style.color = '#666';
+            } else if (qualityProblem === 1 || qualityProblem === true) {
+                yesBtn.classList.add('active');
+                statusSpan.textContent = 'Sim - Possui cotas não conformes';
+                statusSpan.style.color = '#DC4B3C';
+            } else {
+                noBtn.classList.add('active');
+                statusSpan.textContent = 'Não - Todas as cotas conformes';
+                statusSpan.style.color = '#228C22';
+            }
+        }
+
+        // Salvar problema de qualidade
+        function saveQualityProblem(value) {
+            fetch(`/lab/${areaName}/detalhes/${requestId}/qualidade`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    qualityProblem: value
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao salvar problema de qualidade');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Problema de qualidade salvo com sucesso!');
+                updateQualityProblemUI(value);
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+        function loadHistoryLogs(requestId) {
+
+            fetch(`/lab/${areaName}/detalhes/${requestId}/logs`)
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('history-container');
+                container.innerHTML = '';
+            
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="info-value" style="text-align: center;">Nenhum histórico disponível</div>';
+                    return;
+                }
+                
+                // Função para obter a cor da borda com base no tipo de log
+                function getBorderColor(log) {
+                    const statusColors = {
+                        '0': '#dcaa0c', // Aguardando Amostra
+                        '1': '#163A8A', // Fila de Espera
+                        '2': '#3ea93e', // Em Execução
+                        '3': '#000000', // Aguardando Retirada
+                        '4': '#228C22', // Concluído
+                        '5': '#e74c3c'  // Cancelado
+                    };
+                    
+                    if (log.extra === 'status') {
+                        return statusColors[log.new] || '#153A8A';
+                    } else if (log.extra === 'execArea') {
+                        return '#3ea93e'; // Cor do status "Em Execução"
+                    } else if (log.extra === 'prioritize') {
+                        return '#dc3545'; // Cor do botão vermelho de priorização
+                    } else if (log.extra === 'pause') {
+                        return '#3ea93e'; // Cor do status "Em Execução"
+                    } else if (log.extra === 'deadLine') {
+                        return '#9b59b6'; // Cor roxa para prazos
+                    } else if (log.extra === 'cancelText') {
+                        return '#e74c3c'; // Cor do status "Cancelado"
+                    } else {
+                        return '#153A8A'; // Cor padrão
+                    }
+                }
+            
+                // Função para formatar o texto do log
+                function formatLogMessage(log) {
+                // Function to format field names
+                function formatFieldName(field) {
+                    const fieldMap = {
+                        'status': 'Status',
+                        'deadLine': 'Prazo',
+                        'execArea': 'Área de Execução',
+                        'prioritize': 'Prioridade',
+                        'cancelText': 'Motivo de Cancelamento',
+                        'pause': 'Status da Execução'
+                    };
+                    return fieldMap[field] || field;
+                }
+                
+                // Function to format values
+                function formatValue(value, field) {
+                    if (value === 'NULL' || value === null) return '-';
+                    
+                    if (['prioritize', 'pause', 'qualityProblem'].includes(field)) {
+                        return value == 'True' ? 'Sim' : 'Não';
+                    }
+                    
+                    if (field === 'status') {
+                        const statusMap = {
+                            '0': 'Aguardando Amostra',
+                            '1': 'Fila de Espera',
+                            '2': 'Em Execução',
+                            '3': 'Aguardando Retirada',
+                            '4': 'Concluído',
+                            '5': 'Cancelado'
+                        };
+                        return statusMap[value] || value;
+                    }
+
+                    if (field === 'execArea') {
+                        const equipment = equipments.find(eq => eq.id == value);
+                        return equipment ? equipment.name : value;
+                    }
+
+                    if (field === 'deadLine') {
+                        const dateFormatted = value.split('-').reverse().join('/');
+                        return dateFormatted;
+                    }
+                    
+                    return value;
+                }
+                
+                // Casos especiais para mensagens personalizadas
+                if (log.extra === 'pause') {
+                    return log.new === 'True' ? 'Pausou execução' : 'Retomou execução';
+                } 
+                
+                if (log.extra === 'execArea') {
+                    const equipment = equipments.find(eq => eq.id == log.new);
+                    const areaName = equipment ? equipment.name : log.new;
+                    return `Moveu para área "${areaName}"`;
+                }
+                
+                if (log.extra === 'status' && (log.old === 'NULL' || log.old === null)) {
+                    return 'Criou a solicitação com status "Aguardando amostra"';
+                }
+                
+                if (log.extra === 'status') {
+                    return `Alterou status para "${formatValue(log.new, log.extra)}"`;
+                }
+                
+                if (log.extra === 'deadLine') {
+                    const formattedDate = log.new.split('-').reverse().join('/');
+                    return `Definiu prazo para ${formattedDate}`;
+                }
+                
+                if (log.extra === 'prioritize') {
+                    return log.new === 'True' ? 'Marcou como prioridade' : 'Removeu prioridade';
+                }
+                
+                if (log.extra === 'cancelText') {
+                    return `Motivo de cancelamento: ${log.new}`;
+                }
+                
+                // Para outros casos, formato padrão
+                return `Alterou ${formatFieldName(log.extra).toLowerCase()} de "${formatValue(log.old, log.extra)}" para "${formatValue(log.new, log.extra)}"`;
+            }
+            
+                // Ordenação decrescente para mostrar logs mais recentes primeiro
+                data.sort((a, b) => new Date(b.logDate) - new Date(a.logDate));
+                
+                // Mostrar cada log no formato de comentário
+                data.forEach(log => {
+                    // Pular logs de área de execução nula
+                    if (log.extra === 'execArea' && (log.new === 'NULL' || log.new === null)) {
+                        return;
+                    }
+                    
+                    const logEl = document.createElement('div');
+                    logEl.className = 'comment';
+                    
+                    // Definir a cor da borda esquerda com base no tipo de log
+                    logEl.style.borderLeftColor = getBorderColor(log);
+                    
+                    const header = document.createElement('div');
+                    header.className = 'comment-header';
+                    
+                    const author = document.createElement('span');
+                    author.className = 'comment-author';
+                    author.textContent = log.name;
+                    
+                    const date = document.createElement('span');
+                    date.textContent = log.logDate;
+                    
+                    header.appendChild(author);
+                    header.appendChild(date);
+                    
+                    const text = document.createElement('div');
+                    text.className = 'comment-text';
+                    text.textContent = formatLogMessage(log);
+                    
+                    logEl.appendChild(header);
+                    logEl.appendChild(text);
+                    container.appendChild(logEl);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading history logs:', error);
+                showNotification('Erro ao carregar histórico: ' + error);
+            });
+        }
+
+        // Atualizar badge de status
+        function updateStatusBadge(status) {
+            const badge = document.getElementById('status-badge');
+            badge.textContent = status;
+
+            // Remover classes anteriores
+            badge.className = 'request-status';
+            
+            // Adicionar classe baseada no status
+            switch (status) {
+                case 'Aguardando Amostra':
+                    badge.classList.add('status-pending');
+                    break;
+                case 'Fila de Espera':
+                    badge.classList.add('status-queue');
+                    break;
+                case 'Em Execução':
+                    badge.classList.add('status-in-progress');
+                    break;
+                case 'Aguardando Retirada':
+                    badge.classList.add('status-waiting-pickup');
+                    break;
+                case 'Concluído':
+                    badge.classList.add('status-concluded');
+                    break;
+                case 'Cancelado':
+                    badge.classList.add('status-rejected');
+                    break;
+            }
+        }
+
+        function updatePriorityUI() {
+            const isPrioritized = requestData.prioritize === true;
+            const priorityToggleButton = document.getElementById('priority-toggle-button');
+            
+            // Check if the status allows changing priority (not status 0, 4, or 5)
+            const statusCode = parseInt(requestData.statusCode);
+            const canChangePriority = ![0, 4, 5, 3].includes(statusCode); // Disable for status 0, 3, 4, 5
+            
+            // Update button visibility and state based on lab user permission
+            if (isLabUser) {
+                priorityToggleButton.style.display = 'block';
+                priorityToggleButton.textContent = 'Priorizar';
+                
+                if (isPrioritized) {
+                    priorityToggleButton.classList.add('active');
+                } else {
+                    priorityToggleButton.classList.remove('active');
+                }
+                
+                // Disable button if status doesn't allow priority changes
+                if (!canChangePriority) {
+                    priorityToggleButton.style.opacity = '0.5';
+                    priorityToggleButton.style.cursor = 'not-allowed';
+                    priorityToggleButton.title = 'Não é possível alterar prioridade neste status';
+                } else {
+                    priorityToggleButton.style.opacity = '';
+                    priorityToggleButton.style.cursor = '';
+                    priorityToggleButton.title = '';
+                }
+            } else {
+                priorityToggleButton.style.display = 'none';
+            }
+        }
+
+        function togglePriority() {
+            // Check if the status allows changing priority (not status 0, 4, or 5)
+            const statusCode = parseInt(requestData.statusCode);
+            const canChangePriority = ![0, 4, 5, 3].includes(statusCode); // Disable for status 0, 3, 4, 5
+            
+            if (!canChangePriority) {
+                showNotification('Não é possível alterar prioridade neste status');
+                return;
+            }
+            
+            // Get current priority state
+            const isPrioritized = requestData.prioritize === true;
+            
+            // Toggle priority value in requestData object
+            requestData.prioritize = isPrioritized ? false : true;
+            
+            // Update the UI immediately for better user experience
+            updatePriorityUI();
+            
+            // Use the standard pattern - call completeStatusChange to update the backend
+            completeStatusChange();
+            
+            // Show notification
+            showNotification(isPrioritized ? 'Prioridade removida!' : 'Item priorizado!');
+        }
+
+        // Atualizar timeline baseado no código de status
+        function updateTimeline(statusCode) {
+            // Reset all steps
+            document.querySelectorAll('.timeline-step').forEach(step => {
+                step.classList.remove('step-active', 'step-completed');
+            });
+            
+            // Update steps based on status
+            switch (parseInt(statusCode)) {
+                case 0: // Aguardando Amostra
+                    document.getElementById('step-waiting').classList.add('step-active');
+                    break;
+                case 1: // Fila de Espera
+                    document.getElementById('step-waiting').classList.add('step-completed');
+                    document.getElementById('step-queue').classList.add('step-active');
+                    break;
+                case 2: // Em Execução
+                    document.getElementById('step-waiting').classList.add('step-completed');
+                    document.getElementById('step-queue').classList.add('step-completed');
+                    document.getElementById('step-execution').classList.add('step-active');
+                    break;
+                case 3: // Aguardando Retirada
+                    document.getElementById('step-waiting').classList.add('step-completed');
+                    document.getElementById('step-queue').classList.add('step-completed');
+                    document.getElementById('step-execution').classList.add('step-completed');
+                    document.getElementById('step-pickup').classList.add('step-active');
+                    break;
+                case 4: // Concluído
+                    document.getElementById('step-waiting').classList.add('step-completed');
+                    document.getElementById('step-queue').classList.add('step-completed');
+                    document.getElementById('step-execution').classList.add('step-completed');
+                    document.getElementById('step-pickup').classList.add('step-completed');
+                    document.getElementById('step-completed').classList.add('step-completed');
+                    break;
+                case 5: // Cancelado
+                    // Para solicitações canceladas, não mostramos progresso na timeline
+                    // Poderia adicionar um estilo especial ou indicação visual de cancelamento
+                    break;
+            }
+        }
+
+        // OVERLAY - Função principal para mostrar overlays
+        function showOverlay(id, message = null, callback = null) {
+            const overlay = document.getElementById(id);
+            if (!overlay) return;
+            
+            if (message && id === 'confirm-overlay') {
+                document.getElementById('confirm-message').textContent = message;
+                
+                // Configurar callback para o botão de confirmação
+                const submitButton = document.getElementById('confirm-submit');
+                const oldCallback = submitButton.onclick;
+                submitButton.onclick = function() {
+                    if (callback) callback();
+                    closeOverlay(id);
+                    // Restaurar o callback antigo se necessário
+                    if (oldCallback) submitButton.onclick = oldCallback;
+                };
+            }
+            
+            overlay.classList.add('active');
+        }
+
+        // OVERLAY - Função principal para fechar overlays
+        function closeOverlay(id) {
+            const overlay = document.getElementById(id);
+            if (overlay) overlay.classList.remove('active');
+        }
+
+        // NOTIFICATION - Função para mostrar as notificações
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+
+
+        // MANIPULAÇÃO DO STATUS DA SOLICITAÇÃO
+
+        // API solicitação (marcar como entregue)
+        function concludeRequest(requestId) {
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/concluir`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao concluir solicitação');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Solicitação concluída com sucesso!');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+        // OVERLAY - Cancelar solicitação
+        function showCancelOverlay(requestId) {
+            // Criar overlay para inserir texto de cancelamento
+            const overlay = document.getElementById('confirm-overlay');
+            const message = document.getElementById('confirm-message');
+            message.innerHTML = `
+                <p>Informe o motivo do cancelamento:</p>
+                <textarea id="cancel-text" style="width: 100%; min-height: 100px; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="Motivo do cancelamento..."></textarea>
+            `;
+            
+            const submitButton = document.getElementById('confirm-submit');
+            submitButton.onclick = function() {
+                const cancelText = document.getElementById('cancel-text').value.trim();
+                if (!cancelText) {
+                    showNotification('Por favor, informe o motivo do cancelamento.');
+                    return;
+                }
+                
+                cancelRequest(requestId, cancelText);
+                closeOverlay('confirm-overlay');
+            };
+            
+            overlay.classList.add('active');
+        }
+
+        // API - Cancelar solicitação
+        function cancelRequest(requestId, cancelText) {
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/cancelar`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    cancelText: cancelText
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao cancelar solicitação');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Solicitação cancelada com sucesso!');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+        // OVERLAY - Reativar solicitação
+        function showReactivateOverlay(requestId) {
+            const message = "Tem certeza que deseja reativar esta solicitação?";
+            showOverlay('confirm-overlay', message, () => reactivateRequest(requestId));
+        }
+
+        // API - Reativar solicitação
+        function reactivateRequest(requestId) {
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/reativar`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao reativar solicitação');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Solicitação reativada com sucesso!');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+        // LOGICA - atualizar status, chama completeStatusChange
+        function updateLabRequestStatus(requestId, newStatus) {
+            // If moving to queue (status 1), check if deadline is set
+            if (newStatus === 1) {
+                // Show deadline selection overlay
+                const deadlineInput = document.getElementById('deadline-date');
+                const today = new Date().toISOString().split('T')[0];
+                deadlineInput.min = today;
+                deadlineInput.value = today;
+                
+                // Configure what happens when user confirms deadline
+                document.getElementById('deadline-confirm').onclick = function() {
+                    const newDeadline = document.getElementById('deadline-date').value;
+                    
+                    if (!newDeadline) {
+                        showNotification('Por favor, defina um prazo válido.');
+                        return;
+                    }
+                    
+                    // Update requestData with both new status and deadline
+                    requestData.statusCode = newStatus;
+                    requestData.deadline = newDeadline;
+                    
+                    // Call the function that will use these values
+                    completeStatusChange();
+                    closeOverlay('deadline-overlay');
+                };
+                
+                showOverlay('deadline-overlay');
+                return;
+            }
+            
+            // If moving to execution (status 2), ask for execution area
+            if (newStatus === 2) {
+                // Pre-select current area if available
+                if (requestData && requestData.execArea) {
+                    const areaSelect = document.getElementById('execution-area');
+                    areaSelect.value = requestData.execArea;
+                }
+                
+                // Configure what happens when user confirms area selection
+                document.getElementById('area-confirm').onclick = function() {
+                    const area = document.getElementById('execution-area').value;
+                    
+                    if (!area) {
+                        showNotification('Por favor, selecione uma área de execução.');
+                        return;
+                    }
+                    
+                    // Update requestData with both new status and execution area
+                    statusToSend = newStatus;
+                    requestData.execArea = area;
+                    
+                    // Call the function that will use these values
+                    completeStatusChange();
+                    closeOverlay('area-selection-overlay');
+                };
+                
+                // Show the area selection overlay
+                showOverlay('area-selection-overlay');
+                return;
+            }
+            
+            // For other status changes
+            statusToSend = newStatus;
+            completeStatusChange();
+        }
+
+        // API - completar alteração de status
+        function completeStatusChange() {
+
+            // Helper function to format dates
+            function formatDateForInput(dateString) {
+                if (!dateString) return '';
+                
+                // Handle different date formats
+                if (dateString.includes('/')) {
+                    // Convert DD/MM/YYYY to YYYY-MM-DD
+                    const parts = dateString.split('/');
+                    if (parts.length === 3) {
+                        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    }
+                }
+                
+                return dateString;
+            }
+
+            // Always include all required fields in the payload using values from requestData
+            const payload = {
+                requestId: [parseInt(requestData.requestId)]
+                , status: [statusToSend || parseInt(requestData.statusCode)]
+                , deadLine: ["None"]
+                , execArea: ["None"]
+                , prioritize: [requestData.prioritize || false]  // Include priority information
+            };
+            
+            // Include deadline from requestData if available
+            if (requestData.deadline && requestData.deadline !== 'None') {
+                const existingDeadline = formatDateForInput(requestData.deadline);
+                payload.deadLine = [existingDeadline];
+            }
+            
+            // Include execution area from requestData if available
+            if (requestData.execArea) {
+                payload.execArea = [requestData.execArea];
+            }
+            
+            fetch(`/lab/${areaName}/gerenciar`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erro ao alterar dados da solicitação`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification(`Dados atualizados com sucesso!`);
+ 
+                // Only reload the page if it wasn't a priority toggle action
+                if (payload.status[0] != parseInt(requestData.statusCode) || 
+                    payload.deadLine[0] != (formatDateForInput(requestData.deadline) || 'None') ||
+                    payload.execArea[0] != (requestData.execArea || 'None')) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+        // OVERLAY - alterar prazo, chama completeStatusChange
+        function showDeadlineEditOverlay(requestId) {
+            // Preencher com o prazo atual, se houver
+            const currentDeadline = requestData.deadline ? 
+                requestData.deadline.split('/').reverse().join('-') : 
+                new Date().toISOString().split('T')[0];
+            
+            const deadlineInput = document.getElementById('deadline-date');
+            const today = new Date().toISOString().split('T')[0];
+            deadlineInput.min = today;
+            deadlineInput.value = currentDeadline;
+            
+            // Atualizar o título e mensagem do overlay
+            const overlayTitle = document.querySelector('#deadline-overlay .overlay-title');
+            overlayTitle.textContent = 'Alterar prazo para esta solicitação';
+            
+            const overlayMessage = document.querySelector('#deadline-overlay p');
+            overlayMessage.textContent = 'Selecione uma nova data para o prazo da solicitação.';
+            
+            // Configurar o callback do botão de confirmação
+            document.getElementById('deadline-confirm').onclick = function() {
+                const newDeadline = document.getElementById('deadline-date').value;
+                
+                if (!newDeadline) {
+                    showNotification('Por favor, defina um prazo válido.');
+                    return;
+                }
+                
+                // Use the standard pattern - update requestData and call completeStatusChange
+                requestData.deadline = newDeadline;
+                completeStatusChange();
+                
+                // Close overlay and show notification
+                closeOverlay('deadline-overlay');
+                showNotification('Prazo atualizado com sucesso!');
+            };
+            
+            // Mostrar o overlay
+            showOverlay('deadline-overlay');
+        }
+
+
+        // MANIPULAÇÃO DOS COMENTÁRIOS
+        
+        // API + FRONT-END - carregar comentários
+        function loadComments(requestId) {
+            fetch(`/lab/${areaName}/detalhes/${requestId}/comentarios`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('comments-container');
+                    container.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        container.innerHTML = '<div class="info-value" style="text-align: center;">Nenhum comentário ainda</div>';
+                        return;
+                    }
+                    
+                    data.forEach(comment => {
+                        const commentEl = document.createElement('div');
+                        commentEl.className = 'comment';
+                        
+                        const header = document.createElement('div');
+                        header.className = 'comment-header';
+                        
+                        const author = document.createElement('span');
+                        author.className = 'comment-author';
+                        author.textContent = comment.author;
+                        
+                        const date = document.createElement('span');
+                        date.textContent = comment.date;
+                        
+                        header.appendChild(author);
+                        header.appendChild(date);
+                        
+                        const text = document.createElement('div');
+                        text.className = 'comment-text';
+                        text.textContent = comment.text;
+                        
+                        commentEl.appendChild(header);
+                        commentEl.appendChild(text);
+                        container.appendChild(commentEl);
+                    });
+                })
+                .catch(error => {
+                    showNotification('Erro ao carregar comentários: ' + error);
+                });
+        }
+
+        // API - adicionar comentário
+        function addComment(requestId, text) {
+            fetch(`/lab/${areaName}/detalhes/${requestId}/comentarios`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: text
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao adicionar comentário');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Comentário adicionado com sucesso!');
+                document.getElementById('comment-text').value = '';
+                loadComments(requestId);
+            })
+            .catch(error => {
+                showNotification('Erro: ' + error.message);
+            });
+        }
+
+
+        // MANIPULAÇÃO DOS ARQUIVOS
+
+        // FRONT-END - carregar arquivos
+        function loadFiles(type) {
+            const containerId = type === 'draw' ? 'files-container' : 'report-files-container';
+            
+            fetch(`/lab/${areaName}/detalhes/${requestId}/arquivos?type=${type}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    const container = document.getElementById(containerId);
+                    container.innerHTML = "";
+
+                    if (!data || data.length === 0) {
+                        container.innerHTML = `<div class="info-value" style="text-align: center;">Nenhum ${type === 'draw' ? 'arquivo' : 'relatório'} disponível</div>`;
+                        return;
+                    }
+
+                    // Create a table to display files
+                    const table = document.createElement("table");
+                    table.style.width = "100%";
+                    table.style.borderCollapse = "collapse";
+                    table.style.marginTop = "15px";
+                    
+                    // Table header
+                    const thead = document.createElement("thead");
+                    thead.innerHTML = `
+                        <tr>
+                            <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Nome do Arquivo</th>
+                            <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Tamanho</th>
+                            <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Ações</th>
+                        </tr>
+                    `;
+                    table.appendChild(thead);
+                    
+                    // Table body
+                    const tbody = document.createElement("tbody");
+                    data.forEach((file) => {
+                        const row = document.createElement("tr");
+                        row.style.borderBottom = "1px solid #eee";
+                        
+                        // Get appropriate icon
+                        let iconClass = "fa-file";
+                        const extension = file.name.split('.').pop().toLowerCase();
+                        
+                        if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
+                            iconClass = "fa-file-image";
+                        } else if (extension === "pdf") {
+                            iconClass = "fa-file-pdf";
+                        } else if (["doc", "docx"].includes(extension)) {
+                            iconClass = "fa-file-word";
+                        } else if (["xls", "xlsx"].includes(extension)) {
+                            iconClass = "fa-file-excel";
+                        }
+                        
+                        row.innerHTML = `
+                            <td style="padding: 8px;"><i class="fas ${iconClass}" style="margin-right: 10px;"></i>${file.name}</td>
+                            <td style="padding: 8px;">${file.size} KB</td>
+                            <td style="padding: 8px;">
+                                <button onclick="downloadFile('${type}', '${file.name}')" style="background-color: #153A8A; padding: 5px 10px; margin-right: 5px;">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                ${isLabUser && type != 'draw' ? `
+                                <button onclick="confirmDeleteFile('${type}', '${file.name}')" style="background-color: #e74c3c; padding: 5px 10px;">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                                ` : ''}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    table.appendChild(tbody);
+                    container.appendChild(table);
+                })
+                .catch((error) => {
+                    console.error(`Erro ao carregar ${type === 'draw' ? 'arquivos' : 'relatórios'}:`, error);
+                    showNotification(`Erro ao carregar ${type === 'draw' ? 'arquivos' : 'relatórios'}: ${error}`);
+                });
+        }
+
+        // OVERLAY - confirmar exclusão do arquivo
+        function confirmDeleteFile(type, fileName) {
+            const message = `Tem certeza que deseja excluir o arquivo "${fileName}"?`;
+            showOverlay('confirm-overlay', message, () => deleteFile(type, fileName));
+        }
+
+        // API - deletar arquivo
+        function deleteFile(type, fileName) {
+            showNotification('Excluindo arquivo...');
+            
+            fetch(`/lab/${areaName}/detalhes/${requestId}/arquivos?type=${type}&extra=delete`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({file: fileName})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+                return response.text();
+            })
+            .then(() => {
+                showNotification('Arquivo excluído com sucesso!');
+                loadFiles(type);
+            })
+            .catch(error => {
+                console.error('Erro ao excluir:', error);
+                showNotification(`Erro ao excluir: ${error.message}`);
+            });
+        }
+
+        // API - download de arquivo
+        function downloadFile(type, fileName) {
+
+            const data_to_send = {file: fileName}
+
+            fetch(`/lab/${areaName}/detalhes/{{idReq}}/arquivos?type=${type}&extra=download`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data_to_send)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao fazer download do arquivo');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${fileName}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        // API - upload de arquivo
+        async function uploadFile(inputElement, type) {
+            // Now we're receiving the input element directly instead of an event
+            if (!inputElement || !inputElement.files) {
+                showNotification("Erro: Elemento de entrada de arquivo inválido");
+                return;
+            }
+            
+            const files = inputElement.files;
+
+            if (files.length === 0) {
+                showNotification("Nenhum arquivo selecionado.");
+                return;
+            }
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append("files", file);
+            }
+
+            try {
+                // Show upload in progress notification
+                showNotification("Enviando arquivos...");
+                
+                // Make the request to the server
+                const response = await fetch(`/lab/${areaName}/detalhes/${requestId}/arquivos?type=${type}`, {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    showNotification("Arquivo enviado com sucesso!");
+                    // Reload files of the appropriate type
+                    loadFiles(type);
+                } else {
+                    const errorText = await response.text();
+                    showNotification(`Erro ao enviar o arquivo: ${errorText}`);
+                }
+            } catch (error) {
+                console.error("Erro ao enviar o arquivo:", error);
+                showNotification("Erro ao enviar o arquivo. Verifique o console para mais detalhes.");
+            } finally {
+                // Clear the input to allow uploading the same file again
+                inputElement.value = "";
+            }
+        }
+ 
+    </script>
+</body>
+</html>

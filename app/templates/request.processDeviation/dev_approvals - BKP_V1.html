@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital JOST</title>
+
+  <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- TODO: seu CSS inline continua aqui ↓ -->
+  <style>
+    /* ====== Base (mantendo seu visual) ====== */
+    body{
+      font-family: Arial, sans-serif; margin:0; padding:0;
+      display:flex; justify-content:center; align-items:center; height:100vh;
+      background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+      background-size: 600% 600%;
+      animation: GradientAnimation 10s ease infinite;
+    }
+    @keyframes GradientAnimation {
+      0% { background-position: 0% 50%; }
+      50%{ background-position:100% 50%; }
+      100%{ background-position:0% 50%; }
+    }
+    .container{
+      background:#fff; padding:30px; border-radius:10px;
+      box-shadow:0 4px 8px rgba(0,0,0,0.1);
+      width:95%; max-width:1800px; text-align:center; position:relative;
+    }
+    h1{ color:#153A8A; font-size:2.5em; margin:0 0 20px 0; }
+    .title{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .filter-container{ display:flex; justify-content:space-between; margin-bottom:20px; gap:1vw; flex-wrap:wrap; }
+    .filter-container input{
+      width:15%; min-width:180px; padding:10px; font-size:1em;
+      border:1px solid #ccc; border-radius:5px;
+    }
+    table{ width:100%; border-collapse:collapse; }
+    thead{ position:sticky; top:0; z-index:2; }
+    th, td{ padding:10px; text-align:left; border:1px solid #ddd; }
+    th{ background:#153A8A; color:#fff; }
+
+    /* ====== Botões (mesmo padrão + animações suaves) ====== */
+    button{
+      background-color:#2e52a7; color:white; border:none; border-radius:5px;
+      padding:10px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    button:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(46,82,167,.25); }
+    button:active{ transform:translateY(0); box-shadow:0 2px 8px rgba(46,82,167,.25); }
+    button:disabled{ background:#ccc; cursor:not-allowed; transform:none; box-shadow:none; }
+    /* variações */
+    .btn-dark{ background:#000; }
+    .btn-green{ background:#228c22; }
+    .btn-red{ background:#E03131; }
+    .btn-gray{ background:#5a5a5a; }
+    .btn-loading{ position:relative; color:transparent!important; }
+    .btn-loading::after{
+      content:""; position:absolute; inset:0; margin:auto; width:16px; height:16px; border-radius:50%;
+      border:2px solid #fff; border-top-color:transparent; animation:spin .8s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg);} }
+
+    /* ====== Status cells (mantido) ====== */
+    td.status-approved{ background:#4CAF50; color:#fff; }
+    td.status-pending{ background:#FFEB3B; color:#000; }
+    td.status-rejected{ background:#F44336; color:#fff; }
+
+    /* ====== Scrollbar ====== */
+    ::-webkit-scrollbar{ width:8px; height:8px; }
+    ::-webkit-scrollbar-track{ background:none; }
+    ::-webkit-scrollbar-thumb{ background-color:rgb(125,196,255); }
+
+    /* ====== Botões fixos ====== */
+    .static-buttons{ position:absolute; right:1vw; top:1vw; display:flex; gap:.5rem; }
+    .static-buttons button{ background:rgba(0,0,0,0.5); color:#fff; border:none; border-radius:.3rem; padding:.5rem; cursor:pointer; font-size:1vw; }
+    .static-buttons button:hover{ filter:brightness(1.05); }
+
+    /* ====== Dropdown status ====== */
+    .dropdown{ position:relative; display:inline-block; width:20vw; min-width:240px; z-index:10; }
+    .dropbtn{ background:#000; color:#fff; cursor:pointer; border-radius:5px; width:100%; padding:10px; border:none; }
+    .dropdown-content{
+      display:none; position:absolute; background:#f9f9f9; box-shadow:0 8px 16px rgba(0,0,0,0.2);
+      z-index:1; text-align:left; width:100%; max-height:50vh; overflow-y:auto;
+    }
+    .dropdown-content label{ color:#000; padding:12px 16px; display:inline-flex; align-items:center; width:90%; }
+    .dropdown-content label:hover{ background:#f1f1f1; }
+    .dropdown-content input{ margin-right:10px; }
+    .dropdown:hover .dropdown-content{ display:block; }
+    .dropdown:hover .dropbtn{ background:#5a5a5a; }
+    .date-filters{ display:flex; align-items:center; font-size:1em; gap:.5rem; flex-wrap:wrap; }
+    .date-filters label{ margin:0 10px 0 0; font-size:1em; color:#153A8A; }
+    .date-filters input{ padding:5px; border:1px solid #ccc; border-radius:5px; font-size:1em; }
+
+    /* ====== Modal (mantido) ====== */
+    .modal{ display:none; position:fixed; z-index:3; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; }
+    .modal-content{
+      background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8); background-size:600% 600%;
+      animation:GradientAnimation 10s ease infinite;
+      color:#fff; margin:auto; padding:20px; border:none; width:80vw; border-radius:10px; text-align:center;
+    }
+    .close{ color:#fff; float:right; font-size:28px; font-weight:bold; }
+    .close:hover,.close:focus{ color:#ccc; text-decoration:none; cursor:pointer; }
+
+    /* ====== Empty state ====== */
+    .empty-state{
+      padding:1rem; border:1px dashed #cfd6e6; border-radius:8px; margin:10px; color:#445;
+      background:#fafcff;
+    }
+
+    /* ====== Tooltip estilo dev_approvers (hover com título + texto) ====== */
+    .tip {
+      position: fixed; z-index: 20; pointer-events: none;
+      background:#fff; color:#333; border:1px solid #e6e9f2; border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,.12); padding:10px 12px; max-width:280px;
+      opacity:0; transform: translateY(-4px); transition: opacity .15s ease, transform .15s ease;
+    }
+    .tip.show { opacity:1; transform: translateY(0); }
+    .tip .tip-title { font-weight:700; color:#163A8A; margin-bottom:4px; }
+    .tip .tip-text  { font-size:.95em; color:#444; line-height:1.35; }
+  </style>
+</head>
+<body>
+  <div class="static-buttons">
+    <button onclick="downloadFile()"><i class="fas fa-file-excel"></i> Download Excel</button>
+    <button onclick="window.location='/desvios'"><i class="fas fa-xmark"></i></button>
+  </div>
+
+  <div class="container">
+    <div class="title">
+      <h1>Desvios de Processo - Aprovações</h1>
+      <div class="date-filters">
+        <label>Data da Solicitação</label>
+        <label for="start_date">Início:</label>
+        <input type="date" min="2024-04-17" id="start_date" value="{{start_date}}" onchange="searchData()">
+        <label for="end_date">Fim:</label>
+        <input type="date" min="2024-04-18" id="end_date" value="{{end_date}}" onchange="searchData()">
+      </div>
+    </div>
+
+    <div class="filter-container">
+      <input type="text" id="filter1" placeholder="Filtrar - Nº Desvio" onkeyup="filterTable()">
+      <input type="text" id="filter2" placeholder="Filtrar - Solicitante" onkeyup="filterTable()">
+      <input type="text" id="filter3" placeholder="Filtrar - Motivo" onkeyup="filterTable()">
+      <input type="text" id="filter4" placeholder="Filtrar - Centro de Trabalho" onkeyup="filterTable()">
+      <input type="text" id="filter5" placeholder="Filtrar - Família" onkeyup="filterTable()">
+      <div class="dropdown">
+        <button class="dropbtn" type="button">Selecione o status</button>
+        <div class="dropdown-content" id="filter6">
+          <label><input checked type="checkbox" onchange="toggleExclusiveFilter()" id="filter6_group"> Selecionar todos</label>
+          <label><input checked type="checkbox" name="filter6" value="0" onchange="filterTable()"> Aguardando aprovação</label>
+          <label><input checked type="checkbox" name="filter6" value="1" onchange="filterTable()"> Aprovado</label>
+          <label><input checked type="checkbox" name="filter6" value="2" onchange="filterTable()"> Recusado</label>
+          <label><input checked type="checkbox" name="filter6" value="3" onchange="filterTable()"> Cancelado</label>
+          <label><input checked type="checkbox" name="filter6" value="4" onchange="filterTable()"> Finalizado</label>
+          <label><input checked type="checkbox" name="filter6" value="5" onchange="filterTable()"> Em andamento</label>
+          <label><input checked type="checkbox" name="filter6" value="6" onchange="filterTable()"> Vencido</label>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:60vh; overflow-y:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="white-space:nowrap;">Nº Desvio</th>
+            <th>Revisão</th>
+            <th>Solicitante</th>
+            <th>Motivo</th>
+            <th>Centro de Trabalho</th>
+            <th>Família</th>
+            <th>Data Fim</th>
+            <th>Status</th>
+            <th>Aprovador</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="infoTable">
+          <!-- Conteúdo via JS -->
+        </tbody>
+      </table>
+      <div id="emptyBox" class="empty-state" style="display:none;">Nenhum registro encontrado. Ajuste os filtros e tente novamente.</div>
+    </div>
+  </div>
+
+  <!-- Modal de erro amigável -->
+  <div id="modalError" class="modal">
+    <div class="modal-content" style="width: 50%;">
+      <h2 id="errorMessage"></h2>
+      <button onclick="closeModal('modalError')">Fechar</button>
+    </div>
+  </div>
+
+  <script>
+    let tableData = [];
+    const defaultStart = '{{start_date}}';
+    const defaultEnd = '{{end_date}}';
+
+    /* ====== Modal ====== */
+    function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+
+    /* ====== Helpers ====== */
+    function setLoading(btn, is=true){
+      if(!btn) return;
+      if(is){
+        btn.dataset._label = btn.innerHTML;
+        btn.classList.add('btn-loading');
+        btn.disabled = true;
+      }else{
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+        if(btn.dataset._label) btn.innerHTML = btn.dataset._label;
+      }
+    }
+    function safeParseList(raw){
+      // Tenta JSON.parse; se falhar, tenta quebrar por vírgula; garante array
+      try{
+        const v = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if(Array.isArray(v)) return v;
+      }catch(e){}
+      if(typeof raw === 'string' && raw.includes(',')){
+        return raw.split(',').map(x => x.trim()).filter(Boolean);
+      }
+      return Array.isArray(raw) ? raw : [];
+    }
+    function fmtList(arr){
+      const v = safeParseList(arr);
+      if(v.length > 1) return v.slice(0, -1).join(', ') + ' e ' + v[v.length - 1];
+      if(v.length === 1) return v[0];
+      return '';
+    }
+    function getStatusStyle(st){
+      switch(st){
+        case 0: return { text:'Aguardando aprovação', color:'black', backgroundColor:'yellow' };
+        case 1: return { text:'Aprovado', color:'white', backgroundColor:'#228c22' };
+        case 2: return { text:'Recusado', color:'white', backgroundColor:'red' };
+        case 3: return { text:'Cancelado', color:'black', backgroundColor:'gray' };
+        case 4: return { text:'Finalizado', color:'black', backgroundColor:'gray' };
+        case 5: return { text:'Em andamento', color:'white', backgroundColor:'#228c22' };
+        case 6: return { text:'Vencido', color:'white', backgroundColor:'red' };
+        default: return { text:String(st), color:'#111', backgroundColor:'#eee' };
+      }
+    }
+
+    /* ====== Tooltip simples (padrão dev_approvers) ====== */
+    const tip = document.createElement('div');
+    tip.className = 'tip';
+    tip.innerHTML = '<div class="tip-title"></div><div class="tip-text"></div>';
+    document.body.appendChild(tip);
+    function showTip(e, title, text){
+      tip.querySelector('.tip-title').textContent = title || '';
+      tip.querySelector('.tip-text').textContent  = text  || '';
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY + 14) + 'px';
+      tip.classList.add('show');
+    }
+    function moveTip(e){
+      if(!tip.classList.contains('show')) return;
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY + 14) + 'px';
+    }
+    function hideTip(){ tip.classList.remove('show'); }
+    function attachHover(el, title, text){
+      if(!el) return;
+      el.addEventListener('mouseenter', (e)=> showTip(e, title, text));
+      el.addEventListener('mousemove',  moveTip);
+      el.addEventListener('mouseleave', hideTip);
+      el.addEventListener('blur', hideTip);
+    }
+
+    /* ====== SweetAlert2: mensagens de bloqueio ====== */
+    function showBlockedAlert(customText){
+      const text = customText || 'Não foi possível mudar o status: este desvio foi recusado por outra área.';
+      if (typeof Swal === 'undefined'){ alert(text); return; }
+      Swal.fire({
+        icon: 'error',
+        title: 'Ação bloqueada',
+        text: text,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#163A8A'
+      });
+    }
+
+    /* ====== Ações ====== */
+    function sendToApproval(info, action, id, evBtn){
+      const btn = evBtn || null;
+
+      // 🚫 Bloqueio visual imediato se o status geral não for 0
+      if (Number(info['status']) !== 0){
+        showBlockedAlert('Não foi possível mudar o status: este desvio já não está em aprovação.');
+        return;
+      }
+
+      if(btn) setLoading(btn, true);
+
+      if(action === '2'){ // Reprovar: abre tela de recusa (GET)
+        window.location.href = "/desvios/atualizar?id=" + id;
+        return;
+      }
+
+      // Aprovar: pode exigir 'tipo' para cliente/fornecedor
+      if(info['sector'] === 'Qualidade Cliente'){
+        window.location.href = "/desvios/atualizar?aprovar=1&id=" + id + "&tipo=cliente";
+        return;
+      }else if(info['sector'] === 'Eng. Fornecedores'){
+        window.location.href = "/desvios/atualizar?aprovar=1&id=" + id + "&tipo=fornecedor";
+        return;
+      }
+
+      // Demais setores: aprova via POST
+      fetch("/desvios/atualizar?aprovar=1&id=" + id, { method: 'POST' })
+        .then(response => {
+          if(response.ok){ location.reload(); }
+          else{
+            return response.text().then(t => { throw new Error(t || 'Erro ao aprovar desvio'); });
+          }
+        })
+        .catch(err => {
+          console.error("Erro na requisição:", err);
+          document.getElementById('errorMessage').innerHTML = "Erro ao aprovar: " + (err.message || 'tente novamente.');
+          openModal('modalError');
+        })
+        .finally(()=> setLoading(btn, false));
+    }
+
+    /* ====== Tabela ====== */
+    function populateTable(data){
+      const tbody = document.getElementById('infoTable');
+      const emptyBox = document.getElementById('emptyBox');
+      tbody.innerHTML = '';
+      if(!data || data.length === 0){
+        emptyBox.style.display = 'block';
+        return;
+      }else{
+        emptyBox.style.display = 'none';
+      }
+
+      data.forEach(info => {
+        const row = document.createElement('tr');
+
+        // Nº Desvio (botão dark com link para detalhes)
+        let cell = document.createElement('td');
+        const btnId = document.createElement('button');
+        btnId.textContent = info['deviationId'];
+        btnId.className = 'btn-dark';
+        btnId.style.whiteSpace = 'nowrap';
+        btnId.onclick = () => window.location.href = `/desvios/detalhes?id=${info['deviationId']}`;
+        attachHover(btnId, 'Abrir detalhes', 'Clique para ver todas as revisões, anexos e ações do desvio.');
+        cell.appendChild(btnId);
+        row.appendChild(cell);
+
+        // Revisão
+        cell = document.createElement('td');
+        cell.textContent = info['revision'];
+        row.appendChild(cell);
+
+        // Solicitante
+        cell = document.createElement('td');
+        cell.textContent = info['requesterName'] || '';
+        row.appendChild(cell);
+
+        // Motivo
+        cell = document.createElement('td');
+        cell.textContent = info['motive'] || '';
+        row.appendChild(cell);
+
+        // Centro de Trabalho
+        cell = document.createElement('td');
+        cell.textContent = fmtList(info['workCenter']);
+        row.appendChild(cell);
+
+        // Família
+        cell = document.createElement('td');
+        cell.textContent = fmtList(info['families']);
+        row.appendChild(cell);
+
+        // Data Fim (YYYY-MM-DD)
+        cell = document.createElement('td');
+        const rawDate = info['finalDate'] || '';
+        cell.textContent = (typeof rawDate === 'string' && rawDate.includes('T')) ? rawDate.split('T')[0] : rawDate;
+        row.appendChild(cell);
+
+        // Status (badge)
+        cell = document.createElement('td');
+        const st = getStatusStyle(info['status']);
+        cell.textContent = st.text;
+        cell.style.backgroundColor = st.backgroundColor;
+        cell.style.color = st.color;
+        row.appendChild(cell);
+
+        // Aprovador
+        cell = document.createElement('td');
+        if(info['approvalStatus'] === 0){
+          cell.textContent = `${info['sector']}: Pendente`;
+        }else{
+          cell.textContent = `${info['sector']}: ${info['approverName'] || ''}`;
+        }
+        row.appendChild(cell);
+
+        // Ações (visibilidade pelas regras)
+        cell = document.createElement('td');
+        const statusGeral = Number(info['status']);           // 0..6
+        const statusSetor = Number(info['approvalStatus']);  // 0 pendente, 1 aprovado, 2 reprovado
+        const canAct      = (statusSetor === 0) && (statusGeral === 0);
+
+        if (canAct){
+          const btnApprove = document.createElement('button');
+          btnApprove.textContent = 'Aprovar';
+          btnApprove.className = 'btn-green';
+          attachHover(btnApprove, 'Aprovar', 'Registra sua aprovação neste setor. Caso aplicável, pode exigir indicar cliente/fornecedor.');
+          btnApprove.onclick = (ev) => sendToApproval(info, '1', `${info['deviationId']}-${info['revision']}`, ev.currentTarget);
+
+          const btnRefuse = document.createElement('button');
+          btnRefuse.textContent = 'Reprovar';
+          btnRefuse.className   = 'btn-red';
+          btnRefuse.style.marginTop = '1vh';
+          attachHover(btnRefuse, 'Reprovar', 'Abrirá uma tela para justificar a não aprovação deste desvio pela sua área.');
+          btnRefuse.onclick = (ev) => sendToApproval(info, '2', `${info['deviationId']}-${info['revision']}`, ev.currentTarget);
+
+          cell.append(btnApprove, btnRefuse);
+
+        } else {
+          // Bloqueios visuais coerentes + popups
+          if(statusSetor === 1){
+            const ok = document.createElement('button');
+            ok.textContent = 'Aprovado';
+            ok.className   = 'btn-green';
+            ok.disabled    = true;
+            attachHover(ok, 'Ação já tomada', 'Este setor já aprovou este desvio.');
+            cell.append(ok);
+
+          } else if(statusSetor === 2){
+            const no = document.createElement('button');
+            no.textContent = 'Reprovado';
+            no.className   = 'btn-red';
+            no.disabled    = true;
+            attachHover(no, 'Ação já tomada', 'Este setor já reprovou este desvio.');
+            cell.append(no);
+
+          } else if (statusGeral === 2) {
+            // Recusado por outra área: mantém botões visuais mas bloqueados com popup
+            const a1 = document.createElement('button');
+            a1.textContent = 'Aprovar';
+            a1.className   = 'btn-gray';
+            a1.onclick     = () => showBlockedAlert('Não foi possível mudar o status: este desvio foi recusado por outra área.');
+            a1.disabled    = true;
+            attachHover(a1, 'Bloqueado', 'Ação indisponível: o desvio já foi recusado por outra área.');
+
+            const a2 = document.createElement('button');
+            a2.textContent = 'Reprovar';
+            a2.className   = 'btn-gray';
+            a2.style.marginTop = '1vh';
+            a2.onclick     = () => showBlockedAlert('Não foi possível mudar o status: este desvio foi recusado por outra área.');
+            a2.disabled    = true;
+            attachHover(a2, 'Bloqueado', 'Ação indisponível: o desvio já foi recusado por outra área.');
+
+            cell.append(a1, a2);
+
+          } else {
+            const na = document.createElement('button');
+            na.textContent = 'Sem ação disponível';
+            na.className   = 'btn-gray';
+            na.disabled    = true;
+            attachHover(na, 'Indisponível', 'Não há ações para este registro nas condições atuais.');
+            cell.append(na);
+          }
+        }
+
+        row.appendChild(cell);
+        document.getElementById('infoTable').appendChild(row);
+      });
+    }
+
+    /* ====== Filtros ====== */
+    function filterTable(){
+      const f1 = document.getElementById('filter1').value.toLowerCase();
+      const f2 = document.getElementById('filter2').value.toLowerCase();
+      const f3 = document.getElementById('filter3').value.toLowerCase();
+      const f4 = document.getElementById('filter4').value.toLowerCase();
+      const f5 = document.getElementById('filter5').value.toLowerCase();
+      const f6 = Array.from(document.querySelectorAll('#filter6 input[name="filter6"]:checked')).map(cb => cb.value);
+
+      const filtered = (tableData || []).filter(info => {
+        const m1 = String(info['deviationId'] || '').toLowerCase().includes(f1);
+        const m2 = String(info['requesterName'] || '').toLowerCase().includes(f2);
+        const m3 = String(info['motive'] || '').toLowerCase().includes(f3);
+        const m4 = String(fmtList(info['workCenter'])).toLowerCase().includes(f4);
+        const m5 = String(fmtList(info['families'])).toLowerCase().includes(f5);
+        const m6 = f6.includes(String(info['status']));
+        return m1 && m2 && m3 && m4 && m5 && m6;
+      });
+      populateTable(filtered);
+    }
+    function toggleExclusiveFilter(){
+      const master = document.getElementById('filter6_group');
+      const boxes = document.getElementsByName('filter6');
+      boxes.forEach(cb => cb.checked = master.checked);
+      filterTable();
+    }
+    function getFilters(){
+      const s = document.getElementById('start_date');
+      const e = document.getElementById('end_date');
+      if(!s.value) s.value = defaultStart;
+      if(!e.value) e.value = defaultEnd;
+      return { start_date: s.value, end_date: e.value };
+    }
+
+    /* ====== Busca ====== */
+    function searchData(){
+      const payload = getFilters();
+      fetch('/desvios/aprovacoes', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if(!response.ok){
+          return response.json()
+            .then(err => { throw new Error(err.message || 'Acesso negado.'); })
+            .catch(() => { throw new Error('Erro inesperado ao processar a resposta do servidor.'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        tableData = Array.isArray(data) ? data : [];
+        filterTable();
+      })
+      .catch(err => {
+        document.getElementById('errorMessage').innerHTML = err.message || 'Acesso negado.';
+        openModal('modalError');
+        // Limpa grid para não confundir o usuário
+        tableData = [];
+        filterTable();
+      });
+    }
+
+    /* ====== Excel ====== */
+    function downloadFile(){
+      const payload = getFilters();
+      fetch('/desvios/aprovacoes?excel=1', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if(!response.ok) throw new Error('Erro ao gerar o arquivo');
+        const disp = response.headers.get('Content-Disposition');
+        let filename = 'desvios.xlsx';
+        if(disp && disp.includes('filename=')){
+          const m = disp.match(/filename="?([^"]+)"?/);
+          if (m?.[1]) filename = m[1];
+        }
+        return response.blob().then(blob => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none'; a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        URL.revokeObjectURL(url); a.remove();
+      })
+      .catch(err => {
+        document.getElementById('errorMessage').innerHTML = err.message || 'Erro ao baixar arquivo.';
+        openModal('modalError');
+      });
+    }
+
+    /* ====== Init ====== */
+    window.onload = function(){ searchData(); };
+  </script>
+  <!-- ============ CSS aditivo: spinner + pulso + tooltip (sem alterar layout) ============ -->
+<style>
+  .dj-spinner{
+    display:inline-block; width:16px; height:16px;
+    border:2px solid rgba(255,255,255,.4); border-top-color:#fff;
+    border-radius:50%; animation:dj-spin .7s linear infinite; vertical-align:-2px;
+  }
+  @keyframes dj-spin{ to{ transform:rotate(360deg); } }
+
+  .dj-pulse-success{ animation:dj-pulse 380ms ease-in-out; }
+  @keyframes dj-pulse{
+    0%{   transform:scale(1);    box-shadow:0 0 0 rgba(34,197,94,0); }
+    50%{  transform:scale(1.03); box-shadow:0 0 0 8px rgba(34,197,94,0.22); }
+    100%{ transform:scale(1);    box-shadow:0 0 0 rgba(34,197,94,0); }
+  }
+
+  /* Tooltip leve */
+  .dj-tip{
+    position:fixed; z-index:2147483000; pointer-events:none;
+    background:#fff; color:#333; border:1px solid #e6e9f2; border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.12);
+    padding:10px 12px; max-width:280px; opacity:0; transform:translateY(-4px);
+    transition:opacity .15s ease, transform .15s ease; font-family:inherit;
+  }
+  .dj-tip.show{ opacity:1; transform:translateY(0); }
+  .dj-tip .t-title{ font-weight:700; color:#163A8A; margin-bottom:4px; }
+  .dj-tip .t-text{ font-size:.95em; color:#444; line-height:1.35; }
+
+  /* Ícone do Excel dentro do toast */
+  .swal2-toast .dj-toast-icon{ color:#1e7d47 !important; font-size:1.15rem;
+    display:flex; align-items:center; justify-content:center; }
+  .swal2-toast .dj-toast-icon .fa-file-excel{ color:#1e7d47 !important; }
+</style>
+
+<!-- ============ Tooltip container (aditivo; não mexe no layout) ============ -->
+<div id="dj-tip" class="dj-tip" aria-hidden="true" style="display:none">
+  <div class="t-title"></div><div class="t-text"></div>
+</div>
+
+<!-- ============ SweetAlert2 (carrega só se ainda não existir) ============ -->
+<script>
+(function ensureSwal(){
+  if (window.Swal) return;
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/sweetalert2@11';
+  document.head.appendChild(s);
+})();
+</script>
+
+<!-- ============ JS aditivo: Excel (spinner + toast com ícone Excel + pulso) e tooltips ============ -->
+<script>
+(function(){
+  /* -------------------- UTILITÁRIOS -------------------- */
+  function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+  function $all(sel, ctx){ return Array.from((ctx||document).querySelectorAll(sel)); }
+
+  function ensureSwalReady(cb){
+    if (window.Swal){ cb(); return; }
+    let tries=0; (function wait(){
+      if (window.Swal) return cb();
+      if (tries++ > 40) return; // ~3s timeout
+      setTimeout(wait, 75);
+    })();
+  }
+
+  function toast(icon, title){ // genérico (erro, etc.)
+    ensureSwalReady(function(){
+      (window.Toast ||= Swal.mixin({
+        toast:true, position:'top-end', showConfirmButton:false, timer:2600, timerProgressBar:true,
+        didOpen:(t)=>{ t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
+      })).fire({ icon, title });
+    });
+  }
+
+  function toastExcelSuccess(filename){ // com ícone Excel
+    ensureSwalReady(function(){
+      // Detecta FA6 (fa-solid) ou FA5 (fas); se não houver FA, usa emoji 📊
+      const hasFA = document.querySelector('link[href*="font-awesome"], link[href*="fontawesome"], link[href*="cdnjs.cloudflare.com/ajax/libs/font-awesome"]');
+      const fa6   = hasFA && /\/6\./.test(hasFA.href);
+      const faCls = fa6 ? 'fa-solid' : 'fas';
+      const iconHtml = hasFA ? `<i class="${faCls} fa-file-excel"></i>` : '📊';
+
+      (window.Toast ||= Swal.mixin({
+        toast:true, position:'top-end', showConfirmButton:false, timer:2600, timerProgressBar:true,
+        didOpen:(t)=>{ t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
+      })).fire({
+        icon:'success',
+        iconHtml: iconHtml,
+        title: `${filename} gerado`,
+        customClass: { icon:'dj-toast-icon' }
+      });
+    });
+  }
+
+  function setLoading(btn, loading){
+    if(!btn) return;
+    if (loading){
+      btn.disabled = true;
+      btn.dataset._oldHtml = btn.dataset._oldHtml || btn.innerHTML;
+      btn.innerHTML = '<span class="dj-spinner" aria-hidden="true"></span><span style="margin-left:.5rem;">Gerando…</span>';
+    } else {
+      btn.disabled = false;
+      if (btn.dataset._oldHtml) btn.innerHTML = btn.dataset._oldHtml;
+      btn.dataset._oldHtml = '';
+    }
+  }
+
+  function findExcelBtn(){
+    // prioriza id="excelBtn"; senão, botão/anchor com texto “Download Excel”
+    return document.getElementById('excelBtn')
+           || $all('button, a').find(el => /download\s*excel/i.test(el.textContent||'')) || null;
+  }
+
+  function getValue(id){ const el=document.getElementById(id); return el && el.value ? el.value : ''; }
+
+  /* -------------------- EXCEL: handler ADITIVO -------------------- */
+  function onExcelClick(e){
+    e.preventDefault(); e.stopPropagation();
+    const btn = e.currentTarget;
+
+    // payload com filtros SE existirem (senão, manda vazio)
+    const s  = getValue('start_date');
+    const ed = getValue('end_date');
+    const payload = {};
+    if (s)  payload.start_date = s;
+    if (ed) payload.end_date   = ed;
+
+    setLoading(btn, true);
+
+    fetch('/desvios/aprovacoes?excel=1', {
+      method: 'POST',
+      headers: Object.keys(payload).length ? { 'Content-Type':'application/json' } : {},
+      body:   Object.keys(payload).length ? JSON.stringify(payload) : null
+    })
+    .then(r=>{
+      if(!r.ok) throw new Error('Erro ao gerar o arquivo');
+      const disp = r.headers.get('Content-Disposition');
+      let filename = 'desvios.xlsx';
+      if (disp && disp.includes('filename=')) {
+        const m = disp.match(/filename="?([^"]+)"?/); if (m && m[1]) filename = m[1];
+      }
+      return r.blob().then(b => ({ b, filename }));
+    })
+    .then(({b, filename})=>{
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.style.display='none'; a.href=url; a.download=filename;
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(url); a.remove();
+
+      // sucesso: toast com ícone Excel + pulso no botão
+      toastExcelSuccess(filename);
+      btn.classList.add('dj-pulse-success');
+      setTimeout(()=>btn.classList.remove('dj-pulse-success'), 420);
+    })
+    .catch(()=> toast('error', 'Falha ao gerar Excel'))
+    .finally(()=> setLoading(btn, false));
+  }
+
+  /* -------------------- TOOLTIP: bind ADITIVO -------------------- */
+  const tip = document.getElementById('dj-tip');
+  const tipTitle = tip.querySelector('.t-title');
+  const tipText  = tip.querySelector('.t-text');
+
+  function tipMove(e){
+    const off=14; let x=e.clientX+off, y=e.clientY+off;
+    const r=tip.getBoundingClientRect();
+    if (x+r.width  > innerWidth-8)  x = e.clientX - r.width  - off;
+    if (y+r.height > innerHeight-8) y = e.clientY - r.height - off;
+    tip.style.left = x+'px'; tip.style.top = y+'px';
+  }
+  function tipShow(e, title, text){
+    tipTitle.textContent = title || ''; tipText.textContent = text || '';
+    tip.style.display='block'; tipMove(e); tip.classList.add('show');
+  }
+  function tipHide(){ tip.classList.remove('show'); tip.style.display='none'; }
+  function bindTip(el, title, text){
+    if (!el) return;
+    el.addEventListener('mouseenter', e=>tipShow(e,title,text));
+    el.addEventListener('mousemove',  tipMove);
+    el.addEventListener('mouseleave', tipHide);
+    el.addEventListener('blur',       tipHide);
+  }
+  function bindThByText(regex, title, text){
+    const th = $all('table th').find(th => regex.test((th.textContent||'').trim()));
+    bindTip(th, title, text);
+  }
+
+  /* -------------------- INIT: liga Excel + tooltips (não-intrusivo) -------------------- */
+  document.addEventListener('DOMContentLoaded', function(){
+    // Excel
+    const excelBtn = findExcelBtn();
+    if (excelBtn) excelBtn.addEventListener('click', onExcelClick, false);
+
+    // Tooltips
+    bindTip(excelBtn, 'Download Excel', 'Gera e baixa a planilha conforme os filtros informados.');
+    const filterBtn = document.getElementById('filterBtn')
+                    || $all('button').find(el => /^\s*filtrar\s*$/i.test(el.textContent||''));
+    bindTip(filterBtn, 'Filtrar', 'Aplica as datas e o status selecionados para atualizar o resultado.');
+
+    bindTip(document.getElementById('start_date'), 'Data inicial', 'Limite inferior do período de abertura.');
+    bindTip(document.getElementById('end_date'),   'Data final',   'Limite superior do período de abertura.');
+    bindTip(document.getElementById('status'),     'Status',       'Selecione um ou mais status para refinar a busca.');
+
+    bindThByText(/nº?\s*desvio/i,         'Nº Desvio',          'Código base/revisão.');
+    bindThByText(/revisão/i,              'Revisão',            'Número da revisão.');
+    bindThByText(/solicitante/i,          'Solicitante',        'Quem abriu o desvio.');
+    bindThByText(/motivo/i,               'Motivo',             'Motivo principal informado.');
+    bindThByText(/centro.*trabalho/i,     'Centro de Trabalho', 'CT relacionado.');
+    bindThByText(/família/i,              'Família',            'Família do produto.');
+    bindThByText(/data\s*fim/i,           'Data Fim',           'Prazo final informado.');
+    bindThByText(/status/i,               'Status',             'Situação atual do desvio.');
+    bindThByText(/aprovador/i,            'Aprovador',          'Quem aprovou a etapa.');
+    bindThByText(/ação/i,                 'Ação',               'Ações disponíveis para a linha.');
+
+    // Esconde tooltip ao rolar
+    document.addEventListener('scroll', tipHide, {passive:true});
+  });
+})();
+</script>
+</body>
+</html>

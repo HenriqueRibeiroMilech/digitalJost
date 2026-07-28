@@ -1,0 +1,39 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.05;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/video.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="seg_content" style="overflow:hidden;">
+    <a id="select_back" href="/op/ssma">&times;</a>
+    <div class="seg_wrapper" id="seg_sidenav">
+        <p class="seg_title">Árvore de Rotas</p>
+        <p class="seg_text" style="text-align: left;position: absolute;bottom: 2vh;left: 2vh;">Aqui você pode visualizar todas as rotas disponiveis para a aplicação de indicadores de SSMA.</p>
+    </div>
+
+    <div id="seg_form" style="display: flex;flex-direction: column;align-items: flex-end;">
+        <p class="seg_subtitle">Cruz de Segurança</p>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma')">Visualizar Cruz</button>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma/add')">Adicionar Dados</button>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma/edit_select')">Tabela de Dados</button>
+        <br>
+        <p class="seg_subtitle">Indicadores Chaves</p>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma')">Vizualizar Gráficos</button>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma')">Adicionar Dados</button>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma')">Editar Dados</button>
+
+
+
+    </div>
+</body>
+
+<script>
+    {% include 'operation.ssma/op_sec_route.js' %}
+</script>
+{% endblock %}

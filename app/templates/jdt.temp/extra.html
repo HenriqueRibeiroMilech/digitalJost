@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(21, 58, 138, 0.9);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .category-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-button {
+            background-color: #f8f9fa;
+            color: #153A8A;
+        }
+
+        .logout-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .photo-card {
+            position: relative;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            height: 360px; /* Altura fixa para cards */
+        }
+
+        .photo-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .photo-img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .photo-footer {
+            padding: 10px 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+
+        .participant-id {
+            font-weight: bold;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .like-button {
+            background-color: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #6c757d;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .like-button:hover {
+            color: #e91e63;
+        }
+
+        .like-button.liked {
+            color: #e91e63;
+            cursor: pointer;
+        }
+
+        .like-count {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .like-button::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 130%;  /* Posicionado bem acima do botão */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 2000;  /* Z-index alto para ficar acima de tudo */
+            pointer-events: none;  /* Impede que o tooltip bloqueie cliques */
+        }
+        
+        .like-button:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Modal para visualização ampliada */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 80%;
+            max-height: 80%;
+            padding-top: 20px; /* Espaço para tooltip aparecer */
+        }
+
+        .modal-img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 5px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 1001;
+            background: rgba(0, 0, 0, 0.5);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            background-color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 300px;
+        }
+
+        /* Ajustes para o tooltip dentro do modal */
+        .modal-footer .like-button::before {
+            z-index: 2000;  /* Ainda maior que o modal (1000) */
+            bottom: 150%;   /* Posicionado mais alto no modal */
+        }
+
+        .user-info {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+
+        /* Estilos para o novo sistema de carregamento */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(21, 58, 138, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .loader-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loader-spinner {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .loader-spinner div {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            animation: loader-spinner 1.2s linear infinite;
+        }
+
+        .loader-spinner div:nth-child(1) {
+            top: 8px;
+            left: 8px;
+            animation-delay: 0s;
+        }
+
+        .loader-spinner div:nth-child(2) {
+            top: 8px;
+            left: 32px;
+            animation-delay: -0.4s;
+        }
+
+        .loader-spinner div:nth-child(3) {
+            top: 8px;
+            left: 56px;
+            animation-delay: -0.8s;
+        }
+
+        .loader-spinner div:nth-child(4) {
+            top: 32px;
+            left: 8px;
+            animation-delay: -0.4s;
+        }
+
+        .loader-spinner div:nth-child(5) {
+            top: 32px;
+            left: 32px;
+            animation-delay: -0.8s;
+        }
+
+        .loader-spinner div:nth-child(6) {
+            top: 32px;
+            left: 56px;
+            animation-delay: -1.2s;
+        }
+
+        .loader-spinner div:nth-child(7) {
+            top: 56px;
+            left: 8px;
+            animation-delay: -0.8s;
+        }
+
+        .loader-spinner div:nth-child(8) {
+            top: 56px;
+            left: 32px;
+            animation-delay: -1.2s;
+        }
+
+        .loader-spinner div:nth-child(9) {
+            top: 56px;
+            left: 56px;
+            animation-delay: -1.6s;
+        }
+
+        @keyframes loader-spinner {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loader-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* Skeleton loading para as imagens */
+        .photo-card.loading::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .photo-card.loading .photo-footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+        }
+
+        body.loading-active {
+            overflow: hidden;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        /* Animações suaves para carregamento de imagens */
+        .photo-img {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .photo-img.loaded {
+            opacity: 1;
+        }
+
+        /* Estilo para o indicador de ação */
+        .action-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: rgba(21, 58, 138, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 0 0 0 10px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .action-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animação de pulsação para o botão de curtir quando acionado */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .like-button.animate {
+            animation: pulse 0.5s ease;
+        }
+
+        /* Notificação de voto registrado */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none; /* Impede que a notificação bloqueie os cliques quando invisível */
+        }
+
+        .notification.show {
+            opacity: 1;
+            pointer-events: auto; /* Permite interações quando visível */
+        }
+
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s, transform 0.3s;
+            z-index: 1002;
+        }
+
+        .nav-button:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-button.prev {
+            left: 20px;
+        }
+
+        .nav-button.next {
+            right: 20px;
+        }
+        
+        /* Para telas pequenas */
+        @media (max-width: 768px) {
+            .nav-button {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .nav-button.prev {
+                left: 10px;
+            }
+            
+            .nav-button.next {
+                right: 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Loader overlay -->
+    <div class="loader-overlay" id="mainLoader">
+        <div class="loader-content">
+            <div class="loader-spinner">
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+            </div>
+            <div class="loader-message">Carregando fotos...</div>
+        </div>
+    </div>
+    
+    <div class="header">
+        <div class="category-title">Categoria: {{ categoria }}</div>
+        <div class="header-buttons">
+            <button class="back-button">
+                <i class="fas fa-user"></i> {{ nome_usuario }}
+            </button>
+            <button class="back-button" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            <button class="logout-button" onclick="window.location='/extra/logout'">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+    </div>
+
+
+    <div class="photo-grid" id="photoGrid">
+        <div class="loader-container">
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <!-- Modal para visualização ampliada -->
+    <div class="modal" id="photoModal">
+        <span class="close-modal" onclick="closeModal()"><i class="fas fa-times"></i></span>
+        
+        <!-- Botão de navegação anterior -->
+        <button class="nav-button prev" onclick="navigatePhotos('prev')">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div class="modal-content">
+            <img class="modal-img" id="modalImg" src="" alt="Foto ampliada">
+        </div>
+        
+        <!-- Botão de navegação próxima -->
+        <button class="nav-button next" onclick="navigatePhotos('next')">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <div class="modal-footer">
+            <div class="participant-id" id="modalParticipant"></div>
+            <button class="like-button" id="modalLikeBtn" data-tooltip="" onclick="likePhoto(currentPhotoId, event)">
+                <i class="fas fa-heart"></i> <span class="like-count" id="modalLikeCount">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Notificação de voto registrado -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i> Voto registrado com sucesso!
+    </div>
+
+    <script>
+        // Variáveis globais
+        let currentUser = '{{ user_id }}';
+        let currentPhotoId = null;
+        let likedPhotos = [];
+        let allPhotos = [];
+        let loadedImages = 0;
+        let totalImages = 0;
+
+        function goBack() {
+            // Para garantir que a sessão seja mantida, enviar os dados via POST
+            if (currentUser) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/extra';
+                
+                // Adicionar o ID do usuário como campo oculto
+                const userIdField = document.createElement('input');
+                userIdField.type = 'hidden';
+                userIdField.name = 'user_id';
+                userIdField.value = currentUser;
+                
+                form.appendChild(userIdField);
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                // Fallback para navegação normal
+                window.location.href = '/extra';
+            }
+        }
+    
+        // Função para mostrar o loader
+        function showLoader(message = "Carregando...") {
+            document.body.classList.add('loading-active');
+
+            const loader = document.getElementById('mainLoader');
+            const loaderMessage = loader.querySelector('.loader-message');
+            loaderMessage.textContent = message;
+            loader.style.display = 'flex';
+        }
+
+        // Função para esconder o loader
+        function hideLoader(from) {
+            const loader = document.getElementById('mainLoader');
+            
+            // Clear any pending loader timeouts
+            if (window.loaderTimeout) {
+                clearTimeout(window.loaderTimeout);
+            }
+            
+            loader.style.opacity = '0';
+            
+            // Store the timeout in a global variable so we can cancel it if needed
+            window.loaderTimeout = setTimeout(() => {
+                loader.style.display = 'none';
+                loader.style.opacity = '1';
+                
+                // Remove the loading-active class
+                if (from != 'likePhoto') {
+                    document.body.classList.remove('loading-active');
+                    console.log('remove')
+                }
+
+            }, 300);
+        }
+
+        // Carregar fotos da categoria
+        window.onload = async function() {
+            showLoader("Carregando fotos...");
+            await loadPhotos();
+        };
+
+        function navigatePhotos(direction) {
+            if (!currentPhotoId || !allPhotos.length) return;
+            
+            // Re-apply loading-active class to ensure overflow stays hidden
+            document.body.classList.add('loading-active');
+            
+            // Find current index and calculate new index
+            const currentIndex = allPhotos.findIndex(p => p.id === currentPhotoId);
+            if (currentIndex === -1) return;
+            
+            let newIndex;
+            if (direction === 'next') {
+                newIndex = (currentIndex + 1) % allPhotos.length;
+            } else {
+                newIndex = (currentIndex - 1 + allPhotos.length) % allPhotos.length;
+            }
+            
+            // Open the new photo (which will handle the loading state)
+            openModal(allPhotos[newIndex].id);
+        }
+
+        // Função para carregar as fotos
+        async function loadPhotos() {
+            try {
+                const response = await fetch('/extra/fotos/{{ categoria }}');
+                if (response.ok) {
+                    const data = await response.json();
+                    allPhotos = data.photos;
+                    likedPhotos = data.liked_photos || [];
+                    
+                    // Mostrar mensagem de carregamento das imagens
+                    showLoader(`Preparando ${allPhotos.length} fotos...`);
+                    
+                    // Renderizar os placeholders primeiro
+                    renderPhotoPlaceholders();
+                    
+                    // Esperar um pouco para dar impressão de processamento
+                    setTimeout(() => {
+                        // Depois carregar as imagens de verdade
+                        renderPhotos();
+                    }, 800);
+                } else {
+                    console.error('Erro ao carregar fotos');
+                    hideLoader('photo');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                hideLoader('photo');
+            }
+        }
+
+        // Função para embaralhar array (algoritmo Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Função para renderizar placeholders das fotos
+        function renderPhotoPlaceholders() {
+            const photoGrid = document.getElementById('photoGrid');
+            photoGrid.innerHTML = '';
+            
+            // Embaralhar array de fotos para exibição aleatória
+            shuffleArray(allPhotos);
+            
+            totalImages = allPhotos.length;
+            loadedImages = 0;
+            
+            allPhotos.forEach((photo, index) => {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'photo-card loading';
+                photoCard.id = `card-${photo.id}`;
+                
+                photoCard.innerHTML = `
+                    <div class="photo-footer">
+                        <button class="like-button" disabled>
+                            <i class="fas fa-heart"></i> <span class="like-count">...</span>
+                        </button>
+                    </div>
+                    <div class="action-indicator" id="indicator-${photo.id}"></div>
+                `;
+                
+                photoGrid.appendChild(photoCard);
+            });
+        }
+
+        // Função para renderizar as fotos reais
+        function renderPhotos() {
+            allPhotos.forEach((photo, index) => {
+                const isLiked = likedPhotos.includes(photo.id);
+                const photoCard = document.getElementById(`card-${photo.id}`);
+                
+                if (!photoCard) return;
+                
+                // Criar imagem com lazy loading
+                const img = new Image();
+                img.className = 'photo-img';
+                img.alt = `Foto ${photo.id}`;
+                img.onload = function() {
+                    // Quando a imagem carregar
+                    loadedImages++;
+                    updateLoaderProgress();
+                    
+                    // Adicionar a imagem carregada ao card e remover loading state
+                    setTimeout(() => {
+                        photoCard.classList.remove('loading');
+                        photoCard.prepend(img);
+                        img.classList.add('loaded');
+                        
+                        // Configurar o botão de curtir
+                        setupLikeButton(photoCard, photo, isLiked);
+                        
+                        // Adicionar evento de clique na imagem
+                        img.onclick = () => openModal(photo.id);
+                    }, 200 * (index % 5)); // Escalonar o aparecimento para dar impressão de carregamento progressivo
+                };
+                
+                img.onerror = function() {
+                    loadedImages++;
+                    updateLoaderProgress();
+                    photoCard.classList.remove('loading');
+                    photoCard.innerHTML = `
+                        <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #666;">
+                            <i class="fas fa-image" style="font-size: 3rem;"></i>
+                        </div>
+                        <div class="photo-footer">
+                            <button class="like-button" disabled>
+                                <i class="fas fa-heart"></i> <span class="like-count">0</span>
+                            </button>
+                        </div>
+                    `;
+                };
+                
+                // Iniciar o carregamento da imagem
+                img.src = photo.url;
+            });
+        }
+
+        // Atualizar o progresso do carregador
+        function updateLoaderProgress() {
+            const percentage = Math.round((loadedImages / totalImages) * 100);
+            const loaderMessage = document.querySelector('.loader-message');
+            loaderMessage.textContent = `Carregando fotos... ${percentage}%`;
+            
+            if (loadedImages >= totalImages) {
+                setTimeout(hideLoader('photo'), 500);
+            }
+        }
+
+        // Configurar o botão de curtir
+        function setupLikeButton(photoCard, photo, isLiked) {
+            const likeBtn = photoCard.querySelector('.like-button');
+            const likeCount = photoCard.querySelector('.like-count');
+            
+            // Remover atributo disabled
+            likeBtn.removeAttribute('disabled');
+            
+            // Definir estado inicial
+            if (isLiked) {
+                likeBtn.classList.add('liked');
+                likeBtn.setAttribute('data-tooltip', 'Clique para remover seu voto');
+            } else {
+                likeBtn.setAttribute('data-tooltip', 'Clique para votar');
+            }
+            
+            // Definir contagem de curtidas
+            likeCount.textContent = '';
+            
+            // Adicionar evento de clique
+            likeBtn.onclick = (event) => likePhoto(photo.id, event);
+        }
+
+        // Função para curtir ou descurtir uma foto
+        async function likePhoto(photoId, event) {
+            if (event) event.stopPropagation(); // Evitar abrir o modal ao clicar no botão de curtir
+            
+            // Encontrar o botão que foi clicado
+            const likeBtn = event.currentTarget;
+            
+            // Adicionar classe para animação de pulsação
+            likeBtn.classList.add('animate');
+            setTimeout(() => likeBtn.classList.remove('animate'), 500);
+            
+            // Mostrar indicador de ação
+            const indicator = document.getElementById(`indicator-${photoId}`);
+            if (indicator) {
+                indicator.textContent = "Processando...";
+                indicator.classList.add('show');
+            }
+            
+            try {
+                const isLiked = likedPhotos.includes(photoId);
+                
+                const response = await fetch('/extra/curtir', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUser,
+                        photo_id: photoId,
+                        categoria: '{{ categoria }}'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Atualizar estado de curtidas
+                    const photo = allPhotos.find(p => p.id === photoId);
+                    photo.likes = data.likes_count;
+                    
+                    if (data.action === "liked") {
+                        // Adicionar à lista de fotos curtidas
+                        if (!likedPhotos.includes(photoId)) {
+                            likedPhotos.push(photoId);
+                        }
+                        if (indicator) {
+                            indicator.textContent = "Voto registrado!";
+                            indicator.style.backgroundColor = "#4CAF50";
+                        }
+                        showNotification("Voto registrado com sucesso!");
+                    } else {
+                        // Remover da lista de fotos curtidas
+                        const index = likedPhotos.indexOf(photoId);
+                        if (index > -1) {
+                            likedPhotos.splice(index, 1);
+                        }
+                        if (indicator) {
+                            indicator.textContent = "Voto removido!";
+                            indicator.style.backgroundColor = "#FF9800";
+                        }
+                        showNotification("Voto removido com sucesso!", "warning");
+                    }
+                    
+                    // Atualizar UI
+                    updateLikeUI(photoId, data.action === "liked", data.likes_count);
+                    
+                    // Esconder indicador após alguns segundos
+                    if (indicator) {
+                        setTimeout(() => {
+                            indicator.classList.remove('show');
+                        }, 2000);
+                    }
+                    
+                } else {
+                    console.error('Erro ao processar curtida');
+                    if (indicator) {
+                        indicator.textContent = "Erro!";
+                        indicator.style.backgroundColor = "#F44336";
+                        setTimeout(() => {
+                            indicator.classList.remove('show');
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                if (indicator) {
+                    indicator.textContent = "Erro!";
+                    indicator.style.backgroundColor = "#F44336";
+                    setTimeout(() => {
+                        indicator.classList.remove('show');
+                    }, 2000);
+                }
+            }
+        }
+
+        // Atualizar a interface após curtir ou descurtir
+        function updateLikeUI(photoId, isLiked, likesCount) {
+            // Atualizar no card
+            const photoCard = document.getElementById(`card-${photoId}`);
+            if (photoCard) {
+                const likeBtn = photoCard.querySelector('.like-button');
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeBtn.setAttribute('data-tooltip', 'Clique para remover seu voto');
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeBtn.setAttribute('data-tooltip', 'Clique para votar');
+                }
+                const likeCount = likeBtn.querySelector('.like-count');
+                // likeCount.textContent = likesCount;
+            }
+
+            // Atualizar no modal se estiver aberto
+            if (currentPhotoId === photoId) {
+                const modalLikeBtn = document.getElementById('modalLikeBtn');
+                if (isLiked) {
+                    modalLikeBtn.classList.add('liked');
+                    modalLikeBtn.setAttribute('data-tooltip', 'Clique para remover seu voto');
+                } else {
+                    modalLikeBtn.classList.remove('liked');
+                    modalLikeBtn.setAttribute('data-tooltip', 'Clique para votar');
+                }
+                const modalLikeCount = document.getElementById('modalLikeCount');
+                // modalLikeCount.textContent = likesCount;
+            }
+        }
+
+        // Função para abrir o modal
+        function openModal(photoId) {
+            console.log('add')
+            document.body.classList.add('loading-active');
+
+            showLoader("Carregando foto...");
+            
+            const photo = allPhotos.find(p => p.id === photoId);
+            if (!photo) {
+                hideLoader('likePhoto');
+                return;
+            }
+
+
+            
+            currentPhotoId = photoId;
+            const modal = document.getElementById('photoModal');
+            const modalImg = document.getElementById('modalImg');
+            const modalParticipant = document.getElementById('modalParticipant');
+            const modalLikeBtn = document.getElementById('modalLikeBtn');
+            const modalLikeCount = document.getElementById('modalLikeCount');
+            
+            // Pré-carregar a imagem
+            const img = new Image();
+            img.onload = function() {
+                modalImg.src = photo.url;
+                modalParticipant.textContent = `Clique para curtir`;
+                modalLikeCount.textContent = '';
+                
+                const isLiked = likedPhotos.includes(photoId);
+
+                if (isLiked) {
+                    modalLikeBtn.classList.add('liked');
+                    modalLikeBtn.setAttribute('data-tooltip', 'Clique para remover seu voto');
+                } else {
+                    modalLikeBtn.classList.remove('liked');
+                    modalLikeBtn.setAttribute('data-tooltip', 'Clique para votar');
+                }
+
+                hideLoader('likePhoto');
+                modal.style.display = 'flex';
+
+                console.log('add')
+                document.body.classList.add('loading-active');
+
+            };
+            
+            img.onerror = function() {
+                hideLoader(null);
+                alert('Erro ao carregar a imagem.');
+            };
+            
+            img.src = photo.url;
+        }
+
+        // Função para fechar o modal
+        function closeModal() {
+            document.body.classList.remove('loading-active');
+            document.getElementById('photoModal').style.display = 'none';
+            currentPhotoId = null;
+        }
+
+        // Exibir notificação com tipo customizado
+        let notificationTimeout;
+        function showNotification(message, type = "success") {
+            const notification = document.getElementById('notification');
+            
+            // Limpar qualquer timeout existente para evitar sobreposição
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+            }
+            
+            // Remover qualquer classe show existente
+            notification.classList.remove('show');
+            
+            // Forçar reflow para garantir que a transição funcione corretamente
+            void notification.offsetWidth;
+            
+            // Definir cor da notificação baseada no tipo
+            if (type === "success") {
+                notification.style.backgroundColor = "#4CAF50";
+            } else if (type === "warning") {
+                notification.style.backgroundColor = "#FF9800";
+            }
+            
+            // Atualizar texto da notificação
+            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i> ${message}`;
+            
+            // Mostrar a notificação
+            notification.classList.add('show');
+            
+            // Ocultar após alguns segundos
+            notificationTimeout = setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Fechar o modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('photoModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Define o tempo de espera (10 minutos = 600000 ms)
+        const redirectTime = 600000;
+    
+        // Função para redirecionar e fechar a página atual
+        function redirectAndClose() {
+            window.location.href = '/extra';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            // Se o modal estiver aberto
+            if (document.getElementById('photoModal').style.display === 'flex') {
+                if (e.key === 'ArrowLeft') {
+                    navigatePhotos('prev');
+                } else if (e.key === 'ArrowRight') {
+                    navigatePhotos('next');
+                } else if (e.key === 'Escape') {
+                    closeModal();
+                }
+            }
+        });
+
+
+        // Inicia o temporizador para redirecionar
+        setTimeout(redirectAndClose, redirectTime);
+    </script>
+</body>
+</html>

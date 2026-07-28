@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between; /* Alinha o título à esquerda e os filtros à direita */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.7em;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-section > div {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 calc(25% - 10px); /* quatro campos por linha */
+        }
+
+        .form-section > div label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .form-section > div input,
+        .form-section > div select {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .image-container {
+            position: relative;
+            display: inline-block;
+            justify-content: center;
+            display: flex;
+            margin-top: 2vh;
+        }
+
+        .image-container div {
+            font-size: 1vw;
+        }
+
+        .image-container img {
+            display: block;
+            max-width: 60%;
+            width: 60%;
+            border-radius: 30px;
+        }
+
+
+        .text-overlay {
+            position: absolute;
+            color: black;
+            font-size: 16px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            z-index: 5;
+            width: 93%;
+        }
+
+        .dropbtn {
+            background-color: #000000;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: auto;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: inline-flex; 
+            align-items: center;
+            width: 93%;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #5a5a5a;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="downloadExcel()">Download Excel</button>
+        <button onclick="window.location='/rastreabilidade/qr'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Rastreabilidade Quinta Roda - M0{{types}}</h1>
+            <div style="display: flex; flex-direction: column;min-height: calc(2.5em + 20px) ">
+                <button style="font-size: 1vw;" onclick="openModal('modalRequest')">Adicionar Novo Material</button>
+            </div>
+        </div>        
+        
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar - Cód. Material" onkeyup="filterTable()">
+            <input type="text" id="filter2" placeholder="Filtrar - Cód. Material QR" onkeyup="filterTable()">
+            <input type="text" id="filter3" placeholder="Filtrar - Cód. QR" onkeyup="filterTable()">
+            <input type="text" id="filter4" placeholder="Filtrar - Altura Sapata" onkeyup="filterTable()">
+            <input type="text" id="filter5" placeholder="Filtrar - Modelo Sapata" onkeyup="filterTable()">
+            <input type="text" id="filter6" placeholder="Filtrar - Fornecedor Sapata" onkeyup="filterTable()">
+            <input type="text" id="filter7" placeholder="Filtrar - Pintura" onkeyup="filterTable()">
+            <input type="text" id="filter8" placeholder="Filtrar - Modelo Conf." onkeyup="filterTable()">
+        </div>
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table>
+                <thead>
+                    <tr >
+                        <th colspan="8" style="background-color: black;text-align: center;">Dados Gerais</th>
+                        <th colspan="7" style="background-color: black;text-align: center;">Plaqueta de Identificação</th>
+                    </tr>
+                    <tr>
+                        <th>Cód. Material</th>
+                        <th>Cód. Material QR</th>
+                        <th>Cód. QR</th>
+                        <th>Altura Sapata</th>
+                        <th>Modelo Sapata Rast.</th>
+                        <th>Fornecedor Sapata</th>
+                        <th>Pintura</th>
+                        <th>Modelo Conf. Rast.</th>
+                        <th>Desc Material</th>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                        <th>5</th>
+                        <th>6</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="modalRequest" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalRequest')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Cadastro de Material</h2>
+    
+            <!-- Formulário de cadastro de material -->
+            <form id="materialForm">
+                <h3 class="subtitulo">Informações Gerais</h3>
+
+                <div class="form-section">
+                    <div>
+                        <label for="codMaterial">Código Material</label>
+                        <input type="text" id="codMaterial" required>
+                    </div>
+                    <div>
+                        <label for="codMaterialQR">Código Material QR</label>
+                        <input type="text" id="codMaterialQR" required>
+                    </div>
+                    <div>
+                        <label for="codQR">Código QR</label>
+                        <input type="text" id="codQR" required>
+                    </div>
+                </div>
+
+                <div class="form-section" style="margin-top: 1vh;">
+                    <div>
+                        <label for="alturaSapata">Altura Sapata</label>
+                        <select id="alturaSapata" required onchange="changeType(this.value)">
+                            <option value="0">0</option>
+                            <option value="150">150</option>
+                            <option value="185">185</option>
+                            <option value="190">190</option>
+                            <option value="205">205</option>
+                            <option value="220">220</option>
+                            <option value="250">250</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="modeloSapata">Modelo Sapata Rast.</label>
+                        <input type="text" id="modeloSapata" required readonly placeholder="Selecione uma altura de Sapata">
+                    </div>
+
+                    <div>
+                        <label for="fornecedorSapata">Fornecedor da sapata</label>
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Selecione</button>
+                            <div class="dropdown-content" id="fornecedorSapata">
+                                <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="fornecedorSapata" value="SCHULZ">SCHULZ</label>
+                                <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="fornecedorSapata" value="WHB">WHB</label>
+                                <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="fornecedorSapata" value="CASTERTECH">CASTERTECH</label>
+                                <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="fornecedorSapata" value="FUNDIMIG">FUNDIMIG</label>
+                                <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="fornecedorSapata" value="FUNDIMISA">FUNDIMISA</label>
+                                <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="fornecedorSapata" value="FUREZA">FUREZA</label>
+                                <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="fornecedorSapata" value="FERRODOKUM">FERRODOKUM</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-section" style="margin-top: 1vh;">
+                    <div>
+                        <label for="pintura">Pintura</label>
+                        <input type="number" step="1" oninput="this.value = Math.round(this.value);" min="0" id="pintura" required>
+                    </div>
+                    <div>
+                        <label for="modeloConfRast">Modelo Conf. Rast.</label>
+                        <select id="modeloConfRast" required>
+                            <option value="24">24</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="45">45</option>
+                            <option value="63">63</option>
+                            <option value="64">64</option>
+                            <option value="65">65</option>
+                            <option value="67">67</option>
+                            <option value="72">72</option>
+                            <option value="E2">E2</option>
+                            <option value="E8">E8</option>
+                            <option value="E9">E9</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="descMaterial">Descrição do Material</label>
+                        <input type="text" id="descMaterial" required>
+                    </div>
+                </div>
+    
+                <h3 class="subtitulo">Plaqueta de Identificação</h3>
+                <div class="form-section">
+                    <div>
+                        <label for="campo1">Campo 1</label>
+                        <input type="text" id="campo1" required oninput="fillPlate('text1', this.value); validateInput(this)" maxlength="14">
+                    </div>
+                    <div>
+                        <label for="campo2">Campo 2</label>
+                        <input type="text" id="campo2" required oninput="fillPlate('text2', this.value); validateInput(this)" maxlength="6">
+                    </div>
+                    <div>
+                        <label for="campo3">Campo 3</label>
+                        <input type="text" id="campo3" required oninput="fillPlate('text3', this.value); validateInput(this)" maxlength="5">
+                    </div>
+                    <div>
+                        <label for="campo4">Campo 4</label>
+                        <input type="text" id="campo4" required oninput="fillPlate('text4', this.value); validateInput(this)" maxlength="4">
+                    </div>
+                    <div>
+                        <label for="campo5">Campo 5</label>
+                        <input type="text" id="campo5" required oninput="fillPlate('text5', this.value); validateInput(this)">
+                    </div>
+                    <div>
+                        <label for="campo6">Campo 6</label>
+                        <input type="text" id="campo6" required oninput="fillPlate('text6', this.value); validateInput(this)" maxlength="11">
+                    </div>
+                </div>
+
+                <div style="margin-top: 2vh;display: flex;flex-direction: row;justify-content: center;">
+                    <button type='button' id='statusButton' style="margin-right: 2vw;"></button>
+                    <button type="button" id="typeButton">Cadastrar</button>
+                </div>
+
+                <div class="image-container">
+                    <img src="/static/images/qr_plate.png" alt="Imagem de exemplo">
+                
+                    <div id="text1" class="text-overlay" style="top: 11.5%; left: 48.8%;">XXX -XX XXXX</div>
+                    <div id="text2" class="text-overlay" style="top: 81.5%; left: 43.9%;">XXX -X</div>
+                    <div id="text3" class="text-overlay" style="top: 81.5%; left: 49.6%;">XXXX</div>
+                    <div id="text4" class="text-overlay" style="top: 81.5%; left: 55.5%;">XXX </div>
+                    <div id="text5" class="text-overlay" style="top: 61%; left: 25%;">XXX XXXXXXXX</div>
+                    <div id="text6" class="text-overlay" style="top: 35.5%; left: 47.5%;">XXX XXXXXX</div>
+                </div>
+
+            </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="badFill" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+    
+
+    <script>
+        const tableData = JSON.parse({{data | tojson}});
+
+        // FUNÇÕES GERAIS
+
+        function supplierFormat(str) {
+            if (!str || typeof str !== 'string') return '';
+
+            // Remove espaços extras ao redor de vírgulas
+            str = str.split(',').map(s => s.trim()).join(', ');
+            // Substitui a última vírgula por ' e '
+            return str.replace(/, ([^,]*)$/, ' e $1');
+        }
+
+        function validateInput(input) {
+            input.value = input.value.replace(/[^A-Za-z0-9-]/g, '');
+        }
+
+        function changeType(value) {
+            console.log(value)
+            const sapatas = [
+                { altura: '0', modelo: 6 },
+                { altura: '150', modelo: 1 },
+                { altura: '185', modelo: 2 },
+                { altura: '190', modelo: 3 },
+                { altura: '205', modelo: 7 },
+                { altura: '220', modelo: 4 },
+                { altura: '250', modelo: 5 }
+            ];
+
+            document.getElementById('modeloSapata').value = sapatas.find(s => s.altura === value).modelo;
+        }
+
+        function fillPlate(id, textValue) {
+            document.getElementById(id).innerHTML = textValue
+        }
+
+        // FUNÇÕES PARA ABRIR OS MODAIS
+
+        function openModal(modalId, material) {
+            document.getElementById(modalId).style.display = 'flex';
+
+            if (modalId == 'modalRequest') {
+                if (material) {
+
+                    document.getElementById('codMaterial').readOnly = true
+
+                    document.getElementById('codMaterial').value = material.COD_MATERIAL || '';
+                    document.getElementById('codMaterialQR').value = material.COD_MATERIAL_QR || '';
+                    document.getElementById('codQR').value = material.CODE_QR || '';
+                    document.getElementById('alturaSapata').value = material.ALTURA_SAPATA || '';
+                    document.getElementById('modeloSapata').value = material.MOD_SAPATA_RAST || '';
+
+                    if (material.FORNECEDOR_SAPATA != null) {
+                        document.querySelectorAll("input[name='fornecedorSapata']").forEach(checkbox => {
+                            if (material.FORNECEDOR_SAPATA.split(",").includes(checkbox.value)) {
+                                checkbox.checked = true;
+                            } else {
+                                checkbox.checked = false;
+                            }
+                        });
+                    }
+
+                    document.getElementById('pintura').value = material.PINTURA || '';
+                    document.getElementById('modeloConfRast').value = material.MODELO_CONF_RASTREAB || '';
+                    document.getElementById('descMaterial').value = material.DESC_MATERIAL || '';
+                    document.getElementById('campo1').value = material.PLAQUETA_CAMPO1 || '';
+                    document.getElementById('campo2').value = material.PLAQUETA_CAMPO2 || '';
+                    document.getElementById('campo3').value = material.PLAQUETA_CAMPO3 || '';
+                    document.getElementById('campo4').value = material.PLAQUETA_CAMPO4 || '';
+                    document.getElementById('campo5').value = material.PLAQUETA_CAMPO5 || '';
+                    document.getElementById('campo6').value = material.PLAQUETA_CAMPO6 || '';
+
+                    document.getElementById('text1').innerHTML = material.PLAQUETA_CAMPO1 || 'XXX -XX XXXX';
+                    document.getElementById('text2').innerHTML = material.PLAQUETA_CAMPO2 || 'XXX -X';
+                    document.getElementById('text3').innerHTML = material.PLAQUETA_CAMPO3 || 'XXXX';
+                    document.getElementById('text4').innerHTML = material.PLAQUETA_CAMPO4 || 'XXX';
+                    document.getElementById('text5').innerHTML = material.PLAQUETA_CAMPO5 || 'XXX XXXXXXXX';
+                    document.getElementById('text6').innerHTML = material.PLAQUETA_CAMPO6 || 'XXX XXXXXX';
+                    
+
+                    document.getElementById('typeButton').onclick = () => sendForm('old');
+
+                    document.getElementById('statusButton').style.display = 'flex';
+                    if (document.getElementById(material.COD_MATERIAL).value == '0') {
+                        document.getElementById('statusButton').innerHTML = 'Desativar';
+                        document.getElementById('statusButton').onclick = () => changeStatus(material.COD_MATERIAL, '1');
+                    } else {
+                        document.getElementById('statusButton').innerHTML = 'Ativar';
+                        document.getElementById('statusButton').onclick = () => changeStatus(material.COD_MATERIAL, '0');
+                    }
+
+
+                } else {
+                    document.getElementById('typeButton').onclick = () => sendForm('new');
+                    document.getElementById('codMaterial').readOnly = false;
+                    document.getElementById('statusButton').style.display = 'none';
+
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+
+            if (modalId == 'modalRequest') {
+                document.getElementById('materialForm').reset();
+                document.getElementById('text1').innerHTML = 'XXX -XX XXXX'
+                document.getElementById('text2').innerHTML = 'XXX -X'
+                document.getElementById('text3').innerHTML = 'XXXX'
+                document.getElementById('text4').innerHTML = 'XXX'
+                document.getElementById('text5').innerHTML = 'XXX XXXXXXXX'
+                document.getElementById('text6').innerHTML = 'XXX XXXXXX'
+            }
+        }
+
+
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';  // Limpa o conteúdo anterior
+
+            data.forEach(material => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                const button = document.createElement('button');
+                button.textContent = material['COD_MATERIAL'];
+                button.onclick = () => openModal('modalRequest', material);
+                button.id = material['COD_MATERIAL'];
+                button.value = material['CONFIG_STATUS'];
+                cell.appendChild(button);
+
+                if (material['CONFIG_STATUS'] == 1 ) {
+                    cell.className = 'status-rejected';
+                } else {
+                    cell.className = 'status-approved';
+                }
+
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['COD_MATERIAL_QR'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['CODE_QR'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['ALTURA_SAPATA'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['MOD_SAPATA_RAST'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = supplierFormat(material['FORNECEDOR_SAPATA']);
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = material['PINTURA'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = material['MODELO_CONF_RASTREAB'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['DESC_MATERIAL'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['PLAQUETA_CAMPO1'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['PLAQUETA_CAMPO2'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['PLAQUETA_CAMPO3'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['PLAQUETA_CAMPO4'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['PLAQUETA_CAMPO5'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = material['PLAQUETA_CAMPO6'];
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+
+        }
+
+        function filterTable() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+            const filter3 = document.getElementById('filter3').value.toLowerCase();
+            const filter4 = document.getElementById('filter4').value.toLowerCase();
+            const filter5 = document.getElementById('filter5').value.toLowerCase();
+            const filter6 = document.getElementById('filter6').value.toLowerCase();
+            const filter7 = document.getElementById('filter7').value.toLowerCase();
+            const filter8 = document.getElementById('filter8').value.toLowerCase();
+
+            const filteredData = tableData.filter(user => {
+                
+                const filter1Match = user['COD_MATERIAL'].toString().toLowerCase().includes(filter1);
+                const filter2Match = user['COD_MATERIAL_QR'].toLowerCase().includes(filter2);
+                const filter3Match = user['CODE_QR'].toLowerCase().includes(filter3);
+                const filter4Match = !filter4 || user['ALTURA_SAPATA'].toString().toLowerCase() == filter4;
+                const filter5Match = user['MOD_SAPATA_RAST'].toString().toLowerCase().includes(filter5);
+                const filter6Match = user['FORNECEDOR_SAPATA'] || ''.toString().toLowerCase().includes(filter6);
+                const filter7Match = user['PINTURA'].toString().toLowerCase().includes(filter7);
+                const filter8Match = user['MODELO_CONF_RASTREAB'].toString().toLowerCase().includes(filter8);
+            
+                return filter1Match && filter2Match && filter3Match && filter4Match && filter5Match && filter6Match && filter7Match && filter8Match;
+            });
+
+            populateTable(filteredData);
+        }
+
+
+        function sendForm(type) {
+
+            const novoMaterial = {
+                COD_MATERIAL: document.getElementById('codMaterial').value,
+                COD_MATERIAL_QR: document.getElementById('codMaterialQR').value,
+                CODE_QR: document.getElementById('codQR').value,
+                ALTURA_SAPATA: document.getElementById('alturaSapata').value,
+                MOD_SAPATA_RAST: document.getElementById('modeloSapata').value,
+                PINTURA: document.getElementById('pintura').value,
+                MODELO_CONF_RASTREAB: document.getElementById('modeloConfRast').value,
+                DESC_MATERIAL: document.getElementById('descMaterial').value,
+                PLAQUETA_CAMPO1: document.getElementById('campo1').value,
+                PLAQUETA_CAMPO2: document.getElementById('campo2').value,
+                PLAQUETA_CAMPO3: document.getElementById('campo3').value,
+                PLAQUETA_CAMPO4: document.getElementById('campo4').value,
+                PLAQUETA_CAMPO5: document.getElementById('campo5').value,
+                PLAQUETA_CAMPO6: document.getElementById('campo6').value
+            };
+
+            const noFilled = []; // Lista para armazenar os campos vazios
+            
+            // Iterar sobre as propriedades do objeto
+            for (const field in novoMaterial) {
+                if (novoMaterial[field] === "") { // Verificar se o valor está vazio
+                    noFilled.push(field); // Adicionar o nome do campo na lista
+                }
+            }
+
+            novoMaterial['FORNECEDOR_SAPATA'] = Array.from(document.querySelectorAll("input[name='fornecedorSapata']:checked")).map(checkbox => checkbox.value).join(',')
+            
+            if (novoMaterial['FORNECEDOR_SAPATA'] != '' && novoMaterial['ALTURA_SAPATA'] == '0') {
+                noFilled.push('FORNECEDOR_SAPATA');
+            }
+
+            if (noFilled.length > 0) {
+                document.getElementById('badFillMessage').innerHTML =
+                    `Os seguintes campos estão vazios: ${noFilled
+                        .map(campo => campo.replace(/_/g, " "))
+                        .join(", ")
+                        .replace(/, ([^,]*)$/, ' e $1')}`;
+
+                openModal('badFill', null);
+
+                return;
+            }
+            
+            fetch(`/rastreabilidade/qr/cadastro/{{types}}?type=${type}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(novoMaterial)
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal('modalRequest');
+                    
+                    if (type === 'old') {
+                        // Atualizar a linha existente
+                        const index = tableData.findIndex(item => item.COD_MATERIAL === novoMaterial.COD_MATERIAL);
+
+                        if (index !== -1) {
+                            novoMaterial['CONFIG_STATUS'] = tableData[index].CONFIG_STATUS;
+                            tableData[index] = novoMaterial;
+                            filterTable(); // Atualiza a tabela
+                        }
+                    } else {
+                        // Adicionar nova linha
+                        tableData.push(novoMaterial);
+                        filterTable(); // Atualiza a tabela
+                    }
+
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null)     
+                    });
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+        }
+
+        function changeStatus(material, status) {
+
+            const payload = {
+                COD_MATERIAL: material,
+                STATUS: status
+            }
+
+            fetch(`/rastreabilidade/qr/cadastro/{{types}}?type=status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal('modalRequest');
+
+                    const index = tableData.findIndex(item => item.COD_MATERIAL === material);
+                    if (index !== -1) {
+                        tableData[index]['CONFIG_STATUS'] = status;
+                        populateTable(tableData);
+                    }
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+        }
+
+
+        function downloadExcel() {
+
+
+            fetch("/rastreabilidade/qr/excel/{{types}}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar o Excel');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'output.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+
+            }
+
+
+
+        window.onload = function() {
+            populateTable(tableData);
+        }
+        
+    </script>
+</body>
+</html>

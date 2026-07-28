@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+
+    <body class="page_body" onload="animate()">
+        <div class="message_container" style="margin-top:20vh;">
+            <p class="title">Aprovar Desvio de Processo N° {{id}}</p><br>
+            <p class="desc">Você deseja comunicar o {{type}}?</p><br><br>
+            <form action='/desvios/atualizar?aprovar=1&id={{id}}&tipo={{type}}&cmd=1' method="post">
+                <button id="edit_ask" type="submit" style="width:10vw;font-size: calc(1vh + 2vw)">SIM</button><br><br>
+            </form>
+            <form action='/desvios/atualizar?aprovar=0&id={{id}}&tipo={{type}}&cmd=0' method="post">
+                <button id="edit_ask" type="submit" style="width:10vw;font-size: calc(1vh + 2vw)">NÃO</button>
+            </form>
+        </div>
+    </body>
+    
+    <script>
+        function animate() {
+            document.querySelector(".page_body").style.opacity= "1";
+            document.querySelector(".page_body").style.marginTop= "0vh";
+        }
+    </script>
+    
+</html>

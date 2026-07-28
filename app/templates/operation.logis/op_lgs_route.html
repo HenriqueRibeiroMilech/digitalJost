@@ -1,0 +1,32 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.09;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="op_lgs">
+    <a class="title" id="select_back" href="/">&times;</a>
+    <div class="op_lgs_txt_wrapper">
+        <p class="op_lgs_title">Indicadores de Logística</p>
+        <p class="op_lgs_desc">Registre as novas informações de uma data específica ou visualize relatórios na aba <i>"Dashboard"</i></p>
+    </div>
+    <div class="op_lgs_btn_wrapper">
+        <button class="op_lgs_btn" onclick="changeLoc('/op/logistica/edit')">Registros</button>
+        <button class="op_lgs_btn">Dashboard</button>
+    </div>
+</body>
+
+<script>
+    function changeLoc(loc) {
+        window.location = loc;
+    }
+
+    removeNav();
+</script>
+{% endblock %}

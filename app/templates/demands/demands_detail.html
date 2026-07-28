@@ -1,0 +1,47 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+</head>
+
+<body id="gestao_body" onload="initialStatus()">
+    <div class="select_div">
+        <button class="title" id="select_back" style="position:fixed;transform:translate(0, -10%);" onclick="submitFilters()">&times;</button>
+        <p style="margin-bottom:0.5vh" class="select_title">{{title}}</p>
+        <p class="desc" style="width: 100%;" id="descricao"><b>DESCRIÇÃO: </b>{{desc}}</p><br>
+        <p class="desc" style="width: 30%;" id="lider"><b>LÍDER: </b>{{leader}}</p>
+        <p class="desc" style="width: 15%;" id="prazo"><b>SOP: </b><input readonly type="date" style="width:8vw;height:1vw;" class="table_input" value="{{deadline}}"/></p>
+        <p class="desc" style="width: 50%;" id="prod"><b>AUMENTO EM PRODUTIVIDADE: </b></p><br>
+        <p class="select_desc" id="desc_add" style="width:80vw;float:left">
+            <button class="add_btn" style="margin-top:2vh" onclick="window.open('{{entriesLink}}', '_blank')">Entrada: {{entry}}</button>
+            <button class="add_btn" onclick="downloadFile()">Download em Excel</button>
+            <button class="add_btn" style="margin-top:1vh" onclick="window.location='/demandas/detalhes/apoio?area={{area}}&projeto={{idproj}}'">Material de Apoio</button>
+        </p>
+        <div id="div-direita" style="float:right;transform:translate(0, -120%);">
+        </div>
+    </div>
+
+    <form id="filters" method="post" action="" style="clear:both">
+        <input type="hidden" value="{{f_titulo}}" name="titulo">
+        <input type="hidden" value="{{f_descricao}}" name="descricao">
+        <input type="hidden" value="{{f_entrada}}" name="entrada">
+        <input type="hidden" value="{{f_processo}}" name="processo">
+        <input type="hidden" value="{{f_leader}}" name="leader">
+        <input type="hidden" value="{{f_andamento}}" name="andamento">
+        <input type="hidden" value="{{f_atrasado}}" name="atrasado">
+        <input type="hidden" value="{{f_concluido}}" name="concluido">
+    </form>
+
+    <form id="table_form" method="post" action="/demandas/update?area={{area}}&projeto={{idproj}}&global=0&add=0">
+        <div id="table-container2" style="margin-left:2%;margin-right:2%;">
+        </div>
+    </form>
+</body>
+
+<script>
+    {% include 'demands/demands_detail.js' %}
+</script>
+{% endblock %}
+

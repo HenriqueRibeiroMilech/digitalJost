@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between; /* Alinha o título à esquerda e os filtros à direita */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        .date-filters {
+            display: flex;
+            align-items: center;
+            font-size: 1em;
+        }
+
+        .date-filters label {
+            margin: 0 10px;
+            font-size: 1em;
+            color: #153A8A;
+        }
+
+        .date-filters input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 18%;
+            z-index: 5;
+        }
+
+        .dropbtn {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: auto;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #3e8e41;
+        }
+
+                /* Estilos para overlays */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .overlay-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .overlay-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #153A8A;
+        }
+
+        .overlay-content input,
+        .overlay-content textarea {
+            width: calc(100% - 30px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .overlay-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 1vh;
+        }
+
+        .overlay-button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .confirm-button {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        .cancel-button {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        /* Estilos para notificações */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #153A8A;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .notification.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="downloadExcel()">Download Excel</button>
+        <button onclick="window.history.back()"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>SSLs - Consultar</h1>
+            <div class="date-filters">
+                <label for="filter_1">Início:</label>
+                <input type="date" min='2024-09-11' id="filter_1" value="{{filter_1}}" onchange="searchData()">
+                <label for="filter_2">Fim:</label>
+                <input type="date" min='2024-09-11' id="filter_2" value="{{filter_2}}" onchange="searchData()">
+            </div>
+        </div>
+
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar por Id da Solicitação" onkeyup="filterTable()">
+            <input type="text" id="filter2" placeholder="Filtrar por Solicitante" onkeyup="filterTable()">
+            <input type="text" id="filter3" placeholder="Filtrar por Código" onkeyup="filterTable()">
+
+            <div class="dropdown" style="margin-right: 1vw;">
+                <button class="dropbtn" type="button">Selecione o motivo</button>
+                <div class="dropdown-content" id="filter4">
+                    <label><input oninput="toggleExclusiveFilter('filter4')" onchange="filterTable()" type="checkbox" id="sel_filter4">Selecionar todos</label>
+                    {% for motive in motives %}
+                        <label><input type="checkbox" name="filter4" value="{{motive.id}}" onchange="filterTable()">{{motive.name}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="dropdown" style="margin-right: 1vw;">
+                <button class="dropbtn" type="button">Selecione o status</button>
+                <div class="dropdown-content" id="filter5">
+                    <label><input oninput="toggleExclusiveFilter('filter5')" onchange="filterTable()" type="checkbox" id="sel_filter5">Selecionar todos</label>
+                    {% for stat in status %}
+                        <label><input type="checkbox" name="filter5" id="status_{{stat.id}}" value="{{stat.id}}" onchange="filterTable()">{{stat.name}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Selecione a área</button>
+                <div class="dropdown-content" id="filter6">
+                    <label><input oninput="toggleExclusiveFilter('filter6')" onchange="filterTable()" type="checkbox" id="sel_filter6">Selecionar todos</label>
+                    {% for area in areas %}
+                        <label><input type="checkbox" name="filter6" id="area_{{area.id}}" value="{{area.id}}" onchange="filterTable()">{{area.name}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table>
+                <thead>
+                    <tr>
+                        <th>Id SSLs</th>
+                        <th>Área</th>
+                        <th>Solicitante</th>
+                        <th>Motivo</th>
+                        <th>Código Material</th>
+                        <th>Descrição</th>
+                        <th>Prazo do Lab.</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Adicione os overlays no formato padrão -->
+    <div class="overlay" id="reactivate-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Confirmar Reativação</div>
+            <div class="overlay-message">
+                Tem certeza que deseja reativar esta solicitação?
+            </div>
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="reactivate-cancel">Cancelar</button>
+                <button class="overlay-button confirm-button" id="reactivate-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de alerta para usuário bloqueado -->
+    <div class="overlay" id="blocked-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Atenção!</div>
+            <div class="overlay-message">
+                Você possui solicitações aguardando retirada. Por favor, retire-as antes de fazer uma nova solicitação.
+            </div>
+            <div class="overlay-buttons">
+                <button class="overlay-button confirm-button" id="blocked-confirm">Entendi</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+
+        var tableData = {};
+
+        const defaultLastWeek = '{{filter_1}}';
+        const defaultThisWeek = '{{filter_2}}';
+        const admin = '{{admin}}';
+        const userBlocked = '{{userBlocked}}';
+
+        // Variáveis para armazenar informações da solicitação a ser reativada
+        let reactivateInfo = {
+            areaName: null,
+            requestId: null
+        };
+
+        function showOverlay(id, data = {}) {
+            const overlay = document.getElementById(id);
+            if (!overlay) return;
+            
+            overlay.dataset.requestId = data.requestId || '';
+            overlay.dataset.areaName = data.areaName || '';
+            
+            overlay.classList.add('active');
+        }
+        
+        function closeOverlay(id) {
+            const overlay = document.getElementById(id);
+            if (!overlay) return;
+            overlay.classList.remove('active');
+        }
+        
+        // Função para mostrar notificação
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+
+        function handleCopyHeader(areaName, requestId) {
+            if (userBlocked == '1') {
+                showOverlay('blocked-overlay');
+            } else {
+                window.open(`/lab/${areaName.toLowerCase()}/solicitar?id=${requestId}`, '_blank');
+            }
+        }
+        
+
+        function populateTable(data) {
+
+            function getStatusStyle(status) {
+                switch (status) {
+                    case 0: // AGUARDANDO AMOSTRA
+                        return { display: 'AGUARDANDO AMOSTRA', backgroundColor: 'rgb(220,170,12)', color: 'black' };
+                    case 1: // FILA DE ESPERA
+                        return { display: 'FILA DE ESPERA', backgroundColor: '#163A8A', color: 'white' };
+                    case 2: // EM EXECUÇÃO
+                        return { display: 'EM EXECUÇÃO', backgroundColor: '#3ea93e', color: 'white' };
+                    case 3: // AGUARDANDO RETIRADA
+                        return { display: 'AGUARDANDO RETIRADA', backgroundColor: '#000000', color: 'white' };
+                    case 4: // CONCLUÍDO
+                        return { display: 'CONCLUÍDO', backgroundColor: '#228C22', color: 'white' };
+                    case 5: // CANCELADO
+                        return { display: 'CANCELADO', backgroundColor: 'gray', color: 'white' };
+                    default: // STATUS DESCONHECIDO
+                        return { display: 'DESCONHECIDO', backgroundColor: 'red', color: 'white' };
+                }
+            }
+
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';
+
+            data.forEach(info => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                let button = document.createElement('button');
+                button.textContent = info['requestId'];
+                button.onclick = () => window.location.href = `/lab/${info['areaName'].toLowerCase()}/detalhes/${info['requestId']}`;
+                cell.appendChild(button);
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['areaName'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['motive'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['materId'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['descText'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['deadline'] || 'N/A';
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                const statusStyle = getStatusStyle(info['statusId']);
+                cell.textContent = statusStyle.display;
+                cell.style.backgroundColor = statusStyle.backgroundColor;
+                cell.style.color = statusStyle.color;
+                cell.style.fontWeight = 'bold';
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.style.display = 'flex';
+                cell.style.flexDirection = 'column';
+                button = document.createElement('button');
+                button.textContent = 'Copiar Cabeçalho';
+                button.style.backgroundColor = 'black';
+                button.onclick = () => handleCopyHeader(info['areaName'], info['requestId']);
+                cell.appendChild(button);
+
+                if (admin == '1' && info['statusId'] == 4 || info['statusId'] == 5) {
+                    button = document.createElement('button');
+                    button.textContent = 'Reativar';
+                    button.style.marginTop = '1vh';
+                    button.style.backgroundColor = 'red';
+                    button.onclick = () => {
+                        reactivateInfo.areaName = info['areaName'];
+                        reactivateInfo.requestId = info['requestId'];
+                        showOverlay('reactivate-overlay');
+                    };
+                    cell.appendChild(button);
+                }
+
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function filterTable() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+            const filter3 = document.getElementById('filter3').value.toLowerCase();
+            const filter4 = Array.from(document.querySelectorAll(`#filter4 input:checked`)).map(checkbox => checkbox.value);
+            const filter5 = Array.from(document.querySelectorAll(`#filter5 input:checked`)).map(checkbox => checkbox.value);
+            const filter6 = Array.from(document.querySelectorAll(`#filter6 input:checked`)).map(checkbox => checkbox.value);
+
+
+            const filteredData = tableData.filter(user => {
+                
+                const filter1Match = user['requestId'].toString().toLowerCase().includes(filter1);
+                const filter2Match = user['name'].toLowerCase().includes(filter2);
+                const filter3Match = user['materId'].toLowerCase().includes(filter3);
+                const filter4Match = filter4.includes(user['motiveId']);
+                const filter5Match = filter5.includes(user['statusId'].toString());
+                const filter6Match = filter6.includes(user['areaId'].toString());
+
+                return filter1Match && filter2Match && filter3Match && filter4Match && filter5Match && filter6Match;
+            });
+
+            populateTable(filteredData);
+        }
+
+        function searchData() {
+            const filter_1 = document.getElementById('filter_1');
+            const filter_2 = document.getElementById('filter_2');
+
+            if (filter_1.value === "") {
+                filter_1.value = defaultLastWeek;
+            }
+            if (filter_2.value === "") {
+                filter_2.value = defaultFirstWeek;
+            }
+
+            fetch('/lab/consultar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filter_1: filter_1.value
+                    , filter_2: filter_2.value
+                })
+            })
+            .then(response => response.json()) 
+            .then(data => {
+                tableData = data
+                filterTable();
+            });
+        }
+
+        function toggleExclusiveFilter(group) {
+            const input = document.getElementById(`sel_${group}`);
+            const checkboxes = document.getElementsByName(group)
+
+            if (input.checked) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = false);
+            }
+        }
+
+        window.onload = function() {
+            
+            const preload = JSON.parse('{{preload | tojson}}')
+
+            if (Object.keys(preload).length != 0) {
+
+                if (preload['status']) {
+                    document.getElementById('status_' + preload['status']).checked = true;
+                } else {
+                    document.getElementById(`sel_filter5`).checked = true
+                    toggleExclusiveFilter('filter5');
+                }
+
+                document.getElementById('area_' + preload['area']).checked = true;
+
+            } else {
+                document.getElementById(`sel_filter5`).checked = true
+                toggleExclusiveFilter('filter5');
+
+                document.getElementById(`sel_filter6`).checked = true
+                toggleExclusiveFilter('filter6');
+            }
+
+            document.getElementById(`sel_filter4`).checked = true
+            toggleExclusiveFilter('filter4');
+
+            searchData();
+
+            document.getElementById('reactivate-cancel').addEventListener('click', () => closeOverlay('reactivate-overlay'));
+            document.getElementById('blocked-confirm').addEventListener('click', () => closeOverlay('blocked-overlay'));
+            
+            document.getElementById('reactivate-confirm').addEventListener('click', function() {
+                const overlay = document.getElementById('reactivate-overlay');
+                const areaName = reactivateInfo.areaName;
+                const requestId = reactivateInfo.requestId;
+                
+                if (!areaName || !requestId) return;
+                
+                fetch(`/lab/${areaName.toLowerCase()}/gerenciar/${requestId}/reativar`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        showNotification('Solicitação reativada com sucesso!');
+                        closeOverlay('reactivate-overlay');
+                        searchData(); // Atualiza a tabela após reativação
+                    } else {
+                        showNotification('Erro ao reativar solicitação.');
+                    }
+                })
+                .catch(() => {
+                    showNotification('Erro ao reativar solicitação.');
+                });
+            });
+        };
+
+        function downloadExcel() {
+
+            const filter_1 = document.getElementById('filter_1');
+            const filter_2 = document.getElementById('filter_2');
+
+            if (filter_1.value === "") {
+                filter_1.value = defaultLastWeek;
+            }
+            if (filter_2.value === "") {
+                filter_2.value = defaultFirstWeek;
+            }
+
+            fetch('/lab/consultar?type=excel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filter_1: filter_1.value
+                    , filter_2: filter_2.value
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar o Excel');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'laboratorio.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.09;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="op_qual_body" style="overflow:hidden;">
+    <a class="title" id="select_back" href="/">&times;</a>
+    <div class="op_qual_sidenav">
+        <p class="side_title">Informativo da Qualidade</p>
+
+        <button class="side_btn" onclick="window.location='/op/qualidade/add'">Adicionar Entrada</button>
+        <button class="side_btn" style="margin-top:1.5vh;margin-bottom:1.5vh" onclick="window.location='/op/qualidade/edit_select'">Editar Entradas</button>
+        <div class="seg_desc" style="border-radius: 0 0 50px 0;">
+            <select onchange="changeState(this.value)" id="select_city">
+                <option value='0'>Caxias do Sul</option>
+                <option value='1'>Campinas</option>
+                <option selected>Geral</option>
+            </select>
+        </div>
+        <div class="legend_wrapper"><div class="legend_square" id="fornecedor"></div><p class="legend_desc"> Fornecedor</p></div>
+        <div class="legend_wrapper"><div class="legend_square" id="interno"></div><p class="legend_desc"> Interno</p></div>
+        <div class="legend_wrapper"><div class="legend_square" id="clienteF"></div><p class="legend_desc"> Cliente (Formal)</p></div>
+        <div class="legend_wrapper"><div class="legend_square" id="clienteNF"></div><p class="legend_desc"> Cliente (Não Formal)</p></div>
+        <div class="legend_wrapper"><div class="legend_square" id="clienteLG"></div><p class="legend_desc"> Cliente (Logística)</p></div>
+        <div class="legend_wrapper"><div class="legend_square" id="no_prob"></div><p class="legend_desc"> Sem ocorrências</p></div>
+    </div>
+
+    <div class="op_qual_main">
+        <div id="pyramid" class="op_qual_wrapper">
+        </div>
+    </div>
+
+</body>
+
+<script>
+    {% include 'operation.qual/op_qual_pyramid.js' %}
+</script>
+{% endblock %}

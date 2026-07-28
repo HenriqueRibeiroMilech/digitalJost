@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.15.349/pdf.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        #pdf-viewer {
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            background-color: #f4f4f4;
+            border-radius: 10px;
+        }
+
+        canvas {
+            display: block;
+            margin: 10px auto;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 2vh;
+        }
+
+        .button-container button {
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #153A8A;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        .button-container button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        #scroll-message {
+            margin-top: 20px;
+            color: #555;
+            font-style: italic;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button#agree-button {
+            display: none;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        button#agree-button:hover {
+            background-color: #45a049;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/desvios'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <h1 style="margin-top: 0;">Leia o POP</h1>
+        <h2>Confirme que você leu o documento para continuar.</h2>
+        <div id="pdf-viewer"></div>
+        <div id="scroll-message">Leia o POP e role até o final para continuar.</div>
+        <form action="/desvios/pop" method="POST" style="width: 100%;display: flex;justify-content: center;margin-top: 1vh;">
+            <button type="submit" id="agree-button">Eu li e estou de acordo com as informações do POP</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pdfUrl = "{{ pop_pdf_url }}"; // Caminho do arquivo PDF vigente
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const agreeButton = document.getElementById('agree-button');
+            const scrollMessage = document.getElementById('scroll-message');
+
+            const pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.15.349/pdf.worker.min.js';
+
+            try {
+                const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+
+                // Renderizar cada página
+                for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+                    const page = await pdf.getPage(pageNumber);
+
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    pdfViewer.appendChild(canvas);
+
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport,
+                    }).promise;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar o PDF:', error);
+                pdfViewer.innerHTML = '<p>Não foi possível carregar o PDF. Tente novamente mais tarde.</p>';
+                return;
+            }
+
+            // Verificar se o usuário rolou até o final
+            pdfViewer.addEventListener('scroll', () => {
+                const totalHeight = pdfViewer.scrollHeight;
+                const scrolledHeight = pdfViewer.scrollTop + pdfViewer.clientHeight;
+
+                if (scrolledHeight >= totalHeight - 5) {
+                    agreeButton.style.display = 'block';
+                    scrollMessage.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

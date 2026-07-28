@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+
+    <body class="page_body" onload="animate()">
+
+        <a id="select_back" href="/desvios/detalhes?id={{id}}">&times;</a>
+
+        <div class="message_container" style="margin-top:20vh;">
+            <p class="title">Renovar desvio de processo N° {{id}}</p><br>
+            <form action='/desvios/renovar?id={{id}}' method="post">
+
+                <span style="display:inline-block;width:20vw;"><b>Início da Concessão</b></span>
+                <span style="margin-left:3vh;display:inline-block;width:20vw;"><b>Fim da Concessão</b></span>
+                <br>
+                <input required readonly id="data_inicio" name="initDate" autocomplete="off" style="width:20vw;" type="date" value="{{lastDate}}" min="{{lastDate}}">
+                <input required id="data_fim" name="finalDate" autocomplete="off" style="margin-left:3vh;width:20vw;" type="date" min="{{lastDate}}">
+                <br>
+                <br>
+                <button id="edit_ask" type="submit" style="width:15vw;font-size: calc(1vh + 2vw)">RENOVAR</button>
+            </form>
+        </div>
+    </body>
+    
+    <script>
+        function animate() {
+            document.querySelector(".page_body").style.opacity= "1";
+            document.querySelector(".page_body").style.marginTop= "0vh";
+        }
+
+        function end_dsv(valor) {
+
+            data = new Date(valor);
+            if (data > data_fim.valueAsDate) {
+                data_fim.value = '';
+            }
+
+            data.setDate(data.getDate() + 45);
+            data_fim.max = data.toISOString().split('T')[0];
+
+            data2 = new Date(valor);
+            data2.setDate(data2.getDate() + 1);
+            data_fim.min = data2.toISOString().split('T')[0];
+
+        }
+
+        end_dsv('{{lastDate}}')
+    </script>
+    
+</html>

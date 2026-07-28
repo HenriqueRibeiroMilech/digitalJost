@@ -1,0 +1,23 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_native_dash.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/{{video}}" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+</video>
+
+<body id="content" onload="removeNav()">
+    <div class="chp_dash route_div">
+        <p class="chp_title" style="font-size:7vw;padding:0">HORAS PRODUTIVAS</p><br>
+        <a class="dash_btn" style="width:auto;font-size:3vw" href="/dashboards/chp/overview">INDICADORES GERAIS</a><br>
+        <a class="dash_btn" style="width:auto;font-size:3vw" href="/dashboards/chp/select">PAINEL - CENTROS DE TRABALHO</a><br>
+        <a class="dash_btn" style="width:auto;font-size:3vw" href="/dashboards/chp/rh">INDICADORES DE SENTIMENTOS</a><br>
+        <a class="dash_btn" style="font-size:2vw" id="chp_back" href="/">VOLTAR</a>
+    </div>
+</body>
+
+{% endblock %}

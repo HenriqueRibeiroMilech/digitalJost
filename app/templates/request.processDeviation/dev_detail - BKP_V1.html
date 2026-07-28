@@ -1,0 +1,215 @@
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module_dsv.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+    <video autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" type="video/mp4">
+    </video>
+    
+    <body class="page_body">
+
+        <div class="attachment_box" id="box">
+            <a style="z-index: 6;" id="select_back2" onclick="closeAttachments()">&times;</a>
+            <a class="title" style="margin:0" >Anexos são responsabilidade do solicitante.</a>
+            <div id="lab-container">
+                <table></table>
+            </div>
+    
+            <form method="post" action="/" id="lab_form" enctype="multipart/form-data" style="display:none">
+                <div id="admin2">
+                    <label id="placehold_1" class="edit_img_label" for="input_1">Adicione documentos...</label>
+                    <input required class="img_input" id="input_1" type="file" name="anexos" autocomplete="off" multiple="multiple" accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*">
+                    <input type="submit" class="edit_label" id="edit_ask1">
+                    <br>
+                    <a class="img_lbl" id="label_1">Arquivos selecionados:</a>
+                    <div class="list" id="lista_1"></div>
+                </div>
+            </form>
+            
+        </div>
+
+        <div class="topnav">
+            <a id="select_back2" href="/desvios/consultar">&times;</a>
+            <a class="title" >Desvio de processo N° {{idReq}}</a>
+            
+          {# ——— Botão Excluir ao lado do título, visível somente para admin ——— #}
+          {% if admin == '1' %}
+          <button class="add_btn" id="add_btn"
+                 onclick="deletar()"
+           data-devid="{{ idReq }}" >
+            Excluir
+          </button>
+          {% endif %}
+        </div>
+
+        <div class="blur_wrap">
+            <div class='select_div'>
+                <p class="desc_detail" style="width: 30%" id="descricao"><b>SOLICITANTE: </b>{{userName}}</p>
+                <p class="desc_detail" style="width: 30%;" id="lider"><b>AREA: </b>{{sector}}</p>
+                <p class="desc_detail" style="width: 30%;" id="prazo"><b>PRIMEIRA SOLICITAÇÃO: </b> {{firstDate}}</p><br>
+            </div>
+
+            <div id="table-container" style="width: 95vw;margin-left: 2.5vw;">
+            </div>
+        </div>
+        
+    </body>
+
+    <script>
+         {% include 'request.processDeviation/dev_detail.js' %}
+    </script>
+
+    <!-- ====== Hints de hover (sem alterar layout) ====== -->
+<style>
+  /* Componente leve de tooltip. Não interfere no seu CSS existente. */
+  .dj-tip {
+    position: fixed;
+    z-index: 2147483000;
+    pointer-events: none;
+    background: #fff;
+    color: #333;
+    border: 1px solid #e6e9f2;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    padding: 10px 12px;
+    max-width: 280px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity .15s ease, transform .15s ease;
+    font-family: inherit;
+  }
+  .dj-tip.show { opacity: 1; transform: translateY(0); }
+  .dj-tip .t-title { font-weight: 700; color: #163A8A; margin-bottom: 4px; }
+  .dj-tip .t-text { font-size: .95em; color: #444; line-height: 1.35; }
+</style>
+
+<script>
+  (function () {
+    // Cria o tooltip uma única vez
+    const tip = document.createElement('div');
+    tip.className = 'dj-tip';
+    tip.innerHTML = '<div class="t-title"></div><div class="t-text"></div>';
+    document.body.appendChild(tip);
+
+    let activeEl = null;
+
+    function showTip(e, title, text) {
+      tip.querySelector('.t-title').textContent = title || '';
+      tip.querySelector('.t-text').textContent  = text  || '';
+      moveTip(e);
+      tip.classList.add('show');
+    }
+    function hideTip() { tip.classList.remove('show'); activeEl = null; }
+    function moveTip(e) {
+      // Mantém fora das bordas da janela
+      const offset = 14;
+      let x = e.clientX + offset;
+      let y = e.clientY + offset;
+      const rect = tip.getBoundingClientRect();
+      if (x + rect.width > window.innerWidth - 8) x = e.clientX - rect.width - offset;
+      if (y + rect.height > window.innerHeight - 8) y = e.clientY - rect.height - offset;
+      tip.style.left = x + 'px';
+      tip.style.top  = y + 'px';
+    }
+
+    // Mapeia alvos fixos da tela (sem mudar HTML)
+    const fixedHints = [
+      // Topo
+      //{ sel: '.topnav #select_back', title: 'Voltar', text: 'Retorna para a listagem de desvios.' },
+      //{ sel: '.topnav .title',       title: 'Identificador do desvio', text: 'Base/revisão do desvio atual: {{idReq}}.' },
+
+      // Overlay de anexos existente no layout (não alterado)
+      { sel: '.attachment_box .title', title: 'Anexos', text: 'Envio/gestão de evidências é responsabilidade do solicitante.' },
+      { sel: '#lab_form .edit_img_label', title: 'Adicionar documentos', text: 'Formatos aceitos: DOC, XLS, PPT, TXT, PDF, imagens.' },
+      { sel: '#lab_form #edit_ask1', title: 'Enviar anexos', text: 'Confirma o upload dos arquivos selecionados.' },
+
+      // Campos de cabeçalho
+      //{ sel: '.select_div #descricao', title: 'Solicitante', text: 'Usuário que abriu o desvio.' },
+      //{ sel: '.select_div #lider',     title: 'Área',        text: 'Setor responsável pelo desvio.' },
+      //{ sel: '.select_div #prazo',     title: 'Primeira solicitação', text: 'Data de abertura da base do desvio.' }
+    ];
+
+    // Anexa hovers aos alvos fixos (se existirem na página)
+    fixedHints.forEach(({ sel, title, text }) => {
+      document.querySelectorAll(sel).forEach(el => {
+        el.addEventListener('mouseenter', (e) => { activeEl = el; showTip(e, title, text); });
+        el.addEventListener('mousemove',  moveTip);
+        el.addEventListener('mouseleave', hideTip);
+        el.addEventListener('blur',       hideTip);
+      });
+    });
+
+    // Delegação para botões criados dinamicamente pelo dev_detail.js (sem mudar dev_detail.js)
+    document.addEventListener('mouseover', function (e) {
+      const el = e.target.closest('button.table_btn, button.remove, .fa-download');
+      if (!el) return;
+
+      // Deriva título/texto por contexto, sem alterar o layout
+      const label = (el.textContent || '').trim().toLowerCase();
+      let title = '', text = '';
+
+      if (label.includes('revisão')) {
+        title = 'Ver ficha física';
+        text  = 'Abre a ficha física da revisão em nova aba.';
+      } else if (label === 'anexos') {
+        title = 'Anexos';
+        text  = 'Clique para visualizar/baixar anexos desta revisão.';
+      } else if (label === 'cancelar') {
+        title = 'Cancelar desvio';
+        text  = 'Só é possível cancelar se o desvio estiver aguardando aprovação.';
+      } else if (label === 'renovar') {
+        title = 'Renovar desvio';
+        text  = 'Cria uma nova revisão mantendo os dados principais.';
+      } else if (label === 'finalizar') {
+        title = 'Finalizar desvio';
+        text  = 'Conclui o desvio (requer evidência anexada).';
+      } else if (label === 'editar') {
+        title = 'Editar (recriar) desvio';
+        text  = 'Disponível ao solicitante/admin quando o desvio foi recusado.';
+      } else if (label.startsWith('download')) {
+        title = 'Download de anexo';
+        text  = 'Baixa o arquivo selecionado para seu computador.';
+      } else if (el.classList.contains('remove')) {
+        title = 'Remover anexo';
+        text  = 'Exclui o arquivo da revisão atual.';
+      } else {
+        // Botão genérico criado pela grid
+        title = 'Excluir';
+        text  = 'Exclui desvio.';
+      }
+
+      activeEl = el;
+      showTip(e, title, text);
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (activeEl) moveTip(e);
+    });
+
+    document.addEventListener('mouseout', function (e) {
+      if (!e.relatedTarget || !activeEl) return;
+      if (!e.relatedTarget.closest || !e.relatedTarget.closest('.dj-tip')) {
+        // Saiu do alvo; oculta
+        hideTip();
+      }
+    });
+  })();
+</script>
+
+<!-- ADIÇÃO: SweetAlert2 para os alertas de Finalizar sem anexos -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</html>

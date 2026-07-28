@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Criações - Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            margin-top: 20px;
+            font-size: 2.5vw;
+        }
+
+        table {
+            width: 90%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid white;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #2e52a7;
+        }
+
+        .button-container button, #deniedText {
+            padding: 10px 20px;
+            font-size: 1vw;
+            border: none;
+            border-radius: 5px;
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-right: 5px;
+        }
+
+        .button-container button:hover, #deniedText:hover {
+            background-color: #3563c8;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="text"], textarea, .dropbtn {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: none;
+            resize: none;
+        }
+
+        textarea {
+            height: 100px;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        .filters input {
+            padding: 10px;
+            font-size: 1vw;
+            border-radius: 5px;
+            border: none;
+            width: 45%;
+        }
+
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2vw;
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/biblioteca'"><i class="fas fa-x"></i></button>
+    </div>
+    <h1>Gerenciar criações</h1>
+    <div class="filters">
+        <input type="text" id="filterTitle" placeholder="Filtrar por título" oninput="filterTable()">
+        <input type="text" id="filterCreatedBy" placeholder="Filtrar por solicitante" oninput="filterTable()">
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Descrição</th>
+                <th>Áreas impactadas</th>
+                <th>Permissão</th>
+                <th>Criado por</th>
+                <th>Respondido por</th>
+                <th>Data de resposta</th>
+                <th>Status e ações</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Dados preenchidos via JavaScript -->
+        </tbody>
+    </table>
+
+    <!-- Modal para justificativa -->
+    <div id="justificationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeJustificationModal()">&times;</span>
+            <h2>Justificar Recusa</h2>
+            <label for="justificationText">Justificativa:</label>
+            <textarea id="justificationText" required></textarea>
+            <button onclick="submitJustification()" id='deniedText'>Enviar</button>
+        </div>
+    </div>
+
+    <!-- Tela de Loading -->
+    <div id="loadingOverlay">Carregando...</div>
+
+    <script>
+        const data = {{ libraries | safe }};
+        let selectedId = null;
+
+        function openJustificationModal(id) {
+            selectedId = id;
+            document.getElementById("justificationModal").style.display = "flex";
+        }
+
+        function closeJustificationModal() {
+            document.getElementById("justificationModal").style.display = "none";
+            selectedId = null;
+        }
+
+        function approveCreation(id) {
+            updateStatus(id, 1);
+        }
+
+        function rejectCreation(id) {
+            openJustificationModal(id);
+        }
+
+        function submitJustification() {
+            const justificationText = document.getElementById("justificationText").value;
+            if (justificationText.trim() !== "") {
+                updateStatus(selectedId, 2, justificationText);
+                closeJustificationModal();
+            } else {
+                alert("Por favor, insira uma justificativa.");
+            }
+        }
+
+        function showLoading() {
+            document.getElementById("loadingOverlay").style.display = "flex";
+        }
+
+        function hideLoading() {
+            document.getElementById("loadingOverlay").style.display = "none";
+        }
+
+        function updateStatus(id, status, obsText = "") {
+            showLoading();
+            fetch(`/biblioteca/gerenciar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id, status, obsText })
+            })
+            .then(response => response.text())
+            .then(data => {
+                hideLoading();
+                if (!data.includes("DENIED")) {
+                    window.location.reload();
+                } else {
+                    alert("Ocorreu um erro ao atualizar o status.");
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+            });
+        }
+
+        function formatList(arr) {
+            if (arr.length <= 1) return arr.join('');
+            return `${arr.slice(0, -1).join(', ')} e ${arr.slice(-1)}`;
+        }
+
+        function populateTable() {
+            const tableBody = document.getElementById("tableBody");
+            tableBody.innerHTML = ""; // Limpa a tabela antes de repopular
+            data.forEach(item => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.description}</td>
+                    <td>${formatList(JSON.parse(item.impactedAreas))}</td>
+                    <td>${formatList(JSON.parse(item.permission))}</td>
+                    <td>${item.createdBy}</td>
+                    <td>${item.answeredBy || ''}</td>
+                    <td>${item.answeredDate || ''}</td>
+                    <td>${getStatusText(item.status, item.id)}</td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function getStatusText(status, id) {
+            switch(status) {
+                case '1': 
+                    return "Aprovado";
+                case '2': 
+                    return "Recusado";
+                default: 
+                    if ('{{admin}}' == 'True') {
+                        return `
+                            <div class="button-container">
+                                <button onclick="approveCreation(${id})">Aprovar</button>
+                                <button onclick="rejectCreation(${id})">Recusar</button>
+                            </div>
+                        `;
+                    } else {
+                        return "Aguardando aprovação";
+                    }
+
+            }
+        }
+
+        function filterTable() {
+            const filterTitle = document.getElementById('filterTitle').value.toLowerCase();
+            const filterCreatedBy = document.getElementById('filterCreatedBy').value.toLowerCase();
+
+            const filteredData = data.filter(item => {
+                const titleMatch = item.title.toLowerCase().includes(filterTitle);
+                const createdByMatch = item.createdBy.toLowerCase().includes(filterCreatedBy);
+                return titleMatch && createdByMatch;
+            });
+
+            populateFilteredTable(filteredData);
+        }
+
+        function populateFilteredTable(filteredData) {
+            const tableBody = document.getElementById("tableBody");
+            tableBody.innerHTML = "";
+            filteredData.forEach(item => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.description}</td>
+                    <td>${formatList(JSON.parse(item.impactedAreas))}</td>
+                    <td>${formatList(JSON.parse(item.permission))}</td>
+                    <td>${item.createdBy}</td>
+                    <td>${item.answeredBy || ''}</td>
+                    <td>${item.answeredDate || ''}</td>
+                    <td>${getStatusText(item.status, item.id)}</td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateTable();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_native_dash.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/{{video}}" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+</video>
+
+<body id="content">
+    <div class="chp_head_wrap">
+        <a class="dash_btn_b" id="chp_back" href="/dashboards/chp/select">VOLTAR</a>
+        <a class="dash_btn_b" id="emp" onclick="selectArea(this.id)" href="#">EMPRÉSTIMOS</a>
+        <a class="dash_btn_b" id="oper" onclick="selectArea(this.id)" href="#">OPERADORES</a>
+        <a class="dash_btn_b" id="gen" onclick="selectArea(this.id)" href="#">GERAL</a>
+    </div>
+    <div class="chp_dash">
+        <p id="ct" class="chp_title">{{ct}}</p>
+        <div id="chp_desc_wrapper">
+            <p class="chp_desc">...</p>
+        </div>
+        <button id="realtime" class="chp_btn" onclick="selectType(this.id)">TEMPO REAL</button>
+        <button id="periodic" class="chp_btn" onclick="selectType(this.id)">PERÍODO</button>
+        <button id="opers" class="chp_btn">0 DE 0 OPERADORES</button>
+        <button id="last" class="chp_btn" onclick="chooseNext(-1)">ANTERIOR</button>
+        <button id="proxs" class="chp_btn" onclick="chooseNext(1)">PRÓXIMO</button>
+        <div id="chp_main_wrapper" class="chp_content">
+        </div>
+    </div>
+</body>
+
+<script>
+    {% include 'reports.productiveHours/ph_workCenter_detail.js' %}
+</script>
+
+{% endblock %}

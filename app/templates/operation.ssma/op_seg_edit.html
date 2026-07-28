@@ -1,0 +1,160 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.05;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/video.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="seg_content" style="overflow:hidden;" onload="fillForm()">
+    <a id="select_back" href="/op/ssma/edit_select">&times;</a>
+    <div class="seg_wrapper" id="seg_sidenav">
+        <p class="seg_title">Editar Entrada</p>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma/add')">Adicionar Entrada</button>
+    </div>
+
+    <div id="seg_form" style="padding-left:2vw">
+
+        <div class="seg_line_wrapper"><p class="seg_label_in">Unidade</p><br>
+            <select class="seg_input" name="unidade" id="unit">
+                <option disabled selected>Selecione uma opção...</option>
+                <option value="0">Caxias do Sul</option>
+                <option value="1">Campinas</option>
+            </select>
+        </div>
+
+        <p class="seg_label_out">Evento</p>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Definição</p><br>
+            <select class="seg_input" name="definicao" id="definition">
+                <option disabled selected>Selecione uma opção...</option>
+                <option value="Acidente com Afastamento">Acidente com Afastamento</option>
+                <option value="Acidente sem Afastamento">Acidente sem Afastamento</option>
+                <option value="Atendimento Ambulatorial">Atendimento Ambulatorial</option>
+                <option value="Em Análise">Em Análise</option>
+                <option value="Registro de Incidente">Registro de Incidente</option>
+                <option value="Incidente Ambiental">Incidente Ambiental</option>
+            </select>
+        </div>
+
+        <div class="seg_check" id="check_0" onclick="select(this.id)">Incidente de risco crítico</div>
+        <div class="seg_check" id="check_1" onclick="select(this.id)">Acidente com perda de tempo</div>
+        <div class="seg_check" id="check_2" onclick="select(this.id)">Acidente sem perda de tempo</div>
+        <div class="seg_check" id="check_3" onclick="select(this.id)">Incidente com dano material</div>
+        <div class="seg_check" id="check_4" onclick="select(this.id)">Acidente com dano ambiental</div>
+        <div class="seg_check" id="check_5" onclick="select(this.id)">Incidente com risco Potencial</div>
+
+        <p class="seg_label_out" style="margin-top:calc(1.4vh + 1vw);">Classificação de Riscos Críticos</p>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Atividade</p><br></div>
+        <div class="seg_check" id="check_6" onclick="select(this.id)">Armazenamento de Materiais</div>
+        <div class="seg_check" id="check_7" onclick="select(this.id)">Cargas Suspensas</div>
+        <div class="seg_check" id="check_8" onclick="select(this.id)">Combustíveis e Inflamáveis</div>
+        <div class="seg_check" id="check_9" onclick="select(this.id)">Energias Perigosas</div>
+        <div class="seg_check" id="check_10" onclick="select(this.id)">Espaço Confinado</div>
+        <div class="seg_check" id="check_11" onclick="select(this.id)">Explosão e Incêndio</div>
+        <div class="seg_check" id="check_12" onclick="select(this.id)">Máquinas e Equipamentos</div>
+        <div class="seg_check" id="check_13" onclick="select(this.id)">Metal Líquido</div>
+        <div class="seg_check" id="check_14" onclick="select(this.id)">Subestação</div>
+        <div class="seg_check" id="check_15" onclick="select(this.id)">Testes Críticos</div>
+        <div class="seg_check" id="check_16" onclick="select(this.id)">Trabalho em Altura</div>
+        <div class="seg_check" id="check_17" onclick="select(this.id)">Veículos Industriais</div>
+
+        <div class="seg_line_wrapper"><p class="seg_label_in">Ocorrência</p><br>
+            <select class="seg_input" name="ocorrencia" id="type">
+                <option disabled selected>Selecione uma opção...</option>
+                <option value="Acidente">Acidente</option>
+                <option value="Incidente">Incidente</option>
+                <option value="Situação de risco">Situação de Risco</option>
+            </select>
+        </div>
+
+        <div class="seg_line_wrapper"><p class="seg_label_in">Pessoa Envolvida</p><br>
+            <select class="seg_input" name="envolvido" id="involved">
+                <option disabled selected>Selecione uma opção...</option>
+                <option value="2">N/A</option>
+                <option value="1">Funcionário</option>
+                <option value="0">Terceiro</option>
+            </select>
+        </div>
+
+        <div class="seg_line_wrapper"><p class="seg_label_in">Dano Real</p><br>
+            <select style="max-width:calc(14vh + 16vw); overflow:hidden; text-overflow:ellipsis; white-space:nowrap" class="seg_input" name="danoReal" id="realDamage">
+                <option disabled selected>Selecione uma opção...</option>
+                {% for o in damage %}
+                    <option value="{{ o.0 }}">{{ o.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="seg_line_wrapper"><p class="seg_label_in">Dano Potencial</p><br>
+            <select style="max-width:calc(14vh + 16vw); overflow:hidden; text-overflow:ellipsis; white-space:nowrap" class="seg_input" name="danoPotencial" id="potencialDamage">
+                <option disabled selected>Selecione uma opção...</option>
+                {% for o in damage %}
+                <option value="{{ o.0 }}">{{ o.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <p class="seg_label_out" style="margin-top:calc(1.4vh + 1vw);">Dados da Ocorrência</p>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Setor</p><br>
+            <input name="setor" id="sector" list='setor' class="seg_input" type="text" placeholder="Digite Aqui..." onkeyup="this.value=this.value.replace(/'/g, '')"/>
+            <datalist id="setor">
+                {% for o in sector %}
+                <option value="{{o}}">{{o}}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Equipamento</p><br><input name="equip" id="equip" class="seg_input" type="text" placeholder="Digite Aqui..." onkeyup="this.value=this.value.replace(/'/g, '')"/></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Gerente</p><br>
+            <select style="max-width:calc(14vh + 16vw); overflow:hidden; text-overflow:ellipsis; white-space:nowrap" class="seg_input" name="gerente" id="manager">
+                <option disabled selected>Selecione uma opção...</option>
+                <option value="00037328" name="Carsten Horst Franke">Carsten Horst Franke</option>
+                <option value="00023200" name="Carlos Eduardo dos Santos Silva">Carlos Eduardo dos Santos Silva</option>
+            </select>
+        </div>
+        <div class="seg_line_wrapper">
+            <p class="seg_label_in">Contato SSMA</p><br>
+            <select style="max-width:calc(14vh + 16vw); overflow:hidden; text-overflow:ellipsis; white-space:nowrap" class="seg_input" name="ssmaContato" id="userContact">
+                {% for o in concact %}
+                <option value="{{o}}">{{o}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="seg_line_wrapper"><p class="seg_label_in"></p><br>
+           <!-- <input name="seção" id="section" list="seção" class="seg_input" type="text" placeholder="Digite Aqui..." onkeyup="this.value=this.value.replace(/'/g, '')"/>
+            <datalist id="seção">
+                <option disabled selected>Selecione uma opção...</option>
+                <option value="NA">NA</option>
+                {% for o in cts %}
+                <option value="{{o}}">{{o}}</option>
+                {% endfor %}
+            </datalist> -->
+
+        </div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Local</p><br><input name="local" id="local" class="seg_input" type="text" placeholder="Digite Aqui..." onkeyup="this.value=this.value.replace(/'/g, '')"/></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Coordenador</p><br>
+            <select style="max-width:calc(14vh + 16vw); overflow:hidden; text-overflow:ellipsis; white-space:nowrap" class="seg_input" name="coordenador" id="coord">
+                <option disabled selected>Selecione uma opção...</option>
+            </select>
+        </div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Data e Horário</p><br><input name="dataOcorr" id="date" class="seg_input" type="datetime-local" min="2010-01-01T00:00"/></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Descrição do Ocorrido</p><br><textarea rows="6" name="descricao" id="description" class="seg_textarea" onkeyup="this.value=this.value.replace(/'/g, '')"></textarea></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Condições Gerais do Acidentado</p><br><textarea rows="6" name="condicoesGeral" id="generalCondiction" class="seg_textarea" onkeyup="this.value=this.value.replace(/'/g, '')"></textarea></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Causa Raiz</p><br><textarea rows="6" name="causaRaiz" id="rootCause" class="seg_textarea" onkeyup="this.value=this.value.replace(/'/g, '')"></textarea></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Ações de Contenção</p><br><textarea rows="6" name="contencao" id="containment" class="seg_textarea" onkeyup="this.value=this.value.replace(/'/g, '')"></textarea></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Ações de Correção</p><br><textarea rows="6" name="correcao" id="solution" class="seg_textarea" onkeyup="this.value=this.value.replace(/'/g, '')"></textarea></div>
+        <div class="seg_line_wrapper"><p class="seg_label_in">Imagens</p><br><label id="fotos_label" class="seg_label" for="fotos">Adicione as Imagens...</label><input style="display:none;" id="fotos" type="file" multiple name="fotos" class="seg_files" accept="image/*"/><br><a id="seg_lista">Arquivos selecionados:</a><div id="seg_filename"></div></div>
+        <input type="hidden" name="deletar" id="deletar">
+
+        <button class="seg_submit_btn" onclick="submitData()">Finalizar e Postar</button>
+
+    </div>
+</body>
+
+<script>
+    {% include 'operation.ssma/op_seg_edit.js' %}
+</script>
+{% endblock %}

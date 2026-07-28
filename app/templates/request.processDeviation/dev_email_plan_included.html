@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+    <body>
+        <div style="padding:15px;font-size:22px;color:white;background-color:#163A8A;text-align:center;font-family:sans-serif;">
+            <p style="font-weight:bold;">SOLICITAÇÃO DE AVALIAÇÂO DE DESVIO DE PROCESSO - Nº {{final_id}}</p>
+        </div>
+        <div style="margin-left:80px;margin-top:60px;font-family:sans-serif;">
+            <p style="font-size:20px;font-weight:bold;">Olá!</p>
+            <p style="font-size:16px;">O usuário "{{solicitante}}" solicitou a abertura do desvio de processo Nº"{{final_id}}"</p>
+            <p style="font-size:16px;font-weight:bold;">Seu nome foi adicionado na(s) seguinte(s) ação(ões):</p>
+            {% for acao in acoes %}
+            <p style="font-size:16px;">"{{acao}}"</p>
+            {% endfor %}
+            <p style="font-size:20px;font-weight:bold;color:#EF7B04;">Pedimos que avalie a solicitação.</p>
+            <a href="http://digitaljost.randon.com.br/desvios/detalhes?id={{final_id}}" style="color:white;background-color:#163A8A;text-decoration:none;padding:20px;font-size:26px;font-weight:bold;">Clique para acessar todo o documento</a><br><br>
+            <p style="font-size:16px;font-weight:bold;">SE HOUVER ALGUMA DÚVIDA, NÃO RESPONDA ESTE E-MAIL! VOCÊ DEVE ENCAMINHAR ESSA MENSAGEM PARA O SOLICITANTE. </p>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+    
+    <body class="page_body">
+        <a id="select_back" href="/solicitar" style="position: absolute;">&times;</a>
+        <div class="topnav">
+            <p class="title"><i class="fas fa-paper-plane"></i>  Solicitar Projeto</p><br>
+        </div>
+        
+        <div class="edit_body">
+            <form method="post" action="/solicitar/projetos?area={{area}}" enctype="multipart/form-data">
+                <p class="edit_label" style="width:35vw"><b>{{area}}</b></p> <br>
+
+                <p class="edit_label" style="width:35vw">Título do Projeto: </p>
+                <input required name="titulo" class="edit_filter" type="text"  id="solicitar_text_input"  placeholder="Digite o título do projeto..." autocomplete="off" onkeyup="this.value=this.value.replace(/'/g, '')"><br>
+                
+                <p class="edit_label" style="width:35vw">Objetivo do Projeto: </p><br>
+                <textarea required name="objetivo" class="edit_filter" id="textarea" placeholder="Explique o objetivo do projeto..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                
+                <p class="edit_label" style="width:35vw">Premissas do Projeto: </p><br>
+                <textarea required name="premissas" class="edit_filter" id="textarea" placeholder="Explique as premissas do projeto..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+
+                <p class="edit_label" style="width:35vw">Problemas atuais: </p><br>
+                <textarea required name="problemas" class="edit_filter" id="textarea" placeholder="Descreva os problemas atuais..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                
+                <p class="edit_label" style="width:35vw">Ganhos com projeto proposto: </p><br>
+                <textarea required name="melhorias" class="edit_filter" id="textarea" placeholder="Explicite os ganhos do solução proposta..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+
+                <p class="edit_label" style="width:35vw">Prazo esperado: </p>
+                <input required type="date" class="edit_filter" name="data" autocomplete="off"><br>
+
+                <p class="edit_label" style="width:35vw">Verba disponível: </p>
+                <input required type="text" oninput="formatMoney(this)" class="edit_filter" name="verba" value="R$ 0,00" autocomplete="off"><br>
+
+                <p class="edit_label" style="width:35vw">Coordenador aprovador: </p>
+                <select required autocomplete="off" class="edit_filter" name="coord" id="coordenador">
+                      <option value="" disabled selected>Selecione um coordenador...</option>
+                </select><br>
+                
+                <input type="submit" value="Solicitar Projeto" class="edit_label" id="edit_ask">
+            </form>
+        </div>
+        
+    </body>
+    
+    <script>
+       {% include 'request.improvements/improvements_big_new.js' %}
+    </script>
+</html>
+

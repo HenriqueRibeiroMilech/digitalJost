@@ -1,0 +1,36 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<style>
+    @media print {
+      #select_back, #voltar, #prox, #apresentacao, .qual_view_print {
+        display: none;
+      }
+
+      @page {
+        size: landscape;
+        margin: 20mm;
+        }
+    }
+
+</style>
+
+<body>
+    <a style="transform:translate(-22%, -22%);left:95%;position:fixed;" class="title" id="select_back" href="/op/qualidade">&times;</a>
+    <a style="transform:translate(-22%, -22%);left:88%;position:fixed;" class="title" id="voltar" onclick="changeLoc('voltar')">&#10094;</a>
+    <a style="transform:translate(-22%, -22%);left:92%;position:fixed;" class="title" id="prox" onclick="changeLoc('prox')">&#10095;</a>
+    <a><img id="apresentacao" class="title" src="/static/images/download.png" onclick="changeLoc('download')" style="transform:translate(-22%, -22%);left:82%;position:fixed;"></a>
+    <section id="op_qual_body">
+
+    </section>
+</body>
+
+<script>
+    {% include 'operation.qual/op_qual_view.js' %}
+</script>
+{% endblock %}

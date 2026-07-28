@@ -1,0 +1,54 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+    <style>
+        @media print {
+            body {
+                margin: 0;
+            }
+            table {
+                width: 100vw;
+                height: 1500px;
+                border-collapse: collapse;
+                table-layout: fixed;
+                page-break-before: always;
+            }
+            th, td {
+                border: 1px solid black;
+                padding: 8px;
+                text-align: left;
+                word-wrap: break-word;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            .header-input {
+                width: 70px;
+            }
+            .date-input {
+                width: 50px;
+            }
+            .input-field {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+
+        @media screen {
+            table {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body id="op_qual_body">
+</body>
+
+<script>
+    {% include 'operation.qual/op_qual_print.js' %}
+</script>
+{% endblock %}

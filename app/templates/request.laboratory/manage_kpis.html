@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            font-size: 3vw;
+            margin:0;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .filter-container {
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(21, 58, 138, 0.9);
+            border-radius: 0 5px 5px 0;
+            position: absolute;
+            left: 0;
+            top: calc(100% - (80% + 1vw) - 40px);
+            width: 20%;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .filter-container label {
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .filter-container .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .filter-container select, .filter-container input, .filter-container button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .filter-container-button {
+            width: 28%;
+            cursor: pointer;
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .filter-container-button:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .filter-container-button.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .dropbtn:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            max-height: 30vh;
+            height: auto;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .chart-container {
+            width: 75%;
+            height: 80%;
+            align-items: center;
+            overflow-y: hidden;
+            position: absolute;
+            bottom: 1vw;
+            right: 1vw;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+            display: flex;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-multiple {
+            display: flex;
+            flex-direction: row;
+            gap: 1vw;
+            height: 100%;
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
+        .chart-multiple > div {
+            width: calc((100% - 3vw) / 4);
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .scroll-buttons {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            position: absolute;
+        }
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(8vh + 7vw);
+            width: calc(8vh + 7vw);
+            margin: 10% auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        .bullets-info th {
+            background-color: rgb(73, 73, 73);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .scroll-buttons-container {
+            position: absolute;
+            right: 2vw;
+            bottom: 2vw;
+            display: flex;
+            flex-direction: column;
+            gap: 1vh; /* Espaçamento entre os botões */
+            z-index: 5;
+        }
+
+        .scroll-button {
+            width: 100%;
+            height: 6vh;
+            font-size: 3vh;
+            border-radius: 4px;
+            border: none;
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .scroll-button:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .scroll-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .scroll-button {
+                height: 8vh;
+                font-size: 4vh;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .scroll-button {
+                height: 10vh;
+                font-size: 5vh;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="static-buttons">
+        <button onclick="window.location.href='/lab'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <h1>SSLs {{area}} - Indicadores</h1>
+
+    <div class="container">
+        
+        <div class="filter-container">
+            <div>
+                <label for="start_date" style="font-weight: bold;color:white">Data início:</label>
+                <input type="datetime-local" id="start_date" name="start_date" style="float:right;width: 45%;font-size: calc(0.9vh + 0.5vh);" min="2025-11-10T00:00">
+            </div>
+            <div>
+                <label for="end_date" style="font-weight: bold;color:white">Data fim:</label>
+                <input type="datetime-local" id="end_date" name="end_date" style="float:right;width: 45%;font-size: calc(0.9vh + 0.5vh);"  min="2025-11-11T00:00"> 
+            </div>
+            
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por família de produto</button>
+                <div class="dropdown-content" id="m_event">
+                    <label><input oninput="toggleExclusiveFilter('group0')" type="checkbox" id="sel_group0">Selecionar todos</label>
+                    {% for item in families %}
+                        <label><input type="checkbox" name="group0" value="{{ item }}">{{ item }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por instrumento</button>
+                <div class="dropdown-content" id="w_group" style="height: auto;">
+                    <label><input oninput="toggleExclusiveFilter('group1')" type="checkbox" id="sel_group1">Selecionar todos</label>
+                    {% for item in exec_types %}
+                        <label><input type="checkbox" name="group1" value="{{ item.id }}">{{ item.name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por motivo</button>
+                <div class="dropdown-content" id="w_name">
+                    <label><input oninput="toggleExclusiveFilter('group2')" type="checkbox" id="sel_group2">Selecionar todos</label>
+                    {% for item in motives %}
+                        <label><input type="checkbox" name="group2" value="{{ item.id }}">{{ item.name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button onclick="update()" style="cursor: pointer;" id="searchButton">Procurar Dados</button>
+        </div>
+
+        <div class="scroll-buttons-container">
+            <button class="scroll-button" id="up" onclick="scrollSmooth('up')"><b>&uarr;</b></button>
+            <button class="scroll-button" id="down" onclick="scrollSmooth('down')"><b>&darr;</b></button>
+        </div>
+
+        <div class="chart-container" id='chart-container'>
+
+            <div class='chart' id='chart1' style='overflow-y: auto;height: 100%;'>
+                <div class="loader"></div>
+            </div>
+            
+            <div class='chart' id='chart2' style='overflow-y: auto;height: 100%;margin-top: 20px'>
+                <div class="loader"></div>
+            </div>
+
+            <div class='chart' id='chart3' style='overflow-y: auto;height: 100%;margin-top: 20px'>
+                <div class="loader"></div>
+            </div>
+
+            <div class='chart' id='chart4' style='overflow-y: auto;height: 100%;margin-top: 20px'>
+                <div class="loader"></div>
+            </div>
+
+            <div class='chart' id='chart5' style='overflow-y: auto;height: 100%;margin-top: 20px'>
+                <div class="loader"></div>
+            </div>
+
+        </div>
+    </div>
+    
+
+
+
+    <script>
+
+        const area = '{{area}}'
+
+        var data = {};
+        var xhr = new XMLHttpRequest();
+        var currentView = 'both'; // 'individual', 'both', 'total'
+
+        // Função para alternar visualização de equipamentos
+        function toggleView(view) {
+            currentView = view;
+            
+            // Atualizar botões visuais
+            document.querySelectorAll('.filter-container-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.getElementById(`view_${view}`).classList.add('selected');
+            
+            // Atualizar gráfico se já houver dados
+            if (data && Object.keys(data).length > 0) {
+                updateGraph();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            document.getElementById(`sel_group0`).checked = true
+            toggleExclusiveFilter('group0')
+
+            document.getElementById(`sel_group1`).checked = true
+            toggleExclusiveFilter('group1')
+
+            document.getElementById(`sel_group2`).checked = true
+            toggleExclusiveFilter('group2')
+
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.get('preload') == '5') {
+
+                const { first_day, last_day } = getWeekRange(params.get('year'), params.get('week'));
+
+                document.getElementById('start_date').value = first_day + ' 00:00';
+                document.getElementById('end_date').value = last_day + ' 23:59';
+                update()
+
+            } else {
+
+                var today = new Date();
+                today.setHours(today.getHours() - 3);
+                var isoDate = today.toISOString().slice(0, 16);
+                document.getElementById('end_date').value = isoDate
+
+                var dayOfWeek = today.getDay();
+                today.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+                today.setHours(0, 0, 0, 0);
+                document.getElementById('start_date').value = today.toISOString().slice(0, 16).replace("T03:00", "T00:00");
+
+            }
+
+            window.addEventListener('resize', function () {
+                updateGraph();
+            });
+
+        });
+
+
+        // FUNÇÃO PARA MANIPULAR OS GRÁFICOS
+
+        // Atualizar/inserir o gráfico
+        function updateGraph() {
+
+            // Gráfico 1: Porcentagem de uso dos equipamentos
+            function createEquipmentUsageChart(individualData, totalData, elementId) {
+                if ((!individualData || individualData.length === 0) && (!totalData || totalData.length === 0)) {
+                    document.getElementById(elementId).innerHTML = '<p style="text-align:center;color:#999;">Sem dados para exibir</p>';
+                    return;
+                }
+
+                const hasPeriod = (individualData && individualData.length > 0 && 'period' in individualData[0]) || 
+                                  (totalData && totalData.length > 0 && 'period' in totalData[0]);
+                let traces = [];
+                // Sem agrupamento temporal - gráfico de barras
+                let xValues = [];
+                let yValues = [];
+                let colors = [];
+
+                if (currentView === 'individual' || currentView === 'both') {
+                    (individualData || []).forEach(item => {
+                        xValues.push(item.name);
+                        yValues.push(item.usage_percentage);
+                        colors.push(
+                            item.usage_percentage >= 80 ? '#e74c3c' : 
+                            item.usage_percentage >= 50 ? '#f39c12' : 
+                            '#27ae60'
+                        );
+                    });
+                }
+
+                if (currentView === 'total' || currentView === 'both') {
+                    if (totalData && totalData.length > 0) {
+                        xValues.push('TOTAL');
+                        yValues.push(totalData[0].usage_percentage);
+                        colors.push('#e74c3c');
+                    }
+                }
+
+                const trace = {
+                    x: xValues,
+                    y: yValues,
+                    type: 'bar',
+                    marker: { color: colors },
+                    text: yValues.map(v => `${v.toFixed(1)}%`),
+                    textposition: 'outside',
+                    textfont: {
+                        size: 14,
+                        family: 'Arial Black, sans-serif',
+                        color: 'black'
+                    }
+                };
+
+                const layout = {
+                    title: { 
+                        text: 'Uso dos Equipamentos (%)', 
+                        font: { size: 20 } 
+                    },
+                    xaxis: {
+                        title: 'Equipamentos',
+                        tickangle: -45,
+                        automargin: true
+                    },
+                    yaxis: {
+                        title: 'Porcentagem de Uso (%)',
+                        range: [0, 100]
+                    },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    showlegend: false
+                };
+
+                Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false });
+            }
+
+            // Gráfico 2: Tempo médio por status
+            function createStatusLifetimeChart(data, elementId) {
+                if (!data || data.length === 0) {
+                    document.getElementById(elementId).innerHTML = '<p style="text-align:center;color:#999;">Sem dados para exibir</p>';
+                    return;
+                }
+
+                const trace = {
+                    x: data.map(item => item.status_name),
+                    y: data.map(item => item.avg_business_days),
+                    type: 'bar',
+                    marker: {
+                        color: '#3498db'
+                    },
+                    text: data.map(item => `${item.avg_business_days.toFixed(1)}h`),
+                    textposition: 'outside',
+                    textfont: {
+                        size: 14,
+                        family: 'Arial Black, sans-serif',
+                        color: 'black'
+                    }
+                };
+
+                const layout = {
+                    title: { 
+                        text: 'Tempo Médio por Status (horas)', 
+                        font: { size: 20 } 
+                    },
+                    xaxis: {
+                        title: 'Status',
+                        tickangle: -45,
+                        automargin: true
+                    },
+                    yaxis: {
+                        title: 'Tempo (horas)'
+                    },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    showlegend: false
+                };
+
+                Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false });
+            }
+
+            // Gráfico 3: Porcentagem de cumprimento de prazo
+            function createDeadlineChart(data, elementId) {
+                if (!data || data.length === 0) {
+                    document.getElementById(elementId).innerHTML = '<p style="text-align:center;color:#999;">Sem dados para exibir</p>';
+                    return;
+                }
+
+                const percentage = data[0].deadline_reached_percentage || 0;
+                const notReached = 100 - percentage;
+
+                const trace = {
+                    values: [percentage, notReached],
+                    labels: ['No Prazo', 'Fora do Prazo'],
+                    type: 'pie',
+                    marker: {
+                        colors: ['#27ae60', '#e74c3c']
+                    },
+                    textinfo: 'label+percent',
+                    textfont: {
+                        size: 16,
+                        color: 'white'
+                    },
+                    hovertemplate: '<b>%{label}</b><br>%{percent}<extra></extra>'
+                };
+
+                const layout = {
+                    title: { 
+                        text: 'Cumprimento de Prazo', 
+                        font: { size: 20 } 
+                    },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    showlegend: true,
+                    legend: {
+                        orientation: 'h',
+                        y: -0.2
+                    }
+                };
+
+                Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false });
+            }
+
+            // Gráfico 4: Solicitações por motivo
+            function createMotiveChart(data, elementId) {
+                if (!data || data.length === 0) {
+                    document.getElementById(elementId).innerHTML = '<p style="text-align:center;color:#999;">Sem dados para exibir</p>';
+                    return;
+                }
+
+
+                const trace = {
+                    x: data.map(item => item.name),
+                    y: data.map(item => item.request_count),
+                    type: 'bar',
+                    marker: {
+                        color: '#9b59b6'
+                    },
+                    text: data.map(item => item.request_count),
+                    textposition: 'outside',
+                    textfont: {
+                        size: 14,
+                        family: 'Arial Black, sans-serif',
+                        color: 'black'
+                    }
+                };
+
+                const layout = {
+                    title: { 
+                        text: 'Solicitações por Motivo', 
+                        font: { size: 20 } 
+                    },
+                    xaxis: {
+                        title: 'Motivo',
+                        tickangle: -45,
+                        automargin: true
+                    },
+                    yaxis: {
+                        title: 'Quantidade'
+                    },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    showlegend: false
+                };
+
+                Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false });
+            }
+
+            // Gráfico 5: Solicitações concluídas por usuário
+            function createUserChart(data, elementId) {
+                if (!data || data.length === 0) {
+                    document.getElementById(elementId).innerHTML = '<p style="text-align:center;color:#999;">Sem dados para exibir</p>';
+                    return;
+                }
+
+                const trace = {
+                    x: data.map(item => item.closed_by_user),
+                    y: data.map(item => item.closed_requests_count),
+                    type: 'bar',
+                    marker: {
+                        color: '#e67e22'
+                    },
+                    text: data.map(item => item.closed_requests_count),
+                    textposition: 'outside',
+                    textfont: {
+                        size: 14,
+                        family: 'Arial Black, sans-serif',
+                        color: 'black'
+                    }
+                };
+
+                const layout = {
+                    title: { 
+                        text: 'SSLs Concluídas por Usuário', 
+                        font: { size: 20 } 
+                    },
+                    xaxis: {
+                        title: 'Usuário',
+                        tickangle: -45,
+                        automargin: true
+                    },
+                    yaxis: {
+                        title: 'Quantidade'
+                    },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    showlegend: false
+                };
+
+                Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false });
+            }
+
+            // Renderizar todos os gráficos
+            if (data.barchart1 || data.barchart1_total) {
+                createEquipmentUsageChart(data.barchart1 || [], data.barchart1_total || [], 'chart1');
+            }
+            
+            if (data.barchart2) {
+                createStatusLifetimeChart(data.barchart2, 'chart2');
+            }
+            
+            if (data.barchart3) {
+                createDeadlineChart(data.barchart3, 'chart3');
+            }
+            
+            if (data.barchart4) {
+                createMotiveChart(data.barchart4, 'chart4');
+            }
+            
+            if (data.barchart5 && Object.keys(data.barchart5).length > 0) {
+                createUserChart(data.barchart5, 'chart5');
+            } else {
+                document.getElementById('chart5').innerHTML = '<p style="text-align:center;color:#999;">Dados restritos a coordenadores e líderes</p>';
+            }
+        }
+        // FUNÇÃO PARA PESQUISAR OS DADOS
+
+        function update() {
+            
+            document.getElementById('searchButton').disabled = true;
+
+            showLoaders()
+
+            if (xhr && xhr.readyState !== XMLHttpRequest.UNSENT) {
+                xhr.abort();
+            }
+
+            const data_to_send = getFilters()
+
+            xhr.open("POST", `/lab/${area}/indicadores`, true);
+            xhr.setRequestHeader("Content-type","application/json");
+            xhr.onreadystatechange = function () {
+
+                if (xhr.readyState === 4 && xhr.status === 200) {
+
+                    document.getElementById('searchButton').disabled = false;
+
+                    data = JSON.parse(xhr.responseText)
+
+                    hideLoaders()
+
+                    updateGraph()
+                }
+            }
+            
+            xhr.send(JSON.stringify(data_to_send))
+        }
+
+
+        // FUNÇÕES PARA FILTRAR OS DADOS
+
+        // Função para obter os filtros selecionados - retorna um objeto com os filtros
+        function getFilters() {
+
+
+            const start_date = document.getElementById("start_date").value;
+            const end_date = document.getElementById("end_date").value;
+
+            const families = Array.from(document.querySelectorAll(`input[name='group0']:checked`)).map(checkbox => checkbox.value);
+
+            const equipments = Array.from(document.querySelectorAll(`input[name='group1']:checked`)).map(checkbox => checkbox.value);
+
+            const motives = Array.from(document.querySelectorAll(`input[name='group2']:checked`)).map(checkbox => checkbox.value);
+
+
+
+            return {
+
+                families: families
+                , equipments: equipments
+                , motives: motives
+                , start_date: start_date.replace("T", " ") + ":00"
+                , end_date: end_date.replace("T", " ") + ":00"
+
+            }
+        }
+
+        // Função para alternar o estado de seleção de um botão
+        function toggle(button) {
+            if (button.value == "") {
+                button.classList.add('selected');
+                button.value = button.innerText
+            } else {
+                button.classList.remove('selected');
+                button.value = ""
+            }
+        }
+
+        // Função para selecionar um grupo inteiro de checkboxes 
+        function toggleExclusiveFilter(group) {
+            const input = document.getElementById(`sel_${group}`);
+            const checkboxes = document.getElementsByName(group)
+
+            if (input.checked) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = false);
+            }
+        }
+
+
+        // FUNÇÕES GERAIS
+
+        // Função para fazer o download do Excel   
+        function downloadExcel() {
+
+            if (Object.keys(data).length === 0) {
+                alert("Para fazer download você deve filtrar os dados!")
+                return
+            }
+
+            document.getElementById('downloadButton').disabled = true;
+
+            const data_to_send = getFilters()
+
+            fetch("/lab/{{area}}/indicadores?type=excel", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data_to_send)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar o Excel');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'indicadores.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error))
+            .finally(() => {
+                document.getElementById('downloadButton').disabled = false;
+            });
+        }
+
+        // Função para mostrar o efeito de carregamento
+        function showLoaders() {
+
+            document.querySelectorAll('.loader').forEach(function(loader) {
+                loader.style.display = 'block';
+            });
+
+        }
+
+        // Função para esconder o efeito de carregamento
+        function hideLoaders() {
+
+            document.querySelectorAll('.loader').forEach(function(loader) {
+                loader.style.display = 'none';
+            });
+        }
+        
+        // Função para rolar suavemente entre os slides
+        function scrollSmooth(direction) {
+            const upButton = document.getElementById('up');
+            const downButton = document.getElementById('down');
+            const chartContainer = document.getElementById('chart-container');
+            const containerHeight = chartContainer.offsetHeight - 20;
+            const scrollAmount = containerHeight;
+
+            // Desabilita os botões
+            upButton.disabled = true;
+            downButton.disabled = true;
+
+            // Realiza o scroll suave
+            chartContainer.scrollBy({
+                top: direction === 'up' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+
+            // Aguarda a duração estimada da animação (~500ms) antes de reabilitar os botões
+            setTimeout(() => {
+                upButton.disabled = false;
+                downButton.disabled = false;
+            }, 400); // ajuste esse valor conforme necessário
+        }
+
+        function getWeekRange(year, week) {
+            // Primeiro dia do ano
+            const firstJan = new Date(year, 0, 1);
+            const daysOffset = (week - 1) * 7;
+
+            const tempDate = new Date(firstJan.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+
+            // Ajustar para a segunda-feira
+            const day = tempDate.getDay(); // 0 (domingo) a 6 (sábado)
+            const diffToMonday = (day === 0 ? -6 : 1) - day; // ajustar para segunda
+            const monday = new Date(tempDate);
+            monday.setDate(tempDate.getDate() + diffToMonday);
+
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            // Formato YYYY-MM-DD
+            const format = (d) => d.toISOString().split('T')[0];
+
+            return {
+                first_day: format(monday),
+                last_day: format(sunday)
+            };
+        }
+    </script>
+</body>
+</html>

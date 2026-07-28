@@ -1,0 +1,41 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<style>
+    @media print {
+      #select_back, #voltar, #prox, #apresentacao {
+        display: none !important;
+      }
+
+      @page {
+        size: landscape;
+        margin: 20mm;
+      }
+    }
+</style>
+
+<body id="seg_content" style="overflow-x:hidden; height:100%; background:rgba(35,35,35,1)">
+    <a style="transform:translate(-22%, -22%);left:95%;position:fixed;" class="title" id="select_back" href="/op/ssma">&times;</a>
+
+    <a style="transform:translate(-22%, -22%);left:88%;position:fixed;"
+       class="title" id="voltar" onclick="changeLoc('voltar')">&#10094;</a>
+
+    <a style="transform:translate(-22%, -22%);left:92%;position:fixed;"
+       class="title" id="prox" onclick="changeLoc('prox')">&#10095;</a>
+
+    <a>
+        <img id="apresentacao" class="title" src="/static/images/download.png"
+             onclick="changeLoc('download')"
+             style="transform:translate(-22%, -22%);left:82%;position:fixed;">
+    </a>
+</body>
+
+<script>
+    {% include 'operation.ssma/op_seg_view.js' %}
+</script>
+{% endblock %}

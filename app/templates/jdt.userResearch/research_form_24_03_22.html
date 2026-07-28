@@ -1,0 +1,108 @@
+<!-- PESQUISA DO DIA 22/03 REFERENTE A SATISFAÇÃO DO DIGITAL JOST -->
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_lab.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>Digital JOST</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+    
+   <body class="page_body">
+        <div class="topnav">
+            <p class="title"><i class="fas fa-paper-plane"></i>  Pesquisa de Satisfação</p><br>
+        </div>
+
+        <form method="post" action="/research" id="lab_form" enctype="multipart/form-data">
+            <div class="edit_body" id="lab_form_content">
+                
+                <p class="edit_label" style="width:70vw">Para acessar o Digital JOST preencha o formulário.</p>
+                  
+                  <p class="edit_label" style="width:50vw">Qual a frequência que você acessa o Digital JOST? </p>
+                  <select required autocomplete="off" class="edit_filter" name="1">
+                      <option value="" disabled selected>Selecione uma opção...</option>
+                      <option>Poucas vezes por semana</option>
+                      <option>1 vez por dia</option>
+                      <option>Até 3 vezes por dia</option>
+                      <option>Até 5 vezes por dia</option>
+                      <option>Mais de 5 vezes por dia</option>
+                  </select><br>
+
+                <p class="edit_label" style="width:50vw">Em uma escala de 1 a 5, quão satisfeito você está com a experiência geral de uso do Digital Jost? </p>
+                <select required autocomplete="off" class="edit_filter" name="2">
+                      <option value="" disabled selected>Selecione uma opção...</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                </select><br>
+
+                <p class="edit_label" style="width:50vw">Em uma escala de 1 a 5, como você avalia a facilidade de uso da plataforma Digital Jost? </p>
+                <select required autocomplete="off" class="edit_filter" name="3">
+                      <option value="" disabled selected>Selecione uma opção...</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                </select><br>
+                
+                # 3 - SLIDE CLIENTE
+                <p class="edit_label" style="width:50vw">Em uma escala de 1 a 5, quanto você acredita que o Digital Jost melhorou a eficiência do seu trabalho? </p>
+                <select required autocomplete="off" class="edit_filter" name="4">
+                      <option value="" disabled selected>Selecione uma opção...</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                </select><br>
+                
+                # 1 - SLIDE COMUNICACAO FEITO 
+                <p class="edit_label" style="width:50vw">Em uma escala de 1 a 5, você considera que o Digital Jost contribuiu para uma melhor comunicação e colaboração dentro da equipe? </p>
+                <select required autocomplete="off" class="edit_filter" name="5">
+                      <option value="" disabled selected>Selecione uma opção...</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                </select><br>
+
+                # 2 - SLIDE CLIENTE
+                <p class="edit_label" style="width:50vw">Em uma escala de 1 a 5, você percebeu alguma melhoria na transparência das informações desde a implementação do Digital Jost? </p>
+                <select required autocomplete="off" class="edit_filter" name="6">
+                      <option value="" disabled selected>Selecione uma opção...</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                </select><br>
+
+
+                <p class="edit_label" style="width:50vw">Sugestões: </p><br>
+                <textarea name="7" class="edit_filter" id="textarea" placeholder="Digite aqui..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                
+
+                <input type="submit" form="lab_form" class="edit_label" id="edit_ask">
+            </div>
+        </form>
+   </body>
+
+   <script>
+
+</html>

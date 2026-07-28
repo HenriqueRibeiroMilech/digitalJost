@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-top: 8px solid white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 70%;
+            max-width: 900px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .title {
+            margin-bottom: 10px;
+            font-size: 2.3em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .sub-title {
+            font-size: 1.5em;
+            color: white;
+            margin: 0;
+        }
+
+        textarea {
+            width: 100%;
+            height: 20vh;
+            display: inline-block;
+            margin-top: 2vh;
+            resize: none;
+            font-size: 1.5em;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/oee/paradas/alterar'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <h1>Minhas Pendências - Alteração de Paradas</h1>
+        <div class="filter-container">
+            <input type="text" id="filterRequestId" placeholder="Filtrar por ID da Solicitação" onkeyup="filterTable()">
+            <input type="text" id="filterCenter" placeholder="Filtrar por Centro de Trabalho" onkeyup="filterTable()">
+            <input type="text" id="filterUserName" placeholder="Filtrar por Nome do Funcionário" onkeyup="filterTable()">
+            <input type="text" id="filterMotive1" placeholder="Filtrar por Motivo Anterior" onkeyup="filterTable()">
+            <input type="text" id="filterMotive2" placeholder="Filtrar por Motivo Novo" onkeyup="filterTable()" style="margin: 0;">
+        </div>
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table>
+                <thead>
+                    <tr>
+                        <th>Acessar</th>
+                        <th>Centro de Trabalho</th>
+                        <th>Solicitante</th>
+                        <th>Data da Solicitação</th>
+                        <th>Data da Parada</th>
+                        <th>Duração (Min.)</th>
+                        <th>Motivo Anterior</th>
+                        <th>Motivo Novo</th>
+                        <th>Descrição</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="modalDenied" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalDenied')" class="close">&times;</span>
+            <p class="title">Recusa da solicitação de ID <span id='idToDeny'></span></p>
+            <p class="sub-title" id='requestText1'></p>
+            <p class="title">Justifique abaixo:</p>
+            <textarea type="text" id="deniedText"></textarea>
+            <p class="sub-title">OBS: Um e-mail será enviado para o solicitante com o texto da recusa.</p>
+            <button id='deniedButton' style='background-color: black;margin-top: 2vh;'>Negar</button>
+        </div>
+    </div>
+
+    <div id="modalApprove" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalApprove')" class="close">&times;</span>
+            <p class="title">Aprovação da solicitação de ID <span id='idToApprove'></span></p>
+            <p class="sub-title" id='requestText2'></p>
+            <p class="sub-title">OBS: Não aprove a alteração sem ter certeza, em caso de dúvidas, converse com todas as áreas envolvidas.</p>
+            <button id='approveButton' style='background-color: black;margin-top: 2vh;'>Aprovar</button>
+        </div>
+    </div>
+
+    <script>
+        const tableData = JSON.parse({{ table | tojson }});
+
+        function openModal(modalType, id, requestText) {
+
+            if (modalType == 'modalDenied') {
+                document.getElementById(modalType).style.display = 'flex';
+                document.getElementById('idToDeny').innerHTML = id;
+                document.getElementById('requestText1').innerHTML = '<strong>Texto da solicitação:</strong> ' + requestText;;
+                document.getElementById('deniedButton').onclick = () => sendData(id, 'denied');
+            } else {
+                document.getElementById(modalType).style.display = 'flex';
+                document.getElementById('idToApprove').innerHTML = id;
+                document.getElementById('requestText2').innerHTML = '<strong>Texto da solicitação:</strong> ' + requestText + '<br><br>';
+                document.getElementById('approveButton').onclick = () => sendData(id, 'approve');
+            }
+
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+
+        function sendData(requestId, type) {
+
+            if (type == 'denied' && document.getElementById('deniedText').value.length <= 5) {
+                alert('É necessário escrever um texto para recusar uma solicitação.')
+                return
+            }
+
+            showLoading()
+            
+            fetch('/oee/paradas/alterar/pendencias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({requestId: requestId, type: type, deniedText: document.getElementById('deniedText').value})
+            })
+            .then(response => {
+                window.location.reload()
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';  // Limpa o conteúdo anterior
+
+            data.forEach(info => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                let button = document.createElement('button');
+                button.textContent = info['requestId'];
+                button.onclick = () => window.location.href = `/oee/paradas/alterar/solicitacoes/${info['requestId']}?origin=pendencias`;
+                cell.appendChild(button);
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['Workcenter_Name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['openDate'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['tStart'];
+                row.appendChild(cell);  
+                
+                cell = document.createElement('td');
+                cell.textContent = info['dDuration'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = `${info['motive1']} - ${info['motiveDesc1']}`;
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = `${info['motive2']} - ${info['motiveDesc2']}`;
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['requestText'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                button = document.createElement('button');
+                button.textContent = 'Aprovar';
+                button.style.backgroundColor = 'green'
+                button.onclick = () => openModal('modalApprove', info['requestId'], info['requestText']);
+                cell.appendChild(button);
+
+                button = document.createElement('button');
+                button.textContent = 'Negar';
+                button.onclick = () => openModal('modalDenied', info['requestId'], info['requestText']);
+                button.style.marginTop = '1vh'
+                button.style.backgroundColor = 'red'
+                cell.appendChild(button);
+
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function filterTable() {
+            const requestIdFilter = document.getElementById('filterRequestId').value.toLowerCase();
+            const centerFilter = document.getElementById('filterCenter').value.toLowerCase();
+            const userNameFilter = document.getElementById('filterUserName').value.toLowerCase();
+            const motive1Filter = document.getElementById('filterMotive1').value.toLowerCase();
+            const motive2Filter = document.getElementById('filterMotive2').value.toLowerCase();
+
+            const filteredData = tableData.filter(user => {
+                const requestIdMatch = user['requestId'].toString().toLowerCase().includes(requestIdFilter);
+                const centerMatch = user['requestText'].toLowerCase().includes(centerFilter);
+                const userNameMatch = user['name'].toLowerCase().includes(userNameFilter);
+                const motive1Match = `${user['motive1']} - ${user['motiveDesc1']}`.toLowerCase().includes(motive1Filter);
+                const motive2Match = `${user['motive2']} - ${user['motiveDesc2']}`.toLowerCase().includes(motive2Filter);
+
+                return requestIdMatch && centerMatch && userNameMatch && motive1Match && motive2Match;
+            });
+
+            populateTable(filteredData);
+        }
+
+        window.onload = function() {
+            populateTable(tableData);
+        }
+
+
+        // FUNÇÕES PARA ATIVAR O EFEITO DE CARREGAMENTO
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+    </script>
+</body>
+</html>

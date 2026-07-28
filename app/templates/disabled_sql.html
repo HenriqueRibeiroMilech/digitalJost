@@ -1,0 +1,54 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <script>
+    function update() {
+
+         var xhr = new XMLHttpRequest();
+         xhr.open("GET", '/apps/sql_callback');
+
+         xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+               Plotly.react('chart', JSON.parse(xhr.responseText)['data'], JSON.parse(xhr.responseText)['layout']);
+            }};
+
+         xhr.send();
+    }
+
+    window.addEventListener('load', function () {
+         if ({{sql_status | tojson}} == 'Online') {
+         var fetchInterval = 2500;
+         setInterval(update, fetchInterval);
+         }
+    });
+    </script>
+</head>
+
+<body>
+    <div id="title_block">
+        <a id="function_title">{{string}}</a>
+    </div>
+
+    <form id="buttons" method="post" url="">
+        <input class="sub_form" type="submit" name="button" id="connect" value="Connect"></input>
+        <input class="sub_form" type="submit" name="button" id="disconnect" value="Disconnect"></input>
+    </form>
+
+    <div id="status_block">
+        <a id="status_title">Status: </a>
+        <a id="status">{{sql_status}}</a>
+    </div>
+
+    <div id="chart_block">
+        <a style="font-size:40px;padding-left: 30px;">Tempo de Processamento para cada Update</a>
+        <div id="chart" class="chart"></div>
+    </div>
+</body>
+
+<script>
+    d = {{ graphJSON | safe }}
+    Plotly.newPlot('chart', d, {});
+</script>
+
+{% endblock %}

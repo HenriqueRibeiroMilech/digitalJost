@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 3.5em;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: normal;
+            margin: 10px 0;
+        }
+
+        .container button {
+            margin-top: 30px;
+            width: 100%;
+            background-color: rgba(240, 240, 240, 0.9);
+            color: #153A8A;
+            padding: 15px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .container button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.history.back()"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <h1>Página em Desenvolvimento</h1>
+        <h2>A URL (página) que você acessou encontra-se em desenvolvimento.</h2>
+        <h2>Para mais informações, entre em contato com a área de Transformação Digital.</h2>
+
+        <button onclick="window.history.back()">Voltar</button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            font-size: 3vw;
+            margin:0;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .filter-container {
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(21, 58, 138, 0.9);
+            border-radius: 0 5px 5px 0;
+            position: absolute;
+            left: 0;
+            top: calc(100% - (80% + 1vw) - 40px);
+            width: 20%;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .filter-container label {
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .filter-container .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .filter-container select, .filter-container input, .filter-container button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .filter-container-button {
+            width: 28%;
+            cursor: pointer;
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .filter-container-button:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .filter-container-button.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .dropbtn:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .chart-container {
+            width: 75%;
+            height: 80%;
+            align-items: center;
+            overflow-y: hidden;
+            position: absolute;
+            bottom: 1vw;
+            right: 1vw;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+            display: flex;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .separate-chart {
+            width: 32%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .scroll-buttons {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            position: absolute;
+        }
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(10vh + 9vw);
+            width: calc(10vh + 9vw);
+            margin: 10% auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilo para o contêiner da tabela com rolagem horizontal */
+        .table-container {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .data-table {
+            width: 100%;
+            min-width: 600px;
+        }
+
+        .data-table-separate {
+            min-width: 100%;
+        }
+
+        .data-table-separate thead {
+            min-width: 100%;
+        }
+
+        /* Estilo da tabela */
+        table {
+            border-collapse: collapse;
+            table-layout: fixed; /* Força o layout fixo */
+            font-size: calc(1vh + 0.4vw);
+        }
+
+        #data-table2 td, #data-table2 th, #data-table3 td, #data-table3 th, #data-table4 td, #data-table4 th {
+            max-width: 100px; 
+        }
+
+        /* Estilo das células e cabeçalhos */
+        th, td {
+            border: 1px solid #dcdcdc; /* Borda cinza claro */
+            padding: 10px;
+            text-align: left;
+        }
+
+        /* Estilo para a primeira coluna */
+        thead {
+            position: sticky;
+            z-index: 2; /* Faz com que a coluna fixa fique acima das outras células */
+            top:0;
+        }
+        
+
+        /* Estilo das linhas alternadas */
+        tr:nth-child(even) {
+            background-color: #f8f9fa; /* Cinza muito claro */
+        }
+
+        tr:nth-child(odd) {
+            background-color: #ffffff; /* Branco para linhas ímpares */
+        }
+
+        /* Estilo dos botões dentro das células, se houver */
+        td button {
+            background-color: #007bff; /* Azul padrão */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 1em; /* Tamanho do texto do botão */
+        }
+
+        td button:hover {
+            background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
+        }
+
+        /* Estilo do cabeçalho da tabela */
+        th {
+            background-color: #007bff; /* Azul padrão */
+            color: white;
+        }
+
+        th.sorted-asc::after {
+            content: ' ▲'; /* Sinal para ordenação crescente */
+        }
+
+        th.sorted-desc::after {
+            content: ' ▼'; /* Sinal para ordenação decrescente */
+        }
+
+        .bullets-info th {
+            background-color: rgb(73, 73, 73);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .bullets-main {
+            color: white;
+            background-color: rgba(21, 58, 138, 0.9);
+            border-radius: 5px;
+            font-size: 1vw;
+            text-align: left;
+            padding-left: 1vh;
+            padding-right: 1vh;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/tutorial/download?file=oee_stops'">Tutorial</button>
+        <button onclick="downloadExcel()" id="downloadButton">Download Excel</button>
+        <button onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <h1>Histórico de Paradas</h1>
+
+    <div class="container">
+        <div class="filter-container">
+            <div class="filter-row">
+                <label>Turno de trabalho:</label>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="1">1</button>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="2">2</button>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="3">3</button>
+                <button name="shift" class="filter-container-button" onclick="toggle(this)" value="">Extra</button>
+            </div>
+            <div>
+                <label for="start_date" style="font-weight: bold;color:white">Data início:</label>
+                <input type="datetime-local" id="start_date" name="start_date" style="float:right;width: 45%;font-size: calc(0.9vh + 0.5vh);">
+            </div>
+            <div>
+                <label for="end_date" style="font-weight: bold;color:white">Data fim:</label>
+                <input type="datetime-local" id="end_date" name="end_date" style="float:right;width: 45%;font-size: calc(0.9vh + 0.5vh);"> 
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por Motivo de Parada</button>
+                <div class="dropdown-content" id="m_event">
+                    <label><input oninput="toggleExclusiveFilter('group0')" type="checkbox" id="sel_group0">Selecionar todos</label>
+                    {% for event in events %}
+                    <label><input type="checkbox" id="event{{event.Code}}" name="group0" value="{{event.Code}}">{{event.Code}}-{{event.Description}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por 5Ms</button>
+                <div class="dropdown-content" id="m_group">
+                    <label><input oninput="toggleExclusiveFilter('group1')" type="checkbox" id="sel_group1">Selecionar todos</label>
+                    <label><input type="checkbox" name="group1" id="motive3" value="213">Manutenção</label>
+                    <label><input type="checkbox" name="group1" id="motive0" value="10779">Mão de Obra</label>
+                    <label><input type="checkbox" name="group1" id="motive2" value="10781">Material</label>
+                    <label><input type="checkbox" name="group1" id="motive4"value="222">Método</label>
+                    <label><input type="checkbox" name="group1" id="motive1" value="10780">Movimentação</label>
+                    <label><input type="checkbox" name="group1" value="10778">Programada</label>
+                    <label><input type="checkbox" name="group1" value="1">Sem Categoria</label>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por área</button>
+                <div class="dropdown-content" id="w_group" style="height: auto;">
+                    <label><input oninput="toggleExclusiveFilter('group2')" type="checkbox" id="sel_group2">Selecionar todos</label>
+                    <label><input type="checkbox" name="group2" id="area0" value="Montagem">Montagem</label>
+                    <label><input type="checkbox" name="group2" id="area1"value="Usinagem">Usinagem</label>
+                    <label><input type="checkbox" name="group2" id="area2" value="Soldagem">Soldagem</label>
+                    <label><input type="checkbox" name="group2" id="area3" value="Pré-Fabricação">Pré-Fabricação</label>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por centro de trabalho</button>
+                <div class="dropdown-content" id="w_name">
+                    <label><input oninput="toggleExclusiveFilter('group3')" type="checkbox" id="sel_group3">Selecionar todos</label>
+                    {% for workcenter in workcenters %}
+                    <label><input type="checkbox" name="group3" value="{{ workcenter.Workcenter_Key }}">{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <button onclick="update()" style="cursor: pointer;" id="searchButton">Procurar Dados</button>
+        </div>
+        <div class="chart-container" id='chart-container'>
+            <div class='separate-chart' id='table-chart2' style='overflow-y: auto;height: 100%;'>
+                <table id='data-table2' class="data-table-separate">
+                    <thead class="bullets-info">
+                        <tr>
+                            <th colspan="4" style="background-color: black;text-align: center;">TURNO 1</th>
+                        </tr>
+                        <tr style="cursor: pointer;;">
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table2', 0)">Motivo</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table2', 1)">Qtd</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table2', 2)">Min.</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table2', 3)">% Min.</th>
+                        </tr>
+                        <tr>
+                            <th>Total</th>
+                            <th id='t1_qtt'></th>
+                            <th id='t1_min'></th>
+                            <th>100%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+                <div class="loader"></div>
+            </div>
+            <div class='separate-chart' id='table-chart3' style='overflow-y: auto;height: 100%;margin-left: 2%;'>
+                <table id='data-table3' class="data-table-separate">
+                    <thead class="bullets-info">
+                        <tr>
+                            <th colspan="4" style="background-color: black;text-align: center;">TURNO 2</th>
+                        </tr>
+                        <tr style="cursor: pointer;;">
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table3', 0)">Motivo</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table3', 1)">Qtd</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table3', 2)">Min.</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table3', 3)">% Min.</th>
+                        </tr>
+                        <tr>
+                            <th>Total</th>
+                            <th id='t2_qtt'></th>
+                            <th id='t2_min'></th>
+                            <th>100%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+                <div class="loader"></div>
+            </div>
+            <div class='separate-chart' id='table-chart4' style='overflow-y: auto;height: 100%;margin-left: 2%;'>
+                <table id='data-table4' class="data-table-separate">
+                    <thead class="bullets-info">
+                        <tr>
+                            <th colspan="4" style="background-color: black;text-align: center;">TURNO 3</th>
+                        </tr>
+                        <tr style="cursor: pointer;;">
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table4', 0)">Motivo</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table4', 1)">Qtd</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table4', 2)">Min.</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table4', 3)">% Min.</th>
+                        </tr>
+                        <tr>
+                            <th>Total</th>
+                            <th id='t3_qtt'></th>
+                            <th id='t3_min'></th>
+                            <th>100%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+                <div class="loader"></div>
+            </div>
+            <div class='chart' id='table-chart1' style='overflow-y: auto;height: 100%;margin-top: 20px;'>
+                <table id="data-table1" class="data-table">
+                    <thead>
+                        <tr>
+                            <th colspan="7" style="background-color: black;text-align: center;">Relatório Geral</th>
+                        </tr>
+                        <tr style='cursor: pointer;'>
+                            <th onclick="sortTable('data-table1', 0)">Centro de Trabalho</th>
+                            <th onclick="sortTable('data-table1', 1)">Área</th>
+                            <th onclick="sortTable('data-table1', 2)">Data Início</th>
+                            <th onclick="sortTable('data-table1', 3)">Data Fim</th>
+                            <th onclick="sortTable('data-table1', 4)">Minutos</th>
+                            <th onclick="sortTable('data-table1', 5)">Motivo</th>
+                            <th onclick="sortTable('data-table1', 6)">5Ms</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+                <div class="loader"></div>
+            </div>
+            <div class="chart" id="chart1" style='margin-top: 20px;'><div class='loader'></div></div>
+            <div class="chart" id="chart2" style='margin-top: 20px;position: relative;'><div class='loader'></div></div>
+            <div class='chart' id='table-chart5' style='overflow-y: auto;height: 100%;margin-top: 20px;position:relative;display: none;'>
+                <table id="data-table5" class="data-table" style="top:0">
+                    <thead>
+                        <tr>
+                            <th colspan="6" style="background-color: black;text-align: center;">Relatório de Minutos Parados por Motivo</th>
+                        </tr>
+                        <tr style='cursor: pointer;'>
+                            <th onclick="sortTable('data-table5', 0)">Motivo</th>
+                            <th onclick="sortTable('data-table5', 1)">5Ms</th>
+                            <th onclick="sortTable('data-table5', 2)">Ocorrências</th>
+                            <th onclick="sortTable('data-table5', 3)">Tempo Total (Min.)</th>
+                            <th onclick="sortTable('data-table5', 4)">Tempo Total (HRs)</th>
+                            <th onclick="sortTable('data-table5', 5)">% do Total de Min. Parados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+                <button style="position: absolute;top:1%; left: 1%;z-index: 10;margin: 0;" onclick="changeScreen('table-chart5', 'chart2')">Visualizar Gráfico</button>
+                <div class="loader"></div>
+            </div>
+            <div class="chart" id="chart3" style='margin-top: 20px;'><div class='loader'></div></div>
+        </div>
+    </div>
+    
+    <div style="position: absolute;left: 17.5%;bottom: 1vw;">
+        <button class="filter-container-button" id="up" onclick="scrollSmooth('up')" style="width: 100%;height: 10vh;margin-bottom: 1vh;font-size: 3vh;border-radius: 4px;"><b>&uarr;</b></button>
+        <button class="filter-container-button" id="down" onclick="scrollSmooth('down')" style="width: 100%;height: 10vh;font-size: 3vh;border-radius: 4px;"><b>&darr;</b></button>
+    </div>
+
+    <div class='bullets-main' style="position: absolute;left: 1vw;bottom:1vw;font-weight: bold;">
+        <p>Total de Paradas: <span id="total_qtt">sem dados</span></p>
+        <p>Minutos parados: <span id="total_min">sem dados</span></p>
+    </div>
+
+    <script>
+
+        const workcenters = ({{workcenters | tojson}})
+        const events = ({{events | tojson}})
+
+        const sortDirections = {
+            'data-table1': [true, true, true, true, true, true, true],
+            'data-table2': [true, true, true, true],
+            'data-table3': [true, true, true, true],
+            'data-table4': [true, true, true, true],
+            'data-table5': [true, true, true, true, true, true]
+        };
+
+        const monthMap = {
+            'Jan': 'Jan',
+            'Feb': 'Fev',
+            'Mar': 'Mar',
+            'Apr': 'Abr',
+            'May': 'Mai',
+            'Jun': 'Jun',
+            'Jul': 'Jul',
+            'Aug': 'Ago',
+            'Sep': 'Set',
+            'Oct': 'Out',
+            'Nov': 'Nov',
+            'Dec': 'Dez'
+        };
+
+        const stopsFromAreas = {
+            '4': ['3', '4', '19', '42'],
+            '5': ['20', '31', '32', '37', '43', '44', '100']
+        }
+
+        const preload = JSON.parse('{{preload | tojson}}')
+
+        var data = {};
+        var xhr = new XMLHttpRequest();
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            if (Object.keys(preload).length != 0) {
+
+                document.getElementById('start_date').value = `${preload.start}`
+                document.getElementById('end_date').value = `${preload.end}`
+
+                document.getElementById(preload.preload == '5' ? `motive4` : `motive${preload.preload}`).checked = true
+
+                if (preload.preload == '4' || preload.preload == '5') {
+                    stopsFromAreas[preload.preload].forEach((item) => {
+                        document.getElementById(`event${item}`).checked = true
+                    });
+                }
+
+                if (preload.area == '4') {
+                    document.getElementById(`sel_group2`).checked = true
+                    toggleExclusiveFilter('group2')
+                } else {
+                    document.getElementById(`area${preload.area}`).checked = true
+                }
+
+                update()
+
+            } else {
+                var today = new Date();
+                today.setHours(today.getHours() - 3);
+                var isoDate = today.toISOString().slice(0, 16);
+                document.getElementById('end_date').value = isoDate
+
+                var dayOfWeek = today.getDay();
+                today.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+                today.setHours(0, 0, 0, 0);
+                document.getElementById('start_date').value = today.toISOString().slice(0, 16).replace("T03:00", "T00:00");
+
+                document.getElementById(`sel_group0`).checked = true
+                toggleExclusiveFilter('group0')
+
+                document.getElementById(`sel_group1`).checked = true
+                toggleExclusiveFilter('group1')
+
+                document.getElementById(`sel_group2`).checked = true
+                toggleExclusiveFilter('group2')
+
+                document.getElementById(`sel_group3`).checked = true
+                toggleExclusiveFilter('group3')
+            }
+
+            window.addEventListener('resize', function () {
+                updateGraph();
+            });
+
+        });
+
+        function insertData() {
+
+            function configTable(data, elementId) {
+
+                const tableBody = document.querySelector(elementId);
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    // Criação de células com valores dos dados
+                    Object.keys(item).forEach(key => {
+                        // Pula a coluna Shift
+                        if (key === 'Shift') return;
+
+                        const cell = document.createElement('td');
+
+                        if (key === 'Log_Minutes' || key === 'Log_Minutes_Sum' || key === 'Log_Hours_Sum') {
+                            cell.textContent = parseFloat(item[key]).toFixed(2);
+                        } else if (key === 'Percentage') {
+                            cell.textContent = parseFloat(item[key]).toFixed(2) + '%';
+                        } else {
+                            cell.textContent = item[key];
+                        } 
+
+
+                        row.appendChild(cell);
+                    });
+
+                    tableBody.appendChild(row);
+                });
+            }
+
+            document.querySelector('#data-table1 tbody').innerHTML = ''
+            document.querySelector('#data-table2 tbody').innerHTML = ''
+            document.querySelector('#data-table3 tbody').innerHTML = ''
+            document.querySelector('#data-table4 tbody').innerHTML = ''
+            document.querySelector('#data-table5 tbody').innerHTML = ''
+
+            configTable(data.table1, '#data-table1 tbody')
+            configTable(data.table2, '#data-table2 tbody')
+            configTable(data.table3, '#data-table3 tbody')
+            configTable(data.table4, '#data-table4 tbody')
+            configTable(data.table5, '#data-table5 tbody')
+            
+            updateGraph()
+        }
+
+        function updateGraph() {
+
+            let traces;
+            function createBarChart(data, title, elementId) {
+                if (elementId == 'chart1' || elementId == 'chart2') {
+                    var trace1 = {
+                        x: data.map(item => item.label),  // Eixo X com os workcenter_names
+                        y: data.map(item => item.Log_Minutes_Count), // Eixo Y com log_minutes_count
+                        name: 'Quantidade de Paradas',  // Nome da série
+                        type: 'bar',
+                        marker: {
+                            color: 'blue'
+                        },
+                        text: data.map(item => item.Log_Minutes_Count),
+                        textfont: {
+                                        size: 12,
+                                        family: 'Arial Black, sans-serif',
+                                        weight: 'bold',
+                                        color: 'black'
+                                    },
+                        textposition: 'outside'  // Ajusta a posição do texto automaticamente
+
+                    };
+
+                    var trace2 = {
+                        x: data.map(item => item.label),  // Mesmo eixo X (agrupado)
+                        y: data.map(item => item.Log_Minutes_Sum),  // Eixo Y com log_minutes_sum
+                        name: 'Minutos Parados',  // Nome da série
+                        type: 'bar',
+                        marker: {
+                            color: 'orange'
+                        },
+                        text: data.map(item => item.Log_Minutes_Sum),
+                        textfont: {
+                                        size: 12,
+                                        family: 'Arial Black, sans-serif',
+                                        weight: 'bold',
+                                        color: 'black'
+                                    },
+                        textposition: 'outside'
+                    };
+
+                    traces = [trace1, trace2]
+                } else {
+                    var trace3 = {
+                        x: data.map(item => item.Month),  // Mesmo eixo X (agrupado)
+                        y: data.map(item => parseFloat(item.Log_Minutes).toFixed(2)),  // Eixo Y com log_minutes_sum
+                        name: 'Minutos Parados',  // Nome da série
+                        type: 'bar',
+                        marker: {
+                            color: 'orange'
+                        },
+                        text: data.map(item => parseFloat(item.Log_Minutes).toFixed(2)),
+                        textfont: {
+                                        size: 12,
+                                        family: 'Arial Black, sans-serif',
+                                        weight: 'bold',
+                                        color: 'black'
+                                    },
+                        textposition: 'outside'
+                    };
+                    traces = [trace3]
+                }
+                
+
+                var layout = {
+                    title: { text: title, font: { size: 25 } },
+                    barmode: 'group',  // Define o agrupamento das barras
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    xaxis: {
+                        tickangle: -45,
+                        automargin: true
+                    },
+                    legend: {
+                        itemclick: false,
+                        itemdoubleclick: false,
+                        font: { size: 20 }
+                    }
+                };
+
+                Plotly.newPlot(elementId, traces, layout, { displayModeBar: false });
+            }
+
+            createBarChart(data.barchart1, "Minutos Parados por Centro de Trabalho", "chart1");
+            createBarChart(data.barchart2, "Minutos Parados por Motivo", "chart2");
+            createBarChart(data.barchart3, "Minutos Parados por Mês", "chart3");
+
+        }
+
+        function scrollSmooth(direction) {
+            const upButton = document.getElementById('up');
+            const downButton = document.getElementById('down');
+            const chartContainer = document.getElementById('chart-container');
+            const containerHeight = chartContainer.offsetHeight - 20;
+            const scrollAmount = containerHeight;
+
+            // Desabilita os botões
+            upButton.disabled = true;
+            downButton.disabled = true;
+
+            // Realiza o scroll suave
+            chartContainer.scrollBy({
+                top: direction === 'up' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+
+            // Aguarda a duração estimada da animação (~500ms) antes de reabilitar os botões
+            setTimeout(() => {
+                upButton.disabled = false;
+                downButton.disabled = false;
+            }, 400); // ajuste esse valor conforme necessário
+        }
+
+        function update() {
+            
+            document.getElementById('searchButton').disabled = true;
+
+            document.querySelector('#data-table1 tbody').innerHTML = ''
+            document.querySelector('#data-table2 tbody').innerHTML = ''
+            document.querySelector('#data-table3 tbody').innerHTML = ''
+            document.querySelector('#data-table4 tbody').innerHTML = ''
+            document.querySelector('#data-table5 tbody').innerHTML = ''
+
+            showLoaders()
+
+            if (xhr && xhr.readyState !== XMLHttpRequest.UNSENT) {
+                xhr.abort();
+            }
+
+            const data_to_send = getFilters()
+
+            xhr.open("POST", "/oee/paradas", true);
+            xhr.setRequestHeader("Content-type","application/json");
+            xhr.onreadystatechange = function () {
+
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('searchButton').disabled = false;
+
+                    data = {}
+                    data['table1'] = JSON.parse(JSON.parse(xhr.responseText)['table1'])
+                    data['table2'] = JSON.parse(JSON.parse(xhr.responseText)['table2'])
+                    data['table3'] = JSON.parse(JSON.parse(xhr.responseText)['table3'])
+                    data['table4'] = JSON.parse(JSON.parse(xhr.responseText)['table4'])
+                    data['table5'] = JSON.parse(JSON.parse(xhr.responseText)['table5'])
+                    data['barchart1'] = JSON.parse(JSON.parse(xhr.responseText)['barchart1'])
+                    data['barchart2'] = JSON.parse(JSON.parse(xhr.responseText)['barchart2'])
+                    data['barchart3'] = JSON.parse(JSON.parse(xhr.responseText)['barchart3'])
+
+                    data['barchart3'] = data['barchart3'].map(entry => {
+                        const [monthAbbrev, year] = entry.Month.split('-'); // Divide em mês e ano
+                        const monthPt = monthMap[monthAbbrev]; // Mapeia o mês para português
+                        return {
+                            Month: `${monthPt}-${year}`, // Retorna o formato "set-2024"
+                            Log_Minutes: entry.Log_Minutes // Mantém os minutos
+                        };
+                    });
+
+                    document.getElementById('total_qtt').innerHTML = JSON.parse(xhr.responseText)['total_qtt']
+                    document.getElementById('total_min').innerHTML = JSON.parse(xhr.responseText)['total_minutes']
+
+                    document.getElementById("t1_qtt").innerHTML = data['table2'].reduce((sum, item) => sum + item.Log_Minutes_Count, 0);
+                    document.getElementById("t1_min").innerHTML = data['table2'].reduce((sum, item) => sum + item.Log_Minutes_Sum, 0).toFixed(2);
+
+                    document.getElementById("t2_qtt").innerHTML = data['table3'].reduce((sum, item) => sum + item.Log_Minutes_Count, 0);
+                    document.getElementById("t2_min").innerHTML = data['table3'].reduce((sum, item) => sum + item.Log_Minutes_Sum, 0).toFixed(2);
+
+                    document.getElementById("t3_qtt").innerHTML = data['table4'].reduce((sum, item) => sum + item.Log_Minutes_Count, 0);
+                    document.getElementById("t3_min").innerHTML = data['table4'].reduce((sum, item) => sum + item.Log_Minutes_Sum, 0).toFixed(2);
+                    
+                    hideLoaders()
+                    insertData()
+                }
+            }
+            
+            xhr.send(JSON.stringify(data_to_send))
+        }
+
+        function downloadExcel() {
+
+            if (Object.keys(data).length === 0) {
+                alert("Para fazer download você deve filtrar os dados!")
+                return
+            }
+
+            document.getElementById('downloadButton').disabled = true;
+
+            const data_to_send = getFilters()
+
+            fetch("/oee/paradas/excel", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data_to_send)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar o Excel');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'paradas.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error))
+            .finally(() => {
+                document.getElementById('downloadButton').disabled = false;
+            });
+        }
+
+        function sortTable(tableId, columnIndex) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+
+            const rows = Array.from(tbody.rows);
+            const isAscending = sortDirections[tableId][columnIndex];
+
+            // Ordena as linhas
+            rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].innerText;
+                const cellB = b.cells[columnIndex].innerText;
+
+                if (!['data-table1', 'data-table5'].includes(tableId) && columnIndex > 0) {
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else if (tableId == 'data-table1' && columnIndex === 4) {
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else if (tableId == 'data-table5' && columnIndex >= 2) {
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else if (tableId == 'data-table1' && (columnIndex == 2 || columnIndex == 3)) {
+                    const parseBrazilianDate = (dateTimeString) => {
+                        const [datePart, timePart] = dateTimeString.split(' ')
+                        const [day, month, year] = datePart.split('/');
+                        return new Date(`${year}-${month}-${day}T${timePart}`);
+                    };
+
+                    const startDate = parseBrazilianDate(cellA);
+                    const endDate = parseBrazilianDate(cellB);
+
+                    return isAscending ? startDate - endDate : endDate - startDate;
+                } else {
+                    return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+
+            // Limpa o tbody e adiciona as linhas ordenadas
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Alterna a direção da ordenação
+            sortDirections[tableId][columnIndex] = !isAscending;
+
+            columnIndex = columnIndex + 1;
+            // Remove os estilos de ordenação
+            Array.from(table.getElementsByTagName('th')).forEach((th, index) => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (index === columnIndex) {
+                    th.classList.toggle('sorted-desc', sortDirections[tableId][columnIndex - 1]);
+                    th.classList.toggle('sorted-asc', !sortDirections[tableId][columnIndex - 1]);
+                }
+            });
+        }
+
+        function showLoaders() {
+            document.getElementById('chart1').innerHTML = '<div class="loader"></div>'
+            document.getElementById('chart2').innerHTML = `<button style="position: absolute;left: 1%;top: 1%;" onclick="changeScreen('chart2', 'table-chart5')">Visualizar Tabela</button><div class="loader"></div>`
+            document.getElementById('chart3').innerHTML = '<div class="loader"></div>'
+
+            document.querySelectorAll('.loader').forEach(function(loader) {
+                loader.style.display = 'block';
+            });
+
+        }
+
+        function hideLoaders() {
+            document.getElementById('chart1').innerHTML = ''
+            document.getElementById('chart2').innerHTML = `<button style="position: absolute;left: 1%;top: 1%;" onclick="changeScreen('chart2', 'table-chart5')">Visualizar Tabela</button>`
+            document.getElementById('chart3').innerHTML = ''
+
+            document.querySelectorAll('.loader').forEach(function(loader) {
+                loader.style.display = 'none';
+            });
+        }
+        
+
+        function changeScreen(oldScreen, newScreen) {
+            document.getElementById(oldScreen).style.display = 'none'
+            document.getElementById(newScreen).style.display = 'block'
+
+            updateGraph()
+        }
+    
+
+        // FUNÇÕES PARA FILTRAR OS DADOS
+
+        function getFilters() {
+
+            const shift = Array.from(document.querySelectorAll("button[name='shift']")).filter(button => button.value != '').map(button => button.value);
+            const start_date = document.getElementById("start_date").value;
+            const end_date = document.getElementById("end_date").value;
+
+            const m_event = Array.from(document.querySelectorAll(`input[name='group0']:checked`)).map(checkbox => checkbox.value);
+
+            const m_group = Array.from(document.querySelectorAll(`input[name='group1']:checked`))
+                .map(checkbox => checkbox.parentElement.innerText)
+
+            const w_group = Array.from(document.querySelectorAll(`input[name='group2']:checked`)).map(checkbox => checkbox.value);
+
+            const w_name_plex = Array.from(document.querySelectorAll(`input[name='group3']:checked`))
+                .filter(checkbox => checkbox.value != '1')
+                .map(checkbox => checkbox.value)
+
+            const w_name_mic = Array.from(document.querySelectorAll(`input[name='group3']:checked`))
+                .filter(checkbox => checkbox.value == '1')
+                .map(checkbox => checkbox.parentElement.innerText)
+
+
+            return {
+                m_event: m_event,
+
+                m_group: m_group,
+
+                w_group: w_group,
+
+                w_name_plex: w_name_plex,
+                w_name_mic: w_name_mic,
+
+                shift: shift,
+                start_date: start_date,
+                end_date: end_date
+            };
+        }
+
+        function toggle(button) {
+            if (button.value == "") {
+                button.classList.add('selected');
+                button.value = button.innerText
+            } else {
+                button.classList.remove('selected');
+                button.value = ""
+            }
+        }
+
+        function toggleExclusiveFilter(group) {
+            const input = document.getElementById(`sel_${group}`);
+            const checkboxes = document.getElementsByName(group)
+
+            if (input.checked) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = false);
+            }
+        }
+
+    </script>
+</body>
+</html>

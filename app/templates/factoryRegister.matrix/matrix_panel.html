@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: calc(100vw - 10vh);
+            height: 90vh;
+            margin: 5vh;
+            color: #153A8A;
+            overflow: auto;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        input {
+            width: 20%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 0.7;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #2e52a7;
+            color: white;
+            z-index: 2;
+            font-size: 0.7em;
+        }
+
+        tbody td, thead th {
+            padding: 10px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+
+        tbody td {
+            position: relative;
+            text-align: center;
+        }
+
+        tbody th {
+            position: sticky;
+            left: 0;
+            background-color: #153A8A;
+            color: white;
+            z-index: 1;
+            border: 2px solid #ddd;
+        }
+
+        .symbol {
+            font-size: 1.5em;
+        }
+
+        .center-group {
+            background-color: #153A8A;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 5;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .circle {
+            display: inline-block; /* Permite definir largura e altura */
+            width: 20px; /* Largura do círculo */
+            height: 20px; /* Altura do círculo */
+            background-color: white; /* Cor do círculo */
+            border: 2px solid #2c3e50; /* Borda ao redor */
+            border-radius: 50%; /* Faz o quadrado virar um círculo */
+            margin: 0;
+            vertical-align: middle; /* Alinha verticalmente */
+        }
+
+        .circle-yellow {
+            background-color: rgb(219, 219, 40);
+        }
+
+        .circle-green {
+            background-color: green;
+        }
+
+        .circle-blue {
+            background-color: #3498db;
+        }
+
+        .title {
+            display: flex; /* Flexbox para organizar os elementos */
+            justify-content: space-between; /* Espaço entre o título e os círculos */
+            align-items: center; /* Alinhamento vertical centralizado */
+        }
+
+        .label {
+            vertical-align: middle; /* Alinha verticalmente o texto */
+            margin-left: 8px; /* Espaçamento entre a bola e o texto */
+            font-weight: bold;
+            font-size: 0.7em;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/matriz'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <div style="width: 45%;margin-bottom: 2vh;">
+                <h1 style="margin-top: 0;margin-bottom: 1vh;">Matriz de Versatilidade - Painel</h1>
+                <input oninput="filters()" placeholder="Filtrar - Usuário" id="userFilter">
+                <input oninput="filters()" placeholder="Filtrar - Centro de Trabalho" id="workcenterFilter" style="margin-left: 1vw;">
+                <input oninput="filters()" placeholder="Filtrar - Área" id="areaFilter" style="margin-left: 1vw;">
+            </div>
+            <div>
+                <i class="circle"></i><span class="label"> Não Executa</span> 
+                <i class="circle circle-yellow" style="margin-left: 2vw;"></i><span class="label"> Em Treinamento</span>
+                <i class="circle circle-green" style="margin-left: 2vw;"></i><span class="label"> Apto a Executar</span>
+                <i class="circle circle-blue" style="margin-left: 2vw;"></i><span class="label"> Apto a Executar e Treinar</span>
+            </div>
+
+        </div>
+
+
+        <div class="container-table" style='height: calc(55vh + 6vw);overflow-y: auto;'>
+        </div>
+    </div>
+
+    <div id="badFill" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        
+        const admin = '{{admin}}'
+        const data1 = JSON.parse('{{versatility |tojson}}')
+        const data2 = JSON.parse('{{process | tojson}}')
+        const data3 = JSON.parse('{{users | tojson}}')
+        const data4 = JSON.parse('{{workcenters |tojson}}')
+
+        function loadTable(versatility, process, users, workcenters) {
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // Cabeçalho com as Áreas e Centros
+            const headerRow = document.createElement('tr');
+            const areaHeaderRow = document.createElement('tr');
+
+            const blankCell = document.createElement('th');
+            blankCell.rowSpan = 2; // Espaço para o eixo Y (Paradas)
+            blankCell.style.position = 'sticky';
+            blankCell.style.left = '0';
+            blankCell.style.backgroundColor = '#2e52a7';
+            blankCell.style.color = 'white';
+            blankCell.style.zIndex = '4';
+            blankCell.innerHTML = 'Usuários';
+            blankCell.style.fontSize = '2vw'
+
+            headerRow.appendChild(blankCell);
+            areaHeaderRow.appendChild(blankCell);
+
+            // Preenchendo cabeçalhos de área e centro
+            workcenters.forEach(info => {
+                const groupCell = document.createElement('th');
+                groupCell.colSpan = process.filter(center => center.workcenter == info.id).length;
+                groupCell.textContent = info.Workcenter_Code + ' - ' + info.Name;
+                groupCell.style.position = 'sticky';
+                groupCell.style.top = '0';
+                groupCell.style.backgroundColor = '#2e52a7';
+                groupCell.style.color = 'white';
+                groupCell.style.zIndex = '2';
+                groupCell.setAttribute('data-workcenter', info.Workcenter_Code + ' - ' + info.Name);
+
+                areaHeaderRow.appendChild(groupCell);
+
+                process
+                    .filter(center => center.workcenter === info.id)
+                    .forEach(center => {
+                        const centerCell = document.createElement('th');
+                        centerCell.textContent = center.operationName;
+                        centerCell.style.position = 'sticky';
+                        centerCell.style.top = '34px';
+                        centerCell.style.backgroundColor = '#2e52a7';
+                        centerCell.style.color = 'white';
+                        centerCell.style.zIndex = '1';
+                        centerCell.style.maxWidth = '10vh';
+                        centerCell.setAttribute('data-workcenter', info.Workcenter_Code + ' - ' + info.Name);
+                                                
+                        headerRow.appendChild(centerCell);
+                    });
+            });
+
+            thead.appendChild(areaHeaderRow);
+            thead.appendChild(headerRow);
+
+            // Criando linhas para cada parada
+            users.forEach(item => {
+                const row = document.createElement('tr');
+
+                const button_info = versatility.find(u => u.user == item.id);
+
+                const downtimeCell = document.createElement('td');
+                downtimeCell.style.width = '20vw';  // Define a largura da primeira coluna
+                downtimeCell.style.minWidth = '20vw';  // Define a largura da primeira coluna
+                downtimeCell.innerHTML = `<a style='float:left'>${item.id.slice(4)} - ${item.name}</a>`;
+                downtimeCell.style.position = 'sticky';
+                downtimeCell.style.left = '0';
+                downtimeCell.style.backgroundColor = '#f9f9f9';
+                downtimeCell.style.zIndex = '2';
+
+                row.appendChild(downtimeCell);
+
+                process.forEach(center => {
+                    const centerCell = document.createElement('td');
+                    centerCell.style.textAlign = 'center';
+
+                    const workcenterInfo = workcenters.find(wc => wc.id === center.workcenter);
+
+                    // Adicionando o atributo data-workcenter à célula com base no objeto encontrado
+                    if (workcenterInfo) {
+                        centerCell.setAttribute(
+                            'data-workcenter',
+                            `${workcenterInfo.Workcenter_Code} - ${workcenterInfo.Name}`
+                        );
+                    }
+
+                    const user = versatility.find(u => u.user === item.id && u.operation == center.operation && u.workcenter == center.workcenter);
+                    const icon = document.createElement('i');
+                    icon.classList.add('circle')
+                    icon.style.cursor = 'pointer';
+
+                    if (user) {
+                        if (user.status == 1) {
+                            icon.classList.add('circle-yellow')
+                        } else if (user.status == 2) {
+                            icon.classList.add('circle-green')
+                        } else {
+                            icon.classList.add('circle-blue')
+                        }
+
+                        icon.onclick = function () {
+                            sendOperation(user.status, item.id, center.workcenter, center.operation, this); // 'this' é o 'icon'
+                        };
+                    } else {
+                        icon.onclick = function () {
+                            sendOperation(0, item.id, center.workcenter, center.operation, this); // 'this' é o 'icon'
+                        };
+                    }
+
+                    centerCell.appendChild(icon);
+                    row.appendChild(centerCell);
+                });
+
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+
+            document.querySelector('.container-table').innerHTML = ''
+            document.querySelector('.container-table').appendChild(table);
+        }
+
+        function sendOperation(status, user, workcenter, operation, icon) {
+            if (admin == '0') { // Use strict equality (===)
+                document.getElementById('badFillMessage').innerHTML = 
+                    "Você não tem permissão para esta ação. Contate a equipe de Produção.";
+                openModal('badFill');
+                return; // Make sure to exit the function after showing the message
+            }
+            // Add the rest of your function logic here
+
+
+            status = status == 3 ? 0 : status + 1;
+
+            if (status == 1) {
+                icon.classList.add('circle-yellow')
+            } else if (status == 2) {
+                icon.classList.remove('circle-yellow')
+                icon.classList.add('circle-green')
+            } else if (status == 3) {
+                icon.classList.remove('circle-green')
+                icon.classList.add('circle-blue')
+            } else {
+                icon.classList.remove('circle-blue')
+            }
+
+            icon.onclick = function () {
+                sendOperation(status, user, workcenter, operation, this);
+            };
+
+            fetch(`/matriz/painel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({user: user, workcenter: workcenter, operation: operation, status:status})
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill');
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+        }
+
+        function filters() {
+            const filter1 = document.getElementById('userFilter').value.toLowerCase();
+            const filter2 = document.getElementById('workcenterFilter').value.toLowerCase();
+            const filter3 = document.getElementById('areaFilter').value.toLowerCase();
+
+            const filteredData2 = data2.filter(info => {
+
+                const workcenterInfo = data4.find(wc => wc.id === info.workcenter);
+                const filterMatch1 = `${workcenterInfo.Workcenter_Code} - ${workcenterInfo.Name}`.toLowerCase().includes(filter2.toLowerCase());
+                const filterMatch2 = `${workcenterInfo.Workcenter_Group}`.toLowerCase().includes(filter3.toLowerCase());
+
+
+                return filterMatch1 && filterMatch2;
+            });
+
+            const filteredData3 = data3.filter(info => {
+
+                const filterMatch = `${info.id.slice(4)} - ${info.name}`.toLowerCase().includes(filter1.toLowerCase());
+
+                return filterMatch;
+            });
+
+            const filteredData4 = data4.filter(info => {
+
+                const filterMatch1 = `${info.Workcenter_Code} - ${info.Name}`.toLowerCase().includes(filter2.toLowerCase());
+                const filterMatch2 = `${info.Workcenter_Group}`.toLowerCase().includes(filter3.toLowerCase());
+
+                return filterMatch1 && filterMatch2;
+            });
+
+            loadTable(data1, filteredData2, filteredData3, filteredData4);
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        loadTable(data1, data2, data3, data4)
+
+    </script>
+</body>
+</html>

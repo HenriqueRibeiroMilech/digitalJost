@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Aguardando Retirada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(270deg, #d32f2f, #f44336, #ff5722);
+            animation: GradientAnimation 10s ease infinite;
+            padding: 20px;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #d32f2f;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        .urgente-badge {
+            display: inline-block;
+            background-color: #ff5722;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.1em;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #d32f2f;
+        }
+
+        .days-counter {
+            background: linear-gradient(135deg, #ff5722 0%, #f44336 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .days-counter .number {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .days-counter .label {
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: white;
+            background-color: #4CAF50;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="urgente-badge">⚠️ AÇÃO NECESSÁRIA</div>
+        <h1>SSL {{areaName}} - {{requestId}}</h1>
+        
+        <div class="days-counter">
+            <div class="number">{{business_days}}</div>
+            <div class="label">Dias Úteis Aguardando</div>
+        </div>
+
+        <p>Sua solicitação de SSL de N° <span class="highlight">{{requestId}}</span> está pronta e aguardando retirada há <span class="highlight">{{business_days}} dias úteis</span>.</p>
+        
+        <div class="alert-box">
+            <p><strong>⚠️ IMPORTANTE:</strong> Por favor, retire o material no Laboratório com urgência para evitar atrasos no fluxo de trabalho.</p>
+            <p>Materiais não retirados podem impactar o espaço disponível e afetar outras solicitações em andamento.</p>
+        </div>
+        
+        <p>Caso exista alguma dúvida, entre em contato com o responsável da área de laboratório.</p>
+        <a href="http://digitaljost.randon.com.br/lab/{{areaName}}/detalhes/{{requestId}}" class="button">Acessar SSL</a>
+        
+        <p style="margin-top: 30px; color: #666; font-size: 0.9em;">
+            <em>Este é um email automático enviado diariamente enquanto o material permanecer aguardando retirada após 5 dias úteis.</em>
+        </p>
+    </div>
+</body>
+</html>
+

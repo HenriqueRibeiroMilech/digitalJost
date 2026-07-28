@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+   </head>
+    
+    <body class="page_body">
+        <a id="select_back" href="/solicitar" style="position: absolute;">&times;</a>
+        <div class="topnav">
+            <p class="title"><i class="fas fa-paper-plane"></i>  Solicitar nova Melhoria</p><br>
+        </div>
+        
+        <div class="edit_body" id="body">
+            <form method="post" action="/solicitar/melhorias?area={{area}}" enctype="multipart/form-data">
+
+                <p class="edit_label">Título da Melhoria: </p>
+                <input class="edit_filter" required type="text" name="titulo" id="solicitar_text_input" placeholder="Digite o título da melhoria.." autocomplete="off" onkeyup="this.value=this.value.replace(/'/g, '')"><br>
+                
+                <p class="edit_label">Descreva a Melhoria: </p>
+                <br>
+                <textarea required name="objetivo" class="edit_filter" id="textarea" placeholder="Explique o objetivo da melhoria..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+
+                <p class="edit_label">Nível de urgência da solicitação: </p>
+                <select required autocomplete="off" class="edit_filter" name="options">
+                      <option value="" disabled selected>Urgência...</option>
+                      {% for o in options %}
+                      <option value="{{o}}">{{o}}</option>
+                      {% endfor %}
+                </select><br>
+
+                <p style="width: 40vw;" class="edit_label">Documentos:</p><br>
+                <a class="sol_desc">Adicione também, um fluxo da melhoria, para facilitar o processo de <br> análise, desenvolvimento e definição de prazo.</a><br>
+                <a class="sol_desc">Siga o exemplo a seguir, como base:</a><br>
+                <img src="/static/images/FLUXO.PNG" alt="Fluxo" style="width: 100vh; height: auto;"> <br> <br>
+                <a class="sol_desc"><b>OBS:</b> caso o fluxo da melhoria esteja incompleto, a solicitação pode <br> ter seu prazo aumentado ou até ser recusada. </a><br>
+
+                <label id="placehold_1" class="add_img" for="input_1">Adicione documentos...</label>
+                <input multiple class="img_input" required id="input_1" type="file" name="docs" accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*">
+                <br>
+                <a class="add_img_lbl" id="label_1">Arquivos selecionados:</a>
+                <div class="lista" id="lista_1"></div>
+                <br>
+
+                <input type="submit" value="Solicitar Melhoria" class="edit_label" id="edit_ask">
+
+            </form>
+        </div>
+        
+    </body>
+    <script>
+    function createInputs() {
+        var inputs = document.querySelectorAll(".img_input");
+        inputs.forEach(function(item) {
+            var id = item.id.split('_')[1];
+            item.addEventListener('input', function (e) {
+                if (item.files.length > 0) {
+                    document.querySelector("#placehold_" + id).textContent = "Alterar arquivos selecionados...";
+                    document.querySelector("#label_" + id).style.display = "block";
+                    document.querySelector("#lista_" + id).style.display = "block";
+                } else {
+                    document.querySelector("#placehold_" + id).textContent = "Adicione documentos...";
+                    document.querySelector("#label_" + id).style.display = "none";
+                    document.querySelector("#lista_" + id).style.display = "none";
+                };
+
+                var input = document.querySelector('#input_' + id)
+                var output = document.querySelector("#lista_" + id)
+                var children = "";
+
+                for (var i = 0; i < item.files.length; ++i) {
+                    children += '<li>' + input.files.item(i).name + '</li>';
+                }
+
+                output.innerHTML = '<ul>'+children+'</ul>';
+            });
+        });
+    }
+
+    createInputs();
+
+    </script>
+</html>
+

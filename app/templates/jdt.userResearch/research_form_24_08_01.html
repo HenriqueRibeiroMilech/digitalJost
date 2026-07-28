@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            text-align: center;
+            overflow-y: scroll;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Estilo da barra de rolagem */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #153A8A;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #ffffff;
+            border-radius: 10px;
+        }
+
+        .top-nav {
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: rgba(21, 58, 138, 0.9);
+            padding: 20px 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .top-nav h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-nav h2 {
+            font-size: 1.5em;
+            margin-top: 5px;
+            font-weight: normal;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        p {
+            width: 60%;
+            margin: 80px auto 20px;
+            font-size: 1.2em;
+        }
+
+        .section {
+            width: 90%;
+            height: 55vh;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            transition: opacity 0.5s;
+            opacity: 0.2;
+            flex-direction: row;
+        }
+
+        .section img {
+            width: 70%;
+            border-radius: 10px;
+        }
+
+        .section .text {
+            width: 50%;
+            text-align: left;
+        }
+
+        .section h3 {
+            text-align: center;
+            width: 100%;
+        }
+
+        .section .img-description {
+            text-align: center;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        button {
+            margin: 40px 0;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555555;
+        }
+
+        .content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+            padding-top: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <h1>Nova Aplicação Disponível</h1>
+        <h2>Para acessar o Digital JOST clique em "Acessar Digital JOST" no final da página</h2>
+    </div>
+
+    <div class="content">
+        <p>A equipe de Transformação Digital desenvolveu uma nova aplicação, chamada de Biblioteca de Conhecimentos, que tem como finalidade armazenar conhecimentos. </p>
+        
+        <div class="section" id="section1">
+            <div class="text">
+                <h3>Parte 1</h3>
+                <p>Texto explicativo sobre a Parte 1.</p>
+            </div>
+            <div>
+                <img src="/static/images/research/first.jpg" alt="Tela Principal">
+                <div class="img-description">Tela Principal</div>
+            </div>
+        </div>
+
+        <div class="section" id="section2">
+            <div class="text">
+                <h3>Parte 2</h3>
+                <p>Texto explicativo sobre a Parte 2.</p>
+            </div>
+            <div>
+                <img src="/static/images/research/second.jpg" alt="Imagem 2">
+                <div class="img-description">Descrição da imagem 2.</div>
+            </div>
+        </div>
+
+        <div class="section" id="section3">
+            <div class="text">
+                <h3>Parte 3</h3>
+                <p>Texto explicativo sobre a Parte 3.</p>
+            </div>
+            <div>
+                <img src="imagem3.jpg" alt="Imagem 3">
+                <div class="img-description">Descrição da imagem 3.</div>
+            </div>
+        </div>
+
+        <div class="section" id="section4">
+            <div class="text">
+                <h3>Parte 4</h3>
+                <p>Texto explicativo sobre a Parte 4.</p>
+            </div>
+            <div>
+                <img src="imagem4.jpg" alt="Imagem 4">
+                <div class="img-description">Descrição da imagem 4.</div>
+            </div>
+        </div>
+
+        <button onclick="sendRequest()">Acessar Digital JOST</button>
+    </div>
+
+    <script>
+
+        function scrollEffect() {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                const sectionTop = section.getBoundingClientRect().top;
+                const sectionBottom = section.getBoundingClientRect().bottom;
+                const screenHeight = window.innerHeight;
+
+                if (sectionTop >= 0 && sectionBottom <= screenHeight) {
+                    section.style.opacity = 1;
+                } else {
+                    section.style.opacity = 0.2;
+                }
+            });
+        }
+
+        function sendRequest() {
+            fetch('/research', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ access: 'Digital JOST' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        window.addEventListener('scroll', () => {  
+            scrollEffect()
+        });
+
+        scrollEffect()
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_native_dash.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/{{video}}" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+</video>
+
+<body id="content" onload="removeNav()">
+    <div class="chp_head_wrap">
+        <a class="dash_btn_b" id="chp_back" href="/dashboards/chp">VOLTAR</a>
+    </div>
+    <div class="chp_dash">
+        <div class="chp_desc_wrapper">
+            <p class="chp_title">RECURSOS HUMANOS</p>
+            <input type="date" id="init" class="chp_date" value="{{today}}">
+            <input type="date" id="end" class="chp_date" value="{{today}}">
+            <button onclick="filterPeriod()" class="chp_search"><i class="fa fa-search"></i></button>
+        </div>
+
+        <div class="chp_mod" id="1">
+            <div class="loader"></div>
+        </div>
+
+        <div class="chp_mod" id="2">
+            <div class="loader"></div>
+        </div>
+    </div>
+</body>
+
+<script>
+    {% include 'reports.productiveHours/ph_feelings_panel.js' %}
+</script>
+
+{% endblock %}

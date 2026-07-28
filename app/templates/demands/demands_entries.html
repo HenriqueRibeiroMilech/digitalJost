@@ -1,0 +1,33 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+
+</head>
+
+<body id="gestao_body">
+    <div class="select_div">
+        <a class="title" id="select_back" style="position:fixed;transform:translate(0, -10%);" href="/demandas?area={{area}}">&times;</a>
+        <p class="select_title" id="test" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{area}}</p>
+        <p class="select_desc" style="overflow:hidden;white-space:nowrap;transform: translate(0, -50%);">Gestão de entradas
+            <button class="add_btn" id="cadastrar" onclick="addLine()">Adicionar Entradas</button>
+        </p>
+
+        <form id="filters" method="post" action="">
+            <input type="text" class="filter" id="entrada" name="entrada" onkeyup="myFunction()" placeholder='Filtrar por "NOME"...' value="{{f_nome}}">
+        </form>
+    </div>
+
+    <form id="table_form" method="post" action="">
+        <div id="table-container" style="margin-left:2%;margin-right:2%;">
+        </div>
+    </form>
+</body>
+
+<script>
+    {% include 'demands/demands_entries.js' %}
+</script>
+{% endblock %}

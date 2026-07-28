@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/overlay.css') }}">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sidebar {
+            width: 12vw;
+            min-width: 160px;
+            background-color: #153A8A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+            text-align: center;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: clamp(18px, 1.9vw, 1em);
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .action-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .action-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: clamp(10px, 0.9vw, 14px);
+            transition: all 0.3s;
+        }
+
+        .conclude-action {
+            background-color: rgba(34, 140, 34, 0.2);
+            border-color: rgba(34, 140, 34, 0.5);
+        }
+
+        .cancel-action {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.5);
+        }
+
+        .action-button:hover {
+            transform: scale(1.05);
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .conclude-action:hover {
+            background-color: rgba(34, 140, 34, 0.3);
+        }
+
+        .cancel-action:hover {
+            background-color: rgba(220, 53, 69, 0.3);
+        }
+
+        .legend {
+            flex-grow: 1;
+            font-size: clamp(10px, 0.9vw, 14px);
+            margin-bottom: 15px;
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+
+        }
+
+        .legend-section {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        .legend-title {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 4px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .legend-count {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1px 6px;
+            min-width: 18px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+
+        .button-container {
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .sidebar button {
+            background-color: white;
+            color: #153A8A;
+            padding: clamp(6px, 0.8vw, 10px);
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            margin-bottom: 8px;
+            font-size: clamp(10px, 0.9vw, 14px);
+            width: 90%;
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .sidebar button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+
+        .main-container {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow-x: auto;
+        }
+
+        .kanban-board {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            height: 100%;
+            overflow-x: auto;
+        }
+
+        .kanban-column {
+            min-width: 180px;
+            max-width: calc((100vw - 12vw - 120px) / 5); /* Distribui igualmente considerando sidebar e gaps */
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            flex: 1;
+        }
+
+        .kanban-column-header {
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: clamp(12px, 1vw, 16px);
+        }
+
+        /* Cores específicas para cada cabeçalho */
+        .header-waiting-sample {
+            background-color: #dcaa0c;
+        }
+
+        .header-waiting-queue {
+            background-color: #163A8A;
+        }
+
+        .header-execution {
+            background-color: #3ea93e;
+        }
+
+        .header-waiting-pickup {
+            background-color: #000000;
+        }
+
+        .kanban-column-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+
+        }
+
+        .kanban-column-content.over {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .kanban-item {
+            position: relative;
+            background-color: white;
+            border-left: 5px solid #2e52a7;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: grab;
+        }
+
+        .kanban-item:active {
+            cursor: grabbing;
+        }
+
+        .kanban-item-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: clamp(14px, 1vw, 16px);
+        }
+
+        .kanban-item-subtitle {
+            font-size: clamp(10px, 0.8vw, 12px);
+            color: #666;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+
+        .kanban-item-text {
+            font-size: clamp(11px, 0.9vw, 13px);
+            margin-bottom: 10px;
+        }
+
+        .kanban-item-button {
+            background-color: #153A8A;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: clamp(10px, 0.8vw, 12px);
+            width: 100%;
+        }
+
+        .kanban-item-button:hover {
+            background-color: #2e52a7;
+        }
+        
+        .kanban-item.prioritized {
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.5);
+        }
+
+        /* Add style for priority button */
+        .priority-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .priority-button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .priority-button.active {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .execution-area-selector {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .area-button {
+            background-color: #e0e0e0;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: clamp(10px, 0.7vw, 12px);
+        }
+
+        .area-button.active {
+            background-color: #3ea93e;
+            color: white;
+        }
+
+        .kanban-duration {
+            font-size: clamp(10px, 0.8vw, 12px);
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-title">SSLs {{areaName}}<br>Painel de Controle</div>
+        
+        <!-- Áreas de ação para cancelar/concluir -->
+        <div class="action-container">
+            <div class="action-button conclude-action" id="conclude-zone">
+                CONCLUIR SSL
+            </div>
+            <div class="action-button cancel-action" id="cancel-zone">
+                CANCELAR SSL
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div id="legend-content">
+                <!-- Legendas serão preenchidas dinamicamente -->
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <button onclick="changeLoc('/lab/consultar?preload={{areaId}}&status=5')">Solicitações Canceladas</button>
+            <button onclick="changeLoc('/lab/consultar?preload={{areaId}}&status=4')">Solicitações Concluídas</button>
+            <button onclick="changeLoc('/lab')">Página Inicial</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="kanban-board">
+            <!-- Coluna 1: Aguardando Amostra -->
+            <div class="kanban-column" id="alz-column">
+                <div class="kanban-column-header header-waiting-sample">
+                    AGUARDANDO AMOSTRA
+                </div>
+                <div class="kanban-column-content" id="alz">
+                    <!-- Itens serão inseridos via JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Coluna 2: Fila de Espera -->
+            <div class="kanban-column" id="fila-column">
+                <div class="kanban-column-header header-waiting-queue">
+                    FILA DE ESPERA
+                </div>
+                <div class="kanban-column-content" id="fila">
+                    <!-- Itens serão inseridos via JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Coluna 3: Primeira Área de Execução -->
+            <div class="kanban-column" id="exec-areas-1">
+                <div class="kanban-column-header header-execution" id="exec-header-1">
+                    ÁREA DE EXECUÇÃO 1
+                </div>
+                <div class="execution-area-selector" id="area-selector-1">
+                    <!-- Botões de área serão adicionados dinamicamente -->
+                </div>
+                <div class="kanban-column-content" id="exec-content-1">
+                    <!-- Itens serão inseridos via JavaScript com base na área selecionada -->
+                </div>
+            </div>
+            
+            <!-- Coluna 4: Segunda Área de Execução -->
+            <div class="kanban-column" id="exec-areas-2">
+                <div class="kanban-column-header header-execution" id="exec-header-2">
+                    ÁREA DE EXECUÇÃO 2
+                </div>
+                <div class="execution-area-selector" id="area-selector-2">
+                    <!-- Botões de área serão adicionados dinamicamente -->
+                </div>
+                <div class="kanban-column-content" id="exec-content-2">
+                    <!-- Itens serão inseridos via JavaScript com base na área selecionada -->
+                </div>
+            </div>
+            
+            <!-- Coluna 5: Aguardando Retirada -->
+            <div class="kanban-column" id="wait-column">
+                <div class="kanban-column-header header-waiting-pickup">
+                    AGUARDANDO RETIRADA
+                </div>
+                <div class="kanban-column-content" id="wait">
+                    <!-- Itens serão inseridos via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlays -->
+    <div class="overlay" id="deadline-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Defina um prazo de conclusão:</div>
+            <input type="date" id="deadline-date">
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="deadline-cancel">Cancelar</button>
+                <button class="overlay-button confirm-button" id="deadline-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay" id="cancel-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Justifique o cancelamento:</div>
+            <textarea id="cancel-reason" style="resize: vertical;" placeholder="Digite o motivo do cancelamento..."></textarea>
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="cancel-back">Voltar</button>
+                <button class="overlay-button confirm-button" id="cancel-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay" id="conclude-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Deseja confirmar que a SSL foi retirada?</div>
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="conclude-back">Não</button>
+                <button class="overlay-button confirm-button" id="conclude-confirm">Sim</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <script>
+
+        const areaId = '{{ areaId }}';
+        const areaName = '{{ areaName }}';
+        let dataframe = {{ dataframe|tojson }};
+        const executionTypes = {{ exec_types|tojson }};
+
+        let selectedArea1Id = null;
+        let selectedArea1Name = null;
+
+        let selectedArea2Id = null;
+        let selectedArea2Name = null;
+        
+        let dragSrcEl = null;
+        let deadline = {};
+
+        let statusChanges = {};
+        let executionAreaChanges = {};
+        let priorityChanges = {};
+
+        let pendingAction = null;
+        
+        // Variável para armazenar o backup do dataframe antes das operações de drag and drop
+        let dragStartDataframeBackup = null;
+
+        // Cores associadas a cada status para manter consistência visual
+        const statusColors = {
+            0: 'rgb(220,170,12)', // Aguardando amostra
+            1: '#163A8A',         // Fila de espera
+            2: '#3ea93e',         // Execução
+            3: '#000000'          // Aguardando retirada
+        };
+
+        // Mapeamento de status para nomes mais descritivos
+        const statusNames = {
+            0: 'AGUARDANDO AMOSTRA'
+            , 1: 'FILA DE ESPERA'
+            , 2: 'EM EXECUÇÃO'
+            , 3: 'AGUARDANDO RETIRADA'
+        };
+
+        // Mapeamento de ID de coluna para status
+        const columnToStatus = {
+            'alz': 0
+            , 'fila': 1
+            , 'exec-content-1': 2
+            , 'exec-content-2': 2
+            , 'wait': 3
+        };
+
+        // Função global para extrair mensagens de erro detalhadas das respostas do servidor
+        function extractErrorMessage(response) {
+            return response.text().then(errorText => {
+                // Tenta obter mensagem de erro detalhada do JSON
+                const errorData = JSON.parse(errorText);
+                if (errorData && errorData.error) {
+                    throw new Error(errorData.error);
+                } else if (errorData && errorData.message) {
+                    throw new Error(errorData.message);
+                } else {
+                    throw new Error(`Erro do servidor: ${response.status}`);
+                }
+            });
+        }
+
+        // Função para criar legendas dinâmicas
+        function createLegends() {
+            const legendContainer = document.getElementById('legend-content');
+            legendContainer.innerHTML = '';
+            
+            // Seção 1: Legenda fixa para as colunas (status)
+            const statusSection = document.createElement('div');
+            statusSection.className = 'legend-section';
+            
+            const statusTitle = document.createElement('div');
+            statusTitle.className = 'legend-title';
+            statusTitle.textContent = 'Status';
+            statusSection.appendChild(statusTitle);
+            
+            // Define as cores e nomes dos status
+            const statusLegends = [
+                {name: 'Aguardando Amostra', color: 'rgb(220,170,12)'},
+                {name: 'Fila de Espera', color: '#163A8A'},
+                {name: 'Em Execução', color: '#3ea93e'},
+                {name: 'Aguardando Retirada', color: '#000000'}
+            ];
+            
+            // Cria um item para cada status
+            statusLegends.forEach(status => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                
+                const left = document.createElement('div');
+                left.style.display = 'flex';
+                left.style.alignItems = 'center';
+                
+                const colorBox = document.createElement('span');
+                colorBox.className = 'legend-color';
+                colorBox.style.backgroundColor = status.color;
+                left.appendChild(colorBox);
+                
+                const name = document.createElement('span');
+                name.textContent = status.name;
+                left.appendChild(name);
+                
+                item.appendChild(left);
+                
+                // Contador que será atualizado dinamicamente
+                const count = document.createElement('span');
+                count.className = 'legend-count';
+                count.id = `count-${status.name.replace(/\s+/g, '-').toLowerCase()}`;
+                count.textContent = '0';
+                item.appendChild(count);
+                
+                statusSection.appendChild(item);
+            });
+            
+            legendContainer.appendChild(statusSection);
+            
+            // Seção 2: Contadores dinâmicos para tipos em execução
+            const executionSection = document.createElement('div');
+            executionSection.className = 'legend-section';
+            
+            const executionTitle = document.createElement('div');
+            executionTitle.className = 'legend-title';
+            executionTitle.textContent = 'Em Execução por Tipo';
+            executionSection.appendChild(executionTitle);
+            
+            // Adiciona um item para cada tipo de execução disponível
+            const areaTypes = executionTypes.filter(type => type.area == areaId);
+            
+            if (areaTypes.length > 0) {
+                areaTypes.forEach(type => {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+                    
+                    const name = document.createElement('span');
+                    name.textContent = type.name;
+                    item.appendChild(name);
+                    
+                    // Contador dinâmico para cada tipo
+                    const count = document.createElement('span');
+                    count.className = 'legend-count';
+                    count.id = `count-execution-${type.id}`;
+                    count.textContent = '0';
+                    item.appendChild(count);
+                    
+                    executionSection.appendChild(item);
+                });
+                
+                legendContainer.appendChild(executionSection);
+            }
+        }
+        
+        // Cria os botões de seleção de área com base no tipo de área
+        function createAreaButtons() {
+            // Filtra os tipos de execução para a área atual
+            const areaTypes = executionTypes.filter(type => type.area == areaId);
+            
+            const selector1 = document.getElementById('area-selector-1');
+            const selector2 = document.getElementById('area-selector-2');
+            
+            // Limpa os seletores
+            selector1.innerHTML = '';
+            selector2.innerHTML = '';
+            
+            // Para área material (com apenas 2 tipos), não mostra botões de seleção
+            if (areaTypes.length <= 2) {
+                // Esconde os seletores
+                selector1.style.display = 'none';
+                selector2.style.display = 'none';
+                
+                // Define os tipos diretamente
+                if (areaTypes.length > 0) {
+                    selectedArea1Id = areaTypes[0].id;
+                    selectedArea1Name = areaTypes[0].name;
+                    document.getElementById('exec-header-1').textContent = selectedArea1Name;
+                }
+                
+                if (areaTypes.length > 1) {
+                    selectedArea2Id = areaTypes[1].id;
+                    selectedArea2Name = areaTypes[1].name;
+                    document.getElementById('exec-header-2').textContent = selectedArea2Name;
+                } else {
+                    // Se houver apenas um tipo, esconde a segunda coluna
+                    document.getElementById('exec-areas-2').style.display = 'none';
+                }
+            } 
+            // Para área dimensional (com mais tipos), mostra botões de seleção
+            else {
+                // Adiciona botões ao primeiro seletor
+                areaTypes.forEach(type => {
+                    const btn = document.createElement('button');
+                    btn.textContent = type.name;
+                    btn.className = 'area-button';
+                    btn.dataset.id = type.id;
+                    btn.onclick = () => selectExecutionArea(1, type.id, type.name);
+                    selector1.appendChild(btn);
+                });
+                
+                // Adiciona botões ao segundo seletor (os mesmos botões)
+                areaTypes.forEach(type => {
+                    const btn = document.createElement('button');
+                    btn.textContent = type.name;
+                    btn.className = 'area-button';
+                    btn.dataset.id = type.id;
+                    btn.onclick = () => selectExecutionArea(2, type.id, type.name);
+                    selector2.appendChild(btn);
+                });
+                
+                // Seleciona os dois primeiros tipos por padrão
+                if (areaTypes.length > 0) {
+                    selectExecutionArea(1, areaTypes[0].id, areaTypes[0].name);
+                }
+                
+                if (areaTypes.length > 1) {
+                    selectExecutionArea(2, areaTypes[1].id, areaTypes[1].name);
+                }
+            }
+            
+            // Renderiza os itens Kanban após configurar as áreas
+            renderKanbanItems();
+        }
+
+        // Seleciona uma área de execução
+        function selectExecutionArea(columnNum, selectedId, selectedName) {
+            const selector = document.getElementById(`area-selector-${columnNum}`);
+            const buttons = selector.querySelectorAll('.area-button');
+            
+            // Não permite selecionar a mesma área nas duas colunas
+            if (columnNum == 1 && selectedId == selectedArea2Id ||
+                columnNum == 2 && selectedId == selectedArea1Id) {
+                return;
+            }
+            
+            // Atualiza a área selecionada
+            if (columnNum == 1) {
+                selectedArea1Id = selectedId;
+                selectedArea1Name = selectedName;
+                document.getElementById('exec-header-1').textContent = selectedArea1Name;
+            } else {
+                selectedArea2Id = selectedId;
+                selectedArea2Name = selectedName;
+                document.getElementById('exec-header-2').textContent = selectedArea2Name;
+            }
+            
+            // Atualiza o estilo dos botões
+            buttons.forEach(btn => {
+                if (btn.textContent == selectedName) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Atualiza o conteúdo da coluna
+            renderKanbanItems();
+        }
+
+        // Renderiza os itens do kanban
+        function renderKanbanItems() {
+            // Limpa todas as colunas
+            document.querySelector('#alz.kanban-column-content').innerHTML = '';
+            document.querySelector('#fila.kanban-column-content').innerHTML = '';
+            document.querySelector('#exec-content-1').innerHTML = '';
+            document.querySelector('#exec-content-2').innerHTML = '';
+            document.querySelector('#wait.kanban-column-content').innerHTML = '';
+            
+            // Contador para as colunas
+            let alzCount = 0;
+            let filaCount = 0;
+            let exec1Count = 0;
+            let exec2Count = 0;
+            let waitCount = 0;
+            
+            // Contadores para cada área de execução
+            const executionCounts = {};
+            executionTypes.filter(type => type.area == areaId).forEach(type => {
+                executionCounts[type.id] = 0;
+            });
+            
+            // Separamos os itens por status
+            const alzItems = [];
+            const filaItems = [];
+            const execItems = [];
+            const waitItems = [];
+            
+            if (dataframe) {
+                dataframe.forEach(card => {
+                    if (card.status == 0) {
+                        alzItems.push({...card});
+                    } else if (card.status == 1) {
+                        filaItems.push({...card});
+                    } else if (card.status == 2) {
+                        execItems.push({...card});
+                    } else if (card.status == 3) {
+                        waitItems.push({...card});
+                    }
+                });
+            }
+            
+            // Ordenar itens de aguardando amostra: primeiro por prioridade, depois por ID
+            alzItems.sort((a, b) => {
+                // Primeiro por prioridade (true = 1 primeiro)
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+                // Depois por ID
+                return parseInt(b.requestId) - parseInt(a.requestId);
+            });
+            
+            // Ordenar itens da fila de espera: primeiro por prioridade, depois por prazo
+            filaItems.sort((a, b) => {
+                // Primeiro por prioridade
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+
+                // Caso contrário, use o prazo (considere prazos vindos do objeto deadline também)
+                const deadlineA = deadline[a.requestId] || a.deadLine || '9999-12-31';
+                const deadlineB = deadline[b.requestId] || b.deadLine || '9999-12-31';
+                
+                return deadlineA.localeCompare(deadlineB);
+            });
+            
+            // Ordenar itens em execução: primeiro por prioridade, depois por ID
+            execItems.sort((a, b) => {
+                // Primeiro por prioridade
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+                // Depois por ID
+                return parseInt(a.requestId) - parseInt(b.requestId);
+            });
+            
+            // Ordenar itens aguardando retirada: primeiro por prioridade, depois por ID
+            waitItems.sort((a, b) => {
+                // Primeiro por prioridade
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+                // Depois por ID
+                return parseInt(a.requestId) - parseInt(b.requestId);
+            });
+            
+            // Renderizar os itens ordenados
+            // Aguardando amostra
+            alzItems.forEach(card => {
+                const itemElement = createKanbanItem(card);
+                document.querySelector('#alz.kanban-column-content').appendChild(itemElement);
+                alzCount++;
+            });
+            
+            // Fila de espera
+            filaItems.forEach(card => {
+                const itemElement = createKanbanItem(card);
+                document.querySelector('#fila.kanban-column-content').appendChild(itemElement);
+                filaCount++;
+            });
+            
+            // Em execução
+            execItems.forEach(card => {
+                if (card.execArea) {
+                    if (executionCounts.hasOwnProperty(card.execArea)) {
+                        executionCounts[card.execArea]++;
+                    }
+                    
+                    const itemElement = createKanbanItem(card);
+                    if (card.execArea == selectedArea1Id) {
+                        document.querySelector('#exec-content-1').appendChild(itemElement);
+                        exec1Count++;
+                    } else if (card.execArea == selectedArea2Id) {
+                        document.querySelector('#exec-content-2').appendChild(itemElement);
+                        exec2Count++;
+                    }
+                }
+            });
+            
+            // Aguardando retirada
+            waitItems.forEach(card => {
+                const itemElement = createKanbanItem(card);
+                document.querySelector('#wait.kanban-column-content').appendChild(itemElement);
+                waitCount++;
+            });
+            
+            // Atualiza os contadores na legenda para status...
+            document.getElementById('count-aguardando-amostra').textContent = alzCount;
+            document.getElementById('count-fila-de-espera').textContent = filaCount;
+            document.getElementById('count-em-execução').textContent = Object.values(executionCounts).reduce((sum, current) => sum + current, 0);
+            document.getElementById('count-aguardando-retirada').textContent = waitCount;
+            
+            // Atualiza os contadores na legenda para cada área de execução
+            for (const [execArea, count] of Object.entries(executionCounts)) {
+                const counterId = `count-execution-${execArea}`;
+                const counterElement = document.getElementById(counterId);
+                if (counterElement) {
+                    counterElement.textContent = count;
+                }
+            }
+            
+            // Atualiza os cabeçalhos com contagens
+            document.querySelector('#alz-column .kanban-column-header').textContent = `AGUARDANDO AMOSTRA (${alzCount})`;
+            document.querySelector('#fila-column .kanban-column-header').textContent = `FILA DE ESPERA (${filaCount})`;
+            
+            // Atualiza os cabeçalhos das colunas de execução com o nome da área e contagem
+            if (selectedArea1Id) {
+                document.getElementById('exec-header-1').textContent = `${selectedArea1Name.toUpperCase()} (${exec1Count})`;
+            }
+            if (selectedArea2Id) {
+                document.getElementById('exec-header-2').textContent = `${selectedArea2Name.toUpperCase()} (${exec2Count})`;
+            }
+            
+            document.querySelector('#wait-column .kanban-column-header').textContent = `AGUARDANDO RETIRADA (${waitCount})`;
+            
+            // Inicializa o drag and drop após renderizar os itens
+            initDragAndDrop();
+        }
+        
+        // Cria um item do kanban
+        function createKanbanItem(item) {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'kanban-item';
+            itemElement.dataset.requestId = item.requestId;
+
+            if (item.prioritize == true) {
+                itemElement.classList.add('prioritized');
+            }
+            
+            // Aplica a cor da borda baseada no status
+            const itemColor = statusColors[item.status] || '#2e52a7';
+            itemElement.style.borderLeft = `5px solid ${itemColor}`;
+            
+            // Add priority button
+            const priorityButton = document.createElement('button');
+            priorityButton.className = 'priority-button' + (item.prioritize == true ? ' active' : '');
+            priorityButton.textContent = 'Priorizar';
+            
+            // Disable button for status 0 (aguardando amostra), 3 (aguardando retirada), 4 (concluido), or 5 (cancelado)
+            const statusCode = parseInt(item.status);
+            if (statusCode === 0 || statusCode === 3 || statusCode === 4 || statusCode === 5) {
+                priorityButton.style.opacity = '0.5';
+                priorityButton.style.cursor = 'not-allowed';
+                priorityButton.title = 'Não é possível alterar prioridade neste status';
+            } else {
+                priorityButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card selection when clicking the button
+                    togglePriority(item.requestId);
+                });
+            }
+            itemElement.appendChild(priorityButton);
+
+            // Adiciona título com ID da requisição
+            const title = document.createElement('div');
+            title.className = 'kanban-item-title';
+            title.textContent = item.requestId;
+            itemElement.appendChild(title);
+            
+            // Adiciona subtítulo e nome do solicitante
+            const subtitleRequester = document.createElement('div');
+            subtitleRequester.className = 'kanban-item-subtitle';
+            subtitleRequester.textContent = 'SOLICITANTE';
+            itemElement.appendChild(subtitleRequester);
+            
+            const textRequester = document.createElement('div');
+            textRequester.className = 'kanban-item-text';
+            textRequester.textContent = item.requesterName;
+            itemElement.appendChild(textRequester);
+            
+            // Adiciona subtítulo e dados do produto
+            const subtitleProduct = document.createElement('div');
+            subtitleProduct.className = 'kanban-item-subtitle';
+            subtitleProduct.textContent = 'DADOS DO PRODUTO';
+            itemElement.appendChild(subtitleProduct);
+            
+            const textDesc = document.createElement('div');
+            textDesc.className = 'kanban-item-text';
+            textDesc.textContent = item.descText;
+            itemElement.appendChild(textDesc);
+            
+            const textMater = document.createElement('div');
+            textMater.className = 'kanban-item-text';
+            textMater.textContent = item.drawId;
+            itemElement.appendChild(textMater);
+            
+            // Adiciona informações sobre duração, se aplicável
+            if (item.status == 2 && item.initDate) {
+                const start = new Date(item.initDate);
+                const now = new Date();
+                const diffInMinutes = item.executionTimeMinutes;
+                const hours = Math.floor(diffInMinutes / 60);
+                const minutes = Math.floor(diffInMinutes % 60);
+                
+                const duration = document.createElement('div');
+                duration.className = 'kanban-duration';
+                duration.textContent = `Duração: ${hours}h${minutes}min`;
+                itemElement.appendChild(duration);
+                
+                // Adiciona botão de pausar/continuar para itens em execução
+                const pauseButton = document.createElement('button');
+                pauseButton.className = 'kanban-item-button';
+                pauseButton.style.marginBottom = '10px';
+                pauseButton.style.backgroundColor = '#DC3545';
+                pauseButton.textContent = item.paused || 'PAUSAR';
+                pauseButton.addEventListener('click', () => togglePause(item.requestId));
+                itemElement.appendChild(pauseButton);
+            }
+            
+            // Adiciona botão para definir prazo (para status 1 - fila de espera)
+            if (item.status == 1) {
+                const deadlineButton = document.createElement('button');
+                deadlineButton.className = 'kanban-item-button';
+                deadlineButton.style.marginBottom = '10px';
+                deadlineButton.style.backgroundColor = '#FFC107';
+                deadlineButton.style.color = 'black';
+                
+                const deadlineValue = deadline[item.requestId] || item.deadLine;
+                if (!deadlineValue || deadlineValue == 'None') {
+                    deadlineButton.textContent = 'DEFINIR PRAZO';
+                } else {
+                    const deadlineParts = deadlineValue.split('-');
+                    deadlineButton.textContent = `PRAZO: ${deadlineParts[2]}/${deadlineParts[1]}/${deadlineParts[0]}`;
+                    
+                    deadlineButton.addEventListener('mouseover', function() {
+                        this.textContent = 'ALTERAR PRAZO';
+                    });
+                    
+                    deadlineButton.addEventListener('mouseout', function() {
+                        this.textContent = `PRAZO: ${deadlineParts[2]}/${deadlineParts[1]}/${deadlineParts[0]}`;
+                    });
+                }
+                
+                deadlineButton.addEventListener('click', () => showOverlay('deadline-overlay', { 
+                    requestId: item.requestId,
+                    deadline: deadlineValue !== 'None' ? deadlineValue : null
+                }));
+                
+                itemElement.appendChild(deadlineButton);
+            }
+            
+            // Adiciona botão de detalhes com a cor correspondente ao status
+            const button = document.createElement('button');
+            button.className = 'kanban-item-button';
+            button.textContent = 'VER DETALHES';
+            button.style.backgroundColor = itemColor;
+            
+            // Ajusta a cor do texto do botão para garantir boa legibilidade
+            if (item.status == 0) { // Aguardando amostra (amarelo)
+                button.style.color = '#000';
+            }
+            
+            button.onclick = function() {
+                changeLoc(`/lab/${areaName}/detalhes/${item.requestId}`);
+            };
+            itemElement.appendChild(button);
+            
+            return itemElement;
+        }
+        
+        // Inicializar funcionalidades de drag-and-drop
+        function initDragAndDrop() {
+            // Habilitar drag-and-drop para itens do kanban
+            document.querySelectorAll('.kanban-item').forEach(item => {
+                item.setAttribute('draggable', 'true');
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+
+            // Habilitar drop zones nas colunas do kanban
+            document.querySelectorAll('.kanban-column-content').forEach(column => {
+                column.addEventListener('dragover', handleDragOver);
+                column.addEventListener('dragenter', handleDragEnter);
+                column.addEventListener('dragleave', handleDragLeave);
+                column.addEventListener('drop', handleDrop);
+            });
+            
+            // Configurar zones de ação
+            configureActionZones();
+        }
+        
+        // Configurar as zones de ação para concluir e cancelar
+        function configureActionZones() {
+            const concludeZone = document.getElementById('conclude-zone');
+            const cancelZone = document.getElementById('cancel-zone');
+            
+            // Configurar zona de conclusão
+            concludeZone.addEventListener('dragover', handleDragOver);
+            concludeZone.addEventListener('dragenter', handleDragEnter);
+            concludeZone.addEventListener('dragleave', handleDragLeave);
+            concludeZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                
+                const requestId = e.dataTransfer.getData('requestId');
+                if (!requestId) return false;
+                
+                const item = dataframe.find(item => item.requestId == requestId);
+                if (!item) return false;
+                
+                // Somente itens em aguardando retirada podem ser concluídos
+                if (item.status !== 3) {
+                    showNotification('Somente SSLs em Aguardando Retirada podem ser concluídas.', true);
+                    return false;
+                }
+                
+                showOverlay('conclude-overlay', { requestId });
+            });
+            
+            // Configurar zona de cancelamento
+            cancelZone.addEventListener('dragover', handleDragOver);
+            cancelZone.addEventListener('dragenter', handleDragEnter);
+            cancelZone.addEventListener('dragleave', handleDragLeave);
+            cancelZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                
+                const requestId = e.dataTransfer.getData('requestId');
+                if (!requestId) return false;
+                
+                showOverlay('cancel-overlay', { requestId });
+            });
+        }
+        
+        // Funções para eventos de drag and drop
+        function handleDragStart(e) {
+            // Criar um backup completo do estado atual antes de iniciar o drag
+            if (dataframe && dataframe.length > 0) {
+                // Garantir um clone profundo dos dados
+                dragStartDataframeBackup = JSON.parse(JSON.stringify(dataframe));
+                console.log('Backup do estado criado para drag & drop');
+            }
+            
+            this.style.opacity = '0.4';
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+            e.dataTransfer.setData('requestId', this.dataset.requestId);
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+            document.querySelectorAll('.over').forEach(item => item.classList.remove('over'));
+            
+            // Limpar o backup se não foi usado (se houve drop bem-sucedido ou se a operação foi cancelada)
+            // Isso previne acúmulo de memória por backups não utilizados
+            setTimeout(() => {
+                // Pequeno delay para garantir que o drop foi processado
+                dragStartDataframeBackup = null;
+            }, 100);
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault(); // Permite o drop
+            }
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            this.classList.add('over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('over');
+        }
+
+        // Função principal de drop para mover itens entre colunas
+        function handleDrop(e) {
+            e.stopPropagation(); // Impede redirecionamento em alguns navegadores
+            e.preventDefault();
+
+            // Se estiver arrastando para o mesmo lugar, não faz nada
+            if (dragSrcEl == this) {
+                console.log('Drop na mesma coluna, ignorando');
+                return false;
+            }
+
+            // Obtém o ID da requisição sendo arrastada
+            const requestId = e.dataTransfer.getData('requestId');
+            console.log('Drop detectado para requestId:', requestId);
+            
+            if (!requestId) {
+                console.error('RequestId não encontrado no drop');
+                return false;
+            }
+
+            // Obtém o item e seu status atual
+            const itemIndex = dataframe.findIndex(item => String(item.requestId) === String(requestId));
+            
+            if (itemIndex === -1) {
+                console.log('Item não encontrado no banco de dados', dataframe.slice(0, 3));
+                return false;
+            }
+
+            const item = dataframe[itemIndex];
+            
+            // Determina o novo status com base na coluna de destino
+            const columnId = this.id;
+            const newStatus = columnToStatus[columnId];
+            if (newStatus === undefined || newStatus === null) return false;
+
+            // Verifica se é permitido mover para esta coluna
+            if (!isAllowedTransition(item.status, newStatus)) {
+                showNotification('Não é permitido mover diretamente para esta coluna.', true);
+                return false;
+            }
+            
+            // Se for mover para a fila de espera e não tiver prazo, solicita definir
+            if (newStatus == 1 && (!deadline[requestId] || deadline[requestId] == 'None')) {
+                // Armazena a ação pendente para ser executada após definir o prazo
+                pendingAction = {
+                    requestId: requestId,
+                    newStatus: newStatus,
+                    columnId: columnId
+                };
+                
+                showOverlay('deadline-overlay', { requestId });
+                return false;
+            }
+            
+            // Completa a ação de mover o item e captura quaisquer erros
+            try {
+                completeItemMove(requestId, newStatus, columnId)
+                    .catch(error => {
+                        console.error("Erro na operação de drag and drop:", error);
+                        // O erro já é tratado internamente em completeItemMove
+                    });
+            } catch (error) {
+                console.error("Erro ao iniciar operação de drag and drop:", error);
+                // Se o erro ocorrer antes mesmo de chamar a operação
+                restoreOriginalState(error);
+            }
+            
+            return false;
+        }
+        
+        // Nova função para completar a movimentação do item
+        function completeItemMove(requestId, newStatus, columnId) {
+            try {
+                // Guarda o status anterior do item antes de qualquer alteração
+                const item = dataframe.find(item => item.requestId == requestId);
+                const previousStatus = item ? item.status : null;
+                const previousExecArea = item ? item.execArea : null;
+                
+                console.log(`Movendo item ${requestId} de status ${previousStatus} para ${newStatus}`);
+                
+                // Atualiza o status do item
+                updateItemStatus(requestId, newStatus);
+                
+                // Atualiza a execução da área
+                if (newStatus == 2) {
+                    // Se estiver indo para área de execução, precisamos definir qual área específica
+                    let execArea = null;
+                    if (columnId == 'exec-content-1') {
+                        execArea = selectedArea1Id;
+                    } else if (columnId == 'exec-content-2') {
+                        execArea = selectedArea2Id;
+                    }
+                    
+                    if (execArea) {
+                        updateItemExecutionArea(requestId, execArea);
+                    }
+                } else {
+                    if (item && item.status == 2 && newStatus !== 2) {
+                        // Se estiver saindo da área de execução, limpa a área
+                        updateItemExecutionArea(requestId, null);
+                    }
+                }
+                
+                // Atualiza a renderização do kanban
+                renderKanbanItems();
+                
+                // Salva as alterações no servidor com gestão de erros aprimorada
+                const savePromise = new Promise((resolve, reject) => {
+                    // Custom handler para restaurar estado em caso de erro
+                    saveChanges(true)
+                        .then(resolve)
+                        .catch(error => {
+                            console.error(`Erro ao salvar alterações para item ${requestId}:`, error);
+                            // Se houver erro, restaura o estado original antes do drag
+                            restoreOriginalState(error);
+                            reject(error);
+                        });
+                });
+                
+                return savePromise;
+            } catch (error) {
+                console.error(`Erro durante operações locais para item ${requestId}:`, error);
+                // Se houver erro durante as operações locais, restaura o estado
+                restoreOriginalState(error);
+                throw error;
+            }
+        }
+        
+        // Função para restaurar o estado original em caso de erro
+        function restoreOriginalState(error) {
+            console.error('Erro ao mover item:', error);
+            
+            // Restaura o dataframe para o estado antes do drag
+            if (dragStartDataframeBackup) {
+                // Restaura completamente o backup para garantir que todas as propriedades sejam revertidas
+                dataframe = JSON.parse(JSON.stringify(dragStartDataframeBackup));
+                dragStartDataframeBackup = null; // Limpa o backup após uso
+                
+                // Limpa quaisquer alterações pendentes que possam estar interferindo
+                statusChanges = {};
+                executionAreaChanges = {};
+            }
+            
+            // Força a re-renderização do kanban com o estado restaurado
+            setTimeout(() => {
+                renderKanbanItems();
+            }, 50);
+            
+            // Mostra mensagem de erro
+            if (error && error.message) {
+                // Verificar se a mensagem contém informações sobre status do equipamento
+                let errorMessage = error.message;
+                if (!errorMessage.toLowerCase().includes('equipamento') && 
+                    !errorMessage.toLowerCase().includes('disponível') &&
+                    !errorMessage.toLowerCase().includes('status')) {
+                    errorMessage = `${errorMessage}. O equipamento pode estar com status diferente de disponível.`;
+                }
+                showNotification(errorMessage, true);
+            } else {
+                showNotification('Erro ao mover o item. O equipamento pode estar com status diferente de disponível.', true);
+            }
+        }
+
+
+        // Verifica se a transição de status é permitida
+        function isAllowedTransition(currentStatus, newStatus) {
+            // Logging para diagnóstico
+            console.log(`Verificando transição de status ${currentStatus} para ${newStatus}`);
+            
+            // Regras de transição
+            // De aguardando amostra para fila de espera
+            if (currentStatus == 0 && newStatus == 1) return true;
+            
+            // De fila de espera para execução ou de volta para aguardando amostra
+            if (currentStatus == 1 && (newStatus == 2 || newStatus == 0)) return true;
+            
+            // De execução para aguardando retirada ou de volta para fila ou trocando a area de execução
+            if (currentStatus == 2 && (newStatus == 3 || newStatus == 1 || newStatus == 2)) return true;
+            
+            // De aguardando retirada de volta para execução
+            if (currentStatus == 3 && newStatus == 2) {
+                console.log('Transição permitida de aguardando retirada para execução');
+                return true;
+            }
+            
+            console.log('Transição NÃO permitida');
+            return false;
+        }
+
+        // Atualiza o status de um item
+        function updateItemStatus(requestId, newStatus) {
+            const itemIndex = dataframe.findIndex(item => item.requestId == requestId);
+            if (itemIndex == -1) return;
+            
+            const oldStatus = dataframe[itemIndex].status;
+            
+            // Se mudou de status, registra a mudança
+            if (oldStatus !== newStatus) {
+                dataframe[itemIndex].status = newStatus;
+                statusChanges[requestId] = newStatus;
+                
+                // Se for para execução, registra a data de início
+                if (newStatus == 2 && oldStatus !== 2) {
+                    dataframe[itemIndex].initDate = new Date().toISOString();
+                    
+                    // Se não for pausa/continuar, zera o tempo pausado
+                    if (!dataframe[itemIndex].timePaused) {
+                        dataframe[itemIndex].timePaused = '0';
+                    }
+                }
+            }
+        }
+
+        // Atualiza a área de execução de um item
+        function updateItemExecutionArea(requestId, execArea) {
+            const itemIndex = dataframe.findIndex(item => item.requestId == requestId);
+            if (itemIndex == -1) return;
+            
+            const oldExecArea = dataframe[itemIndex].execArea;
+            
+            // Se mudou de área, registra a mudança
+            if (oldExecArea !== execArea) {
+                dataframe[itemIndex].execArea = execArea;
+                executionAreaChanges[requestId] = execArea;
+            }
+        }
+
+        // Função para pausar/continuar uma SSL em execução
+        function togglePause(requestId) {
+            const itemIndex = dataframe.findIndex(item => item.requestId == requestId);
+            if (itemIndex == -1 || dataframe[itemIndex].status !== 2) return;
+
+            const isPaused = dataframe[itemIndex].paused == 'CONTINUAR';
+            const action = isPaused ? 'patch' : 'post'; // 'post' para pausar, 'patch' para continuar
+
+            // Backup do estado atual antes de aplicar alterações
+            const dataframeBackup = JSON.parse(JSON.stringify(dataframe));
+            
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/pausar`, {
+                method: action.toUpperCase(),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return extractErrorMessage(response);
+                }
+                dataframe[itemIndex].paused = isPaused ? 'PAUSAR' : 'CONTINUAR';
+                renderKanbanItems();
+                showNotification(isPaused ? 'SSL continuada!' : 'SSL pausada!', false);
+                return {};
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                
+                // Restaura o estado original do dataframe em caso de erro
+                dataframe = dataframeBackup;
+                
+                // Mostra a mensagem de erro detalhada
+                if (error.message) {
+                    showNotification(error.message, true);
+                } else {
+                    showNotification('Erro ao alterar o estado de pausa. Tente novamente.', true);
+                }
+                
+                // Re-renderiza para reverter as alterações visualmente
+                renderKanbanItems();
+            });
+        }
+
+        function togglePriority(requestId) {
+            const itemIndex = dataframe.findIndex(item => item.requestId == requestId);
+            if (itemIndex == -1) return;
+            
+            const item = dataframe[itemIndex];
+            const statusCode = parseInt(item.status);
+            
+            // Check if status is one that shouldn't allow priority changes
+            if (statusCode === 0 || statusCode === 3 || statusCode === 4 || statusCode === 5) {
+                showNotification('Não é possível alterar prioridade neste status', true);
+                return;
+            }
+            
+            // Toggle the priority value (0 or 1)
+            const currentValue = dataframe[itemIndex].prioritize == true ? false : true;
+            item.prioritize = currentValue;
+            
+            // Track the change for saving to the server
+            priorityChanges[requestId] = currentValue;
+            
+            // Update the display
+            renderKanbanItems();
+            
+            // Backup do estado atual antes de aplicar alterações
+            const dataframeBackup = JSON.parse(JSON.stringify(dataframe));
+            
+            // Save changes to server
+            saveChanges()
+                .catch(error => {
+                    // Em caso de erro, restaurar o estado
+                    dataframe = dataframeBackup;
+                    renderKanbanItems();
+                    
+                    if (error.message) {
+                        showNotification(error.message, true);
+                    } else {
+                        showNotification('Erro ao alterar prioridade. Tente novamente.', true);
+                    }
+                });
+            
+            // Show notification
+            showNotification(currentValue ? 'Item priorizado!' : 'Prioridade removida!', false);
+        }
+
+        // Função para mostrar overlay
+        function showOverlay(id, data = {}) {
+            const overlay = document.getElementById(id);
+            if (!overlay) return;
+            
+            overlay.dataset.requestId = data.requestId || '';
+            
+            if (id == 'deadline-overlay') {
+                const deadlineInput = document.getElementById('deadline-date');
+                const today = new Date().toISOString().split('T')[0];
+                deadlineInput.min = today;
+                deadlineInput.value = data.deadline || today;
+            }
+            
+            overlay.classList.add('active');
+        }
+
+        // Função para fechar overlay
+        function closeOverlay(id) {
+            const overlay = document.getElementById(id);
+            if (!overlay) return;
+            overlay.classList.remove('active');
+        }
+
+        // Funções para manipulação de prazos
+        function confirmDeadline() {
+            const overlay = document.getElementById('deadline-overlay');
+            const requestId = overlay.dataset.requestId;
+            const deadlineDate = document.getElementById('deadline-date').value;
+            
+            if (!deadlineDate) {
+                showNotification('Por favor, defina um prazo válido.', true);
+                return;
+            }
+            
+            // Get the original deadline for comparison
+            const itemIndex = dataframe.findIndex(item => item.requestId == requestId);
+            const originalDeadline = itemIndex !== -1 ? dataframe[itemIndex].deadLine : null;
+            
+            // Update the deadline in the global object
+            deadline[requestId] = deadlineDate;
+            
+            closeOverlay('deadline-overlay');
+            
+            // If there was a pending action, complete it now
+            if (pendingAction && pendingAction.requestId == requestId) {
+                try {
+                    completeItemMove(
+                        pendingAction.requestId, 
+                        pendingAction.newStatus, 
+                        pendingAction.columnId
+                    )
+                    .then(() => {
+                        pendingAction = null;
+                        showNotification('Item movido e prazo definido com sucesso!', false);
+                    })
+                    .catch(error => {
+                        // O erro já é tratado internamente em completeItemMove
+                        pendingAction = null;
+                    });
+                } catch (error) {
+                    console.error("Erro ao processar pendingAction:", error);
+                    pendingAction = null;
+                    // Se ocorrer um erro durante a operação, restaura o estado
+                    restoreOriginalState(error);
+                }
+            } else {
+                // Update the display immediately to reflect the new order
+                if (itemIndex !== -1) {
+                    // Store the original deadline value to track the change
+                    if (originalDeadline !== deadlineDate) {
+                        // Force this to be recognized as a change by adding to statusChanges
+                        // This ensures saveChanges() will include this item
+                        statusChanges[requestId] = dataframe[itemIndex].status;
+                    }
+                    
+                    // Update the dataframe with the new deadline
+                    dataframe[itemIndex].deadLine = deadlineDate;
+                }
+                
+                // Backup do estado atual antes de aplicar alterações
+                const dataframeBackup = JSON.parse(JSON.stringify(dataframe));
+                
+                // Update the display and save changes
+                renderKanbanItems();
+                saveChanges()
+                    .then(() => {
+                        showNotification('Prazo definido com sucesso!', false);
+                    })
+                    .catch(error => {
+                        // Em caso de erro, restaurar o estado
+                        dataframe = dataframeBackup;
+                        renderKanbanItems();
+                        
+                        if (error.message) {
+                            showNotification(error.message, true);
+                        } else {
+                            showNotification('Erro ao definir prazo. Tente novamente.', true);
+                        }
+                    });
+            }
+        }
+        
+        // Funções para operações finais (concluir/cancelar)
+        function confirmCancel() {
+            const overlay = document.getElementById('cancel-overlay');
+            const requestId = overlay.dataset.requestId;
+            const cancelReason = document.getElementById('cancel-reason').value;
+            
+            if (!cancelReason) {
+                showNotification('Por favor, forneça uma justificativa para o cancelamento.', true);
+                return;
+            }
+            
+            // Backup do estado atual antes de aplicar alterações
+            const dataframeBackup = JSON.parse(JSON.stringify(dataframe));
+            
+            // Enviar solicitação para cancelar a SSL
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/cancelar`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({'cancelText': cancelReason})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return extractErrorMessage(response);
+                }
+                
+                // Remover o item do dataframe
+                dataframe = dataframe.filter(item => item.requestId !== requestId);
+                renderKanbanItems();
+                showNotification('SSL cancelada com sucesso!', false);
+                return {};
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                
+                // Restaura o estado original do dataframe em caso de erro
+                dataframe = dataframeBackup;
+                
+                // Mostra a mensagem de erro detalhada
+                if (error.message) {
+                    showNotification(error.message, true);
+                } else {
+                    showNotification('Erro ao cancelar a SSL. Tente novamente.', true);
+                }
+                
+                // Re-renderiza para reverter as alterações visualmente
+                renderKanbanItems();
+            });
+            
+            closeOverlay('cancel-overlay');
+        }
+
+        function confirmConclude() {
+            const overlay = document.getElementById('conclude-overlay');
+            const requestId = overlay.dataset.requestId;
+            
+            // Backup do estado atual antes de aplicar alterações
+            const dataframeBackup = JSON.parse(JSON.stringify(dataframe));
+            
+            // Enviar solicitação para concluir a SSL
+            fetch(`/lab/${areaName}/gerenciar/${requestId}/concluir`, {
+                method: 'PATCH'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return extractErrorMessage(response);
+                }
+
+                // Remover o item do dataframe
+                dataframe = dataframe.filter(item => item.requestId != requestId);
+                renderKanbanItems();
+                showNotification('SSL concluída com sucesso!', false);
+                return {};
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                
+                // Restaura o estado original do dataframe em caso de erro
+                if (dataframeBackup) {
+                    dataframe = JSON.parse(JSON.stringify(dataframeBackup));
+                    
+                    // Limpa quaisquer alterações pendentes para evitar problemas futuros
+                    statusChanges = {};
+                    executionAreaChanges = {};
+                    priorityChanges = {};
+                }
+                
+                // Mostra a mensagem de erro detalhada
+                if (error.message) {
+                    showNotification(error.message, true);
+                } else {
+                    showNotification('Erro ao salvar alterações. Tente novamente.', true);
+                }
+                
+                // Re-renderiza para reverter as alterações visualmente
+                setTimeout(() => {
+                    renderKanbanItems();
+                }, 50);
+                
+                // Se é uma operação de drag & drop, rejeitamos a Promise para que o método completeItemMove saiba que houve erro
+                if (fromDragDrop) {
+                    reject(error);
+                }
+            });
+            
+            closeOverlay('conclude-overlay');
+        }
+
+        // Função para salvar todas as alterações no servidor
+        // Parâmetro fromDragDrop indica se a chamada veio da operação de drag & drop
+        function saveChanges(fromDragDrop = false) {
+            // Retorna uma Promise para lidar com erros nas operações de drag & drop
+            return new Promise((resolve, reject) => {
+                // We add objects to track changes in deadlines and priorities
+                const deadlineChanges = {};
+                
+                // Backup do estado atual antes de aplicar alterações
+                const dataframeBackup = JSON.parse(JSON.stringify(dataframe));
+                
+                // Set of unique IDs that have changes
+                const modifiedIds = new Set([
+                    ...Object.keys(statusChanges),
+                    ...Object.keys(executionAreaChanges),
+                    ...Object.keys(priorityChanges) // Add priority changes to modified IDs
+                ]);
+            
+            // Add IDs with changed deadlines to the set of modified items
+            for (const [requestId, value] of Object.entries(deadline)) {
+                const itemIndex = dataframe.findIndex(item => item.requestId == requestId);
+                if (itemIndex !== -1 && dataframe[itemIndex].deadLine !== value) {
+                    deadlineChanges[requestId] = value;
+                    modifiedIds.add(requestId);
+                }
+            }
+            
+                // If there are no changes, don't send anything
+                if (modifiedIds.size == 0) {
+                    resolve(); // Resolvemos a promise sem alterações
+                    return;
+                }            // Prepare data for sending (only modified items)
+            const changes = {
+                requestId: [],
+                status: [],
+                deadLine: [],
+                paused: [],
+                execArea: [],
+                prioritize: [] // Add prioritize field to changes
+            };
+            
+            // Add only modified items
+            modifiedIds.forEach(requestId => {
+                const item = dataframe.find(i => i.requestId == requestId);
+                if (item) {
+                    changes.requestId.push(item.requestId);
+                    changes.status.push(item.status);
+                    changes.deadLine.push(deadline[item.requestId] || item.deadLine || 'None');
+                    changes.paused.push(item.paused == 'CONTINUAR' ? '1' : '0');
+                    changes.execArea.push(item.execArea || 'None');
+                    changes.prioritize.push(item.prioritize || false); // Add prioritize value
+                }
+            });
+            
+            // Send changes to server
+            fetch(`/lab/${areaName}/gerenciar`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(changes)
+            })
+            .then(response => {
+                // Processa a resposta e verifica se há erro
+                if (!response.ok) {
+                    return extractErrorMessage(response);
+                }
+                
+                // Try to convert to JSON with improved error handling
+                return response.text().then(text => {
+                    try {
+                        // If text is empty, return empty object
+                        if (!text) return {};
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("Erro ao converter resposta para JSON:", e);
+                        // If can't convert to JSON, we still consider it success
+                        // since response.ok is true
+                        return {};
+                    }
+                });
+            })
+            .then(data => {
+                // Atualizar itens que foram modificados no servidor
+                if (data && data.updated_items) {
+                    data.updated_items.forEach(updatedItem => {
+                        if (updatedItem && updatedItem.requestId) {
+                            const itemIndex = dataframe.findIndex(item => item.requestId == updatedItem.requestId);
+                            if (itemIndex !== -1) {
+                                // Atualizar qualquer outra propriedade relevante retornada pelo servidor
+                                if (updatedItem.status !== undefined) {
+                                    dataframe[itemIndex].status = updatedItem.status;
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Não mostrar a notificação de sucesso para operações de drag & drop
+                // pois isso será tratado por cada operação individualmente
+                if (!fromDragDrop) {
+                    showNotification('Alterações salvas com sucesso!');
+                }
+                
+                // Clear change records
+                statusChanges = {};
+                executionAreaChanges = {};
+                priorityChanges = {}; // Clear priority changes
+                // Also clear deadline changes
+                Object.keys(deadlineChanges).forEach(id => deadlineChanges[id] = undefined);
+                
+                // Update rendering with new waitlinePos
+                renderKanbanItems();
+                
+                // Resolvemos a promise com sucesso
+                resolve(data);
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                
+                // Restaura o estado original do dataframe em caso de erro
+                dataframe = dataframeBackup;
+                
+                // Mostra a mensagem de erro detalhada apenas se não for de drag & drop
+                // (drag & drop tem seu próprio tratamento de erro)
+                if (!fromDragDrop) {
+                    if (error.message) {
+                        showNotification(error.message);
+                    } else {
+                        showNotification('Erro ao salvar alterações. Tente novamente.');
+                    }
+                }
+                
+                // Re-renderiza para reverter as alterações visualmente
+                renderKanbanItems();
+                
+                // Rejeitamos a promise com o erro
+                reject(error);
+            });
+            
+            }); // Fechamento da Promise
+        }
+
+        // Variável para controlar o timeout de notificação
+        let notificationTimeout = null;
+        let isErrorNotificationActive = false;
+        
+        // Função para mostrar notificação
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            
+            // Limpa qualquer timeout existente para evitar múltiplas notificações
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+                notificationTimeout = null;
+            }
+            
+            // Se já existe uma notificação de erro ativa e esta não é erro, ignoramos
+            if (isErrorNotificationActive && !isError) {
+                console.log("Ignorando notificação de sucesso durante erro:", message);
+                return;
+            }
+            
+            // Atualiza o estado de controle
+            isErrorNotificationActive = isError;
+            
+            // Remove todas as classes e recomeça
+            notification.classList.remove('active', 'error');
+            
+            // Pequeno delay para garantir que a transição será aplicada
+            setTimeout(() => {
+                notification.textContent = message;
+                notification.classList.add('active');
+                
+                if (isError) {
+                    notification.classList.add('error');
+                    
+                    // Faz o elemento scroll para ficar visível se for um erro
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Para erros, mostrar por mais tempo (7 segundos)
+                    notificationTimeout = setTimeout(() => {
+                        notification.classList.remove('active');
+                        notification.classList.remove('error');
+                        isErrorNotificationActive = false;
+                    }, 7000);
+                } else {
+                    // Para mensagens normais, mostrar por 3 segundos
+                    notificationTimeout = setTimeout(() => {
+                        notification.classList.remove('active');
+                        isErrorNotificationActive = false;
+                    }, 3000);
+                }
+            }, 10);
+        }
+
+        // Função para navegação
+        function changeLoc(loc) {
+            window.location = loc;
+        }
+
+        // Criar um auto-refresh para atualizar o kanban periodicamente
+        let refreshInterval;
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                // Backup do estado atual para caso de erro
+                const dataframeBackup = JSON.parse(JSON.stringify(dataframe));
+                
+                fetch(`/lab/${areaName}/gerenciar`)
+                    .then(response => {
+                        if (!response.ok) {
+                            return extractErrorMessage(response);
+                        }
+                        return response.json();
+                    })
+                    .then(newData => {
+                        // Atualizar dados sem perder as alterações locais
+                        dataframe = newData;
+                        renderKanbanItems();
+                    })
+                    .catch(error => {
+                        console.error('Erro ao atualizar dados:', error);
+                        
+                        // Restaura o estado original do dataframe em caso de erro
+                        dataframe = dataframeBackup;
+                        
+                        // Mostra o erro apenas se for uma falha de comunicação (não em auto-refresh silencioso)
+                        if (error.message && error.message !== 'Failed to fetch') {
+                            showNotification(error.message);
+                        }
+                    });
+            }, 3 * 60 * 1000); // Atualiza a cada 3 minutos
+        }
+
+        function stopAutoRefresh() {
+            clearInterval(refreshInterval);
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar prazos
+            if (dataframe) {
+                dataframe.forEach(item => {
+                    if (item.deadLine) {
+                        deadline[item.requestId] = item.deadLine;
+                    }
+                });
+            }
+            
+            // Configurar event listeners para botões dos overlays
+            document.getElementById('deadline-cancel').addEventListener('click', () => closeOverlay('deadline-overlay'));
+            document.getElementById('cancel-back').addEventListener('click', () => closeOverlay('cancel-overlay'));
+            document.getElementById('conclude-back').addEventListener('click', () => closeOverlay('conclude-overlay'));
+            
+            document.getElementById('deadline-confirm').addEventListener('click', confirmDeadline);
+            document.getElementById('cancel-confirm').addEventListener('click', confirmCancel);
+            document.getElementById('conclude-confirm').addEventListener('click', confirmConclude);
+            
+            // Inicializar legendas e botões de área
+            createLegends();
+            createAreaButtons();
+            
+            // Iniciar o auto-refresh
+            startAutoRefresh();
+        });
+
+        // Adicionar evento para parar o auto-refresh quando a página for fechada
+        window.addEventListener('beforeunload', stopAutoRefresh);
+    </script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+        <title>Digital JOST</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+
+    <body class="page_body">
+        <div id="main_sidebar" class="sidebar">
+            <a href="/"><i class="fas fa-home"></i> Home</a>
+            <a id="op" onclick="openNav('op')"><i class="far fa-folder-open"></i> OP Meeting</a>
+            <a id="dem" onclick="openNav('dem')"><i class="far fa-list-alt"></i> Demandas</a>
+            <a id="sol" onclick="openNav('sol')"><i class="fas fa-paper-plane"></i> Solicitações</a>
+            <a id="apps" onclick="openNav('apps')"><i class="fas fa-chart-bar"></i> Relatórios</a>
+            <a id="tdg" onclick="openNav('tdg')"><i class="fas fa-desktop"></i> Transformação Digital</a>
+        </div>
+
+        <div id="app_sidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <t><i class="fas fa-chart-bar"></i> Relatórios</t>
+            <a id="subburro1" onclick="openBurroNav('burro1')">Relatórios JOST</a>
+            <a id="subburro2" onclick="openBurroNav('burro2')">Apontamento de Paradas</a>
+            <a id="subburro3" onclick="openBurroNav('burro3')">Apontamento de Produção</a>
+            <a id="subburro4" onclick="openBurroNav('burro4')">Rastreabilidade</a>
+            <a id="subburro5" onclick="openBurroNav('burro5')">Manutenção</a>
+            <a id="subburro6" onclick="openBurroNav('burro6')">Logística</a>
+            <a id="subburro7" onclick="openBurroNav('burro7')">Cadastros</a>
+            <a id="subburro8" onclick="openBurroNav('burro8')">Engenharia da Qualidade</a>
+            <a id="subburro9" onclick="openBurroNav('burro9')">Segurança</a>
+            <!-- <a href="/dashboards/chp">Horas Produtivas</a> -->
+        </div>
+
+        <div id="sol_sidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <t><i class="fas fa-paper-plane"></i> Solicitações</t>
+            <a href="/oee/paradas/alterar">Alteração de Paradas</a>
+            <a href="/desvios">Desvios de Processo</a>
+            <a href="/solicitar">Melhorias e Projetos</a>
+            <a href="/lab">Solicitações de Serviço<br> de Laboratório</a>
+
+        </div>
+
+        <div id="op_sidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <t href=""><i class="far fa-folder-open"></i>  Operation Meeting</t>
+            <a href="/op/qualidade">Informativo da Qualidade</a>
+            <a href="/op/producao">Indicadores de Produção</a>
+            <a href="/op/ssma">Indicadores de SSMA</a>
+            <a href="/op/logistica">Indicadores de Logística</a>
+            <a href="/op/plano">Planejamento e<br> Acompanhamento</a>
+        </div>
+
+        <div id="dem_sidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <t><i class="far fa-list-alt"></i> Gestão de Demandas</t>
+            <a href="/demandas?area=Engenharia de Processo">Engenharia de Processo</a>
+            <a href="/demandas?area=Engenharia de Dev. de Fornecedores">Engenharia de Dev. de <br>Fornecedores</a>
+            <a href="/demandas?area=Transformação Digital">Transformação Digital</a>
+            <a href="/demandas?area=Manutenção">Manutenção</a>
+            <a href="/demandas?area=SSMA">SSMA</a>
+        </div>
+
+        <div id="tdg_sidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <t><i class="fa fa-desktop"></i> Transformação Digital</t>
+            <a href="/biblioteca">Biblioteca de Conhecimentos</a>
+            <a href="/monitoramento">Monitoramento Industrial</a>
+            <a href="/usuarios">Configurações de usuários</a>
+            <a href="/cockpit">Comunicação Interna</a>
+        </div>
+
+        <div onmouseover="openMain()"  id="sub_sidebar" class="sidebar">
+            <a id="sub_icon"><i class="fas fa-align-justify"></i></a>
+            <a id="close_icon" onclick="changeNav()"><i class="fas fa-arrow-left"></i></a>
+        </div>
+      
+        <div id="burro1" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Relatórios JOST</t>
+            <a href="http://svh-aut-07/ReportServer/Pages/ReportViewer.aspx?%2fJOST%2frptConsultaDetalheEficienciaGeral">Consulta Detalhada OEE</a>
+            <a href="http://svh-aut-07/ReportServer/Pages/ReportViewer.aspx?%2fJOST%2frptConsultaEficiencia">Consulta Eficiência</a>
+            <a href="http://svh-aut-07/ftweb/diariobordo.aspx">Consulta Montagem</a>
+            <a href="http://svh-aut-07/ReportServer/Pages/ReportViewer.aspx?%2fJOST%2frptConsultaProducao">Consulta Produção</a>
+            <!-- <a href="/dashboards/setup/geral">Consulta Setup</a> -->
+            <a href="http://svh-aut-07/FTWeb/PainelControle.aspx">Painel de Controle</a>
+        </div>
+      
+        <div id="burro2" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Apontamento de Paradas</t>
+            <a href="/oee/paradas">Relatório de Paradas</a>
+        </div>
+      
+        <div id="burro3" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Apontamento de Produção</t>
+            <a href="/oee/sinal">Consulta Sinal</a>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiYjQzN2VlYTEtZjdiNy00ODFjLTk2YjgtNmE4NzZlMDUyNDRkIiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9&pageName=ReportSectione177cab88c4d01499b06">Acompanhamento de Produção</a>
+            <a href="http://svh-aut-07/ReportServer/Pages/ReportViewer.aspx?%2fJOST%2frptConsultaLogOP">Informação das Ordens de produção</a>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiYzE2N2FhZjUtOWI3Mi00ZGJkLThhMWUtZWY3YjA3MDM0ZmEwIiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9&pageName=ReportSectionb9119da780558d260093">Painel de Eficiência</a>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiNDQwMjkyMjgtYzRkZC00Mjg5LTkwMzMtNTg2ZDNjNDI3MzUyIiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9">Produção Geral</a>
+            <a href="/monitoramento/IA">Consulta Inteligência Artificial</a>
+        </div>
+      
+        <div id="burro4" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Rastreabilidade</t>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiYjgyYjI4OGEtMGQxNi00N2Y4LTgzNjgtZWYyMTY3ZDZkZmE3IiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9">Laminadora</a>
+            <a href="/rastreabilidade/qr">Montagem QR</a>
+            <a href="https://al.randon.com.br/">Montagem AL</a>
+            <!-- <a href="http://svh-aut-07/ReportServer/Pages/ReportViewer.aspx?%2fJOST%2frptConsultaRastreabilidadePinoRei&rs:Command=Render">Pino Rei Famup</a> -->
+            <a href="http://pinorei.randon.com.br/">Pino Rei</a>
+            <a href="http://sp3e.randon.com.br">Suspensor 3º Eixo</a>
+            <a href="http://svh-aut-04/Buslink">Articulação de ônibus</a>
+
+        </div>
+      
+        <div id="burro5" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Manutenção</t>
+            <a href="/manutencao/disponibilidade">Disponibilidade de Máquinas</a>
+            <a href="/manutencao/controle">Controle de Notas e Ordens</a>
+            <a href="/manutencao/controle/consulta">Consulta de Notas</a>
+        </div>
+      
+        <div id="burro6" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Logística</t>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiNjhkN2YzZGEtNjhlMS00OTA1LWFlODctMzZmMmEyM2YxYWUwIiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9">Estoque de Planejadores</a>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiNjhkN2YzZGEtNjhlMS00OTA1LWFlODctMzZmMmEyM2YxYWUwIiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9&pageName=ReportSectiona73bbf2059a88850a44f">Indicadores por Falta Matéria Prima</a>
+            <a href="https://wasejost.randon.com.br">Monitoramento dos Trilhos</a>
+            <a href="http://svh-aut-07/ftweb/PainelControleEmpilhadeiras.aspx">Sistema de Empilhadeira</a>
+        </div>
+      
+        <div id="burro7" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Cadastros</t>
+            <a href="/cadastros/5s">Cadastro de Auditorias - 5s</a>
+            <a href="/cadastros/metas">Cadastro de Metas - CT</a>
+            <a href="/cadastros/paradas">Cadastro de Paradas</a>
+            <a href="/cadastros/agenda_paradas">Cadastro de Paradas Agendadas</a>
+            <a href="/cadastros/tablets">Cadastro de Tablets</a>
+            <a href="/cadastros/qualidade">Cadastro Motivos de Qualidade</a>
+            <a href="/cadastros/py_suspensor">Cadastro Poka-Yoke Suspensor</a>
+            <a href="/cadastros/fatores">Cadastro de Fatores</a>
+            <a href="http://svh-aut-07/FTWeb/ConsultaFalhasEquipamento.aspx">Cadastro Falhas de Equipamento</a>
+            <a href="http://svh-aut-07/FTWeb/ConsultaFuncionariosArea.aspx">Cadastro de Funcionários por Área</a>
+            <a href="/matriz">Matriz de Versatilidade</a>
+        </div>
+      
+        <div id="burro8" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Engenharia da Qualidade</t>
+            <a href="/dashboards/qualidade">Relatório da Qualidade</a>
+            <a href="http://svh-aut-08:7576/">Relatório Inspeção Eletrônica</a>
+            <a href="/dashboards/cnq">Relatório de CNQ</a>
+        </div>
+
+        <div id="burro9" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+                <t><i class="fas fa-rocket"></i>  Segurança</t>
+            <a href="http://alarmesjost.randon.com.br/">Relatório de Alarmes</a>
+        </div>
+
+        <script>
+            {% include 'home.js' %}
+        </script>
+    {% block content %}{% endblock %}
+    </body>
+</html>

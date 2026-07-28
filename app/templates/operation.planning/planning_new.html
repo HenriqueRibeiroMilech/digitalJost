@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 24px;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        /* Corpo principal e fundo */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Container principal */
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 700px;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            color: #153A8A;
+            font-weight: bold;
+        }
+
+        .form-input, select, textarea {
+            width: calc(100% - 30px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        /* Estilo para alinhar labels e inputs/selects na mesma linha */
+        .form-row {
+            display: flex;
+            gap: 10px; /* Espaço entre os elementos */
+            align-items: flex-start; /* Mantém o label acima do campo */
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            display: flex;
+            flex-direction: column; /* Coloca o label acima do campo */
+            flex: 1; /* Faz com que os elementos ocupem espaço igual */
+            min-width: 0; /* Previne que inputs fiquem muito grandes */
+        }
+
+        .form-row label {
+            font-size: 0.9em; /* Reduz o tamanho do label para economizar espaço */
+            margin-bottom: 5px; /* Espaço menor entre o label e o campo */
+        }
+
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #153A8A;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1em;
+            flex: 1;
+        }
+
+        button:hover {
+            background-color: #2e52a7;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        /* Estilo da rolagem */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgb(125, 196, 255);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgb(100, 170, 255);
+        }
+
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+
+        .dropdown-down .dropdown-content {
+            top: 100%;
+            bottom: auto;
+        }
+        .dropdown-up .dropdown-content {
+            bottom: 100%;
+            top: auto;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            color: black;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        th.sorted-asc::after {
+            content: ' ▲'; /* Sinal para ordenação crescente */
+        }
+
+        th.sorted-desc::after {
+            content: ' ▼'; /* Sinal para ordenação decrescente */
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .selected-row {
+            background-color: #dddddd;
+            font-weight: bold;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 5px; /* Espaço menor entre o label e o campo */
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+
+    </style>
+</head>
+<body>
+    <!-- Botão de navegação -->
+    <div class="static-buttons">
+        <button onclick="window.location='/op/plano'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="loading-overlay" id="loading-overlay">Carregando...</div>
+
+    <!-- Container principal -->
+    <div class="container">
+        <h1 style="margin-top: 0;">Cadastrar - Plano de Ação</h1>
+        <form id="action-plan-form">
+            <!-- Semana de apresentação -->
+            <div class="form-row">
+                <!-- Grupo para o input de semana -->
+                <div class="form-group">
+                    <label for="presentation-week">Semana de Apresentação</label>
+                    <input class="form-input" type="number" id="presentation-week" name="presentation-week" min="{{week}}" value="{{week}}" max="52" placeholder="Informe a semana (1 a 52)" required>
+                </div>
+
+                <!-- Grupo para o select de status -->
+                <div class="form-group">
+                    <label for="presentation-m">M de Apresentação</label>
+                    <select id="presentation-m" required>
+                        <option value="" disabled selected>Selecione um M</option>
+                        <option value='0'>Mão de Obra</option>
+                        <option value='1'>Movimentação</option>
+                        <option value='2'>Material</option>
+                        <option value='3'>Manutenção</option>
+                        <option value='4'>Método (Qualidade)</option>
+                        <option value='5'>Método (Processos)</option>
+                    </select>
+                </div>
+            
+            </div>
+            
+            <div class="form-row">
+
+                <!-- Grupo para o select de área -->
+                <div class="form-group">
+                    <label for="presentation-area">Área de Apresentação</label>
+                    <select id="presentation-area" required>
+                        <option value="" disabled selected>Selecione uma Área</option>
+                        <option value='0'>Montagem</option>
+                        <option value='1'>Usinagem</option>
+                        <option value='2'>Soldagem</option>
+                        <option value='3'>Pré-Fabricação</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="due-date">Prazo da Ação</label>
+                    <input class="form-input" type="date" id="due-date" name="due-date" required>
+                </div>
+            </div>
+            <!-- Descrição -->
+            <label for="description">Descrição</label>
+            <textarea id="description" name="description" placeholder="Informe a descrição da ação" required></textarea>
+
+            <button class="dropbtn" type="button" onclick="openModal('modalRelate')">Selecione as paradas relacionadas</button>
+
+            <div class="dropdown dropdown-up" style="margin-top: 1vh;">
+                <button class="dropbtn" type="button">Selecione as áreas impactadas</button>
+                <div class="dropdown-content" id="w_group" style="height: auto;">
+                    <label><input type="checkbox" name="Montagem" value="Montagem"> Montagem</label>
+                    <label><input type="checkbox" name="Pré-Fabricação" value="Pré-Fabricação"> Pré-Fabricação</label>
+                    <label><input type="checkbox" name="Soldagem" value="Soldagem"> Soldagem</label>
+                    <label><input type="checkbox" name="Usinagem" value="Usinagem"> Usinagem</label>
+                </div>
+            </div>
+
+            <div class="dropdown dropdown-up" style="margin-top: 1vh;margin-bottom: 3vh;">
+                <button class="dropbtn" type="button">Selecione os centros impactados</button>
+                <div class="dropdown-content" id="w_name">
+                    {% for workcenter in workcenters %}
+                    <label><input type="checkbox" value="{{workcenter.Workcenter_Code}}-{{workcenter.Name}}">{{workcenter.Workcenter_Code}}-{{workcenter.Name}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Botões de ação -->
+            <div class="button-group">
+                <button type="submit">Cadastrar</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="modalRelate" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalRelate')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Relacionar paradas</h2>
+    
+            <div class="filter-container">
+                <div>
+                    <h2 for="workCenter">Centro de trabalho</h2>
+                    <select id="workCenter">
+                        <option disabled value="">Selecione uma opção</option>
+                        {% for workcenter in workcenters %}
+                            {% if workcenter.Workcenter_Key != 1 %}
+                                <option value="{{ workcenter.Workcenter_Key }}">
+                                    {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
+                                </option>
+                            {% else %}
+                                <option value="{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}">
+                                    {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div>
+                    <h2 for="motive">Motivo de parada</h2>
+                    <select id="motive">
+                        <option disabled value="">Selecione uma opção</option>
+                        {% for event in events %}
+                            <option value="{{event.Code}}">{{event.Code}}-{{event.Description}}</option>
+                        {% endfor %}
+                    </select>
+                </div>  
+    
+                <div>
+                    <h2 for="initDate">Hora de início</h2>
+                    <input class="form-input" type="datetime-local" id="initDate" value="{{initDateFilter}}">
+                </div>
+    
+                <div>
+                    <h2 for="endDate">Hora de fim </h2>
+                    <input class="form-input" type="datetime-local" id="endDate" value="{{endDateFilter}}">
+                </div>
+
+                <button style="max-width: 10vw;background-color: black;" onclick="populateTable()" id="searchStops">Pesquisar paradas</button>
+
+            </div>
+    
+            <div style='height: 50vh;overflow-y: auto;'>         
+                <table id='stopsTable'>
+                    <thead>
+                        <tr>
+                            <th>Centro de trabalho</th>
+                            <th>Motivo de parada</th>
+                            <th onclick="sortTable(2)">Hora de início</th>
+                            <th onclick="sortTable(3)">Hora de fim</th>
+                            <th onclick="sortTable(4)">Duração</th>
+                            <th>Relacionar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stopTable">
+                        <!-- Conteúdo gerado via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <form id="requestForm">
+            </form>
+        </div>
+    </div>
+
+
+    <div id="badFill" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        const events = JSON.parse('{{events | tojson}}')
+        const relatedStops = {};
+
+        // FUNÇÃO PARA CRIAR O PLANO DE AÇÃO
+
+        document.getElementById('action-plan-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const areas = Array.from(document.querySelectorAll(`#w_group input:checked`)).map(checkbox => checkbox.value);
+            const workcenters = Array.from(document.querySelectorAll(`#w_name input:checked`)).map(checkbox => checkbox.value);
+            
+            // Objeto com os dados do formulário
+            const data = {
+                p_week: document.getElementById('presentation-week').value,
+                p_ms: document.getElementById('presentation-m').value,
+                p_area: document.getElementById('presentation-area').value,
+                deadline: document.getElementById('due-date').value,
+                description: document.getElementById('description').value,
+                areas: areas,
+                workcenters: workcenters,
+                relatedStops: relatedStops
+            };
+
+            // Envia os dados ao servidor (ajuste a rota conforme necessário)
+            fetch('/op/plano/novo?type=register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                window.location.href = '/op/plano/historico/' + data.id
+            })
+        });
+
+
+        // FUNÇÕES PARA RELACIONAR AS PARADAS
+
+        const sortDirections = {
+            'stopsTable': [true, true, true, true, true, true],
+        };
+
+        function populateTable() {
+
+
+            var w_name_mic = [document.getElementById('workCenter').value]
+            var w_name_plex = Number.isInteger(parseInt(document.getElementById('workCenter').value)) ? [parseInt(document.getElementById('workCenter').value)] : []
+
+            var type = '1'
+            if (Number.isInteger(parseInt(document.getElementById('workCenter').value))) {
+                type = '0'
+            }
+            var m_event = [document.getElementById('motive').value];
+            var start_date = document.getElementById('initDate').value;
+            var end_date = document.getElementById('endDate').value;
+
+            if (w_name_mic == [] || m_event == [] || start_date == '' || end_date == '') {
+                alert("Você deve preencher todos os campos.");
+                return;
+            }
+
+            document.getElementById('loading-overlay').classList.add('active');
+
+            fetch('/op/plano/novo?type=data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ shift : ['1', '2', '3', 'Extra'], w_name_mic, w_name_plex, m_event, start_date, end_date, type })
+            })
+                .then(response => response.json()) // Convert the response to JSON
+                .then(data => {
+                    const tableBody = document.getElementById('stopTable');
+                    tableBody.innerHTML = ''; // Limpa o conteúdo anterior
+
+                    // Usar DocumentFragment para melhorar o desempenho
+                    const fragment = document.createDocumentFragment();
+
+                    // Adiciona as linhas armazenadas em relatedStops ao topo
+                    Object.values(relatedStops).forEach(stop => {
+                        const row = createRow(stop, true); // Linha já selecionada
+                        fragment.appendChild(row);
+                    });
+
+                    data.forEach(user => {
+                        // Verifica se a linha já foi selecionada para evitar duplicação
+                        if (relatedStops[user['Log_Key']]) return;
+                        const row = createRow(user, false); // Linha não selecionada
+                        fragment.appendChild(row);
+                    });
+
+                    // Adicionar tudo de uma vez ao tableBody
+                    tableBody.appendChild(fragment);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    document.getElementById('loading-overlay').classList.remove('active');
+                })
+        }
+
+        function createRow(data, isSelected) {
+            const row = document.createElement('tr');
+            row.setAttribute('data-log-key', data['Log_Key']); // Adiciona um atributo para identificar a linha
+
+            // Aplica uma classe CSS diferente se a linha estiver selecionada
+            if (isSelected) {
+                row.classList.add('selected-row');
+            }
+
+            // Lista de campos a serem preenchidos
+            const fields = ['Workcenter_Name', 'Event', 'Log_Date', 'End_Date', 'Log_Minutes'];
+
+            // Cria células para cada campo
+            fields.forEach(field => {
+                const cell = document.createElement('td');
+                cell.textContent = data[field] || '';
+                row.appendChild(cell);
+            });
+
+            // Criação da célula para o botão
+            const actionCell = document.createElement('td');
+            const button = document.createElement('button');
+            button.textContent = isSelected ? 'Remover' : 'Selecionar'; // Define o texto do botão
+            console.log(data)
+            button.onclick = () => toggleSelection(data, row, button); // Alterna seleção
+            actionCell.appendChild(button);
+
+            row.appendChild(actionCell);
+            return row;
+        }
+
+        function toggleSelection(data, row, button) {
+            const logKey = data['Log_Key'];
+
+            if (relatedStops[logKey]) {
+                delete relatedStops[logKey]; // Remove do objeto
+                row.classList.remove('selected-row'); // Remove a classe de destaque
+                button.textContent = 'Selecionar'; // Muda o texto do botão
+            } else {
+                relatedStops[logKey] = data;
+                row.classList.add('selected-row'); // Adiciona a classe de destaque
+                button.textContent = 'Remover'; // Muda o texto do botão
+            }
+        }
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('stopsTable');
+            const tbody = table.querySelector('tbody');
+
+            const rows = Array.from(tbody.rows);
+            const isAscending = sortDirections['stopsTable'][columnIndex];
+
+            // Ordena as linhas
+            rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].innerText;
+                const cellB = b.cells[columnIndex].innerText;
+
+                if (columnIndex == 2 || columnIndex == 3) {
+                    const parseBrazilianDate = (dateTimeString) => {
+                        const [datePart, timePart] = dateTimeString.split(' ')
+                        const [day, month, year] = datePart.split('/');
+                        return new Date(`${year}-${month}-${day}T${timePart}`);
+                    };
+
+                    const startDate = parseBrazilianDate(cellA);
+                    const endDate = parseBrazilianDate(cellB);
+
+                    return isAscending ? startDate - endDate : endDate - startDate;
+                } else if (columnIndex == 4) {
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else {
+                    return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+
+            // Limpa o tbody e adiciona as linhas ordenadas
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Alterna a direção da ordenação
+            sortDirections['stopsTable'][columnIndex] = !isAscending;
+
+            // Remove os estilos de ordenação
+            Array.from(table.getElementsByTagName('th')).forEach((th, index) => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (index === columnIndex) {
+                    th.classList.toggle('sorted-desc', sortDirections['stopsTable'][columnIndex]);
+                    th.classList.toggle('sorted-asc', !sortDirections['stopsTable'][columnIndex]);
+                }
+            });
+        }
+
+        // FUNÇÕES PARA ABRIR E FECHAR MODAL
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between; /* Alinha o título à esquerda e os filtros à direita */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        .date-filters {
+            display: flex;
+            align-items: center;
+            font-size: 1em;
+        }
+
+        .date-filters label {
+            margin: 0 10px;
+            font-size: 1em;
+            color: #153A8A;
+        }
+
+        .date-filters input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 18%;
+            z-index: 5;
+        }
+
+        .dropbtn {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: auto;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #3e8e41;
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/op/plano'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Plano de Ação - Operation Meeting</h1>
+            <div class="date-filters">
+                <label for="last_week">Início:</label>
+                <input type="date" min='2024-09-11' id="last_week" value="{{last_week}}" onchange="searchData()">
+                <label for="this_week">Fim:</label>
+                <input type="date" min='2024-09-11' id="this_week" value="{{this_week}}" onchange="searchData()">
+            </div>
+        </div>
+
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar por Criador" onkeyup="filterTable()">
+            <input type="text" id="filter2" placeholder="Filtrar por Responsável" onkeyup="filterTable()">
+            <input type="text" id="filter3" placeholder="Filtrar por Local" onkeyup="filterTable()">
+            <input type="text" id="filter4" placeholder="Filtrar por Paradas" onkeyup="filterTable()">
+            <input type="text" id="filter5" placeholder="Filtrar por Descrição do Problema" onkeyup="filterTable()">
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Selecione o status</button>
+                <div class="dropdown-content" id="filter6">
+                    <label><input checked type="checkbox" name="filter6" value="Não Iniciado" onchange="filterTable()"> Não Iniciado</label>
+                    <label><input checked type="checkbox" name="filter6" value="Em Andamento" onchange="filterTable()"> Em Andamento</label>
+                    <label><input checked type="checkbox" name="filter6" value="Concluído" onchange="filterTable()"> Concluído</label>
+                    <label><input checked type="checkbox" name="filter6" value="Cancelado" onchange="filterTable()"> Cancelado</label>
+                </div>
+            </div>
+        </div>
+
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table>
+                <thead>
+                    <tr>
+                        <th>Semana</th>
+                        <th>Área</th>
+                        <th>Criador</th>
+                        <th>Responsáveis</th>
+                        <th>Local</th>
+                        <th>Paradas</th>
+                        <th>Descrição do Problema</th>
+                        <th>Prazo Final</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+
+        var tableData = {};
+
+        const defaultLastWeek = '{{last_week}}';
+        const defaultThisWeek = '{{this_week}}';
+
+        function populateTable(data) {
+
+            function getStatusStyle(status) {
+                switch (status) {
+                    case -2: // CANCELADO
+                    return { display: 'CANCELADO', color: 'gray' };
+                    case -1: // RECUSADO
+                    return { display: 'RECUSADO', color: 'red' };
+                    case 0: // NÃO INICIADO
+                    return { display: 'NÃO INICIADO', color: 'black' };
+                    case 100: // CONCLUÍDO
+                    return { display: 'CONCLUÍDO', color: 'green' };
+                    default: // EM ANDAMENTO
+                    return { display: `${status}%`, color: 'blue' };
+                }
+            }
+
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';
+
+            data.forEach(user => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                const button = document.createElement('button');
+                button.textContent = user['week'];
+                button.onclick = () => window.location.href = `/op/plano/historico/${user['id']}`;
+                cell.appendChild(button);
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['presentationMotive'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['responsible'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['local'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['event'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['description'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = user['deadline'];
+                row.appendChild(cell);
+                
+                
+                cell = document.createElement('td');
+                const statusStyle = getStatusStyle(user['status']);
+                cell.textContent = statusStyle.display;
+                cell.style.color = statusStyle.color;
+                cell.style.fontWeight = 'bold';
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function filterTable() {
+
+            function getStatusName(status) {
+                switch (status) {
+                    case -2: // CANCELADO
+                    return 'Cancelado';
+                    case 0: // NÃO INICIADO
+                    return 'Não Iniciado';
+                    case 100: // CONCLUÍDO
+                    return 'Concluído';
+                    default: // EM ANDAMENTO
+                    return `Em Andamento`;
+                }
+            }
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+            const filter3 = document.getElementById('filter3').value.toLowerCase();
+            const filter4 = document.getElementById('filter4').value.toLowerCase();
+            const filter5 = document.getElementById('filter5').value.toLowerCase();
+            const filter6 = Array.from(document.querySelectorAll(`#filter6 input:checked`)).map(checkbox => checkbox.value);
+
+
+            const filteredData = tableData.filter(user => {
+                
+                const filter1Match = user['name'].toString().toLowerCase().includes(filter1);
+                const filter2Match = user['responsible'].toLowerCase().includes(filter2);
+                const filter3Match = user['local'].toLowerCase().includes(filter3);
+                const filter4Match = user['event'].toString().toLowerCase().includes(filter4);
+                const filter5Match = user['description'].toString().toLowerCase().includes(filter5);
+                const filter6Match = filter6.includes(getStatusName(user['status']))
+
+
+                return filter1Match && filter2Match && filter3Match && filter4Match && filter5Match && filter6Match;
+            });
+
+            populateTable(filteredData);
+            }
+
+        function searchData() {
+            const last_week = document.getElementById('last_week');
+            const this_week = document.getElementById('this_week');
+
+
+            if (last_week.value === "") {
+                last_week.value = defaultLastWeek;
+            }
+            if (this_week.value === "") {
+                this_week.value = defaultThisWeek;
+            }
+
+            fetch('/op/plano/historico', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    last_week: last_week.value,
+                    this_week: this_week.value
+                })
+            })
+            .then(response => response.json()) 
+            .then(data => {
+                tableData = data
+                filterTable();
+            });
+        }
+
+        window.onload = function() {
+            searchData();
+        };
+    </script>
+</body>
+</html>

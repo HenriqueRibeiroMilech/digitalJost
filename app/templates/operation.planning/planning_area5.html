@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="{{ url_for('static', filename= 'plotly-latest.min.js') }}" charset="utf-8"></script>
+    
+    <style>
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(10vh + 9vw);
+            width: calc(10vh + 9vw);
+            margin: 10% auto;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            display: none;
+            text-align: center;
+            background-color: white;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .container.active {
+            display: block;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+            display: flex;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            margin-top: 2vh;
+        }
+
+        h3 {
+            margin: 0;
+        }
+
+        .charts-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            height: 80%;
+            width: 100vw;
+            overflow-y: auto;
+        }
+
+        .mid-charts-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            height: 85%;
+            width: calc(50% - 1vh);
+            float: left;
+            overflow-y: auto;
+        }
+
+        .chart {
+            width: 24%;
+            min-height: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+            margin: 0;
+        }
+
+        .navigation-buttons {
+            position: absolute;
+            bottom: 1vh;
+            width: 100vw;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navigation-buttons button, .navigation-buttons input {
+            background-color: #153A8A;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .navigation-buttons button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .right {
+            display: flex;
+            align-items: center;
+        }
+
+        .img-container {
+            height: 5vh;
+            display: flex;
+            align-items: center;
+            margin-right: 1vw;
+        }
+
+        .img-container img {
+            height: 100%;
+        }
+
+        .top-section {
+            display: flex;
+            width: 100%;
+            height: 60%;
+        }
+
+        .half-chart {
+            width: 50%;
+            height: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+
+        .bottom-section {
+            width: 100%;
+            height: 35%;
+            margin-top: 10px;
+        }
+
+        .full-chart {
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        table th:first-child, table td:first-child {
+            width: 150px;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #153A8A;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        button:hover {
+            background-color: #1a5db5;
+        }
+
+        .tooltip {
+            display: none; /* Oculta o tooltip por padrão */
+            position: absolute;
+            top: 100%; /* Aparece logo abaixo do elemento */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #007bff; /* Azul */
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap; /* Impede que o texto quebre linhas */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+            z-index: 1000; /* Garante que fique acima de outros elementos */
+            font-size: 0.9rem;
+            max-width: 15vw;
+            width: 15vw;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        /* Mostrar o tooltip quando passar o mouse */
+        #deadline-container div:hover .tooltip, td div:hover .tooltip {
+            display: block; /* Exibe o tooltip */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons" style="left: 1vw;"> 
+        <button onclick="" style="background-color: black;display: none;margin-right: 1vw;" id="stopped3"></button>
+    </div>
+
+    <div class="static-buttons"> 
+        <button onclick="" style="background-color: black;display: none;margin-right: 1vw;" id="stopped1"></button>
+        <button onclick="" style="background-color: black;display: none;margin-right: 1vw;" id="stopped2"></button>
+        <button onclick="window.location='/op/plano'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container active" id="container1">
+        <h1>Impacto de paradas na disponibilidade</h1>
+        <div id="charts-container1" class="charts-container"><h1 style="bottom: 50%;position: absolute;color: red;">Selecione o período de apresentação e pesquise.</h1></div>
+    </div>
+    </div>
+
+    <div class="container" id="container2">
+        <h1>Montagem - Análise de Paradas</h1>
+        <div id="charts-container2" class="mid-charts-container" style="margin-left: 1vh;">
+            <div class="top-section">
+                <div id="chart1" class="half-chart"></div>
+                <div id="chart2" class="half-chart" style='margin-left: 10px;'></div>
+            </div>
+        
+            <div class="bottom-section">
+                <div id="chart3" class="full-chart"></div>
+            </div>
+        </div>
+        <div id="action-plan1" class="mid-charts-container" style="margin-right: 1vh;">
+            <table id="actionPlan0">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container" id="container3">
+        <h1>Usinagem - Análise de Troca de Insumo</h1>
+        <div id="charts-container3" class="mid-charts-container" style="margin-left: 1vh;">
+            <div id="chart4" class="full-chart"></div>
+        </div>
+        <div id="action-planExtra1" class="mid-charts-container" style="margin-right: 1vh;">
+            <table id="actionPlanExtra1">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container" id="container4">
+        <h1>Usinagem - Análise de Paradas</h1>
+        <div id="charts-container4" class="mid-charts-container" style="margin-left: 1vh;">
+            <div class="top-section">
+                <div id="chart5" class="half-chart"></div>
+                <div id="chart6" class="half-chart" style='margin-left: 10px;'></div>
+            </div>
+        
+            <div class="bottom-section">
+                <div id="chart7" class="full-chart"></div>
+            </div>
+        </div>
+        <div id="action-plan2" class="mid-charts-container" style="margin-right: 1vh;">
+            <table id="actionPlan1">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container" id="container5">
+        <h1>Soldagem - Análise de Setups</h1>
+        <div id="charts-container5" class="mid-charts-container" style="margin-left: 1vh;">
+            <div id="chart8" class="full-chart"></div>
+        </div>
+        <div id="action-planExtra2" class="mid-charts-container" style="margin-right: 1vh;">
+            <table id="actionPlanExtra2">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container" id="container6">
+        <h1>Soldagem - Análise de Paradas</h1>
+        <div id="charts-container6" class="mid-charts-container" style="margin-left: 1vh;">
+            <div class="top-section">
+                <div id="chart9" class="half-chart"></div>
+                <div id="chart10" class="half-chart" style='margin-left: 10px;'></div>
+            </div>
+        
+            <div class="bottom-section">
+                <div id="chart11" class="full-chart"></div>
+            </div>
+        </div>
+        <div id="action-plan3" class="mid-charts-container" style="margin-right: 1vh;">
+            <table id="actionPlan2">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container" id="container7">
+        <h1>Pré-Fabricação - Análise de Setups</h1>
+        <div id="charts-container7" class="mid-charts-container" style="margin-left: 1vh;">
+            <div id="chart12" class="full-chart"></div>
+        </div>
+        <div id="action-planExtra3" class="mid-charts-container" style="margin-right: 1vh;">
+            <table id="actionPlanExtra3">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container" id="container8">
+        <h1>Pré-Fabricação - Análise de Paradas</h1>
+        <div id="charts-container8" class="mid-charts-container" style="margin-left: 1vh;">
+            <div class="top-section">
+                <div id="chart13" class="half-chart"></div>
+                <div id="chart14" class="half-chart" style='margin-left: 10px;'></div>
+            </div>
+        
+            <div class="bottom-section">
+                <div id="chart15" class="full-chart"></div>
+            </div>
+        </div>
+        <div id="action-plan4" class="mid-charts-container" style="margin-right: 1vh;">
+            <table id="actionPlan3">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container" id="container9">
+        <h1>Plano de Ações - Recorrentes</h1>
+        <div id="action-plan5" class="charts-container" style="margin-right: 1vh;">
+            <table id="actionPlan4">
+                <thead>
+                    <tr>
+                        <th>Ação</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="navigation-buttons">
+        <div style="margin-left: 1vw">
+            <input type="number" id="yearInput" placeholder="Ano" min="2024" max="2100" value='{{year}}'>
+            <input type="number" id="weekInput" placeholder="Semana" min="1" max="53" value='{{week}}'>
+            <button onclick="submitWeek('{{areaId}}')" id="getDataButton">Pesquisar</button>
+            <button id="prevBtn" onclick="prevSlide()" disabled style="margin-left: 2vh;">Anterior</button>
+            <button id="nextBtn" onclick="nextSlide()">Próximo</button>
+        </div>
+
+        <div class="right">
+            <h2 style="margin-right: 1vw;">Operation Meeting - <span id="areaName">{{areaName}}</span></h2>
+            <div class="img-container">
+                <img src="/static/images/new_jost_logo.jpg">
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/operation.planning/getData.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/operation.planning/slidesController.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/operation.planning/actionPlan.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/operation.planning/barchart.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/operation.planning/percentageChart.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/operation.planning/chart0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/operation.planning/chartMotive5.js') }}"></script>
+
+
+    <script>
+
+        const areasNames = {
+            0: 'Montagem',
+            1: 'Usinagem',
+            2: 'Soldagem',
+            3: 'Pré-Fabricação'
+        }
+
+        let received_data = {}
+        const current_area = {{areaList | tojson }}
+        const areaName = '{{areaName}}'
+        let motiveId = {{areaId}}
+
+        
+        window.onload = function() {
+            
+            // submitWeek(motiveId);
+
+            window.addEventListener('resize', function () {
+                showData()
+            });
+        }
+
+    </script>
+</body>
+</html>
+

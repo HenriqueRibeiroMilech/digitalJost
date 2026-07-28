@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/overlay.css') }}">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sidebar {
+            width: 12vw;
+            min-width: 160px;
+            background-color: #153A8A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+            text-align: center;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: clamp(18px, 1.9vw, 1em);
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .sidebar-description {
+            font-size: clamp(11px, 1.4vw, 17px);
+            margin-bottom: 15px;
+            text-align: center;
+            line-height: 1.4;
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .legend {
+            flex-grow: 1;
+            font-size: clamp(10px, 0.9vw, 14px);
+            margin-bottom: 15px;
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+
+        }
+
+        .legend-section {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        .legend-title {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 4px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .legend-count {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1px 6px;
+            min-width: 18px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+
+        .button-container {
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .sidebar button {
+            background-color: white;
+            color: #153A8A;
+            padding: clamp(6px, 0.8vw, 10px);
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            margin-bottom: 8px;
+            font-size: clamp(10px, 0.9vw, 14px);
+            width: 90%;
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .sidebar button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .main-container {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow-x: auto;
+        }
+
+        .kanban-board {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            height: 100%;
+            overflow-x: auto;
+        }
+
+        .kanban-column {
+            min-width: 180px;
+            max-width: calc((100vw - 12vw - 120px) / 5); /* Distribui igualmente considerando sidebar e gaps */
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            flex: 1;
+        }
+
+        .kanban-column-header {
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: clamp(12px, 1vw, 16px);
+        }
+
+        /* Cores específicas para cada cabeçalho */
+        .header-waiting-sample {
+            background-color: #dcaa0c;
+        }
+
+        .header-waiting-queue {
+            background-color: #163A8A;
+        }
+
+        .header-execution {
+            background-color: #3ea93e;
+        }
+
+        .header-waiting-pickup {
+            background-color: #000000;
+        }
+
+        .kanban-column-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .kanban-item {
+            background-color: white;
+            border-left: 5px solid #2e52a7;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .kanban-item-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: clamp(14px, 1vw, 16px);
+        }
+
+        .kanban-item-subtitle {
+            font-size: clamp(10px, 0.8vw, 12px);
+            color: #666;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+
+        .kanban-item-text {
+            font-size: clamp(11px, 0.9vw, 13px);
+            margin-bottom: 10px;
+        }
+
+        .kanban-item-button {
+            background-color: #153A8A;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: clamp(10px, 0.8vw, 12px);
+            width: 100%;
+        }
+
+        .kanban-item-button:hover {
+            background-color: #2e52a7;
+        }
+
+        .execution-area-selector {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .area-button {
+            background-color: #e0e0e0;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .area-button.active {
+            background-color: #3ea93e;
+            color: white;
+        }
+
+        .kanban-duration {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+
+        <div class="sidebar-title">SSLs {{areaName}}<br>Painel Geral</div>
+               
+        <div class="sidebar-description">
+            Após realizar a sua solicitação, a mesma estará na posição <b>{{ wait }}</b> da fila de espera
+        </div>
+        
+        <div class="legend">
+            <div id='legend-content'>
+                <!-- Legendas serão preenchidas dinamicamente -->
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <button onclick="changeLoc('/lab/consultar?preload={{areaId}}&origin=quadro')">Consultar Todas Solicitações</button>
+            <button onclick="changeLoc('/lab')">Página Inicial</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="kanban-board">
+            <!-- Coluna 1: Aguardando Amostra -->
+            <div class="kanban-column" id="alz-column">
+                <div class="kanban-column-header header-waiting-sample">
+                    AGUARDANDO AMOSTRA
+                </div>
+                <div class="kanban-column-content" id="alz">
+                    <!-- Itens serão inseridos via JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Coluna 2: Fila de Espera -->
+            <div class="kanban-column" id="fila-column">
+                <div class="kanban-column-header header-waiting-queue">
+                    FILA DE ESPERA
+                </div>
+                <div class="kanban-column-content" id="fila">
+                    <!-- Itens serão inseridos via JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Coluna 3: Primeira Área de Execução -->
+            <div class="kanban-column" id="exec-areas-1">
+                <div class="kanban-column-header header-execution" id="exec-header-1">
+                    ÁREA DE EXECUÇÃO 1
+                </div>
+                <div class="execution-area-selector" id="area-selector-1">
+                    <!-- Botões de área serão adicionados dinamicamente -->
+                </div>
+                <div class="kanban-column-content" id="exec-content-1">
+                    <!-- Itens serão inseridos via JavaScript com base na área selecionada -->
+                </div>
+            </div>
+            
+            <!-- Coluna 4: Segunda Área de Execução -->
+            <div class="kanban-column" id="exec-areas-2">
+                <div class="kanban-column-header header-execution" id="exec-header-2">
+                    ÁREA DE EXECUÇÃO 2
+                </div>
+                <div class="execution-area-selector" id="area-selector-2">
+                    <!-- Botões de área serão adicionados dinamicamente -->
+                </div>
+                <div class="kanban-column-content" id="exec-content-2">
+                    <!-- Itens serão inseridos via JavaScript com base na área selecionada -->
+                </div>
+            </div>
+            
+            <!-- Coluna 5: Aguardando Retirada -->
+            <div class="kanban-column" id="wait-column">
+                <div class="kanban-column-header header-waiting-pickup">
+                    AGUARDANDO RETIRADA
+                </div>
+                <div class="kanban-column-content" id="wait">
+                    <!-- Itens serão inseridos via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados do backend
+        const areaName = '{{areaName}}';
+        const areaId = '{{areaId}}';
+        const executionTypes = JSON.parse('{{ exec_types | tojson | safe }}');
+        const dataframe = {{ dataframe | tojson }}
+
+        // Definição de cores por status
+        const statusColors = {
+            '0': 'rgb(220,170,12)', // Aguardando amostra
+            '1': '#163A8A',         // Fila de espera
+            '2': '#3ea93e',         // Execução
+            '3': '#000000'          // Aguardando retirada
+        };
+
+        let selectedArea1Id = null;
+        let selectedArea1Name = null;
+
+        let selectedArea2Id = null;
+        let selectedArea2Name = null;
+
+        let deadline = {};
+
+
+        const statusNames = {
+            0: 'AGUARDANDO AMOSTRA'
+            , 1: 'FILA DE ESPERA'
+            , 2: 'EM EXECUÇÃO'
+            , 3: 'AGUARDANDO RETIRADA'
+        };
+        
+        // Função para criar legendas dinâmicas com base nos tipos de execução
+        function createLegends() {
+            const legendContainer = document.getElementById('legend-content');
+            legendContainer.innerHTML = '';
+            
+            // Seção 1: Legenda fixa para as colunas (status)
+            const statusSection = document.createElement('div');
+            statusSection.className = 'legend-section';
+            
+            const statusTitle = document.createElement('div');
+            statusTitle.className = 'legend-title';
+            statusTitle.textContent = 'Status';
+            statusSection.appendChild(statusTitle);
+            
+            // Define as cores e nomes dos status
+            const statusLegends = [
+                {name: 'Aguardando Amostra', color: 'rgb(220,170,12)'},
+                {name: 'Fila de Espera', color: '#163A8A'},
+                {name: 'Em Execução', color: '#3ea93e'},
+                {name: 'Aguardando Retirada', color: '#000000'}
+            ];
+            
+            // Cria um item para cada status
+            statusLegends.forEach(status => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                
+                const left = document.createElement('div');
+                left.style.display = 'flex';
+                left.style.alignItems = 'center';
+                
+                const colorBox = document.createElement('span');
+                colorBox.className = 'legend-color';
+                colorBox.style.backgroundColor = status.color;
+                left.appendChild(colorBox);
+                
+                const name = document.createElement('span');
+                name.textContent = status.name;
+                left.appendChild(name);
+                
+                item.appendChild(left);
+                
+                // Contador que será atualizado dinamicamente
+                const count = document.createElement('span');
+                count.className = 'legend-count';
+                count.id = `count-${status.name.replace(/\s+/g, '-').toLowerCase()}`;
+                count.textContent = '0';
+                item.appendChild(count);
+                
+                statusSection.appendChild(item);
+            });
+            
+            legendContainer.appendChild(statusSection);
+            
+            // Seção 2: Contadores dinâmicos para tipos em execução
+            const executionSection = document.createElement('div');
+            executionSection.className = 'legend-section';
+            
+            const executionTitle = document.createElement('div');
+            executionTitle.className = 'legend-title';
+            executionTitle.textContent = 'Em Execução por Tipo';
+            executionSection.appendChild(executionTitle);
+            
+            // Adiciona um item para cada tipo de execução disponível
+            const areaTypes = executionTypes.filter(type => type.area == areaId);
+            
+            if (areaTypes.length > 0) {
+                areaTypes.forEach(type => {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+                    
+                    const name = document.createElement('span');
+                    name.textContent = type.name;
+                    item.appendChild(name);
+                    
+                    // Contador dinâmico para cada tipo
+                    const count = document.createElement('span');
+                    count.className = 'legend-count';
+                    count.id = `count-execution-${type.id}`;
+                    count.textContent = '0';
+                    item.appendChild(count);
+                    
+                    executionSection.appendChild(item);
+                });
+                
+                legendContainer.appendChild(executionSection);
+            }
+        }
+        
+        // Cria os botões de seleção de área com base no tipo de área (dimensional ou material)
+        function createAreaButtons() {
+            // Filtra os tipos de execução para a área atual
+            const areaTypes = executionTypes.filter(type => type.area == areaId);
+            
+            const selector1 = document.getElementById('area-selector-1');
+            const selector2 = document.getElementById('area-selector-2');
+            
+            // Limpa os seletores
+            selector1.innerHTML = '';
+            selector2.innerHTML = '';
+            
+            // Para área material (com apenas 2 tipos), não mostra botões de seleção
+            if (areaTypes.length <= 2) {
+                // Esconde os seletores
+                selector1.style.display = 'none';
+                selector2.style.display = 'none';
+                
+                // Define os tipos diretamente
+                if (areaTypes.length > 0) {
+                    selectedArea1Id = areaTypes[0].id;
+                    selectedArea1Name = areaTypes[0].name;
+                    document.getElementById('exec-header-1').textContent = selectedArea1Name.toUpperCase();
+                }
+                
+                if (areaTypes.length > 1) {
+                    selectedArea2Id = areaTypes[1].id;
+                    selectedArea2Name = areaTypes[1].name;
+                    document.getElementById('exec-header-2').textContent = selectedArea2Name.toUpperCase();
+                } else {
+                    // Se houver apenas um tipo, esconde a segunda coluna
+                    document.getElementById('exec-areas-2').style.display = 'none';
+                }
+            } 
+            // Para área dimensional (com mais tipos), mostra botões de seleção
+            else {
+                // Adiciona botões ao primeiro seletor
+                areaTypes.forEach(type => {
+                    const btn = document.createElement('button');
+                    btn.textContent = type.name;
+                    btn.className = 'area-button';
+                    btn.dataset.id = type.id;
+                    btn.onclick = () => selectExecutionArea(1, type.id, type.name);
+                    selector1.appendChild(btn);
+                });
+                
+                // Adiciona botões ao segundo seletor (os mesmos botões)
+                areaTypes.forEach(type => {
+                    const btn = document.createElement('button');
+                    btn.textContent = type.name;
+                    btn.className = 'area-button';
+                    btn.dataset.id = type.id;
+                    btn.onclick = () => selectExecutionArea(2, type.id, type.name);
+                    selector2.appendChild(btn);
+                });
+                
+                // Seleciona os dois primeiros tipos por padrão
+                if (areaTypes.length > 0) {
+                    selectExecutionArea(1, areaTypes[0].id, areaTypes[0].name);
+                }
+                
+                if (areaTypes.length > 1) {
+                    selectExecutionArea(2, areaTypes[1].id, areaTypes[1].name);
+                }
+            }
+            
+            // Renderiza os itens Kanban após configurar as áreas
+            renderKanbanItems();
+        }
+        
+        // Seleciona uma área de execução
+        function selectExecutionArea(columnNum, selectedId, selectedName) {
+            const selector = document.getElementById(`area-selector-${columnNum}`);
+            const buttons = selector.querySelectorAll('.area-button');
+            
+            // Não permite selecionar a mesma área nas duas colunas
+            if (columnNum == 1 && selectedId == selectedArea2Id ||
+                columnNum == 2 && selectedId == selectedArea1Id) {
+                return;
+            }
+            
+            // Atualiza a área selecionada
+            if (columnNum == 1) {
+                selectedArea1Id = selectedId;
+                selectedArea1Name = selectedName;
+                document.getElementById('exec-header-1').textContent = selectedArea1Name;
+            } else {
+                selectedArea2Id = selectedId;
+                selectedArea2Name = selectedName;
+                document.getElementById('exec-header-2').textContent = selectedArea2Name;
+            }
+            
+            // Atualiza o estilo dos botões
+            buttons.forEach(btn => {
+                if (btn.textContent == selectedName) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Atualiza o conteúdo da coluna
+            renderKanbanItems();
+        }
+        
+        // Renderiza os itens do kanban
+        function renderKanbanItems() {
+            // Limpa todas as colunas
+            document.querySelector('#alz.kanban-column-content').innerHTML = '';
+            document.querySelector('#fila.kanban-column-content').innerHTML = '';
+            document.querySelector('#exec-content-1').innerHTML = '';
+            document.querySelector('#exec-content-2').innerHTML = '';
+            document.querySelector('#wait.kanban-column-content').innerHTML = '';
+            
+            // Contador para as colunas
+            let alzCount = 0;
+            let filaCount = 0;
+            let exec1Count = 0;
+            let exec2Count = 0;
+            let waitCount = 0;
+            
+            // Contadores para cada área de execução
+            const executionCounts = {};
+            executionTypes.filter(type => type.area == areaId).forEach(type => {
+                executionCounts[type.id] = 0;
+            });
+            
+            // Separamos os itens por status
+            const alzItems = [];
+            const filaItems = [];
+            const execItems = [];
+            const waitItems = [];
+            
+            if (dataframe) {
+                dataframe.forEach(card => {
+                    if (card.status == 0) {
+                        alzItems.push({...card});
+                    } else if (card.status == 1) {
+                        filaItems.push({...card});
+                    } else if (card.status == 2) {
+                        execItems.push({...card});
+                    } else if (card.status == 3) {
+                        waitItems.push({...card});
+                    }
+                });
+            }
+            
+            // Ordenar itens de aguardando amostra: primeiro por prioridade, depois por ID
+            alzItems.sort((a, b) => {
+                // Primeiro por prioridade (true = 1 primeiro)
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+                // Depois por ID
+                return parseInt(b.requestId) - parseInt(a.requestId);
+            });
+            
+            // Ordenar itens da fila de espera: primeiro por prioridade, depois por prazo
+            filaItems.sort((a, b) => {
+                // Primeiro por prioridade
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+                
+                // Caso contrário, use o prazo (considere prazos vindos do objeto deadline também)
+                const deadlineA = deadline[a.requestId] || a.deadLine || '9999-12-31';
+                const deadlineB = deadline[b.requestId] || b.deadLine || '9999-12-31';
+                
+                return deadlineA.localeCompare(deadlineB);
+            });
+            
+            // Ordenar itens em execução: primeiro por prioridade, depois por ID
+            execItems.sort((a, b) => {
+                // Primeiro por prioridade
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+                // Depois por ID
+                return parseInt(a.requestId) - parseInt(b.requestId);
+            });
+            
+            // Ordenar itens aguardando retirada: primeiro por prioridade, depois por ID
+            waitItems.sort((a, b) => {
+                // Primeiro por prioridade
+                if ((a.prioritize === true) && (b.prioritize !== true)) {
+                    return -1;
+                }
+                if ((b.prioritize === true) && (a.prioritize !== true)) {
+                    return 1;
+                }
+                // Depois por ID
+                return parseInt(a.requestId) - parseInt(b.requestId);
+            });
+            
+            // Renderizar os itens ordenados
+            // Aguardando amostra
+            alzItems.forEach(card => {
+                const itemElement = createKanbanItem(card);
+                document.querySelector('#alz.kanban-column-content').appendChild(itemElement);
+                alzCount++;
+            });
+            
+            // Fila de espera
+            filaItems.forEach(card => {
+                const itemElement = createKanbanItem(card);
+                document.querySelector('#fila.kanban-column-content').appendChild(itemElement);
+                filaCount++;
+            });
+            
+            // Em execução
+            execItems.forEach(card => {
+
+                if (card.execArea) {
+                    if (executionCounts.hasOwnProperty(card.execArea)) {
+                        executionCounts[card.execArea]++;
+                    }
+                    
+                    const itemElement = createKanbanItem(card);
+                    if (card.execArea == selectedArea1Id) {
+                        document.querySelector('#exec-content-1').appendChild(itemElement);
+                        exec1Count++;
+                    } else if (card.execArea == selectedArea2Id) {
+                        document.querySelector('#exec-content-2').appendChild(itemElement);
+                        exec2Count++;
+                    }
+                }
+            });
+            
+            // Aguardando retirada
+            waitItems.forEach(card => {
+                const itemElement = createKanbanItem(card);
+                document.querySelector('#wait.kanban-column-content').appendChild(itemElement);
+                waitCount++;
+            });
+            
+            // Atualiza os contadores na legenda para status...
+            document.getElementById('count-aguardando-amostra').textContent = alzCount;
+            document.getElementById('count-fila-de-espera').textContent = filaCount;
+            document.getElementById('count-em-execução').textContent = Object.values(executionCounts).reduce((sum, current) => sum + current, 0);
+            document.getElementById('count-aguardando-retirada').textContent = waitCount;
+
+            // Atualiza os contadores na legenda para cada área de execução
+            for (const [execArea, count] of Object.entries(executionCounts)) {
+                const counterId = `count-execution-${execArea}`;
+                const counterElement = document.getElementById(counterId);
+                if (counterElement) {
+                    counterElement.textContent = count;
+                }
+            }
+            
+            // Atualiza os cabeçalhos com contagens
+            document.querySelector('#alz-column .kanban-column-header').textContent = `AGUARDANDO AMOSTRA (${alzCount})`;
+            document.querySelector('#fila-column .kanban-column-header').textContent = `FILA DE ESPERA (${filaCount})`;
+            
+            // Atualiza os cabeçalhos das colunas de execução com o nome da área e contagem
+            if (selectedArea1Id) {
+                document.getElementById('exec-header-1').textContent = `${selectedArea1Name.toUpperCase()} (${exec1Count})`;
+            }
+            if (selectedArea2Id) {
+                document.getElementById('exec-header-2').textContent = `${selectedArea2Name.toUpperCase()} (${exec2Count})`;
+            }
+            
+            document.querySelector('#wait-column .kanban-column-header').textContent = `AGUARDANDO RETIRADA (${waitCount})`;
+        
+        }
+        
+        // Cria um item do kanban
+        function createKanbanItem(item) {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'kanban-item';
+            
+            // Aplica a cor da borda baseada no status
+            const itemColor = statusColors[item.status] || '#2e52a7'; // Cor padrão se não encontrar
+            itemElement.style.borderLeft = `5px solid ${itemColor}`;
+            
+            // Adiciona título com ID da requisição
+            const title = document.createElement('div');
+            title.className = 'kanban-item-title';
+            title.textContent = item.requestId;
+            itemElement.appendChild(title);
+            
+            // Adiciona subtítulo e nome do solicitante
+            const subtitleRequester = document.createElement('div');
+            subtitleRequester.className = 'kanban-item-subtitle';
+            subtitleRequester.textContent = 'SOLICITANTE';
+            itemElement.appendChild(subtitleRequester);
+            
+            const textRequester = document.createElement('div');
+            textRequester.className = 'kanban-item-text';
+            textRequester.textContent = item.requesterName;
+            itemElement.appendChild(textRequester);
+            
+            // Adiciona subtítulo e dados do produto
+            const subtitleProduct = document.createElement('div');
+            subtitleProduct.className = 'kanban-item-subtitle';
+            subtitleProduct.textContent = 'DADOS DO PRODUTO';
+            itemElement.appendChild(subtitleProduct);
+            
+            const textDesc = document.createElement('div');
+            textDesc.className = 'kanban-item-text';
+            textDesc.textContent = item.descText;
+            itemElement.appendChild(textDesc);
+            
+            const textMater = document.createElement('div');
+            textMater.className = 'kanban-item-text';
+            textMater.textContent = item.drawId;
+            itemElement.appendChild(textMater);
+            
+            // Adiciona informações sobre duração, se aplicável
+            if (item.status == '2' && item.initDate) {
+                const start = new Date(item.initDate);
+                const now = new Date();
+                const diffInMinutes = item.executionTimeMinutes;
+                const hours = Math.floor(diffInMinutes / 60);
+                const minutes = Math.floor(diffInMinutes % 60);
+                
+                const duration = document.createElement('div');
+                duration.className = 'kanban-duration';
+                duration.textContent = `Duração: ${hours}h${minutes}min`;
+                itemElement.appendChild(duration);
+            }
+            
+            // Adiciona botão de detalhes com a cor correspondente ao status
+            const button = document.createElement('button');
+            button.className = 'kanban-item-button';
+            button.textContent = 'VER DETALHES';
+            button.style.backgroundColor = itemColor;
+            
+            // Ajusta a cor do texto do botão para garantir boa legibilidade
+            // Para cores claras como amarelo, usar texto preto
+            if (item.status === '0') { // Aguardando amostra (amarelo)
+                button.style.color = '#000';
+            }
+            
+            button.onclick = function() {
+                changeLoc(`/lab/${areaName}/detalhes/${item.requestId}`);
+            };
+            itemElement.appendChild(button);
+            
+            return itemElement;
+        }
+
+        // Função para navegação
+        function changeLoc(loc) {
+            window.location = loc;
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            createLegends();
+            createAreaButtons();
+        });
+    </script>
+</body>
+</html>

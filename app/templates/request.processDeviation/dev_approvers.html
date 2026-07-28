@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Digital JOST</title>
+
+  <!-- Ícone -->
+  <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}"/>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root{
+      --brand-700:#153A8A;
+      --brand-600:#2e52a7;
+      --brand-500:#3563c8;
+      --dark:#0f172a;
+      --success:#22c55e;
+      --danger:#ef4444;
+      --shadow-md:0 8px 20px rgba(0,0,0,.18);
+      --shadow-sm:0 4px 10px rgba(0,0,0,.10);
+      --shadow-xs:0 2px 6px rgba(0,0,0,.08);
+    }
+
+    /* ======= ESTILOS GERAIS ======= */
+    html, body { height:100%; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      height: 100vh;
+
+      background: linear-gradient(270deg, var(--brand-700), var(--brand-600), var(--brand-500));
+      background-size: 200% 200%;
+      animation: GradientAnimation 10s ease infinite;
+    }
+    @keyframes GradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      width: 95%;
+      max-width: 1800px;
+      text-align: center;
+    }
+
+    h1 {
+      color: var(--brand-700);
+      font-size: 2.5em;
+      margin: 0 0 20px 0;
+    }
+
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .filter-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .filter-container input {
+      width: 15%;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 1vw;
+      outline: none;
+      transition: box-shadow .16s ease, border-color .16s ease;
+    }
+    .filter-container input:focus,
+    .filter-container input:focus-visible {
+      border-color: var(--brand-600);
+      box-shadow: 0 0 0 3px rgba(46,82,167,.18);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead { position: sticky; top: 0; z-index: 2; }
+    table th, table td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    table th { background-color: var(--brand-700); color: white; }
+
+    /* ===== Botões (base) ===== */
+    button {
+      background-color: var(--brand-600);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease, filter .16s ease, background-color .16s ease;
+      box-shadow: var(--shadow-xs);
+    }
+    button:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); filter: brightness(1.04); }
+    button:active { transform: translateY(0); box-shadow: var(--shadow-xs); filter: brightness(.98); }
+    button:disabled { background-color:#ccc; cursor:not-allowed; transform:none; box-shadow:none; filter:none; }
+    button:focus-visible{
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(46,82,167,.20), 0 2px 6px rgba(0,0,0,.08);
+    }
+
+    /* Botões de status na tabela */
+    .status-btn { border-radius: 8px; padding: 6px 10px; color:#fff; cursor:pointer; border:0; }
+    .ok { background: var(--success); }
+    .ok:hover{ filter: brightness(1.06); }
+    .no { background: var(--danger); }
+    .no:hover{ filter: brightness(1.06); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: none; }
+    ::-webkit-scrollbar-thumb { background-color: rgb(125, 196, 255); }
+
+    /* Botões flutuantes (Excel/Fechar) */
+    .static-buttons {
+      position: absolute;
+      right: 1vw;
+      top: 1vw;
+      display:flex; gap:.5rem;
+    }
+    .static-buttons .excel-btn{
+      background-color: rgba(0, 0, 0, 0.55);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: .55rem .8rem;
+      cursor: pointer;
+      font-size: 1rem;
+      display: inline-flex; align-items:center; gap:.5rem;
+      transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease, filter .16s ease;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: saturate(130%) blur(3px);
+    }
+    .static-buttons .excel-btn:hover{
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 10px 22px rgba(0,0,0,.22);
+      background-color: rgba(0,0,0,0.65);
+      filter: brightness(1.04);
+    }
+    .static-buttons .close-btn{
+      background-color: rgba(0,0,0,.5);
+      border-radius: 10px;
+      padding: .55rem .7rem;
+    }
+
+    /* Spinner do Excel */
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent;
+      border-radius: 50%; display:inline-block; animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ======= MODAL ======= */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 15;
+      left: 0; top: 0; width: 100%; height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: linear-gradient(270deg, var(--brand-700), var(--brand-600), var(--brand-500));
+      background-size: 600% 600%;
+      animation: GradientAnimation 10s ease infinite;
+      color: white;
+      margin: auto;
+      padding: 20px;
+      border: none;
+      width: 80vw;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+    .close {
+      color: white;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      background: transparent;
+      box-shadow: none;
+    }
+    .close:hover, .close:focus { color: #e2e8f0; cursor: pointer; }
+
+    /* ======= DROPDOWN (geral) ======= */
+    .dropdown { position: relative; display: inline-block; width: 100%; }
+    .dropbtn { background-color: #000; color:#fff; cursor:pointer; border-radius:8px; width:100%; padding:10px; border:1px solid transparent; transition: box-shadow .16s ease, border-color .16s ease, background-color .16s ease; }
+    .dropdown-content{
+      display:none; position:absolute; background:#f9f9f9; box-shadow:0 8px 16px rgba(0,0,0,.2);
+      z-index: 1050; /* elevado para não ficar atrás de nada */
+      text-align:left; width:100%; max-height:30vh; overflow-y:auto;
+    }
+    .dropdown-content label{ color:#000; padding:12px 16px; display:block; margin:0; }
+    .dropdown-content label:hover{ background:#f1f1f1; }
+    .dropdown-content input{ margin-right:10px; }
+
+    /* Hover APENAS nos filtros do TOPO (não afeta o modal) */
+    .filter-container .dropdown:hover .dropdown-content{ display:block; }
+    .filter-container .dropdown:hover .dropbtn{ background:#222; }
+
+    /* ======= FORM ======= */
+    .form-section { display:flex; flex-wrap:wrap; gap:10px; }
+    .form-section > div { display:flex; flex-direction:column; flex:1 1 calc(25% - 10px); }
+    .form-section > div label { font-weight:bold; margin-bottom:5px; text-align:left; }
+    .extra-input,
+    .form-section > div input,
+    .form-section > div select {
+      width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 1em;
+      outline: none; transition: box-shadow .16s ease, border-color .16s ease;
+    }
+    .form-section > div input:focus,
+    .form-section > div input:focus-visible,
+    .form-section > div select:focus,
+    .form-section > div select:focus-visible,
+    .extra-input:focus,
+    .extra-input:focus-visible {
+      border-color: var(--brand-600);
+      box-shadow: 0 0 0 3px rgba(46,82,167,.18);
+    }
+
+    /* ========= Ajustes ESPECÍFICOS do MODAL ========= */
+    /* No modal, dropdowns abrem somente no clique (sem forçar display:none no :hover) */
+    .modal .dropdown .dropdown-content.show{ display:block; }
+
+    /* Focus ring azul no dropbtn do modal */
+    .modal .dropbtn:focus, 
+    .modal .dropbtn:focus-visible{
+      border-color: var(--brand-600);
+      box-shadow: 0 0 0 3px rgba(46,82,167,.18);
+    }
+
+    /* Validação visual no botão preto (verde/verm) */
+    .modal .dropbtn.is-valid{
+      border-color: var(--success) !important;
+      box-shadow: 0 0 0 3px rgba(34,197,94,.18) !important;
+    }
+    .modal .dropbtn.is-invalid{
+      border-color: var(--danger) !important;
+      box-shadow: 0 0 0 3px rgba(239,68,68,.18) !important;
+    }
+
+    /* ===== Modal > Usuário: barra de busca no topo do menu ===== */
+    .modal .dropdown .dropdown-search{
+      position: sticky; top: 0; z-index: 1;
+      background:#fff;
+      padding: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      display:flex; align-items:center; gap:8px;
+    }
+    .modal .dropdown .dropdown-search i{ color:#6b7280; }
+    .modal .dropdown .dropdown-search input{
+      flex:1; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px;
+      outline:none; transition: box-shadow .16s ease, border-color .16s ease;
+    }
+    .modal .dropdown .dropdown-search input:focus{
+      border-color: var(--brand-600);
+      box-shadow: 0 0 0 3px rgba(46,82,167,.18);
+    }
+    .modal .dropdown .dropdown-search .clear-btn{
+      background:transparent; color:#6b7280; border:0; padding:6px 8px; border-radius:6px; cursor:pointer;
+    }
+    .modal .dropdown .dropdown-search .clear-btn:hover{ background:#f3f4f6; }
+
+    .modal .dropdown .dropdown-empty{
+      padding:12px 16px; color:#6b7280; font-size:.95rem;
+    }
+    
+  </style>
+</head>
+<body>
+  <div class="static-buttons">
+    <button id="excelBtn" class="excel-btn" onclick="downloadFile()">
+      <i class="fa-solid fa-file-excel"></i>
+      <span id="excelBtnText">Download Excel</span>
+    </button>
+    <button class="close-btn" onclick="window.location='/desvios'"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <div class="container">
+    <div class="title">
+      <h1>Desvios de Processo - Aprovadores</h1>
+      <div style="display:flex; flex-direction:row; min-height: calc(2.5em + 20px); gap:20px">
+        <!-- Visível apenas para admin (controlado no onload) -->
+        <button onclick="openModal('modalRegister')" id="openModalButton" style="display: none;">
+          <i class="fa-solid fa-user-plus"></i> Novo Aprovador
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-container">
+      <input type="text" id="filter1" placeholder="Filtrar - Usuário" onkeyup="filterTable()">
+      <input type="text" id="filter2" placeholder="Filtrar - Nome Funcionário" onkeyup="filterTable()">
+      <input type="text" id="filter3" placeholder="Filtrar - E-mail" onkeyup="filterTable()">
+      <input type="text" id="filter4" placeholder="Filtrar - Unidade JOST" onkeyup="filterTable()">
+      <input type="text" id="filter5" placeholder="Filtrar - Setor" onkeyup="filterTable()">
+      <div class="dropdown" style="width: 20vw">
+        <button class="dropbtn" type="button">Selecione o status</button>
+        <div class="dropdown-content" id="filter6">
+          <label><input checked type="checkbox" name="filter6" value="1" onchange="filterTable()"> Ativo</label>
+          <label><input checked type="checkbox" name="filter6" value="0" onchange="filterTable()"> Inativo</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div style="height: 60vh; overflow-y: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Nome Funcionário</th>
+            <th>E-mail</th>
+            <th>Unidade JOST</th>
+            <th>Setor</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="infoTable"><!-- via JS --></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar novo aprovador -->
+  <div id="modalRegister" class="modal">
+    <div class="modal-content">
+      <button onclick="closeModal('modalRegister')" class="close" aria-label="Fechar">&times;</button>
+      <h2 style="margin-left:0; margin-right:0;">Registrar Novo Aprovador</h2>
+
+      <form id="sendForm">
+        <div class="form-section" style="margin-top:1vh;">
+          <div>
+            <label for="user">Usuário: <span id="userSelected"></span></label>
+            <div class="dropdown">
+              <button class="dropbtn" type="button" onclick="toggleModalDropdown('user', event)">Selecione</button>
+              <div class="dropdown-content" id="user">
+                <!-- 🔎 Barra de busca do usuário -->
+                <div class="dropdown-search">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input id="userSearch" type="text" placeholder="Digite para filtrar..." oninput="filterUserOptions()" autocomplete="off">
+                  <button type="button" class="clear-btn" onclick="clearUserSearch()" title="Limpar">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <!-- Opções de usuário -->
+                <div id="userOptions">
+                  {% for user in users %}
+                    <label data-text="{{ (user.name ~ ' ' ~ user.id)|lower }}">
+                      <input oninput="toggleExclusiveFilter('user', this)"
+                             style="width:auto; margin:0 10px 0 0;"
+                             type="checkbox" name="user" value="{{user.id}}">
+                      {{user.name}}
+                    </label>
+                  {% endfor %}
+                </div>
+
+                <!-- Vazio -->
+                <div id="userEmpty" class="dropdown-empty" style="display:none;">
+                  Nenhum usuário encontrado
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" style="margin-top:1vh;">
+          <div>
+            <label for="sector">Setor: <span id="sectorSelected"></span></label>
+            <div class="dropdown">
+              <button class="dropbtn" type="button" onclick="toggleModalDropdown('sector', event)">Selecione</button>
+              <div class="dropdown-content" id="sector">
+                {% for sector in sectors %}
+                  <label>
+                    <input oninput="toggleExclusiveFilter('sector', this)" style="width:auto; margin:0 10px 0 0;" type="checkbox" name="sector" value="{{sector.id}}">{{sector.sector}}
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:2vh; display:flex; flex-direction:row; justify-content:left;">
+          <button type="button" style="background-color:#000;" onclick="registerApprover()">
+            <i class="fa-solid fa-check"></i> Cadastrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal genérico de erro -->
+  <div id="modalError" class="modal">
+    <div class="modal-content" style="width:50%;">
+      <h2 id="errorMessage"></h2>
+      <button onclick="closeModal('modalError')">Fechar</button>
+    </div>
+  </div>
+
+  <script>
+    let tableData = {};
+    let admin = '{{ admin }}'; // '1' ou '0'
+
+    /* ======= SweetAlert: Toast + Modal (fixa “fundo descolando”) ======= */
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2200,
+      timerProgressBar: true
+    });
+
+    // Usa este para popups “de verdade” (confirm/alert)
+    const Modal = Swal.mixin({
+      heightAuto: false,       // não altera a altura do <body>
+      scrollbarPadding: false, // não adiciona padding-right no <body>
+      backdrop: true,
+      allowOutsideClick: true,
+      showConfirmButton: true
+    });
+
+    /* ======= MODAIS ======= */
+    function openModal(modalId){
+      // reset de seleção e validação no modal (Usuário/Setor)
+      ['user','sector'].forEach(g=>{
+        document.getElementsByName(g).forEach(cb => cb.checked = false);
+        document.getElementById(`${g}Selected`).textContent = '';
+        const btn = document.querySelector(`#${g}`).closest('.dropdown').querySelector('.dropbtn');
+        btn.textContent = 'Selecione';
+        btn.classList.remove('is-valid','is-invalid');
+        document.getElementById(g).classList.remove('show');
+      });
+
+      // reseta a busca de usuário
+      const userSearch = document.getElementById('userSearch');
+      if(userSearch){
+        userSearch.value = '';
+        filterUserOptions();
+      }
+
+      document.getElementById(modalId).style.display='flex';
+    }
+    function closeModal(modalId){ document.getElementById(modalId).style.display='none'; }
+
+    /* ======= TABELA ======= */
+    function populateTable(data){
+      const tbody = document.getElementById('infoTable');
+      tbody.innerHTML = '';
+
+      data.forEach(info=>{
+        const tr = document.createElement('tr');
+
+        let td = document.createElement('td'); td.textContent = info['id']; tr.appendChild(td);
+        td = document.createElement('td'); td.textContent = info['name']; tr.appendChild(td);
+        td = document.createElement('td'); td.textContent = info['companyEmail']; tr.appendChild(td);
+        td = document.createElement('td'); td.textContent = info['companyName']; tr.appendChild(td);
+        td = document.createElement('td'); td.textContent = info['sector']; tr.appendChild(td);
+
+        td = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.className = 'status-btn ' + (info['active'] ? 'ok' : 'no');
+        btn.textContent = info['active'] ? 'Ativo' : 'Inativo';
+        btn.onclick = () => changeStatus(info['id'], info['sectorId'], info['active']);
+        td.appendChild(btn);
+        tr.appendChild(td);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterTable(){
+      const f1 = document.getElementById('filter1').value.toLowerCase();
+      const f2 = document.getElementById('filter2').value.toLowerCase();
+      const f3 = document.getElementById('filter3').value.toLowerCase();
+      const f4 = document.getElementById('filter4').value.toLowerCase();
+      const f5 = document.getElementById('filter5').value.toLowerCase();
+      const f6 = Array.from(document.querySelectorAll('#filter6 input:checked'))
+                      .map(cb => cb.value==='1'?true:false);
+
+      const filtered = (tableData||[]).filter(info=>{
+        const m1 = (info['id']+'').toLowerCase().includes(f1);
+        const m2 = (info['name']+'').toLowerCase().includes(f2);
+        const m3 = (info['companyEmail']||'').toLowerCase().includes(f3);
+        const m4 = (info['companyName']+'').toLowerCase().includes(f4);
+        const m5 = (info['sector']+'').toLowerCase().includes(f5);
+        const m6 = f6.includes(info['active']);
+        return m1 && m2 && m3 && m4 && m5 && m6;
+      });
+
+      populateTable(filtered);
+    }
+
+    /* ======= BUSCA ======= */
+    function searchData(){
+      fetch(`/desvios/aprovadores`, { method:'POST' })
+        .then(resp=>{
+          if(!resp.ok){
+            return resp.json().then(err=>{
+              const message = err?.message || "Erro inesperado";
+              document.getElementById('errorMessage').textContent = message;
+              openModal('modalError');
+              throw new Error(message);
+            }).catch(()=>{
+              const fallback = "Erro inesperado ao processar a resposta do servidor.";
+              document.getElementById('errorMessage').textContent = fallback;
+              openModal('modalError');
+              throw new Error(fallback);
+            });
+          }
+          return resp.json();
+        })
+        .then(data=>{ tableData = data || []; filterTable(); })
+        .catch(err=> console.error('Erro na requisição:', err));
+    }
+
+    /* ======= ATUALIZAÇÕES (com confirmação + toasts) ======= */
+    function changeStatus(userId, sectorId, isActive){
+      Modal.fire({
+        icon:'question',
+        title: isActive ? 'Desativar aprovador?' : 'Ativar aprovador?',
+        text:  isActive ? 'Este aprovador ficará INATIVO para o setor selecionado.'
+                        : 'Este aprovador ficará ATIVO para o setor selecionado.',
+        showCancelButton:true,
+        confirmButtonText: isActive ? 'Sim, desativar' : 'Sim, ativar',
+        cancelButtonText:'Cancelar'
+      }).then(result=>{
+        if(!result.isConfirmed) return;
+
+        fetch(`/desvios/aprovadores/${userId}/${sectorId}`, { method:'PATCH' })
+          .then(async r=>{
+            let data={}; try{ data = await r.json(); }catch(e){}
+            if(r.ok){
+              Toast.fire({ icon:'success', title: data.message || 'Status atualizado!' });
+              searchData();
+            }else{
+              Toast.fire({ icon:'error', title: (data && data.message) || 'Erro ao atualizar status' });
+            }
+          })
+          .catch(()=> Toast.fire({ icon:'error', title:'Falha de conexão' }));
+      });
+    }
+
+    /* ======= Dropdown do MODAL: abrir/fechar somente no CLIQUE ======= */
+    function toggleModalDropdown(group, ev){
+      if(ev) ev.stopPropagation(); // não deixa o "clique fora" fechar no mesmo tick
+      const menu = document.getElementById(group);
+      const isOpen = menu.classList.toggle('show');
+
+      // fecha o outro dropdown
+      ['user','sector'].forEach(g => { if(g!==group) document.getElementById(g)?.classList.remove('show'); });
+
+      // foco visual no botão correspondente
+      const btn = menu.closest('.dropdown').querySelector('.dropbtn');
+      if(isOpen){
+        btn.focus();
+        if(group === 'user'){
+          const s = document.getElementById('userSearch');
+          if(s){
+            s.value = '';
+            filterUserOptions();
+            setTimeout(()=> s.focus(), 0);
+          }
+        }
+      }
+    }
+
+    // Fecha menus do modal ao clicar fora (em bubble, sem captura)
+    function closeModalMenusIfOutside(ev){
+      if(!ev.target.closest('#modalRegister .dropdown')){
+        ['user','sector'].forEach(g => document.getElementById(g)?.classList.remove('show'));
+      }
+    }
+    document.addEventListener('click', closeModalMenusIfOutside, false);
+
+    // Fecha com ESC quando algum menu estiver aberto
+    document.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Escape'){
+        const anyOpen = ['user','sector'].some(g => document.getElementById(g)?.classList.contains('show'));
+        if(anyOpen){
+          ['user','sector'].forEach(g => document.getElementById(g)?.classList.remove('show'));
+          ev.stopPropagation();
+          ev.preventDefault();
+        }
+      }
+    });
+
+    /* ======= Seleção exclusiva + atualiza rótulo/botão + validação ======= */
+    function toggleExclusiveFilter(group, clickedCheckbox){
+      const checkboxes = document.getElementsByName(group);
+      checkboxes.forEach(cb => { cb.checked = false; });
+      clickedCheckbox.checked = true;
+
+      const labelText = clickedCheckbox.parentElement.innerText.trim();
+
+      // rótulo "Usuário:" / "Setor:"
+      document.getElementById(`${group}Selected`).textContent = labelText;
+
+      // botão preto "Selecione" -> vira o texto escolhido
+      const btn = document.querySelector(`#${group}`).closest('.dropdown').querySelector('.dropbtn');
+      btn.textContent = labelText || 'Selecione';
+      btn.classList.remove('is-invalid');
+      btn.classList.add('is-valid');
+
+      // fecha o menu
+      document.getElementById(group).classList.remove('show');
+
+      // limpa busca do usuário após escolher
+      if(group === 'user'){
+        const s = document.getElementById('userSearch');
+        if(s){
+          s.value = '';
+          filterUserOptions();
+        }
+      }
+    }
+
+    function markBtnValidity(group, valid){
+      const btn = document.querySelector(`#${group}`).closest('.dropdown').querySelector('.dropbtn');
+      btn.classList.toggle('is-valid', !!valid);
+      btn.classList.toggle('is-invalid', !valid);
+    }
+
+    /* ======= Usuário: filtrar por digitação ======= */
+    function filterUserOptions(){
+      const input = document.getElementById('userSearch');
+      if(!input) return;
+      const term = (input.value || '').toLowerCase().trim();
+
+      const labels = document.querySelectorAll('#userOptions > label');
+      let anyVisible = false;
+      labels.forEach(lab=>{
+        const text = (lab.getAttribute('data-text') || lab.innerText).toLowerCase();
+        const show = !term || text.includes(term);
+        lab.style.display = show ? 'block' : 'none';
+        if(show) anyVisible = true;
+      });
+
+      const empty = document.getElementById('userEmpty');
+      if(empty) empty.style.display = anyVisible ? 'none' : 'block';
+    }
+
+    function clearUserSearch(){
+      const input = document.getElementById('userSearch');
+      if(!input) return;
+      input.value = '';
+      filterUserOptions();
+      input.focus();
+    }
+
+    /* ======= CADASTRAR APROVADOR (com popups e validação no botão) ======= */
+    function registerApprover(){
+      const userId   = document.querySelector("input[name='user']:checked")?.value;
+      const sectorId = document.querySelector("input[name='sector']:checked")?.value;
+
+      // validação visual nos botões
+      markBtnValidity('user',   !!userId);
+      markBtnValidity('sector', !!sectorId);
+
+      if(!userId || !sectorId){
+        Modal.fire({ icon:'warning', title:'Campos faltando', text:'Selecione o usuário e o setor antes de cadastrar.' });
+        return;
+      }
+
+      fetch(`/desvios/aprovadores/${userId}/${sectorId}`, { method:'POST' })
+        .then(async r=>{
+          let data={}; try{ data = await r.json(); }catch(e){}
+          const msg = data.message ?? 'Operação concluída.';
+
+          if(r.ok){
+            const isAlready = msg.toLowerCase().includes('já cadastrado');
+            Modal.fire({ icon: isAlready?'warning':'success', title: isAlready?'Já cadastrado':'Sucesso!', text: msg });
+            closeModal('modalRegister');
+            searchData();
+          }else if(r.status===400 && msg.toLowerCase().includes('aprovador já registrado')){
+            Modal.fire({ icon:'warning', title:'Já cadastrado', text: msg });
+            closeModal('modalRegister');
+            searchData();
+          }else{
+            Modal.fire({ icon:'error', title:'Erro ao cadastrar', text: msg || 'Erro inesperado ao registrar aprovador.' });
+          }
+        })
+        .catch(()=> Modal.fire({ icon:'error', title:'Falha de conexão', text:'Não foi possível comunicar com o servidor.' }));
+    }
+
+    /* ======= Excel: loading + toasts ======= */
+    function setExcelLoading(loading=true){
+      const btn = document.getElementById('excelBtn');
+      if(loading){
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner" aria-hidden="true"></span><span style="margin-left:.5rem;">Gerando…</span>`;
+      }else{
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-file-excel"></i> <span id="excelBtnText">Download Excel</span>`;
+      }
+    }
+    function downloadFile(){
+      setExcelLoading(true);
+      fetch('/desvios/aprovadores?excel=1', { method:'POST' })
+        .then(r=>{
+          if(!r.ok) throw new Error('Erro ao gerar o arquivo');
+          const disp = r.headers.get('Content-Disposition');
+          let filename = 'desvios.xlsx';
+          if(disp && disp.includes('filename=')){
+            const m = disp.match(/filename="?([^"]+)"?/); if(m?.[1]) filename = m[1];
+          }
+          return r.blob().then(b=>({b, filename}));
+        })
+        .then(({b, filename})=>{
+          const url = URL.createObjectURL(b);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click();
+          URL.revokeObjectURL(url); a.remove();
+          Toast.fire({ icon:'success', title:`${filename} gerado` });
+        })
+        .catch(()=> Toast.fire({ icon:'error', title:'Falha ao gerar Excel' }))
+        .finally(()=> setExcelLoading(false));
+    }
+
+    /* ======= ON LOAD ======= */
+    window.onload = function(){
+      searchData();
+      if(admin == '1'){ document.getElementById('openModalButton').style.display = 'block'; }
+    }
+  </script>
+</body>
+</html>

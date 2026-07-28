@@ -1,0 +1,387 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_documentos.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" type="video/mp4">
+</video>
+
+<body id="content" class="page_body">
+    <button id="select_back" style="transform:translate(0, -10%);" onclick="window.location='/desvios'">&times;</button>
+    <div class="desv_sidenav" id="desv_sidenav">
+        <div class="side_wrapper">
+                <p class="topics_title">Informações Gerais</p>
+                <p class="paint" id="paint_equipe"><i class='far fa-circle'></i> Equipe</p>
+                <p class="paint" id="paint_unidade"><i class='far fa-circle'></i> Unidade JOST</p>
+                <p class="paint" id="paint_ct"><i class='far fa-circle'></i> Centro de Trabalho</p>
+                <p class="paint" id="paint_produto"><i class='far fa-circle'></i> Codigo do Produto</p>
+                <p class="paint" id="paint_familia"><i class='far fa-circle'></i> Familia do Produto</p>
+                <p class="paint" id="paint_desc"><i class='far fa-circle'></i> Descrição Geral</p>
+                <p class="paint" id="paint_instrucao"><i class='far fa-circle'></i> Instrução de Trabalho</p>
+                <p class="paint" id="paint_doc"><i class='far fa-circle'></i> Documentos relacionados</p>
+                <p class="paint" id="paint_data_inicio"><i class='far fa-circle'></i> Início da Concessão</p>
+                <p class="paint" id="paint_data_fim"><i class='far fa-circle'></i> Validade da Concessão</p>
+                <p class="paint" id="paint_rast"><i class='far fa-circle'></i> Rastreabilidade</p>
+                <p class="paint" id="paint_motivo"><i class='far fa-circle'></i> Motivo da Concessão</p>
+                <p class="paint" id="paint_imagens1"><i class='far fa-circle'></i> Evidências motívo</p>
+                <p class="topics_title"><i class='fas fa-list'></i> Detalhes da Solicitação</p>
+                <p id="paint_riscos"><i class='far fa-circle'></i> Análise de riscos</p>
+                <p id="paint_especial1"><i class='far fa-circle'></i> Caracteristica @1</p>
+                <p id="paint_especial2"><i class='far fa-circle'></i> Caracteristica @2</p>
+                <p id="paint_ssma"><i class='far fa-circle'></i> Impacto SSMA</p>
+                <p id="paint_proced"><i class='far fa-circle'></i> Procedimentos</p>
+                <p class="paint" id="paint_imagens2"><i class='far fa-circle'></i> Evidências procedimentos</p>
+                <p id="paint_ver_acao"><i class='far fa-circle'></i> Plano de ação</p>
+            </div>
+    </div>
+
+    <div class="desv_form_container" id="desv_form_container">
+        <div class="form_wrapper">
+            <form id="desv_form" enctype="multipart/form-data" method="post" action="/desvios/gerar?cmd={{cmd}}{{edit}}">
+                <div id='botao_solicitante'></div>
+                 <span style="display:inline-block;margin-top: 10px ;" class="desv_subtittle"><strong>INFORMAÇÕES GERAIS</strong></span>
+
+                <span class="desv_label">Solicitante</span>
+                <input id="solicitante_input" oninput="paint(this.name)" required readonly value="{{solicitante}}" onkeyup="this.value=this.value.replace(/'/g, '')" name="solicitante" placeholder="Digite aqui..." autocomplete="off" type="text">
+
+                <span class="desv_label">Equipe</span>
+                <select oninput="paint(this.name)" required name="equipe" id="equipe_input">
+                    <option value="" disabled selected>Selecione uma opção...</option>
+                    {% for o in equipes %}
+                      <option value="{{ o.0 }}">{{ o.1 }}</option>
+                    {% endfor %}
+                </select>
+
+                <span class="desv_label">Aplicação da Concessão</span>
+                <select oninput="paint(this.name)" required name="unidade" id="unidade">
+                    <option value="" disabled selected>Selecione uma opção...</option>
+                    <option value="0" >Caxias do Sul</option>
+                    <option value="1" >Campinas</option>
+                    <option value="2" >Todas</option>
+                </select>
+
+                <span class="desv_label">Centro de Trabalho</span>
+                <div style="display: inline-block;">
+                    <input list="options_ct" id='ct' required value="" onkeyup="this.value=this.value.replace(/'/g, '')" name="ct" placeholder="Digite aqui..." autocomplete="off" type="text">
+                    <button style="margin-left:2vw;display: inline-block;" class="desv_submit" type="button" onclick="addInfo('ct')">Adicionar</button><br>
+
+                </div>
+                <div id="ct_info"></div>
+
+                <span class="desv_label">Código do Produto</span>
+                <div style="display: inline-block;">
+                    <input list="options" id='produto' required value="" onkeyup="this.value=this.value.replace(/'/g, '')" name="produto" placeholder="Digite aqui..." autocomplete="off" type="text">
+                    <button style="margin-left:2vw;display: inline-block;" class="desv_submit" type="button" onclick="addInfo('produto')">Adicionar</button><br>
+                </div>
+                <div id="produto_info"></div>
+
+                <span class="desv_label">Familia do Produto</span>
+                <div style="display: inline-block;">
+                    <input list="options_families" id='familia' required value="" onkeyup="this.value=this.value.replace(/'/g, '')" name="familia" placeholder="Digite aqui..." autocomplete="off" type="text">
+                    <button style="margin-left:2vw;display: inline-block;" class="desv_submit" type="button" onclick="addInfo('familia')">Adicionar</button><br>
+                </div>
+                <div id="familia_info"></div>
+
+                <span class="desv_label">Descrição do Produto</span>
+                <textarea id='desc' oninput="paint(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" name="desc" autocomplete="off"></textarea>
+
+                <span class="desv_label">Instrução de Trabalho</span>
+                <div style="display: inline-block;">
+                    <input list="options" id='instrucao' name="instrucao" required value="" onkeyup="this.value=this.value.replace(/'/g, '')" name="it" placeholder="Digite aqui..." autocomplete="off" type="text">
+                    <button style="margin-left:2vw;display: inline-block;" class="desv_submit" type="button" onclick="addInfo('instrucao')">Adicionar</button><br>
+                </div>
+                <div id="instrucao_info"></div>
+
+                <span class="desv_label">Documentos relacionados</span>
+                <input id='dr_input' oninput="paint(this.name)" value="" onkeyup="this.value=this.value.replace(/'/g, '')" name="doc" style="display:block;" placeholder="Digite aqui..." autocomplete="off" type="text">
+
+                <span class="desv_label" style="display:inline-block;width:20vw;">Início da Concessão</span>
+                <span class="desv_label" style="margin-left:3vh;display:inline-block;width:20vw;">Fim da Concessão</span>
+                <br>
+                <input oninput="paint(this.name)" required value="" onkeyup="this.value=this.value.replace(/'/g, '')" id="data_inicio" name="data_inicio" autocomplete="off" style="width:20vw;" type="date" onchange="end_dsv(this.value)">
+                <input oninput="paint(this.name)" required value="" onkeyup="this.value=this.value.replace(/'/g, '')" id="data_fim" name="data_fim" autocomplete="off" style="margin-left:3vh;width:20vw;" type="date">
+
+                <input id='lote1' required hidden name="lote" value="{{revisao}}" type="text">
+
+                <span class="desv_label">Rastreabilidade</span>
+                <select oninput="paint(this.name)" required name="rast" id="ras_input">
+                    <option value="" disabled selected>Selecione uma opção...</option>
+                    <option value="0" >Normal de Produto</option>
+                    <option value="1" >Especial</option>
+                    <option value="2" >Não Aplicavel</option>
+                </select>
+
+                <span class="desv_label">Motivo da Concessão</span>
+                <textarea id='mc_input' oninput="paint(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" name="motivo" autocomplete="off"></textarea>
+                <br>
+
+                <span style="display:inline-block;" id="placehold_3" class="desv_label">Evidências motivo de concessão (apenas JPG, JPEG ou PNG)</span>
+                <input alt='Imagens JPG, JPEG ou PNG' oninput="paint(this.name)" class="desv_label" id="input_imagens" type="file" name="imagens1" autocomplete="off" multiple="multiple" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+
+                <div id="preview_imagens1" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;margin-bottom:10px;"></div>
+
+                <br>
+
+                <div id='botao_risco'></div>
+                <span style="display:inline-block;" class="desv_subtittle" ><strong>DETALHES DA SOLICITAÇÃO</span></strong>
+
+                <span class="desv_label">Análise de riscos</span>
+                <textarea id='risco_input' oninput="paint(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" name="riscos" autocomplete="off"></textarea>
+                <br>
+
+                <span class="desv_label">Afeta caracteristica especial @1</span>
+                <select oninput="paint(this.name)" required name="especial1" id="especial1">
+                    <option value="" disabled selected>Selecione uma opção...</option>
+                    <option value="1" >Sim</option>
+                    <option value="0" >Não</option>
+                </select>
+
+                <span class="desv_label">Afeta caracteristica especial @2</span>
+                <select oninput="paint(this.name)" required name="especial2" id="especial2">
+                    <option value="" disabled selected>Selecione uma opção...</option>
+                    <option value="1" >Sim</option>
+                    <option value="0" >Não</option>
+                </select>
+
+                <span class="desv_label">Impacta em SSMA</span>
+                <select oninput="paint(this.name)" required name="ssma" id="ssma">
+                    <option value="" disabled selected>Selecione uma opção...</option>
+                    <option value="1" >Sim</option>
+                    <option value="0" >Não</option>
+                </select>
+
+                <span class="desv_label">Procedimentos a serem seguidos</span>
+                <textarea id='procedimentos_input' oninput="paint(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" name="proced" autocomplete="off"></textarea>
+                <br>
+
+
+                <span style="display:inline-block;" id="placehold_2" class="desv_label" for="input_1">Evidências procedimentos a serem seguidos (apenas JPG, JPEG ou PNG)</span>
+                <input oninput="paint(this.name)" class="desv_label" id="input_imagens1" type="file" name="imagens2" autocomplete="off" multiple="multiple" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+
+                <div id="preview_imagens2" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;margin-bottom:10px;"></div>
+
+                <span style="display:inline-block;" id="pa_input" class="desv_subtittle"><strong>PLANO DE AÇÃO PARA SOLUCIONAR O PROBLEMA</strong></span><br>
+                <button style="display:inline-block;margin-bottom:2vh" class="desv_submit" type="button" onclick="addAcao()">Adicionar</button><br>
+
+                <div id="acao_div"></div>
+                <input id='ver_acao' name="ver_acao" type="hidden">
+
+                <input required type="hidden" name="ct_send" id="ct_send" value="">
+                <input required type="hidden" name="produto_send" id="produto_send" value="">
+                <input required type="hidden" name="familia_send" id="familia_send" value="">
+                <input required type="hidden" name="instrucao_send" id="instrucao_send" value="">
+
+                <br>
+
+                <button style="display:inline-block;margin-bottom:2vh" class="desv_submit" type="button" onclick="enviar()" id='sendForm'>Enviar</button><br>
+
+                <datalist id="options">
+                        <option value="Todos">Todos</option>
+                </datalist>
+
+                <datalist id="options_families">
+                    <option value="Todos">Todos</option>
+                    <option value="QR">QR</option>
+                    <option value="QR + MESA">QR + MESA</option>
+                    <option value="AO">AO</option>
+                    <option value="SP 3° EIXO">SP 3° EIXO</option>
+                    <option value="SP SR">SP SR</option>
+                    <option value="EE">EE</option>
+                    <option value="PR">PR</option>
+                    <option value="AL">AL</option>
+                    <option value="VT">VT</option>
+                    <option value="EA">EA</option>
+                    <option value="PE">PE</option>
+                    <option value="EC">EC</option>
+                </datalist>
+                
+                <datalist id="options_ct">
+                    <option value="Todos">Todos</option>
+                    {% for o in cts %}
+                    <option value="{{o}}">{{o}}</option>
+                    {% endfor %}
+                    <option value="MONTAGEM ARTICULAÇÃO DE ONIBUS">MONTAGEM ARTICULAÇÃO DE ONIBUS</option>
+                    <option value="SOLDA ROBOTIZADA ARTICULAÇÃO DE ONIBUS">SOLDA ROBOTIZADA ARTICULAÇÃO DE ONIBUS</option>
+                    <option value="MONTAGEM TRAVA DE QUINTA RODA">MONTAGEM TRAVA DE QUINTA RODA</option>
+                </datalist>
+
+                <datalist id="options_mails">
+                    {% for o in mails %}
+                    <option value="{{o}}">{{o}}</option>
+                    {% endfor %}
+                </datalist>
+
+            </form>
+        </div>
+
+    </div>
+
+    <div class="desv_tags" id="desv_tags">
+        <a href="#botao_solicitante" id="step" class="desv_tag"><b>1.</b> Informações Gerais</a>
+        <a href="#botao_risco" id="step_2" class="desv_tag"><b>2.</b> Detalhes da Solicitação</a>
+        <a href="#botao_aprovadores" id="step_3" class="desv_tag"><b>3.</b> Fluxo de Aprovação</a>
+    </div>
+
+<!-- Tooltip container (não altera a DOM original) -->
+<div id="dj-tip" class="dj-tip" aria-hidden="true" style="display:none">
+  <div class="t-title"></div><div class="t-text"></div>
+</div>
+
+<script>
+(function(){
+  /* ====== 1) Tornar “anexo de documento” não obrigatório (sem mexer no HTML) ======
+     Pelo seu template, o campo “Documentos relacionados” é o input [name="doc"]
+     e estava `required`. Vamos só remover a obrigatoriedade via JS. */
+  document.addEventListener('DOMContentLoaded', function(){
+    const docInput = document.querySelector('[name="doc"]'); // "Documentos relacionados"
+    if (docInput) docInput.removeAttribute('required');
+
+    // (Opcional) se quiser eliminar obrigatoriedade dos arquivos de evidência também:
+    // const ev1 = document.querySelector('input[name="imagens1"]');
+    // const ev2 = document.querySelector('input[name="imagens2"]');
+    // ev1 && ev1.removeAttribute('required');
+    // ev2 && ev2.removeAttribute('required');
+  });
+
+  /* ====== 2) Tooltip: binds aditivos (mantém a estrutura) ====== */
+  const tip = document.getElementById('dj-tip');
+  const tTitle = tip.querySelector('.t-title');
+  const tText  = tip.querySelector('.t-text');
+
+  function tipMove(e){
+    const off=14; let x=e.clientX+off, y=e.clientY+off;
+    const r=tip.getBoundingClientRect();
+    if (x+r.width  > innerWidth-8)  x = e.clientX - r.width  - off;
+    if (y+r.height > innerHeight-8) y = e.clientY - r.height - off;
+    tip.style.left=x+'px'; tip.style.top=y+'px';
+  }
+  function tipShow(e, title, text){
+    tTitle.textContent = title || '';
+    tText.textContent  = text  || '';
+    tip.style.display='block'; tipMove(e); tip.classList.add('show');
+  }
+  function tipHide(){ tip.classList.remove('show'); tip.style.display='none'; }
+  function bindTip(el, title, text){
+    if (!el) return;
+    el.addEventListener('mouseenter', e=>tipShow(e,title,text));
+    el.addEventListener('mousemove',  tipMove);
+    el.addEventListener('mouseleave', tipHide);
+    el.addEventListener('blur',       tipHide);
+  }
+
+  // ====== Mapa de informativos (sem alterar seu HTML) ======
+
+  // Informações Gerais
+  bindTip(document.getElementById('solicitante_input'),
+          'Solicitante', 'Usuário que está abrindo a solicitação.');
+  bindTip(document.getElementById('equipe_input'),
+          'Equipe', 'Setor responsável pelo desvio. Defina corretamente para rotear as aprovações.');
+  bindTip(document.getElementById('unidade'),
+          'Aplicação da Concessão', 'Escolha a unidade onde a concessão se aplica (ou “Todas”).');
+
+  // CT / Produto / Família — botões Adicionar
+  const btnAddCT       = Array.from(document.querySelectorAll('button.desv_submit'))
+                              .find(b=>String(b.getAttribute('onclick')||'').includes("addInfo('ct'"));
+  const btnAddProduto  = Array.from(document.querySelectorAll('button.desv_submit'))
+                              .find(b=>String(b.getAttribute('onclick')||'').includes("addInfo('produto'"));
+  const btnAddFamilia  = Array.from(document.querySelectorAll('button.desv_submit'))
+                              .find(b=>String(b.getAttribute('onclick')||'').includes("addInfo('familia'"));
+  const btnAddInstrucao= Array.from(document.querySelectorAll('button.desv_submit'))
+                              .find(b=>String(b.getAttribute('onclick')||'').includes("addInfo('instrucao'"));
+
+  bindTip(document.getElementById('ct'),
+          'Centro de Trabalho', 'Digite para filtrar e use “Adicionar” para incluir na lista.');
+  bindTip(btnAddCT, 'Adicionar CT', 'Inclui o CT digitado na lista à direita.');
+  bindTip(document.getElementById('produto'),
+          'Código do Produto', 'Pesquise o produto e clique “Adicionar” para registrar.');
+  bindTip(btnAddProduto, 'Adicionar Produto', 'Inclui o código de produto na lista.');
+  bindTip(document.getElementById('familia'),
+          'Família do Produto', 'Informe a família e clique “Adicionar”.');
+  bindTip(btnAddFamilia, 'Adicionar Família', 'Inclui a família do produto na lista.');
+  bindTip(document.getElementById('instrucao'),
+          'Instrução de Trabalho', 'Informe a IT relacionada e clique “Adicionar”.');
+  bindTip(btnAddInstrucao, 'Adicionar IT', 'Inclui a instrução de trabalho na lista.');
+
+  // Descrição / Documentos
+  bindTip(document.getElementById('desc'),
+          'Descrição do Produto', 'Contextualize o produto ou item afetado.');
+  bindTip(document.getElementById('dr_input'),
+          'Documentos relacionados (opcional)', 'Referências/documentos de suporte. Não é obrigatório.');
+
+  // Datas
+  bindTip(document.getElementById('data_inicio'),
+          'Início da Concessão', 'Data a partir da qual a concessão passa a vigorar.');
+  bindTip(document.getElementById('data_fim'),
+          'Validade da Concessão', 'Data de término prevista da concessão.');
+
+  // Evidências (imagens)
+  // 
+  bindTip(document.getElementById('input_imagens'),
+          'Evidências do motivo', 'Anexe imagens que comprovem o motivo (opcional).');
+  bindTip(document.getElementById('input_imagens1'),
+          'Evidências de procedimento', 'Anexe imagens do procedimento (opcional).');
+
+  // Detalhes da Solicitação
+  bindTip(document.getElementById('risco_input'),
+          'Análise de riscos', 'Descreva os riscos e contramedidas aplicáveis.');
+  bindTip(document.getElementById('especial1'),
+          'Característica especial @1', 'Indique se afeta a característica especial 1.');
+  bindTip(document.getElementById('especial2'),
+          'Característica especial @2', 'Indique se afeta a característica especial 2.');
+  bindTip(document.getElementById('ssma'),
+          'Impacto SSMA', 'Informe se há impacto em Segurança, Saúde e Meio Ambiente.');
+  bindTip(document.getElementById('procedimentos_input'),
+          'Procedimentos a serem seguidos', 'Descreva o que deve ser cumprido durante a concessão.');
+
+  // Plano de Ação
+  const btnAddAcao = Array.from(document.querySelectorAll('button.desv_submit'))
+                          .find(b=>String(b.textContent||'').trim().toLowerCase()==='adicionar' &&
+                                   String(b.getAttribute('onclick')||'').includes('addAcao'));
+  bindTip(btnAddAcao, 'Adicionar ação', 'Inclui uma atividade no plano de ação.');
+
+  // Enviar
+  bindTip(document.getElementById('sendForm'),
+          'Enviar', 'Valida e envia a solicitação para o fluxo de aprovação.');
+
+  // Etapas (tags âncoras)
+  bindTip(document.getElementById('step'),   '1. Informações Gerais', 'Preencha equipe, unidade, CT, produto, família e descrição.');
+  bindTip(document.getElementById('step_2'), '2. Detalhes da Solicitação', 'Defina riscos, características especiais, SSMA e procedimentos.');
+  bindTip(document.getElementById('step_3'), '3. Fluxo de Aprovação', 'Revisão do fluxo de aprovação conforme setor e unidade.');
+
+  // Ocultar tooltip ao rolar
+  document.addEventListener('scroll', function(){ tipHide(); }, {passive:true});
+
+  /* ====== 3) Ripple no clique de todos os botões .desv_submit ====== */
+  function attachRipple(btn){
+    if (!btn) return;
+    btn.addEventListener('click', function(ev){
+      const rect = btn.getBoundingClientRect();
+      const d = Math.max(rect.width, rect.height);
+      const r = document.createElement('span');
+      r.className = 'dj-ripple';
+      r.style.width  = r.style.height = d + 'px';
+      r.style.left = (ev.clientX - rect.left - d/2) + 'px';
+      r.style.top  = (ev.clientY - rect.top  - d/2) + 'px';
+      btn.appendChild(r);
+      requestAnimationFrame(()=>{ r.style.transform='scale(1)'; r.style.opacity='.0'; });
+      setTimeout(()=> r.remove(), 420);
+    }, {passive:true});
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('button.desv_submit').forEach(attachRipple);
+  });
+})();
+</script>
+``
+
+</body>
+
+<script>
+   {% include 'request.processDeviation/dev_create.js' %}
+</script>
+{% endblock %}
+

@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 24px;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2em;
+            margin-bottom: 10px;
+            margin-top: 0;
+            align-items: center;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: normal;
+            margin: 10px 0;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            width: 96%;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .small-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .general-info {
+            width: 60%;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+            height: auto;
+        }
+
+        .general-info h2 {
+            text-align: left;
+            color: #153A8A;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .general-info p {
+            margin: 5px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 5px;
+        }
+
+        .left {
+            grid-column: 1;
+        }
+
+        .right {
+            grid-column: 2;
+        }
+
+        .description {
+            grid-column: span 2;
+            max-height: 15vh;
+            overflow: auto;
+        }
+
+        .tables-container {
+            width: 100%;
+            height: 46vh;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5em;
+            color: #153A8A;
+            margin: 0;
+            text-align: left;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #153A8A;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        
+        th.sorted-asc::after {
+            content: ' ▲'; /* Sinal para ordenação crescente */
+        }
+
+        th.sorted-desc::after {
+            content: ' ▼'; /* Sinal para ordenação decrescente */
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+            margin: 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .selected-row {
+            background-color: #dddddd;
+            font-weight: bold;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .form-input, select, textarea {
+            width: calc(100% - 30px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 5px; /* Espaço menor entre o label e o campo */
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: black;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+
+        .dropdown-down .dropdown-content {
+            top: 100%;
+            bottom: auto;
+        }
+        .dropdown-up .dropdown-content {
+            bottom: 100%;
+            top: auto;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px; /* Espaço entre os elementos */
+            align-items: flex-start; /* Mantém o label acima do campo */
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            display: flex;
+            flex-direction: column; /* Coloca o label acima do campo */
+            flex: 1; /* Faz com que os elementos ocupem espaço igual */
+            min-width: 0; /* Previne que inputs fiquem muito grandes */
+        }
+
+        .form-row label {
+            font-size: 0.9em; /* Reduz o tamanho do label para economizar espaço */
+            margin-bottom: 5px; /* Espaço menor entre o label e o campo */
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .tooltip {
+            display: none; /* Oculta o tooltip por padrão */
+            position: absolute;
+            top: 100%; /* Aparece logo abaixo do elemento */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #007bff; /* Azul */
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap; /* Impede que o texto quebre linhas */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+            z-index: 1000; /* Garante que fique acima de outros elementos */
+            font-size: 0.9rem;
+            max-width: 15vw;
+            width: 15vw;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        /* Mostrar o tooltip quando passar o mouse */
+        #deadline-container div:hover .tooltip, td div:hover .tooltip {
+            display: block; /* Exibe o tooltip */
+        }
+
+        #evidence-table td button {
+            background-color: #F44336;
+        }
+
+        #evidence-table td button:hover {
+            background-color: #D32F2F;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/op/plano/historico'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="loading-overlay" id="loading-overlay">Carregando...</div>
+
+    <div class="container">
+        <div class="section-header" style="margin: 0;">
+            <h1>Plano de Ação W{{week}} - Operation Meeting</h1>
+            <h1>{{presentationMotiveDesc}} - {{presentationAreaDesc}}</h1>
+        </div>
+
+        <div class="small-container">
+            <div class="general-info" style="position: relative;">
+                <div class="section-header">
+                    <h2>Informações Gerais</h2>
+                    <button onclick="openModal('modalGeneralInfo')" id="editGeneralInfo">Editar Informações Gerais</button>
+                </div>
+                <div class="grid-container">
+
+                    <div class="left">
+                        <p><strong>Criador:</strong> {{name}}</p>
+                        <p><strong>Data de criação:</strong> {{createDate}}</p>
+                        <p id="displayStatus"><strong>Status geral:</strong> </p>
+                    </div>
+            
+                    <div class="right" style="position: relative;"> 
+                        <p><strong>Prazo:</strong></p>
+                        <div id="deadline-container">
+                            <!-- Os prazos serão inseridos aqui dinamicamente -->
+                        </div>
+                    </div>
+            
+                    <div class="description" style="grid-column: span 2;">
+                        <p style="margin-top: 0;white-space: pre-line;"><strong>Descrição:</strong> {{description}}</p>
+                    </div>
+                </div>
+
+                    <div class="section-header">
+                        <h2>Locais Impactados</h2>
+                    </div>
+                    <p>Área: <span id="areas">xx</span></p>
+                    <p>Centro: <span id="workcenters">xx</span></p>
+
+                    <!-- Paradas Relacionadas -->
+                    <div class="section-header">
+                        <h2>Paradas Relacionadas</h2>
+                        <button onclick="openModal('modalRelate')">Eventos</button>
+                    </div>
+                    <p>Minutos de duração: <span id="totalDuration">xx</span></p>
+                    <p>Paradas: <span id="stops">xx</span></p>
+
+
+                
+            </div>
+
+            <div class="tables-container">
+                <div class="section-header">
+                    <h2>Plano de Ação</h2>
+                    <button onclick="openModal('modalAction')" id='addAction'>Adicionar Ação</button>
+                </div>
+                <div style="overflow-y: auto;height: 100%;">
+                    <table id="planoTable">
+                        <thead>
+                            <tr>
+                                <th>Tipo de Ação</th>
+                                <th>Ação</th>
+                                <th>Responsável</th>
+                                <th>Prazo</th>
+                                <th>Status</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody style="white-space: pre-line;">
+                            <!-- Filled by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalRelate" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalRelate')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;" id="relateTitle">Relacionar paradas</h2>
+    
+            <div class="filter-container">
+                <div>
+                    <h2 for="workCenter">Centro de trabalho</h2>
+                    <select id="workCenter">
+                        <option disabled value="">Selecione uma opção</option>
+                        {% for workcenter in workcenters %}
+                            {% if workcenter.Workcenter_Key != 1 %}
+                                <option value="{{ workcenter.Workcenter_Key }}">
+                                    {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
+                                </option>
+                            {% else %}
+                                <option value="{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}">
+                                    {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+    
+                <div>
+                    <h2 for="motive">Motivo de parada</h2>
+                    <select id="motive">
+                        <option disabled value="">Selecione uma opção</option>
+                        {% for event in events %}
+                            <option value="{{event.Code}}">{{event.Code}}-{{event.Description}}</option>
+                        {% endfor %}
+                    </select>
+                </div>  
+    
+                <div>
+                    <h2 for="initDate">Hora de início</h2>
+                    <input class="form-input" type="datetime-local" id="initDate" value="{{initDateFilter}}">
+                </div>
+    
+                <div>
+                    <h2 for="endDate">Hora de fim </h2>
+                    <input class="form-input" type="datetime-local" id="endDate" value="{{endDateFilter}}">
+                </div>
+
+                <button style="max-width: 10vw;background-color: black;" onclick="populateTable()" id='searchStops'>Pesquisar paradas</button>
+
+            </div>
+    
+            <div style='height: 50vh;overflow-y: auto;'>         
+                <table id="stopsTable">
+                    <thead>
+                        <tr>
+                            <th>Centro de trabalho</th>
+                            <th>Motivo de parada</th>
+                            <th onclick="sortTable(2)">Hora de início</th>
+                            <th onclick="sortTable(3)">Hora de fim</th>
+                            <th onclick="sortTable(4)">Duração</th>
+                            <th>Relacionar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stopTable" style="background-color: white;color: black;">
+                        <!-- Conteúdo gerado via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button style="max-width: 10vw;background-color: black;" onclick="relateStops()" id='relateStops'>Atualizar</button>
+        </div>
+    </div>
+
+    <div id="modalGeneralInfo" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span onclick="closeModal('modalGeneralInfo')" class="close">&times;</span>
+            <h1 style="margin-top: 0;color: white;">Editar - Plano de Ação</h1>
+
+            <form id="general-info-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="presentation-week">Semana de Apresentação</label>
+                        <input class="form-input" type="number" id="presentation-week" name="presentation-week" min="0" value="{{week}}" max="52" placeholder="Informe a semana (1 a 52)" required readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="presentation-m">M de Apresentação</label>
+                        <select id="presentation-m" required>
+                            <option value="" disabled selected>Selecione um M</option>
+                            <option value='0'>Mão de Obra</option>
+                            <option value='1'>Movimentação</option>
+                            <option value='2'>Material</option>
+                            <option value='3'>Manutenção</option>
+                            <option value='4'>Método (Qualidade)</option>
+                            <option value='5'>Método (Processos)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="presentation-area">Área de Apresentação</label>
+                        <select id="presentation-area" required>
+                            <option value="" disabled selected>Selecione uma Área</option>
+                            <option value='0'>Montagem</option>
+                            <option value='1'>Usinagem</option>
+                            <option value='2'>Soldagem</option>
+                            <option value='3'>Pré-Fabricação</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="due-date">Prazo da Ação</label>
+                        <input class="form-input" type="date" id="due-date" name="due-date" required>
+                    </div>
+                </div>
+
+                <label for="justifyText" id="labelJustifyText" style="display: none;">Justificativa para alteração do Prazo</label>
+                <textarea id="justifyText" name="justifyText" placeholder="Informe a justificativa da alteração" style="display: none;"></textarea>
+                
+                <label for="description">Descrição</label>
+                <textarea id="description" name="description" placeholder="Informe a descrição da ação" required></textarea>
+
+                <div class="dropdown dropdown-up" style="margin-top: 1vh;">
+                    <button class="dropbtn" type="button">Selecione as áreas impactadas</button>
+                    <div class="dropdown-content" id="w_group" style="height: auto;">
+                        <label><input type="checkbox" name="Montagem" value="Montagem"> Montagem</label>
+                        <label><input type="checkbox" name="Pré-Fabricação" value="Pré-Fabricação"> Pré-Fabricação</label>
+                        <label><input type="checkbox" name="Soldagem" value="Soldagem"> Soldagem</label>
+                        <label><input type="checkbox" name="Usinagem" value="Usinagem"> Usinagem</label>
+                    </div>
+                </div>
+
+                <div class="dropdown dropdown-up" style="margin-top: 1vh;margin-bottom: 3vh;">
+                    <button class="dropbtn" type="button">Selecione os centros impactados</button>
+                    <div class="dropdown-content" id="w_name">
+                        {% for workcenter in workcenters %}
+                        <label><input type="checkbox" value="{{workcenter.Workcenter_Code}}-{{workcenter.Name}}">{{workcenter.Workcenter_Code}}-{{workcenter.Name}}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="presentation-status">Status</label>
+                    <input class="form-input" type="number" id="presentation-status" name="presentation-status" min="0" value="{{ 0 if status < 0 else status }}" max="100" placeholder="Informe o status de 0 a 100" required>
+                </div>
+
+                <button type="submit" style="background-color: black;">Cadastrar</button>
+                <button type="submit" style="background-color: black;" id="cancelActionGeneral">Cancelar</button>
+
+            </form>
+        </div>
+    </div>
+
+    <div id="modalAction" class="modal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <span onclick="closeModal('modalAction')" class="close">&times;</span>
+            <h1 style="margin-top: 0;color: white;" id="titleAction">Criar Ação</h1>
+            <div style="float: left;width: 100%;" id="createActionDiv">
+                <form id="action-form">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="action-type">Tipo de Ação</label>
+                            <select id="action-type" required>
+                                <option value="" disabled selected>Selecione um Tipo</option>
+                                <option value='0'>Contenção</option>
+                                <option value='1'>Corretiva</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="action-training">É treinamento?</label>
+                            <select id="action-training" required>
+                                <option value='1'>Sim</option>
+                                <option value='0' selected>Não</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="action-due-date">Prazo da Ação</label>
+                            <input class="form-input" type="date" id="action-due-date" name="action-due-date" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="action-user">Responsável</label>
+                            <select id="action-user" required>
+                                <option value="" disabled selected>Selecione um Responsável</option>
+                                {% for info in users_info %}
+                                    <option> {{info.companyEmail}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <label for="justifyTextAction" id="labelJustifyActionText" style="display: none;">Justificativa para alteração do Prazo</label>
+                    <textarea id="justifyTextAction" name="justifytextAction" placeholder="Informe a justificativa da alteração" style="display: none;"></textarea>
+            
+                    <label for="action-text">Ação</label>
+                    <textarea id="action-text" name="action-text" placeholder="Informe a descrição da ação" required></textarea>
+
+                    <div class="form-group">
+                        <label for="presentation-status">Status</label>
+                        <input class="form-input" type="number" id="action-status" name="action-status" min="0" value="{{status}}" max="100" placeholder="Informe o status de 0 a 100" required>
+                    </div>
+
+                    <label for="action-refuse">Texto de Recusa</label>
+                    <textarea id="action-refuse" name="action-refuse" placeholder="Informe o texto de recusa"></textarea>
+
+                    <button type="submit" style="background-color: black;" id="registerAction">Cadastrar</button>
+                    <button type="submit" style="background-color: black;display: none;" id="editAction">Atualizar</button>
+                    <button type="submit" style="background-color: black;display: none;" id="cancelAction">Cancelar</button>
+                    <button type="submit" style="background-color: black;display: none;" id="refuseAction">Recusar</button>
+                </form>
+            </div>
+
+            <div class="evidence-container" style="float: right;width: 50%;display: none;" id="editActionDiv">
+                <h2 style="text-align: left;margin-top: 0;">Evidências</h2>
+                <div class="form-row" id='upload-button'>
+                    <form id="upload-form">
+                        <input type="file" id="upload-evidence" style="display: none;" onchange="uploadEvidence(event)">
+                        <button type="button" onclick="document.getElementById('upload-evidence').click()" style="background-color: black;">Upload</button>
+                    </form>
+                </div>
+                <div class="form-row">
+                    <table id="evidence-table">
+                        <thead>
+                            <tr>
+                                <th>Nome do Arquivo</th>
+                                <th>Tamanho</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evidences-table-body">
+                            <!-- Arquivos carregados aparecerão aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="badFill" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+
+        let mainDeadline;
+
+        const generalDeadlineData = JSON.parse({{ deadline_info | tojson}});
+        const actionDeadlineData = JSON.parse({{ action_deadline | tojson}});
+        const relatedStops = JSON.parse('{{ events_info | tojson}}');
+        const planData = JSON.parse({{ action_info | tojson}});
+
+        const events = JSON.parse('{{events | tojson}}')
+
+        const current_user_admin = '{{admin}}'
+        const current_user_email = '{{current_user_email}}'
+
+        function phrase(data, column) {
+
+            let dataset;
+
+            if (column == null) {
+                dataset = [...new Set(data)];
+            } else {
+                dataset = [...new Set(data.map(row => row[column]))];
+            }
+
+
+            let phrase_str = '';
+
+            if (dataset.length > 1) {
+                const last_data = dataset.pop();
+                phrase_str = dataset.join(', ') + ' e ' + last_data;
+            } else if (dataset.length == 1) {
+                phrase_str = dataset[0];
+            } else {
+                phrase_str = 'Não Definido'
+            }
+            return phrase_str
+        }
+
+        function displayDeadlines(id, data) {
+            const container = document.getElementById(id);
+            container.innerHTML = '';
+
+            data.forEach((deadline, index) => {
+                const div = document.createElement('div');
+                div.style.cursor = 'help'
+                const tooltip = document.createElement('span'); // Tooltip personalizado
+
+                // Configurando o texto da data
+                if (index === 0) {
+                    div.innerHTML = `<strong>${deadline.deadline}</strong>`;
+                    if (id == 'deadline-container') {
+                        const partesData = deadline.deadline.split("/");
+                        mainDeadline = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
+                        document.getElementById('due-date').value = mainDeadline;
+
+                        document.getElementById('due-date').oninput = function() {
+                            justifyChange('due-date', 'labelJustifyText', 'justifyText', mainDeadline);
+                        };
+                    }
+                } else {
+                    div.style.textDecoration = "line-through";
+                    div.innerHTML = `${deadline.deadline}`;
+                }
+
+                // Configurando o tooltip
+                tooltip.className = "tooltip";
+                tooltip.innerText = `Justificativa de Prazo: ${deadline.text}`;
+
+                // Adicionando o tooltip ao div
+                div.appendChild(tooltip);
+
+                // Adicionando o div ao container
+                container.appendChild(div);
+            });
+        }
+
+        function getStatusStyle(status) {
+            switch (status) {
+                case -2: // CANCELADO
+                return { display: 'CANCELADO', color: 'gray' };
+                case -1: // RECUSADO
+                return { display: 'RECUSADO', color: 'red' };
+                case 0: // NÃO INICIADO
+                return { display: 'NÃO INICIADO', color: 'black' };
+                case 100: // CONCLUÍDO
+                return { display: 'CONCLUÍDO', color: 'green' };
+                default: // EM ANDAMENTO
+                return { display: `${status}%`, color: 'blue' };
+            }
+        }
+
+        // FUNÇÕES PARA EDITAR INFORMAÇÕES GERAIS
+        document.getElementById('general-info-form').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
+                event.preventDefault();
+            }
+        });
+
+        document.getElementById('general-info-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+
+            const clickedButton = event.submitter;
+            const areas = Array.from(document.querySelectorAll(`#w_group input:checked`)).map(checkbox => checkbox.value);
+            const workcenters = Array.from(document.querySelectorAll(`#w_name input:checked`)).map(checkbox => checkbox.value);
+            
+            const data = {
+                p_week: document.getElementById('presentation-week').value,
+                p_ms: document.getElementById('presentation-m').value,
+                p_area: document.getElementById('presentation-area').value,
+                description: document.getElementById('description').value,
+                areas: areas,
+                workcenters: workcenters,
+                status: document.getElementById('presentation-status').value,
+            };
+
+            if (clickedButton.id == 'cancelActionGeneral') {
+                data['cancel'] = '1'
+            }
+
+            if (document.getElementById('justifyText').required == true) {
+                data.deadline = document.getElementById('due-date').value,
+                data.justifyText = document.getElementById('justifyText').value;
+            }
+
+            fetch('/op/plano/historico/{{plan_id}}?type=edit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        infoAlert(`Erro ${response.status}: ${err.error || 'Erro desconhecido'}`)
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                window.location.href = '/op/plano/historico/{{plan_id}}'
+            })
+        });
+
+        function justifyChange(element0, element1, element2, value) {
+            if (document.getElementById(element0).value != value) {
+                document.getElementById(element1).style.display = 'block'
+                document.getElementById(element2).style.display = 'block'
+                document.getElementById(element2).required = true
+            } else {
+                document.getElementById(element1).style.display = 'none'
+                document.getElementById(element2).style.display = 'none'
+                document.getElementById(element2).required = false
+                document.getElementById(element2).value = ''
+            }
+        }
+
+
+        // FUNÇÕES PARA MODULO DE RELACIONAR PARADAS
+
+        const sortDirections = {
+            'stopsTable': [true, true, true, true, true, true],
+        };
+
+        function populateTable() {
+
+            var w_name_mic = [document.getElementById('workCenter').value]
+            var w_name_plex = Number.isInteger(parseInt(document.getElementById('workCenter').value)) ? [parseInt(document.getElementById('workCenter').value)] : []
+
+            var type = '1'
+            if (Number.isInteger(parseInt(document.getElementById('workCenter').value))) {
+                type = '0'
+            }
+
+            var m_event = [document.getElementById('motive').value];
+            var start_date = document.getElementById('initDate').value;
+            var end_date = document.getElementById('endDate').value;
+
+            if (w_name_mic == [] || m_event == [] || start_date == '' || end_date == '') {
+                alert("Você deve preencher todos os campos.");
+                return;
+            }
+
+            document.getElementById('loading-overlay').classList.add('active');
+
+            fetch('/op/plano/novo?type=data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ shift : ['1', '2', '3', 'Extra'], w_name_mic, w_name_plex, m_event, start_date, end_date, type })
+            })
+            .then(response => response.json()) // Convert the response to JSON
+            .then(data => {
+                createTable(data)
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                document.getElementById('loading-overlay').classList.remove('active');
+            })
+        }
+
+        function createTable(data) {
+            const tableBody = document.getElementById('stopTable');
+            tableBody.innerHTML = ''; // Limpa o conteúdo anterior
+
+            // Usar DocumentFragment para melhorar o desempenho
+            const fragment = document.createDocumentFragment();
+
+            // Adiciona as linhas armazenadas em relatedStops ao topo
+            Object.values(relatedStops).forEach(stop => {
+                const row = createRow(stop, true); // Linha já selecionada
+                fragment.appendChild(row);
+            });
+
+            data.forEach(user => {
+                // Verifica se a linha já foi selecionada para evitar duplicação
+                if (relatedStops[user['Log_Key']]) return;
+                const row = createRow(user, false); // Linha não selecionada
+                fragment.appendChild(row);
+            });
+
+            // Adicionar tudo de uma vez ao tableBody
+            tableBody.appendChild(fragment);
+        }
+
+        function createRow(data, isSelected) {
+            const row = document.createElement('tr');
+            row.setAttribute('data-log-key', data['Log_Key']); // Adiciona um atributo para identificar a linha
+
+            // Aplica uma classe CSS diferente se a linha estiver selecionada
+            if (isSelected) {
+                row.classList.add('selected-row');
+            }
+
+            // Lista de campos a serem preenchidos
+            const fields = ['Workcenter_Name', 'Event', 'Log_Date', 'End_Date', 'Log_Minutes'];
+
+            // Cria células para cada campo
+            fields.forEach(field => {
+                const cell = document.createElement('td');
+                cell.textContent = data[field] || '';
+                row.appendChild(cell);
+            });
+
+            const actionCell = document.createElement('td');
+            if (current_user_admin != '0') {
+                const button = document.createElement('button');
+                button.textContent = isSelected ? 'Remover' : 'Selecionar';
+                button.onclick = () => toggleSelection(data, row, button);
+                actionCell.appendChild(button);
+
+            } else {
+                actionCell.textContent = 'Sem Ação Disponivel'; 
+            }
+
+            row.appendChild(actionCell);
+            return row;
+        }
+
+        function toggleSelection(data, row, button) {
+            const logKey = data['Log_Key'];
+            if (relatedStops[logKey]) {
+                delete relatedStops[logKey]; // Remove do objeto
+                row.classList.remove('selected-row'); // Remove a classe de destaque
+                button.textContent = 'Selecionar'; // Muda o texto do botão
+            } else {
+                relatedStops[logKey] = data;
+                row.classList.add('selected-row'); // Adiciona a classe de destaque
+                button.textContent = 'Remover'; // Muda o texto do botão
+            }
+        }
+        
+        function relateStops() {
+
+            if (current_user_admin == '0') {
+                infoAlert(`Sem permissão para está ação!`)
+                throw new Error(err.error || 'Erro desconhecido');
+            }
+
+            const data = {
+                relatedStops: relatedStops
+            };
+            
+            // Envia os dados ao servidor (ajuste a rota conforme necessário)
+            fetch('/op/plano/historico/{{plan_id}}?type=stops', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    createTable([]); 
+                    populateStopsInfo();
+                } else {
+                    return response.json().then(err => {
+                        infoAlert(`Erro ${response.status}: ${err.error || 'Erro desconhecido'}`)
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+        }
+
+        function populateStopsInfo() {
+
+            let totalDuration = Object.values(relatedStops).reduce((total, row) => total + row.Log_Minutes, 0);
+
+            document.getElementById('totalDuration').textContent = totalDuration.toFixed(2);
+            document.getElementById('stops').textContent = phrase(Object.values(relatedStops), 'Event');
+        }
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('stopsTable');
+            const tbody = table.querySelector('tbody');
+
+            const rows = Array.from(tbody.rows);
+            const isAscending = sortDirections['stopsTable'][columnIndex];
+
+            // Ordena as linhas
+            rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].innerText;
+                const cellB = b.cells[columnIndex].innerText;
+
+                if (columnIndex == 2 || columnIndex == 3) {
+                    const parseBrazilianDate = (dateTimeString) => {
+                        const [datePart, timePart] = dateTimeString.split(' ')
+                        const [day, month, year] = datePart.split('/');
+                        return new Date(`${year}-${month}-${day}T${timePart}`);
+                    };
+
+                    const startDate = parseBrazilianDate(cellA);
+                    const endDate = parseBrazilianDate(cellB);
+
+                    return isAscending ? startDate - endDate : endDate - startDate;
+                } else if (columnIndex == 4) {
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else {
+                    return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+
+            // Limpa o tbody e adiciona as linhas ordenadas
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Alterna a direção da ordenação
+            sortDirections['stopsTable'][columnIndex] = !isAscending;
+
+            // Remove os estilos de ordenação
+            Array.from(table.getElementsByTagName('th')).forEach((th, index) => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (index === columnIndex) {
+                    th.classList.toggle('sorted-desc', sortDirections['stopsTable'][columnIndex]);
+                    th.classList.toggle('sorted-asc', !sortDirections['stopsTable'][columnIndex]);
+                }
+            });
+        }
+
+        // FUNÇÕES PARA EDITAR AS AÇÕES
+
+        document.getElementById('action-form').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
+                event.preventDefault();
+            }
+        });
+
+        document.getElementById('action-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const clickedButton = event.submitter;
+            
+            const data = {
+                type: document.getElementById('action-type').value,
+                training: document.getElementById('action-training').value,
+                deadline: document.getElementById('action-due-date').value,
+                justifyText: document.getElementById('justifyTextAction').value,
+                user: document.getElementById('action-user').value,
+                text: document.getElementById('action-text').value,
+                status: document.getElementById('action-status').value
+            };
+
+            if (clickedButton.id == 'cancelAction') {
+                data['cancel'] = '1'
+                data['id'] = clickedButton.value
+            } else if (clickedButton.id == 'editAction') {
+                data['id'] = clickedButton.value
+            } else if (clickedButton.id == 'refuseAction') {
+                data['id'] = clickedButton.value
+                data['refuse'] = document.getElementById('action-refuse').value
+            }
+
+            fetch('/op/plano/historico/{{plan_id}}?type=action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        infoAlert(`Erro ${response.status}: ${err.error || 'Erro desconhecido'}`)
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                window.location.href = '/op/plano/historico/{{plan_id}}'
+            })
+        });
+
+        function populateActionTable() {
+
+            const tableBody = document.querySelector("#planoTable tbody");
+            tableBody.innerHTML = '';
+
+            planData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+
+                const typeCell = tr.insertCell();
+                typeCell.textContent = row.type == 1 ? 'Corretiva' : 'Contenção';
+
+                const textCell = tr.insertCell();
+                textCell.textContent = row.text;
+
+                const nameCell = tr.insertCell();
+                nameCell.textContent = row.name;
+
+                const deadlineCell = tr.insertCell();
+                deadlineCell.id = `id_${row.id}`;
+                deadlineCell.style.position = 'relative'
+
+                const statusCell = tr.insertCell();
+                const statusStyle = getStatusStyle(row.status);
+                statusCell.textContent = statusStyle.display;
+                statusCell.style.color = statusStyle.color;
+                statusCell.style.fontWeight = 'bold';
+
+                const actionCell = tr.insertCell();
+                const button = document.createElement('button');
+                button.textContent = 'Acessar';
+
+                const partesData = actionDeadlineData.filter(data => data.id == row.id)[0].deadline.split("/");
+                row['deadline'] = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
+
+                button.addEventListener('click', () => openModal('modalAction', row));
+                actionCell.appendChild(button);
+
+                tableBody.appendChild(tr);
+            });
+
+            planData.forEach((row, index) => {
+                displayDeadlines(`id_${row.id}`, actionDeadlineData.filter(data => data.id == row.id))
+            });
+        }
+
+        async function uploadEvidence(event, action) {
+            const input = event.target; // Captura o input de arquivo
+            const files = input.files;
+
+            if (files.length === 0) {
+                alert("Nenhum arquivo selecionado.");
+                return;
+            }
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append("files", file);
+            }
+
+            try {
+                // Faz a requisição para o servidor
+                const response = await fetch(`/op/plano/historico/{{plan_id}}/${action}/files?type=upload`, {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    alert("Arquivo enviado com sucesso!");
+                    loadEvidences(action)
+                } else {
+                    const errorText = await response.text();
+                    alert(`Erro ao enviar o arquivo: ${errorText}`);
+                }
+            } catch (error) {
+                console.error("Erro ao enviar o arquivo:", error);
+                alert("Erro ao enviar o arquivo. Verifique o console para mais detalhes.");
+            } finally {
+                // Limpa o input para permitir o upload do mesmo arquivo novamente
+                input.value = "";
+            }
+        }
+
+        function loadEvidences(action) {
+            // Implementação para buscar e renderizar arquivos na tabela
+            fetch(`/op/plano/historico/{{plan_id}}/${action}/files`)
+                .then((response) => response.json())
+                .then((data) => {
+                    const tableBody = document.getElementById("evidences-table-body");
+                    tableBody.innerHTML = "";
+
+                    data.forEach((file) => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${file.name}</td>
+                            <td>${file.size} KB</td>
+                            <td>
+                                <button onclick="downloadEvidence('${action}', '${file.name}')">Download</button>
+                                ${current_user_admin !== '0' 
+                                                ? `<button onclick="deleteEvidence('${action}', '${file.name}')">Excluir</button>` 
+                                                : ''}
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch((error) => console.error("Erro ao carregar as evidências:", error));
+        }
+
+        function downloadEvidence(action, file) {
+
+            const data_to_send = {file: file}
+
+            fetch(`/op/plano/historico/{{plan_id}}/${action}/files?type=download`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data_to_send)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao fazer download do arquivo');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${file}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        function deleteEvidence(action, file) {
+
+            const data_to_send = {file: file}
+
+            fetch(`/op/plano/historico/{{plan_id}}/${action}/files?type=delete`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data_to_send)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return loadEvidences(action);
+                } else {
+                    return response.json().then(err => {
+                        infoAlert(`Erro ${response.status}: ${err.error || 'Erro desconhecido'}`)
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+        }
+        
+        
+        // FUNÇÕES GERAIS
+
+        window.onload = function() {
+
+            const impacted_areas = JSON.parse('{{ impacted_areas |tojson | safe  }}')
+            const impacted_workcenters = JSON.parse('{{ impacted_workcenters |tojson  | safe }}')
+            document.getElementById('displayStatus').innerHTML += getStatusStyle(parseInt('{{status}}')).display
+
+            displayDeadlines('deadline-container', generalDeadlineData);
+            populateStopsInfo();
+
+            document.getElementById('areas').innerText = phrase(impacted_areas, null)
+            document.getElementById('workcenters').innerText =  phrase(impacted_workcenters, null)
+
+            populateActionTable();
+            createTable([]);
+
+            document.getElementById('presentation-m').value = '{{presentationMotive}}'
+            document.getElementById('presentation-area').value = '{{presentationArea}}'
+            document.getElementById('description').value = `{{description}}`
+
+            impacted_areas.forEach(area => {
+                const checkbox = document.querySelector(`input[type="checkbox"][value="${area}"]`);
+                if (checkbox) {
+                    checkbox.checked = true; // Marca o checkbox correspondente
+                }
+            });
+
+            impacted_workcenters.forEach(area => {
+                const checkbox = document.querySelector(`input[type="checkbox"][value="${area}"]`);
+                if (checkbox) {
+                    checkbox.checked = true; // Marca o checkbox correspondente
+                }
+            });
+
+            if (current_user_admin == '0') {
+                document.getElementById('addAction').style.display = 'none'
+                document.getElementById('editGeneralInfo').style.display = 'none'
+
+                document.getElementById('workCenter').style.display = 'none'
+                document.querySelector('h2[for="workCenter"]').style.display = 'none'
+
+                document.getElementById('motive').style.display = 'none'
+                document.querySelector('h2[for="motive"]').style.display = 'none'
+
+                document.getElementById('initDate').style.display = 'none'
+                document.querySelector('h2[for="initDate"]').style.display = 'none'
+
+                document.getElementById('endDate').style.display = 'none'
+                document.querySelector('h2[for="endDate"]').style.display = 'none'
+
+                document.getElementById('searchStops').style.display = 'none'
+                document.getElementById('relateStops').style.display = 'none'
+
+                document.getElementById('relateTitle').innerHTML = 'Visualizar Paradas Relacionadas'
+            }
+        }
+
+        function openModal(modalId, row) {
+            document.getElementById(modalId).style.display = 'flex';
+
+            if (row) {
+                document.getElementById('titleAction').innerHTML = 'Editar Ação'
+                document.getElementById('action-type').value = row.type
+                document.getElementById('action-training').value = row.istraining
+                document.getElementById('action-user').value = row.companyEmail
+                document.getElementById('action-text').value = row.text
+                document.getElementById('action-status').value = row.status < 0 ? 0 : row.status
+                document.getElementById('action-due-date').value = row.deadline
+
+                document.getElementById('action-due-date').onchange = function(event) {
+                    justifyChange('action-due-date', 'labelJustifyActionText', 'justifyTextAction', row.deadline)
+                };
+
+                document.getElementById('action-refuse').value = row.refuseText
+                
+                document.getElementById('registerAction').style.display = 'none'
+
+                if (row.status != -1) {
+                    document.getElementById('editAction').style.display = 'inline-block'
+                    document.getElementById('editAction').value = row.id
+
+                    document.getElementById('cancelAction').style.display = 'inline-block'
+                    document.getElementById('cancelAction').value = row.id
+
+                    document.getElementById('upload-evidence').onchange = function(event) {
+                        uploadEvidence(event, row.id);
+                    };
+
+                    if ((current_user_email == row.companyEmail && current_user_admin == '0') || current_user_admin == '2') {
+                        document.getElementById('refuseAction').style.display = 'inline-block'
+                        document.getElementById('refuseAction').value = row.id
+
+                        document.querySelector('label[for="action-refuse"]').style.display = 'block'
+                        document.getElementById('action-refuse').style.display = 'block'
+                        document.getElementById('action-refuse').required = true
+                    } else {
+                        document.querySelector('label[for="action-refuse"]').style.display = 'none'
+                        document.getElementById('action-refuse').style.display = 'none'
+                        document.getElementById('action-refuse').required = false
+                    }
+
+                    if (current_user_admin != '0') {
+                        document.getElementById('upload-button').style.display = 'flex'
+                    } else {
+                        document.getElementById('upload-button').style.display = 'none'
+                    }
+
+                } else {
+                    document.getElementById('upload-button').style.display = 'none'
+
+                    document.querySelector('label[for="action-refuse"]').style.display = 'block'
+                    document.getElementById('action-refuse').style.display = 'block'
+                }
+
+                document.getElementById('createActionDiv').style.width = '50%'
+                document.getElementById('editActionDiv').style.display = 'block'
+
+                loadEvidences(row.id)
+
+                if (current_user_admin == '0' || row.status == -1) {
+                    document.getElementById('titleAction').innerHTML = 'Visualizar Ação'
+                    document.getElementById('action-type').disabled = true
+                    document.getElementById('action-training').disabled = true
+                    document.getElementById('action-user').disabled = true
+                    document.getElementById('action-text').readOnly = true
+                    document.getElementById('action-status').readOnly = true
+                    document.getElementById('action-due-date').readOnly = true
+                    
+                    if (current_user_email == row.companyEmail && row.status != -1) {
+                        document.getElementById('action-refuse').readOnly = false
+                    } else {
+                        document.getElementById('action-refuse').readOnly = true
+                    }
+
+                    document.getElementById('editAction').style.display = 'none'
+                    document.getElementById('cancelAction').style.display = 'none'
+                } else {
+                    document.getElementById('action-type').disabled = false
+                    document.getElementById('action-training').disabled = false
+                    document.getElementById('action-user').disabled = false
+                    document.getElementById('action-text').readOnly = false
+                    document.getElementById('action-status').readOnly = false
+                    document.getElementById('action-due-date').readOnly = false
+
+                    if (current_user_email == row.companyEmail) {
+                        document.getElementById('action-refuse').readOnly = false
+                    }
+                }
+
+            } else if (modalId = 'modalAction') {
+                document.getElementById('titleAction').innerHTML = 'Criar Ação'
+                document.getElementById('action-type').disabled = false
+                document.getElementById('action-training').disabled = false
+                document.getElementById('action-user').disabled = false
+                document.getElementById('action-text').readOnly = false
+                document.getElementById('action-status').readOnly = false
+                document.getElementById('action-due-date').readOnly = false
+
+                document.querySelector('label[for="action-refuse"]').style.display = 'none'
+                document.getElementById('action-refuse').style.display = 'none'
+                document.getElementById('action-refuse').required = false
+
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+
+            if (modalId == 'modalAction') {
+                document.getElementById('action-form').reset()
+                document.getElementById('registerAction').style.display = 'inline-block'
+                document.getElementById('editAction').style.display = 'none'
+                document.getElementById('cancelAction').style.display = 'none'
+                document.getElementById('refuseAction').style.display = 'none'
+
+                document.getElementById('createActionDiv').style.width = '100%'
+                document.getElementById('editActionDiv').style.display = 'none'
+                document.getElementById('titleAction').innerHTML = 'Criar Ação'
+                
+            }
+        }
+
+        function infoAlert(msg) {
+            document.getElementById('badFillMessage').innerHTML = msg;
+            openModal('badFill', null);
+        }
+
+    </script>
+
+</body>
+</html>

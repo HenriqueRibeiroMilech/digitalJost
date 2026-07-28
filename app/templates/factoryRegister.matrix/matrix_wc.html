@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: white;
+            color: #153A8A;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #153A8A;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background: #2e52a7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background-color: #153A8A;
+            color: white;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .status-btn {
+            padding: 5px 10px;
+            background-color: #ccc;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .status-btn.active {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-btn.inactive {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Estilo do Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1em;
+        }
+
+        .modal-content input, .modal-content select {
+            width: 40%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #ccc;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+    </style>
+</head>
+<body>
+
+    <datalist id="data-operations">
+        {% for info in matrix_operation %}
+        <option value="{{info.id}}">{{info.name}}</option>
+        {% endfor %}
+    </datalist>
+
+    <div class="static-buttons"> 
+        <button onclick="window.location='/matriz'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <h1>Matriz de Versatilidade - Cadastro de Centros de Trabalho</h1>
+        <!-- Botões para abrir os modais -->
+        <div style="width: 100%;justify-content: center;display: flex;">
+            <button onclick="openModal('modalCentro')">Cadastrar Centro de Trabalho</button>
+            <button onclick="openModal('modalOperacao')" style="margin-left: 1vw;">Cadastrar Operação</button>    
+        </div>
+
+        <div style="height: 70vh;overflow-y: auto;margin-top: 2vh;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Centro de Trabalho</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="centros-list">
+                    <!-- Centros dinamicamente adicionados -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    
+    <div id="modalEditarOperacoes" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modalEditarOperacoes')">&times;</span>
+            <h2>Operações: <span id="localWorkcenter"></span></h2>
+
+            <h3>Adicione uma operação nova</h3>
+            <form id="adicionar-operacao-form">
+                <select id="operacao-select" required>
+                    <option value="" selected disabled>Selecione uma Operação</option>
+                    {% for info in matrix_operation %}
+                    <option value="{{info.id}}">{{info.name}}</option>
+                    {% endfor %}
+                </select>
+                <select id="operacao-especial">
+                    <option value="0" selected>Nenhum</option>
+                    <option value="1">@1</option>
+                    <option value="2">@2</option>
+                </select>
+                <button type="submit">Adicionar</button>
+            </form>
+
+            <h3>Edite as operações atuais</h3>
+            <form id="editar-operacoes-form">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sequenciamento de Operações</th>
+                            <th>Operação</th>
+                            <th>Status</th>
+                            <th>Especial</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="editar-operacoes-list">
+                        <!-- Operações editáveis adicionadas aqui -->
+                    </tbody>
+                </table>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Centro de Trabalho -->
+    <div id="modalCentro" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modalCentro')">&times;</span>
+            <h2>Cadastrar Centro de Trabalho</h2>
+            <form id="centro-trabalho-form">
+                <select id="centro-nome" placeholder="Nome do Centro" required>
+                    <option value="" selected disabled>Selecione um Centro PLEX</option>
+                    {% for info in workcenters %}
+                    <option value="{{info.Workcenter_Key}}">{{info.Name}}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="text" id="centro-descricao" placeholder="Descrição" required>
+                
+                <button type="submit" style="margin-top: 2vh;">Cadastrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Operação -->
+    <div id="modalOperacao" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modalOperacao')">&times;</span>
+            <h2>Cadastrar Operação</h2>
+            <form id="operacao-form">
+                <input type="text" id="operacao-nome" placeholder="Nome da Operação" required list="data-operations">
+                <button type="submit">Cadastrar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="badFill" class="modal" style="z-index: 1000;">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        let workcenters = JSON.parse({{ matrix_workcenter|tojson }});
+        let processes = JSON.parse({{ matrix_process|tojson }});
+
+        let operations = JSON.parse('{{ matrix_operation|tojson }}');
+        let workcentersDesc = JSON.parse('{{ workcenters|tojson }}');
+
+        let currentWorkcenterId;
+
+        // Abrir Modal
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'flex';
+        }
+
+        // Fechar Modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'none';
+        }
+        
+        // Atualizar a Tabela
+        function renderWorkcenters() {
+            const centrosList = document.getElementById('centros-list');
+            centrosList.innerHTML = '';
+
+            workcenters.forEach(workcenter => {
+                const associatedOperations = processes
+                    .filter(process => process.workcenter === workcenter.id)
+                    .map(process => operations.find(op => op.id === process.operation)?.name || 'Não encontrado');
+
+                const workcenter_info = workcentersDesc.filter(info => info.Workcenter_Key == workcenter.id)
+
+                const row = `
+                    <tr>
+                        <td>${workcenter_info[0].Workcenter_Code}</td>
+                        <td>${workcenter_info[0].Name}</td>
+                        <td>
+                            <button class="status-btn ${workcenter.status == 1 ? 'active' : 'inactive'}"
+                                onclick="toggleWorkcenterStatus(${workcenter.id})">
+                                ${workcenter.status == 1 ? 'Ativo' : 'Inativo'}
+                            </button>
+                        </td>
+                        <td>
+                            <button onclick="editWorkcenter(${workcenter.id})">Editar</button>
+                        </td>
+                    </tr>
+                `;
+
+                centrosList.innerHTML += row;
+            });
+        }
+        
+        // Abrir Modal para Editar Operações
+        function editWorkcenter(workcenterId) {
+
+            currentWorkcenterId = workcentersDesc.filter(work => work.Workcenter_Key === workcenterId)[0].Workcenter_Key;
+            document.getElementById('localWorkcenter').innerHTML = workcentersDesc.filter(work => work.Workcenter_Key === workcenterId)[0].Name;
+
+            const modal = document.getElementById('modalEditarOperacoes');
+            const editarOperacoesList = document.getElementById('editar-operacoes-list');
+
+            const localOperations = processes.filter(process => process.workcenter === workcenterId).sort((a, b) => a.order - b.order);
+
+
+            editarOperacoesList.innerHTML = '';
+
+            localOperations.forEach(info => {
+                const status = info.status;
+                const ordem =  info.order;
+                const especial = info.special;
+                const row = `
+                    <tr>
+                        <td style="display: flex; justify-content: space-between; align-items: center;">
+                            <button type="button">Operação ${ordem + 1}</button>
+                            <div>
+                                <button type="button" onclick="moveRow(${info.operation}, 'down')">⬆</button>
+                                <button type="button" onclick="moveRow(${info.operation}, 'up')">⬇</button>
+                            </div>
+                        </td>
+                        <td>${operations.filter(ope => ope.id == info.operation)[0].name}</td>
+                        <td>
+                            <select style="width: 90%" class="status-select" onchange="changeRelation(${info.operation}, 1, this.value)">
+                                <option value="1" ${status == 1 ? 'selected' : ''}>Ativo</option>
+                                <option value="0" ${status == 0 ? 'selected' : ''}>Inativo</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select style="width: 90%" class="especial-select" onchange="changeRelation(${info.operation}, 0, this.value)">
+                                <option value="0" ${especial == 0 ? 'selected' : ''}>Nenhum</option>
+                                <option value="1" ${especial == 1 ? 'selected' : ''}>@1</option>
+                                <option value="2" ${especial == 2 ? 'selected' : ''}>@2</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button type="button" onclick="detach(${info.operation})">Deletar</button>
+                        </td>
+                    </tr>
+                `;
+
+                editarOperacoesList.innerHTML += row;
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        
+        // FUNÇÕES PARA ATUALIZAR A MATRIZ
+
+        // MUDA A ORDEM DAS OPERAÇÕES
+        function moveRow(operationId, where) {
+            fetch(`/matriz/ct?type=order`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({workcenter: currentWorkcenterId, operation: operationId, where: where})
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+
+                processes = data; 
+                editWorkcenter(currentWorkcenterId);
+            })
+        }
+
+        // DESATIVA OU ATIVA UM CEN TRO DE TRABALHO
+        function toggleWorkcenterStatus(id) {
+            const workcenter = workcenters.find(w => w.id === id);
+            if (workcenter) {
+                workcenter.status = workcenter.status == 1 ? 0 : 1;
+            }
+
+            fetch(`/matriz/ct?type=status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({status: workcenter.status, workcenter: workcenter.id})
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+
+                workcenters = data; 
+                renderWorkcenters();
+            })
+        }
+
+        // DELETA UMA OPERAÇÃO DE UM CENTRO DE TRABALHO
+        function detach(operationId) {
+
+            fetch(`/matriz/ct?type=detach`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({workcenter: currentWorkcenterId, operation: operationId})
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+
+                processes = data; 
+                editWorkcenter(currentWorkcenterId);
+            })
+        }
+
+        // EDITA UMA OPERAÇÃO RELACIONADA A UM CENTRO DE TRABALHO
+        function changeRelation(operationId, field, value) {
+
+            fetch(`/matriz/ct?type=change`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({workcenter: currentWorkcenterId, operation: operationId, field: field, value: value})
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                processes = data; 
+            })
+        }
+
+        // ADICIONA UM NOVO CENTRO DE TRABALHO
+        document.getElementById('centro-trabalho-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const id = document.getElementById('centro-nome').value;
+            const description = document.getElementById('centro-descricao').value;
+
+            const payload = {
+                workcenter: id,
+                description: description
+            };
+
+            try {
+                const response = await fetch('/matriz/ct?type=ct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    workcenters = data;
+                    renderWorkcenters();
+                    closeModal('modalCentro');
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null)     
+                    });
+                }
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+            }
+        });
+
+        // ADICIONA UMA NOVA OPERAÇÃO
+        document.getElementById('operacao-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('operacao-nome').value;
+
+            const payload = {
+                name: name
+            };
+
+            try {
+                const response = await fetch('/matriz/ct?type=op', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    operations = data;
+
+
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null)     
+                    });
+                }
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+            }
+        });
+
+        // RELACIONA UMA OPERAÇÃO COM O CENTRO DE TRABALHO
+        document.getElementById('adicionar-operacao-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const operationId = document.getElementById('operacao-select').value;
+            const especial = document.getElementById('operacao-especial').value;
+
+            const payload = {
+                workcenter: currentWorkcenterId,
+                operation: operationId,
+                special: parseInt(especial)
+            };
+
+            try {
+                const response = await fetch('/matriz/ct?type=relate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    processes = data;
+                    editWorkcenter(currentWorkcenterId)
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null)     
+                    });
+                }
+
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+            }
+        });
+
+        renderWorkcenters();
+    </script>
+</body>
+</html>

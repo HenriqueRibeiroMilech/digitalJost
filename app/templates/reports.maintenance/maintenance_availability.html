@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            font-size: 3vw;
+            margin:0;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .filter-container {
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(21, 58, 138, 0.9);
+            border-radius: 0 5px 5px 0;
+            position: absolute;
+            left: 0;
+            top: calc(100% - (80% + 1vw) - 40px);
+            width: 20%;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .filter-container label {
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .filter-container .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .filter-container select, .filter-container input, .filter-container button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .filter-container-button {
+            width: 28%;
+            cursor: pointer;
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .filter-container-button:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .filter-container-button.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .dropbtn:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            max-height: 30vh;
+            height: auto;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .chart-container {
+            width: 75%;
+            height: 80%;
+            align-items: center;
+            overflow-y: hidden;
+            position: absolute;
+            bottom: 1vw;
+            right: 1vw;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+            display: flex;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-multiple {
+            display: flex;
+            flex-direction: row;
+            gap: 1vw;
+            height: 100%;
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
+        .chart-multiple > div {
+            width: calc((100% - 3vw) / 4);
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .scroll-buttons {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            position: absolute;
+        }
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(8vh + 7vw);
+            width: calc(8vh + 7vw);
+            margin: 10% auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilo para o contêiner da tabela com rolagem horizontal */
+        .table-container {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .data-table {
+            width: 100%;
+            min-width: 600px;
+        }
+
+        .data-table-separate {
+            min-width: 100%;
+        }
+
+        .data-table-separate thead {
+            min-width: 100%;
+        }
+
+        /* Estilo da tabela */
+        table {
+            border-collapse: collapse;
+            table-layout: fixed; /* Força o layout fixo */
+            font-size: calc(1vh + 0.4vw);
+        }
+
+        /* Estilo das células e cabeçalhos */
+        th, td {
+            border: 1px solid #dcdcdc; /* Borda cinza claro */
+            padding: 10px;
+            text-align: left;
+        }
+
+        /* Estilo para a primeira coluna */
+        thead {
+            position: sticky;
+            z-index: 2; /* Faz com que a coluna fixa fique acima das outras células */
+            top:0;
+        }
+        
+
+        /* Estilo das linhas alternadas */
+        tr:nth-child(even) {
+            background-color: #f8f9fa; /* Cinza muito claro */
+        }
+
+        tr:nth-child(odd) {
+            background-color: #ffffff; /* Branco para linhas ímpares */
+        }
+
+        /* Estilo dos botões dentro das células, se houver */
+        td button {
+            background-color: #007bff; /* Azul padrão */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 1em; /* Tamanho do texto do botão */
+        }
+
+        td button:hover {
+            background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
+        }
+
+        /* Estilo do cabeçalho da tabela */
+        th {
+            background-color: #007bff; /* Azul padrão */
+            color: white;
+        }
+
+        th.sorted-asc::after {
+            content: ' ▲'; /* Sinal para ordenação crescente */
+        }
+
+        th.sorted-desc::after {
+            content: ' ▼'; /* Sinal para ordenação decrescente */
+        }
+
+        .bullets-info th {
+            background-color: rgb(73, 73, 73);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="static-buttons"> 
+        <button onclick="downloadExcel()" id="downloadButton">Download Excel</button>
+        <button onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <h1>Manutenção - Disponibilidade de Máquinas</h1>
+
+    <div class="container">
+        <div class="filter-container">
+            <div>
+                <label for="group" style="font-weight: bold;color:white">Agrupar dados por: </label>
+                <select id="group" name="group" type="date" style="float:right;font-size: calc(0.9vh + 0.5vh);">
+                    <option value="0" selected>Dia</option>
+                    <option value="1">Semana</option>
+                    <option value="2">Mês</option>
+                    <option value="3">Ano</option>
+                    <option value="5">Livre</option>
+                </select>
+            </div>
+            <div class="filter-row">
+                <label>Turno de trabalho:</label>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="1">1</button>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="2">2</button>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="3">3</button>
+            </div>
+            <div>
+                <label for="start_date" style="font-weight: bold;color:white">Data início:</label>
+                <input type="datetime-local" id="start_date" name="start_date" style="float:right;width: 45%;font-size: calc(0.9vh + 0.5vh);">
+            </div>
+            <div>
+                <label for="end_date" style="font-weight: bold;color:white">Data fim:</label>
+                <input type="datetime-local" id="end_date" name="end_date" style="float:right;width: 45%;font-size: calc(0.9vh + 0.5vh);"> 
+            </div>
+            
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por motivo de parada</button>
+                <div class="dropdown-content" id="m_event">
+                    <label><input oninput="toggleExclusiveFilter('group0')" type="checkbox" id="sel_group0">Selecionar todos</label>
+                    {% for event in events %}
+                    <label><input type="checkbox" id="event{{event.Code}}" name="group0" value="{{event.Code}}">{{event.Code}}-{{event.Description}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por área</button>
+                <div class="dropdown-content" id="w_group" style="height: auto;">
+                    <label><input oninput="toggleExclusiveFilter('group1')" type="checkbox" id="sel_group1">Selecionar todos</label>
+                    <label><input type="checkbox" name="group1" id="area0" value="Montagem">Montagem</label>
+                    <label><input type="checkbox" name="group1" id="area1"value="Usinagem">Usinagem</label>
+                    <label><input type="checkbox" name="group1" id="area2" value="Soldagem">Soldagem</label>
+                    <label><input type="checkbox" name="group1" id="area3" value="Pré-Fabricação">Pré-Fabricação</label>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por centro de trabalho</button>
+                <div class="dropdown-content" id="w_name">
+                    <label><input oninput="toggleExclusiveFilter('group2')" type="checkbox" id="sel_group2">Selecionar todos</label>
+                    {% for workcenter in workcenters %}
+                    <label><input type="checkbox" name="group2" value="{{ workcenter.Workcenter_Key }}">{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button onclick="update()" style="cursor: pointer;" id="searchButton">Procurar Dados</button>
+        </div>
+
+        <div class="chart-container" id='chart-container'>
+
+            <div class='chart' id='table-chart1' style='overflow-y: auto;height: 100%;'>
+                <table id="data-table1" class="data-table">
+                    <thead class="bullets-info">
+                        <tr>
+                            <th colspan="8" style="background-color: black;text-align: center;">Relatório Detalhado</th>
+                        </tr>
+                        <tr style='cursor: pointer;'>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 0)">Agrupador</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 1)">Centro de Trabalho</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 2)">Tempo Parado (Min.)</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 3)">Quantidade de Parada</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 4)">Tempo Disponivel (Min.)</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 5)">MTBF</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 6)">MTTR</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 7)">Disponibilidade</th>
+                        </tr>
+
+                        <tr>
+                            <th name="agg-type"></th>
+                            <th id='bullet-extra1'></th>
+                            <th id='bullet-extra2'></th>
+                            <th id='bullet-extra3'></th>
+                            <th id='bullet-extra4'></th>
+                            <th id='bullet-extra5'></th>
+                            <th id='bullet-extra6'></th>
+                            <th id='bullet-extra7'></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+                <div class="loader"></div>
+            
+            </div>
+            
+            <div class='chart-multiple' style="margin-top: 20px;">
+
+                <div id='table-chart2'>
+                    <table id='data-table2' class="data-table-separate" style="font-size: 0.8em;">
+                        <thead class="bullets-info">
+                            <tr>
+                                <th colspan="4" style="background-color: black;text-align: center;">Montagem</th>
+                            </tr>
+                            <tr style="cursor: pointer;;">
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table2', 0)">Agrupador</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table2', 1)">Centro de Trabalho</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table2', 2)">%</th>
+                            </tr>
+                            <tr>
+                                <th name="agg-type"></th>
+                                <th id="bullet-extra8"></th>
+                                <th id='overall2'></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+
+                    <div class="loader"></div>
+                </div>
+
+                <div id='table-chart3'>
+                    <table id='data-table3' class="data-table-separate" style="font-size: 0.8em;">
+                        <thead class="bullets-info">
+                            <tr>
+                                <th colspan="4" style="background-color: black;text-align: center;">Usinagem</th>
+                            </tr>
+                            <tr style="cursor: pointer;;">
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table3', 0)">Agrupador</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table3', 1)">Centro de Trabalho</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table3', 2)">%</th>
+                            </tr>
+                            <tr>
+                                <th name="agg-type"></th>
+                                <th id="bullet-extra9"></th>
+                                <th id='overall3'></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+
+                    <div class="loader"></div>
+                </div>
+
+                <div id='table-chart4'>
+                    <table id='data-table4' class="data-table-separate" style="font-size: 0.8em;">
+                        <thead class="bullets-info">
+                            <tr>
+                                <th colspan="4" style="background-color: black;text-align: center;">Soldagem</th>
+                            </tr>
+                            <tr style="cursor: pointer;;">
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table4', 0)">Agrupador</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table4', 1)">Centro de Trabalho</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table4', 2)">%</th>
+                            </tr>
+                            <tr>
+                                <th name="agg-type"></th>
+                                <th id="bullet-extra10"></th>
+                                <th id='overall4'></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+
+                    <div class="loader"></div>
+                </div>
+
+                <div id='table-chart5'>
+                    <table id='data-table5' class="data-table-separate" style="font-size: 0.8em;">
+                        <thead class="bullets-info">
+                            <tr>
+                                <th colspan="4" style="background-color: black;text-align: center;">Pré-Fabricação</th>
+                            </tr>
+                            <tr style="cursor: pointer;;">
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table5', 0)">Agrupador</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table5', 1)">Centro de Trabalho</th>
+                                <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table5', 2)">%</th>
+                            </tr>
+                            <tr>
+                                <th name="agg-type"></th>
+                                <th id="bullet-extra11"></th>
+                                <th id='overall5'></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+
+                    <div class="loader"></div>
+                </div>
+
+            </div>
+
+            <div class="chart" style="margin-top: 20px;position: relative;display: flex;flex-direction: column;">
+
+                <div style="display: flex;flex-direction: row;justify-content: space-between;min-width: 100%;">
+                    <h2 style="width: 30%;margin-top: 0;">Gráfico - Visualizar Evolução de Disponibilidade</h2>
+                    <div style="width: 30%;display: flex;flex-direction: column;justify-content: space-between;">
+                        
+                        <div class="dropdown" id="chart-agg-type-container" style="display: none;">  
+                            <button class="dropbtn" type="button" id="chart-agg-type" style="background-color: #921218;">Agrupador do gráfico - Não selecionado</button>
+                            <div class="dropdown-content" id="chart-agg-type-options">
+                                <label><input type="checkbox" name="chart-agg-type-select" onclick="changeGraphType(0)" id="chart-agg-type-select0" value="Centro de Trabalho">Centro de Trabalho</label>
+                                <label><input type="checkbox" name="chart-agg-type-select" onclick="changeGraphType(1)" id="chart-agg-type-select1" value="Área">Área</label>
+                                <label><input type="checkbox" name="chart-agg-type-select" onclick="changeGraphType(2)" id="chart-agg-type-select2" value="Total">Total</label>
+                            </div>
+                        </div>
+
+                        <div class="dropdown" id="chart-agg-by-container" style="display: none;">  
+                            <button class="dropbtn" type="button" id="chart-agg-by" style="background-color: #921218;">Valor - Não selecionado</button>
+                            <div class="dropdown-content" id="chart-agg-by-options">
+                                <label>Selecione um agrupador</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chart-container1" style="width: 100%;flex:1"><div class="loader"></div></div>
+            </div>
+
+        </div>
+    </div>
+    
+    <div style="position: absolute;left: 17.5%;bottom: 1vw;">
+        <button class="filter-container-button" id="up" onclick="scrollSmooth('up')" style="width: 100%;height: 10vh;margin-bottom: 1vh;font-size: 3vh;border-radius: 4px;"><b>&uarr;</b></button>
+        <button class="filter-container-button" id="down" onclick="scrollSmooth('down')" style="width: 100%;height: 10vh;font-size: 3vh;border-radius: 4px;"><b>&darr;</b></button>
+    </div>
+
+
+    <script>
+
+        const workcenters = ({{workcenters | tojson}})
+        const events = ({{events | tojson}})
+
+        const sortDirections = {
+            'data-table1': [true, true, true, true, true, true, true, true],
+            'data-table2': [true, true, true],
+            'data-table3': [true, true, true],
+            'data-table4': [true, true, true],
+            'data-table5': [true, true, true]
+        };
+
+        const groupMap = {
+            '0': 'Dia',
+            '1': 'Semana',
+            '2': 'Mês',
+            '3': 'Ano',
+            '5': 'Livre'
+        };
+
+        // Armazena os filtros e dados do gráfico
+        let graphAgg = {
+            type: 0, // 0 - Workcenter_Name, 1 - Workcenter_Group, 2 - Total
+            by: 'Não selecionado',
+            group: '',
+            data: {}
+        };
+
+
+        var data = {};
+        var xhr = new XMLHttpRequest();
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            document.getElementById(`sel_group0`).checked = true
+            toggleExclusiveFilter('group0')
+
+            document.getElementById(`sel_group1`).checked = true
+            toggleExclusiveFilter('group1')
+
+            document.getElementById(`sel_group2`).checked = true
+            toggleExclusiveFilter('group2')
+
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.get('preload') == '5') {
+
+                const { first_day, last_day } = getWeekRange(params.get('year'), params.get('week'));
+
+                document.getElementById('start_date').value = first_day + ' 00:00';
+                document.getElementById('end_date').value = last_day + ' 23:59';
+                document.getElementById('group').value = '5';
+                update()
+
+            } else {
+
+                var today = new Date();
+                today.setHours(today.getHours() - 3);
+                var isoDate = today.toISOString().slice(0, 16);
+                document.getElementById('end_date').value = isoDate
+
+                var dayOfWeek = today.getDay();
+                today.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+                today.setHours(0, 0, 0, 0);
+                document.getElementById('start_date').value = today.toISOString().slice(0, 16).replace("T03:00", "T00:00");
+
+            }
+
+            window.addEventListener('resize', function () {
+                updateGraph();
+            });
+
+        });
+
+
+        // FUNÇÃO PARA MANIPULAR OS GRÁFICOS
+
+        // Atualizar/inserir o gráfico
+        function updateGraph() {
+
+            function createBarChart(data, title, x_legend, elementId) {
+
+                var trace = {
+                    x: data.map(item => item.group),  // Eixo X com os workcenter_names
+                    y: data.map(item => item.CALC * 100.0), // Eixo Y com log_minutes_count
+                    name: x_legend,  // Nome da série
+                    type: 'bar',
+                    marker: {
+                        color: 'blue'
+                    },
+                    text: data.map(item => `${Number.isInteger(item.CALC) ? item.CALC * 100.0 : (item.CALC * 100.0).toFixed(2)}%`),
+                    textfont: {
+                                    size: 12,
+                                    family: 'Arial Black, sans-serif',
+                                    weight: 'bold',
+                                    color: 'black'
+                                },
+                    textposition: 'outside'  // Ajusta a posição do texto automaticamente
+
+                };
+
+                var layout = {
+                    title: { text: title, font: { size: 25 } },
+                    barmode: 'group',  // Define o agrupamento das barras
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    xaxis: {
+                        tickangle: -45,
+                        automargin: true
+                    },
+                    legend: {
+                        itemclick: false,
+                        itemdoubleclick: false,
+                        font: { size: 20 }
+                    }
+                };
+
+                Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false });
+            }
+
+            if (Object.keys(graphAgg['data']).length === 0) return;
+
+            createBarChart(graphAgg['data'], 'Disponibilidade', 'Disponibilidade', 'chart-container1');
+        }
+
+        // Alterar o agrupador do gráfico
+        function changeGraphType(type) {
+
+            const input = document.getElementById(`chart-agg-type-select${type}`);
+            const checkboxes = document.querySelectorAll('.dropdown-content input[name="chart-agg-type-select"]');
+
+            const button = document.getElementById(`chart-agg-type`);
+
+            const container = document.getElementById('chart-agg-by-container');
+            const optionsContainer = document.getElementById('chart-agg-by-options');
+
+            // Limpa opções anteriores
+            optionsContainer.innerHTML = '';
+
+            if (input.checked) {
+
+                checkboxes.forEach(cb => cb.checked = false);
+                input.checked = true;
+                button.textContent = `Agrupador do gráfico - ${input.value}`;
+                button.style.backgroundColor = '#4CAF50'
+
+                graphAgg['type'] = type
+
+                if (type == 0 || type == 1) {
+                    const field = type === 0 ? 'Workcenter_Name' : 'Workcenter_Group';
+                    const uniqueValues = [...new Set(data.workcenters.map(info => info[field]))]
+                        .sort((a, b) => a.localeCompare(b));
+
+                    let acum = 0
+                    uniqueValues.forEach(value => {
+                        const option = document.createElement('label');
+                        option.innerHTML = `<input type="checkbox" name="chart-agg-by-select" id="chart-agg-by-select${acum}" value="${value}" onclick="changeGraphBy(${acum})">${value}`;
+                        optionsContainer.appendChild(option);
+                        acum++;
+                    });
+
+                    container.style.display = 'block';
+
+
+                } else if (type == 2) {
+                    container.style.display = 'none';
+                }
+
+            } else {
+                button.textContent = `Agrupador do gráfico - Não selecionado`;
+                button.style.backgroundColor = '#921218'
+
+                document.getElementById('chart-agg-by').style.backgroundColor = '#921218';
+                document.getElementById('chart-agg-by').textContent = 'Valor - Não selecionado';
+                document.getElementById('chart-agg-by-options').innerHTML = '<label>Selecione um agrupador</label>';
+
+                graphAgg['type'] = 0
+                container.style.display = 'none';
+            }
+
+            graphAgg['by'] = 'Não selecionado';
+            saveGraphData(data.workcenters)
+
+        }
+
+        // Selecionar o valor do agrupador
+        function changeGraphBy(value) {
+
+            const input = document.getElementById(`chart-agg-by-select${value}`);
+            const checkboxes = document.querySelectorAll('.dropdown-content input[name="chart-agg-by-select"]');
+
+            const button = document.getElementById(`chart-agg-by`);
+
+            if (input.checked) {
+                checkboxes.forEach(cb => cb.checked = false);
+                input.checked = true;
+                button.textContent = `Valor - ${input.value}`;
+                button.style.backgroundColor = '#4CAF50'
+                graphAgg['by'] = input.value;
+            } else {
+                button.textContent = `Valor - Não selecionado`;
+                button.style.backgroundColor = '#921218'
+                graphAgg['by'] = 'Não selecionado';
+            }
+
+            saveGraphData(data.workcenters)
+
+        }
+        
+        // Salvar os dados para mostrar no gráfico
+        function saveGraphData(data) {
+
+            document.getElementById("chart-container1").innerHTML = ""
+            graphAgg['data'] = {}
+
+            const isValid = graphAgg['type'] == 2 || ((graphAgg['type'] == 0 || graphAgg['type'] == 1) && graphAgg['by'] != 'Não selecionado');
+            if (!isValid) return;
+
+            let filtered_data = data
+
+            if (graphAgg['type'] == 0) {
+                filtered_data = filtered_data.filter(info => info.Workcenter_Name == graphAgg['by'])
+            } else if (graphAgg['type'] == 1) {
+                filtered_data = filtered_data.filter(info => info.Workcenter_Group == graphAgg['by'])
+            }
+
+            const grouped = {};
+            filtered_data.forEach(info => {
+                const group = info.Time_Group || 'Livre';
+
+                if (!grouped[group]) {
+                    grouped[group] = {
+                        group: group,
+                        Log_Minutes_Sum: 0,
+                        Log_Minutes_Count: 0,
+                        TotalAvail: 0
+                    };
+                }
+
+                grouped[group].Log_Minutes_Sum += info.Log_Minutes_Sum || 0;
+                grouped[group].Log_Minutes_Count += info.Log_Minutes_Count || 0;
+                grouped[group].TotalAvail += info.TotalAvail || 0;
+            });
+
+            graphData = Object.values(grouped);
+
+            graphAgg['data'] = calcAvaibility(graphData)
+
+            graphAgg['data'] = graphAgg['data'].sort((a, b) => {
+                if (graphAgg['group'] === '0') {
+                    const parseDate = (val) => {
+                        const [day, month] = val.split('/').map(Number);
+                        return new Date(2025, month - 1, day);
+                    };
+
+                    const dateA = parseDate(a.group || '01/01');
+                    const dateB = parseDate(b.group || '01/01');
+                    return dateA - dateB;
+                }
+
+                // Fallback para os outros casos
+                const groupA = a.group || '';
+                const groupB = b.group || '';
+                return groupA.localeCompare(groupB);
+            });
+
+            updateGraph()
+        }
+
+
+        // FUNÇÕES PARA MANIPULAÇÃO DAS TABELAS
+
+        // Calcula a disponibilidade de um grupo/coluna definido na chamada da função
+        function calcAvaibility(grouped) {
+
+            const result = [];
+
+            for (const group in grouped) {
+
+                const sum = grouped[group];
+                const count = sum.Log_Minutes_Count;
+                const logSum = sum.Log_Minutes_Sum;
+                const totalAvailMinutes = sum.TotalAvail * 60;
+
+                const MTTR = count > 0 ? logSum / count : 0;
+                const MTBF = count > 0 ? (totalAvailMinutes - logSum) / count : 1;
+                const denominator = MTTR + MTBF;
+                const CALC = denominator > 0 ? MTBF / denominator : 1;
+
+                result.push({
+                    group: sum.group,
+                    MTTR: MTTR,
+                    MTBF: MTBF,
+                    CALC: CALC
+                });
+            }
+
+            return result
+        }
+
+        // Insere os dados nas tabelas nos bullets points
+        function insertTableData() {
+
+            function configTable(data, elementId, groupType) {
+
+                const tableBody = document.querySelector(elementId);
+                tableBody.innerHTML = '';
+
+                if (groupType) {
+                    
+                    data.filter(info => info.Workcenter_Group == groupType).forEach(info => {
+                        // Cria um novo elemento para exibir os dados
+                        const row = document.createElement('tr'); 
+                
+                        let cell = document.createElement('td');
+                        cell.textContent = info.Time_Group;
+                        row.appendChild(cell);
+
+                        cell = document.createElement('td');
+                        cell.textContent = info.Workcenter_Name;
+                        row.appendChild(cell);
+
+                        cell = document.createElement('td');
+                        cell.textContent = `${Number.isInteger(info.CALC) ? info.CALC * 100.0 : (info.CALC * 100.0).toFixed(2)}%`;
+                        cell.style.fontWeight = 'bold';
+
+                        if ((info.CALC * 100.0).toFixed(2) >= 98) {
+                            cell.style.backgroundColor = '#00B050'
+                        } else if ((info.CALC * 100.0).toFixed(2) >= 97) {
+                            cell.style.backgroundColor = '#FFC000'
+                        } else {
+                            cell.style.backgroundColor = '#FF5050'
+                        }
+
+                        row.appendChild(cell);
+                
+                        tableBody.appendChild(row);
+                    })
+
+                } else {
+
+                    data.forEach(info => {
+
+                        // Cria um novo elemento para exibir os dados
+                        const row = document.createElement('tr'); 
+                
+                        // Nome do Workcenter
+                        let cell = document.createElement('td');
+                        cell.textContent = info.Time_Group;
+                        row.appendChild(cell);
+
+                        cell = document.createElement('td');
+                        cell.textContent = info.Workcenter_Name;
+                        row.appendChild(cell);
+                
+                        // Cálculo formatado
+                        cell = document.createElement('td');
+                        cell.textContent = Number.isInteger(info.Log_Minutes_Sum) ? info.Log_Minutes_Sum : info.Log_Minutes_Sum.toFixed(2);
+                        cell.style.fontWeight = 'bold';
+                        row.appendChild(cell);
+
+                        cell = document.createElement('td');
+                        cell.textContent = info.Log_Minutes_Count;
+                        cell.style.fontWeight = 'bold';
+                        row.appendChild(cell);
+
+
+                        cell = document.createElement('td');
+
+                        let rawValue = parseFloat(info.TotalAvail) * 60.0;
+                        let rounded = Math.round(rawValue * 100.0) / 100.0;
+                        let formatted = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+
+                        cell.textContent = formatted
+                        cell.style.fontWeight = 'bold';
+                        row.appendChild(cell);
+
+                        cell = document.createElement('td');
+                        
+                        cell.textContent = info.MTBF.toFixed(2).toString().includes('.00') ? parseInt(info.MTBF) : info.MTBF.toFixed(2)
+                        cell.style.fontWeight = 'bold';
+                        row.appendChild(cell);
+
+                        cell = document.createElement('td');
+
+                        rawValue = parseFloat(info.MTTR);
+                        rounded = Math.round(rawValue * 100.0) / 100.0;
+                        formatted = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+
+                        cell.textContent = formatted;
+                        cell.style.fontWeight = 'bold';
+                        row.appendChild(cell);
+
+                        cell = document.createElement('td');
+                        cell.textContent = `${Number.isInteger(info.CALC) ? info.CALC * 100.0 : (info.CALC * 100.0).toFixed(2)}%`;
+                        cell.style.fontWeight = 'bold';
+
+                        if ((info.CALC * 100.0).toFixed(2) >= 98) {
+                            cell.style.backgroundColor = '#00B050'
+                        } else if ((info.CALC * 100.0).toFixed(2) >= 97) {
+                            cell.style.backgroundColor = '#FFC000'
+                        } else {
+                            cell.style.backgroundColor = '#FF5050'
+                        }
+
+                        row.appendChild(cell);
+                
+                        // Adiciona na div correspondente
+                        tableBody.appendChild(row);
+                    });
+                }
+            }
+
+            configTable(data.workcenters, '#data-table1 tbody')
+
+            configTable(data.workcenters, '#data-table2 tbody', 'Montagem')
+            configTable(data.workcenters, '#data-table3 tbody', 'Usinagem')
+            configTable(data.workcenters, '#data-table4 tbody', 'Soldagem')
+            configTable(data.workcenters, '#data-table5 tbody', 'Pré-Fabricação')
+
+            const grouped = {};
+            data.workcenters.forEach(info => {
+                const group = info.Workcenter_Group;
+
+                if (!grouped[group]) {
+                    grouped[group] = {
+                        group: group,
+                        Log_Minutes_Sum: 0,
+                        Log_Minutes_Count: 0,
+                        TotalAvail: 0
+                    };
+                }
+
+                grouped[group].Log_Minutes_Sum += parseFloat(info.Log_Minutes_Sum) || 0;
+                grouped[group].Log_Minutes_Count += parseFloat(info.Log_Minutes_Count) || 0;
+                grouped[group].TotalAvail += parseFloat(info.TotalAvail) || 0;
+            });
+
+            const aggAvaibilityList = calcAvaibility(grouped)
+
+        
+            document.getElementsByName('agg-type').forEach(
+                element => {
+                    element.innerHTML = groupMap[document.getElementById('group').value];
+                }
+            );
+            document.getElementById('bullet-extra1').innerHTML = `${data.workcenters.length} linhas`;
+            document.getElementById('bullet-extra2').innerHTML = data.overall.Log_Minutes_Sum ? data.overall.Log_Minutes_Sum.toFixed(2) : '0.00';
+            document.getElementById('bullet-extra3').innerHTML = data.overall.Log_Minutes_Count ? data.overall.Log_Minutes_Count.toFixed(2) : '0.00';
+            document.getElementById('bullet-extra4').innerHTML = data.overall.Availability ? data.overall.Availability.toFixed(2) : '0.00';
+            document.getElementById('bullet-extra5').innerHTML = Number.isInteger(data.overall.MTBF) ? data.overall.MTBF: data.overall.MTBF.toFixed(2);
+            document.getElementById('bullet-extra6').innerHTML = Number.isInteger(data.overall.MTTR) ? data.overall.MTBF : data.overall.MTTR.toFixed(2);
+            document.getElementById('bullet-extra7').innerHTML = `${Number.isInteger(data.overall.CALC) ? data.overall.CALC * 100 : (data.overall.CALC * 100.0).toFixed(2)}%`;
+
+            document.getElementById('bullet-extra8').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Montagem').length} linhas`;
+            document.getElementById('bullet-extra9').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Usinagem').length} linhas`;
+            document.getElementById('bullet-extra10').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Soldagem').length} linhas`;
+            document.getElementById('bullet-extra11').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Pré-Fabricação').length} linhas`;
+            
+            document.getElementById('overall2').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Montagem')?.CALC ?? 1) * 100).toFixed(2)}%`
+            document.getElementById('overall3').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Usinagem')?.CALC ?? 1) * 100).toFixed(2)}%`
+            document.getElementById('overall4').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Soldagem')?.CALC ?? 1) * 100).toFixed(2)}%`
+            document.getElementById('overall5').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Pré-Fabricação')?.CALC ?? 1) * 100).toFixed(2)}%`
+
+        }
+
+        // Função para ordenar as tabelas
+        function sortTable(tableId, columnIndex) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+
+            const rows = Array.from(tbody.rows);
+            const isAscending = sortDirections[tableId][columnIndex];
+
+            // Ordena as linhas
+            rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].innerText;
+                const cellB = b.cells[columnIndex].innerText;
+
+                if (columnIndex == 0) {
+                    if (graphAgg['group'] === '0') {
+                        const parseDate = (val) => {
+                            const [day, month] = val.split('/').map(Number);
+                            return new Date(2025, month - 1, day);
+                        };
+
+                        const dateA = parseDate(cellA || '01/01');
+                        const dateB = parseDate(cellB || '01/01');
+
+                        return isAscending ? dateA - dateB : dateB - dateA;
+                    } else {
+                        return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                    }
+                } else if (['data-table1'].includes(tableId)&& columnIndex > 1) {
+
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else if ('data-table1' != tableId && columnIndex == 3) {
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else {
+                    return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+
+            // Limpa o tbody e adiciona as linhas ordenadas
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Alterna a direção da ordenação
+            sortDirections[tableId][columnIndex] = !isAscending;
+
+            columnIndex = columnIndex + 1;
+            // Remove os estilos de ordenação
+            Array.from(table.getElementsByTagName('th')).forEach((th, index) => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (index === columnIndex) {
+                    th.classList.toggle('sorted-desc', sortDirections[tableId][columnIndex - 1]);
+                    th.classList.toggle('sorted-asc', !sortDirections[tableId][columnIndex - 1]);
+                }
+            });
+        }
+
+
+        // FUNÇÃO PARA PESQUISAR OS DADOS
+
+        function update() {
+            
+            document.getElementById('searchButton').disabled = true;
+
+            document.querySelector('#data-table1 tbody').innerHTML = ''
+
+            document.querySelector('#data-table2 tbody').innerHTML = ''
+            document.querySelector('#data-table3 tbody').innerHTML = ''
+            document.querySelector('#data-table4 tbody').innerHTML = ''
+            document.querySelector('#data-table5 tbody').innerHTML = ''
+
+            document.getElementById("chart-container1").innerHTML = ""
+            document.getElementById('chart-agg-type-container').style.display = 'none'
+            document.getElementById('chart-agg-by-container').style.display = 'none'
+
+            graphAgg['data'] = {}
+            graphAgg['type'] = 0
+
+            showLoaders()
+
+            if (xhr && xhr.readyState !== XMLHttpRequest.UNSENT) {
+                xhr.abort();
+            }
+
+            const data_to_send = getFilters()
+
+            xhr.open("POST", "/manutencao/disponibilidade?type=dash", true);
+            xhr.setRequestHeader("Content-type","application/json");
+            xhr.onreadystatechange = function () {
+
+                if (xhr.readyState === 4 && xhr.status === 200) {
+
+                    document.getElementById('searchButton').disabled = false;
+
+                    data = {}
+                    
+                    data['workcenters'] = JSON.parse(xhr.responseText)['workcenters']
+                    data['overall'] = JSON.parse(xhr.responseText)['overall']
+
+
+                    hideLoaders()
+                    insertTableData()
+
+                    document.getElementById('chart-agg-type-container').style.display = 'block'
+
+                    updateGraph()
+                }
+            }
+            
+            xhr.send(JSON.stringify(data_to_send))
+        }
+
+
+        // FUNÇÕES PARA FILTRAR OS DADOS
+
+        // Função para obter os filtros selecionados - retorna um objeto com os filtros
+        function getFilters() {
+
+            const time_group = document.getElementById("group").value;
+            graphAgg['group'] = time_group
+
+            const shift = Array.from(document.querySelectorAll("button[name='shift']")).filter(button => button.value != '').map(button => button.value);
+            const start_date = document.getElementById("start_date").value;
+            const end_date = document.getElementById("end_date").value;
+
+            const m_event = Array.from(document.querySelectorAll(`input[name='group0']:checked`)).map(checkbox => checkbox.value);
+
+            const w_group = Array.from(document.querySelectorAll(`input[name='group1']:checked`)).map(checkbox => checkbox.value);
+
+            const w_name_plex = Array.from(document.querySelectorAll(`input[name='group2']:checked`))
+                .filter(checkbox => checkbox.value != '1')
+                .map(checkbox => checkbox.value)
+
+            const w_name_mic = Array.from(document.querySelectorAll(`input[name='group2']:checked`))
+                .filter(checkbox => checkbox.value == '1')
+                .map(checkbox => checkbox.parentElement.innerText)
+
+
+            return {
+
+                time_group: time_group,
+
+                m_event: m_event,
+                w_group: w_group,
+
+                w_name_plex: w_name_plex,
+                w_name_mic: w_name_mic,
+
+                shift: shift,
+                start_date: start_date,
+                end_date: end_date
+
+            }
+        }
+
+        // Função para alternar o estado de seleção de um botão
+        function toggle(button) {
+            if (button.value == "") {
+                button.classList.add('selected');
+                button.value = button.innerText
+            } else {
+                button.classList.remove('selected');
+                button.value = ""
+            }
+        }
+
+        // Função para selecionar um grupo inteiro de checkboxes 
+        function toggleExclusiveFilter(group) {
+            const input = document.getElementById(`sel_${group}`);
+            const checkboxes = document.getElementsByName(group)
+
+            if (input.checked) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = false);
+            }
+        }
+
+
+        // FUNÇÕES GERAIS
+
+        // Função para fazer o download do Excel   
+        function downloadExcel() {
+
+            if (Object.keys(data).length === 0) {
+                alert("Para fazer download você deve filtrar os dados!")
+                return
+            }
+
+            document.getElementById('downloadButton').disabled = true;
+
+            const data_to_send = getFilters()
+
+            fetch("/manutencao/disponibilidade?type=excel", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data_to_send)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar o Excel');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'manutenção.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error))
+            .finally(() => {
+                document.getElementById('downloadButton').disabled = false;
+            });
+        }
+
+        // Função para mostrar o efeito de carregamento
+        function showLoaders() {
+
+            document.querySelectorAll('.loader').forEach(function(loader) {
+                loader.style.display = 'block';
+            });
+
+        }
+
+        // Função para esconder o efeito de carregamento
+        function hideLoaders() {
+
+            document.querySelectorAll('.loader').forEach(function(loader) {
+                loader.style.display = 'none';
+            });
+        }
+        
+        // Função para rolar suavemente entre os slides
+        function scrollSmooth(direction) {
+            const upButton = document.getElementById('up');
+            const downButton = document.getElementById('down');
+            const chartContainer = document.getElementById('chart-container');
+            const containerHeight = chartContainer.offsetHeight - 20;
+            const scrollAmount = containerHeight;
+
+            // Desabilita os botões
+            upButton.disabled = true;
+            downButton.disabled = true;
+
+            // Realiza o scroll suave
+            chartContainer.scrollBy({
+                top: direction === 'up' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+
+            // Aguarda a duração estimada da animação (~500ms) antes de reabilitar os botões
+            setTimeout(() => {
+                upButton.disabled = false;
+                downButton.disabled = false;
+            }, 400); // ajuste esse valor conforme necessário
+        }
+
+
+
+        function getWeekRange(year, week) {
+            // Primeiro dia do ano
+            const firstJan = new Date(year, 0, 1);
+            const daysOffset = (week - 1) * 7;
+
+            const tempDate = new Date(firstJan.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+
+            // Ajustar para a segunda-feira
+            const day = tempDate.getDay(); // 0 (domingo) a 6 (sábado)
+            const diffToMonday = (day === 0 ? -6 : 1) - day; // ajustar para segunda
+            const monday = new Date(tempDate);
+            monday.setDate(tempDate.getDate() + diffToMonday);
+
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            // Formato YYYY-MM-DD
+            const format = (d) => d.toISOString().split('T')[0];
+
+            return {
+                first_day: format(monday),
+                last_day: format(sunday)
+            };
+        }
+    </script>
+</body>
+</html>

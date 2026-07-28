@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+   </head>
+    
+    <body class="page_body">
+        <a id="select_back" href="/computadores" style="position: absolute;">&times;</a>
+        <div class="topnav">
+            <p class="title"><i class="fa-solid fa-computer"></i>  Solicitação de Desktops ou Notebooks</p><br>
+        </div>
+        
+        <div class="edit_body" id="body">
+            <form method="post" action="/computadores/registrar" enctype="multipart/form-data" id="form_data">
+
+                <p style="width: 40vw;" class="edit_label"><b>Fluxo do registro</b></p><br>
+                <ol class="sol_desc" style="margin-left:0">
+                    <li><a class="sol_desc">Caso o colaborador tenha uma CPU. Abrir chamado na TI para avaliação de hardware;</a></li>
+                    <li><a class="sol_desc">Preencher o formulário abaixo;</a></li>
+                    <li><a class="sol_desc">Aguardar aprovação do gestor direto via Digital JOST;</a></li>
+                    <li><a class="sol_desc">Aguardar resposta do responsável pelos investimentos;</a></li>
+                    <li><a class="sol_desc">Após aprovação, abrir chamado via CSC p/ oficializar com TI corporativa.</a></li>
+                </ol>
+
+                <p style="width: 40vw;" class="edit_label">Usuário de rede do responsável geral: </p>
+                <input list="matriculas" class="edit_filter" required type="text" name="matricula" id="matricula" placeholder="Usuário do colaborador..." autocomplete="off"><br>
+                <datalist id="matriculas">
+                    {% for o in options %}
+                    <option value="{{o}}">{{o}}</option>
+                    {% endfor %}
+                </datalist>
+
+                <p style="width: 40vw;" class="edit_label">O computador será para fábrica? </p>
+                <select required class="edit_filter" name="turno_1" id="tuno_1">
+                    <option value="0" selected>Não</option>
+                    <option value="1">Sim</option>
+                </select><br>
+
+                <p style="width: 40vw;" class="edit_label">Uso será compartilhado? </p>
+                <select required class="edit_filter" name="turno_1" id="tuno_1">
+                    <option value="0" selected>Não</option>
+                    <option value="1">Sim</option>
+                </select><br>
+
+                <p style="width: 40vw;" class="edit_label">Tipo: </p>
+                <select required class="edit_filter" name="tipo" id="tipo">
+                    <option value="0">Desktop</option>
+                    <option value="1" selected>Notebook</option>
+                </select>
+
+                <p style="width: 40vw;" class="edit_label"><b>Avaliação TI</b></p><br>
+                <a class="sol_desc">Adicione uma imagem com o resultado do laudo da TI.</a><br>
+                <label id="placehold_1" class="add_img" for="input_1">Adicione documentos...</label>
+                <input class="img_input" id="input_1" type="file" name="docs" accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*">
+                <br>
+                <a class="add_img_lbl" id="label_1">Arquivos selecionados:</a>
+                <div class="lista" id="lista_1"></div>
+                <br>
+
+                <button onclick="registrar()" type="button" class="edit_label" id="edit_ask">Registrar</button>
+
+            </form>
+        </div>
+        
+    </body>
+
+    <script>
+        {% include 'jdt.computers/computers_new.js' %}
+    </script>
+</html>
+

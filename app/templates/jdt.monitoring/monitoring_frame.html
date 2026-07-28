@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: #f0f0f0;
+            margin: 0;
+            padding-top: 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        h1, h2 {
+            color: #ffffff;
+        }
+        #status-container {
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #1a73e8;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            height: 60px;
+        }
+        #status, #reason, #timeInStatus {
+            margin: 0;
+        }
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            background-color: rgba(255, 255, 255, 0.1);
+            margin: 60px 20px 60px 20px;
+            width: calc(100vw - 40px);
+        }
+
+        .chart {
+            width: 24%;
+            height: 43vh;
+            min-width: 300px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Novo layout flex para o header */
+        .sc-left, .sc-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        .sc-left { justify-content: flex-start; }
+        .sc-center { display: flex; justify-content: center; align-items: center; }
+        .sc-right { justify-content: flex-end; gap: 1vw; }
+        #workcenter { text-align: left; }
+        #timeInStatus { color: white; }
+        #shiftStatus { background-color: black; padding: 0.2em; border-radius: 5px; cursor: pointer; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1em;
+        }
+
+
+        /* ===================== RESPONSIVIDADE ===================== */
+        #status-container { font-size: clamp(1.1rem, 2.2vw, 2rem); }
+
+        #shiftStatus { 
+            /* aumentado */
+            font-size: clamp(.8rem, 1.05vw, 1.25rem); 
+            padding: .4em .85em; 
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        /* Mantém 4 colunas até ~1480px para evitar quebra prematura em 1536px */
+        @media (max-width: 1700px) {
+            .chart { width: 24%;height: 42vh; }
+            .gauge-chart { height: 55%; }
+            .chart--tall .gauge-chart { height: 85%; }
+            .chart-container { margin-top: 3.5rem; }
+        }
+        @media (max-width: 1480px) {
+            .gauge-chart { height: 70%; }
+            .chart--tall .gauge-chart { height: 85%; }
+        }
+
+        @media (max-width: 1350px) {
+            .chart { width: 48%; height: 42vh; }
+            .gauge-chart { height: 65%; }
+            .chart--tall .gauge-chart { height: 80%; }
+            .chart-container { justify-content: space-evenly; }
+            #operators .operator-value { font-size: clamp(2.8rem, 6.2vw, 5.2rem); }
+            body { overflow-y: auto; }
+
+        }
+
+        @media (max-width: 1000px) {
+            #status-container { flex-wrap: wrap; height: auto; row-gap: .4rem; padding: 10px 14px; }
+            .sc-left, .sc-center, .sc-right { flex: 1 1 100%; justify-content: center; }
+            .sc-left { order: 1; }
+            .sc-center { order: 2; }
+            .sc-right { order: 3; gap: 2rem; }
+            #timeInStatus, #shiftStatus { font-size: .55em; }
+            .chart-container { margin-top: calc(60px + 4.5rem); }
+            .chart { width: 48%; height: 320px; }
+        }
+
+        @media (max-width: 680px) {
+            .chart { width: 100%; height: 300px; }
+            .gauge-chart { height: 60%; }
+            .chart--tall .gauge-chart { height: 75%; }
+            .info { flex-wrap: wrap; row-gap: .4rem; }
+            #status-container { font-size: clamp(1rem, 4.2vw, 1.5rem); }
+            #timeInStatus, #shiftStatus { font-size: .6em; }
+        }
+
+        /* Telas com altura limitada (como 1536x730 inner 730) */
+        @media (max-height: 780px) and (min-width: 1200px) {
+            #status-container { padding: 12px 16px; }
+        }
+        @media (max-height: 750px) {
+            body { overflow-y: auto; }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            position: relative;
+            border-spacing: 5px; /* Define o espaçamento entre as células */
+        }
+
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-radius: 5px;
+
+        }
+    
+        
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border-radius: 8px;
+            margin: 5px;
+        }
+
+        table th {
+            background-color: rgba(21, 58, 138, 0.842);
+            color: white;
+        }
+
+    </style>
+    
+    <script src="{{ url_for('static', filename= 'plotly-latest.min.js') }}" charset="utf-8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+    <div id="status-container">
+        <div class="sc-left">
+            <div id="workcenter"></div>
+        </div>
+        <div class="sc-center">
+            <div id="status"><span id="centerStatus"></span><span id="stopReason" style="display:none;"></span></div>
+        </div>
+        <div class="sc-right">
+            <div id="timeInStatus"></div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h1 style="width: 100%;text-align: center;">Quadro - Hora x Hora</h1>
+        <div style="margin: 1vw;width: 100%;">
+            <table>
+                <head>
+                    <tr>
+                        <th colspan="5" style="background-color: rgba(255,255,255,0.06);">Por Hora</th>
+                        <th colspan="4" style="background-color: rgba(255,255,255,0.06);">Acumulado</th>
+                    </tr>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Produzido</th>
+                        <th>Meta</th>
+                        <th>Performance</th>
+                        <th>Qualidade</th>
+                        <th>Produzido</th>
+                        <th>Meta</th>
+                        <th>Performance</th>
+                        <th>Qualidade</th>
+                    </tr>
+                </head>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="errorModal" class="modal" style="z-index: 1000;">
+        <div class="modal-content" style="width: 50%;">
+            <h1 id="errorModalMessage" style="color: white;"></h1>
+        </div>
+    </div>
+
+
+    <script>
+        let globalData = null;
+        const user = '{{user}}'
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                modal.style.display = 'flex';
+            }
+
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                modal.style.display = 'none';
+            }
+
+            function updateDashboard() {
+                axios.post('/monitoramento/quadro?ct={{workcenter}}').then(response => {
+                    closeModal('errorModal')
+                    globalData = response.data;
+                    updateUI(globalData);
+                }).catch(async error => {
+                    console.error('Error updating dashboard:', error);
+
+                    async function hasInternetConnection() {
+                        try {
+                            await fetch('https://jost.on.plex.com', { mode: 'no-cors' });
+                            return true;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+
+                    const online = await hasInternetConnection();
+                    let message;
+
+
+                    if (!online) {
+                        message = `Sem conexão de internet.${user === 'fabrica_jost' ? '<br><br>Comunique a sua liderança.' : ''}`;
+                    } else if (!error.response) {
+                        message = `Não foi possível conectar ao Digital JOST.${user === 'fabrica_jost' ? '<br><br>Comunique a sua liderança.' : ''}`;
+                    } else if (error.response.status == 404) {
+                        message = `Centro não encontrado - {{workcenter}}`;
+                    } else {
+                        message = `Erro ao atualizar o dashboard: ${error.response.status}.${user === 'fabrica_jost' ? '<br><br>Comunique a sua liderança.' : ''}`;
+                    }
+
+                    document.getElementById('errorModalMessage').innerHTML = message;
+                    openModal('errorModal', null);
+
+                });
+            }
+
+            function updateUI(data) {
+                document.getElementById('workcenter').innerText = `${data.workcenter}`;
+                document.getElementById('centerStatus').innerText = data.status;
+                document.getElementById('timeInStatus').innerText = `Tempo: ${data.statusTime}`;
+
+                if (data.reason != '-') {
+                    document.getElementById('stopReason').style.display = 'inline';
+                    document.getElementById('stopReason').innerText = ` ${data.reason}`;
+                    document.getElementById('status-container').style.backgroundColor = '#DC4B3C'; // Vermelho
+                    document.getElementById('centerStatus').innerText = ''; // Verde
+                } else {
+                    document.getElementById('stopReason').style.display = 'none';
+                    document.getElementById('status-container').style.backgroundColor = '#1FA11D'; // Verde
+                }
+
+            }
+
+
+            updateDashboard();
+            setInterval(updateDashboard, 30000);
+
+        });
+        
+    </script>
+</body>
+</html>

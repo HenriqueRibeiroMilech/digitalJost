@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            color: #fff;
+        }
+        .itens {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container, .table-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 45%;
+            height: auto;
+            transition: all 0.5s ease;
+        }
+        .container h1, .table-container h1 {
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group input, .input-group select {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            width: 20vw;
+            font-size: 2vw;
+        }
+        .input-group button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #153A8A;
+            color: #fff;
+            font-size: 2vw;
+            cursor: pointer;
+        }
+
+        .dates {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1vh;
+            margin-bottom: 1vh;
+        }
+
+        .dates label {
+            margin-right: 10px;
+        }
+
+        .dates input, .dates select {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            width: 10vw;
+            font-size: 1vw;
+            margin-right: 1vw;
+            margin-left: 0.3vw;
+        }
+
+        .input-group button:hover {
+            background-color: #2e52a7;
+        }
+        .input-group label {
+            font-size: 1.2vw;
+            margin: 5px 0;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: left;
+            display: none;
+        }
+        .result h2 {
+            font-size: 3vw;
+        }
+        .result p {
+            font-size: 2vw;
+            margin: 5px 0;
+        }
+        .result .status {
+            font-size: 4vw;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+        table {
+            width: 96%;
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        table, th, td {
+            border: 1px solid #fff;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            font-size: 1.5vw;
+            background-color: gray;
+        }
+        th {
+            background-color: #153A8A;
+        }
+        #resultsTable {
+            max-height: 50vh;
+            margin: 0;
+            width: 100%;
+        }
+        #resultsTable thead  {
+            position: sticky;
+            top: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+        .full-screen {
+            width: 90%;
+            height: 90vh;
+        }
+
+        .default-button {
+            width: 10vw;
+            cursor: pointer;
+            font-size: 2vw;
+            color: #fff;
+            background-color: #153A8A;
+            border-radius: 5px;
+            border: none;
+            padding: 10px 20px;
+        }
+
+        .default-button:hover {
+            background-color: #2e52a7;
+        }
+
+        .back-button {
+            position: absolute;
+            bottom: 5%;
+            left: 45%;
+
+        }
+
+        ::-webkit-scrollbar {
+        width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+        background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+        background-color: #5B75AD;
+        border-radius: 0px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+        background-color: #ffffff;
+        cursor: pointer;
+        }
+
+        #main-title {
+            position: absolute;
+            width: 100vw;
+            text-align: center;
+            font-size: 4.5vw;
+        }
+
+        .scroll-buttons {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            position: absolute;
+        }
+
+        /* Teclado numérico */
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            width: 30vw;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .key {
+            flex: 1 1 20%;
+            margin: 5px;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #153A8A;
+            color: #fff;
+            text-align: center;
+            font-size: 2vw;
+            cursor: pointer;
+        }
+
+        .key.empty {
+            background: none;
+        }
+
+        .key:hover {
+            background-color: #2e52a7;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            color:black;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 1% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 85%;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .modal-content button {
+            background-color: #153A8A;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.5vw;
+        }
+
+        .modal-content button:hover {
+            background-color: #2e52a7;
+        }
+
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2vw;
+        }
+
+    </style>
+</head>
+<body>
+    <button id='back_button' class="scroll-buttons" style="top:1vw;right:1vw;font-size: 1vw;" onclick="window.location='/'"><i class="fas fa-x"></i></button>
+
+    <h1 id="main-title">CONSULTAR NOTAS DE MANUTENÇÃO</h1>
+    <div class="itens">
+        <div class="table-container" id="tableContainer">
+            <h1 style="font-size: 2.5vw;">POR CENTRO DE TRABALHO</h1>
+            <div class="input-group">
+                <div class="dates">
+                    <select id="workCenter">
+                        {% for o in workCenter %}
+                        <option value="{{o}}">{{o}}</option>
+                        {% endfor %}
+                    </select>
+                    <label for='startDate'>Inicio</label>
+                    <input type="date" id="startDate">
+                    <label for='endDate'>Fim</label>
+                    <input type="date" id="endDate">
+                    <label for='activated' style="width: 8vw;">Finalizadas</label>
+                    <input type="checkbox" style="width: 40px; height: 40px;" id="activated">
+                </div>
+                <button onclick="searchByWorkCenter()">PESQUISAR</button>
+            </div>
+            <div style='height: 0vh;overflow-y: auto;overflow-x: hidden;' id='table-overflow'>
+                <table id="resultsTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>N° da Nota</th>
+                            <th>Data de Abertura</th>
+                            <th>Nome do equipamento</th>
+                            <th>Problema</th>
+                            <th>N° da Ordem</th>
+                            <th>Responsável</th>
+                            <th>Prazo</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button class="default-button back-button hidden" id="backButton1" onclick="resetView()">VOLTAR</button>
+        </div>
+
+        <div class="container" id="noteContainer">
+            <div id="input-group">
+                <h1 style="font-size: 2.5vw;">POR NÚMERO DE NOTA</h1>
+                <div class="input-group">
+                    <input type="number" id="noteNumber" placeholder="DIGITE O NUMERO">
+                    <button onclick="searchNote()">PESQUISAR</button>
+                </div>
+            </div>
+
+            <!-- Teclado numérico -->
+            <div class="keyboard" id='keyboard'>
+                <div class="key" onclick="appendNumber('1')">1</div>
+                <div class="key" onclick="appendNumber('2')">2</div>
+                <div class="key" onclick="appendNumber('3')">3</div>
+                <div class="key" onclick="appendNumber('4')">4</div>
+                <div class="key" onclick="appendNumber('5')">5</div>
+                <div class="key" onclick="appendNumber('6')">6</div>
+                <div class="key" onclick="appendNumber('7')">7</div>
+                <div class="key" onclick="appendNumber('8')">8</div>
+                <div class="key" onclick="appendNumber('9')">9</div>
+                <div class="key empty"></div>
+                <div class="key" onclick="appendNumber('0')">0</div>
+                <div class="key" onclick="deleteNumber()"><i class="fas fa-backspace"></i></div>
+            </div>
+
+            <div class="result" id="result">
+                <h2>Detalhes da Nota de Manutenção - <span id="numeroNota"></span></h2>
+                <p><strong>Data de Abertura:</strong> <span id="dataAbertura"></span></p>
+                <p><strong>Centro de Trabalho:</strong> <span id="centroTrabalho"></span></p>
+                <p><strong>Equipamento:</strong> <span id="descricaoEquipamento"></span></p>
+                <p><strong>Problema:</strong> <span id="problema"></span></p>
+                <p><strong>Número da Ordem:</strong> <span id="numeroOrdem"></span></p>
+                <p><strong>Tipo de Ordem:</strong> <span id="tipoOrdem"></span></p>
+                <p><strong>Responsavel:</strong> <span id="responsavelOrdem"></span></p>
+                <p><strong>Prazo:</strong> <span id="prazoOrdem"></span></p>
+                <p class="status" id="status"></p>
+            </div>
+            <button class="default-button back-button hidden" id="backButton2" onclick="resetView()">VOLTAR</button>
+        </div>
+    </div>
+
+    <div id="noNotesModal" class="modal">
+        <div class="modal-content">
+            <h1>Não há notas de manutenção com o filtro especificado.</h1>
+            <button onclick="closeModal()">Fechar</button>
+        </div>
+    </div>
+
+    <div id="loadingOverlay">
+        <p>Pesquisando...</p>
+    </div>
+
+    <script>
+        
+        if ('{{user}}' == 'fabrica_jost') {
+            document.getElementById('back_button').style.display = 'none'
+        }
+        
+        function searchNote() {
+            const noteNumber = document.getElementById('noteNumber').value;
+            showLoading()
+
+            fetch('/manutencao/controle/consulta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ noteNumber })
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (data.id == 'NOT FOUND') {
+                    throw new Error("openDate is undefined");
+                }
+
+                hideLoading()
+
+                document.getElementById('dataAbertura').textContent = data.openDate;
+                document.getElementById('numeroNota').textContent = data.id;
+                document.getElementById('centroTrabalho').textContent = data.workCenter;
+                document.getElementById('descricaoEquipamento').textContent = data.equipmentName;
+                document.getElementById('problema').textContent = data.problem;
+                document.getElementById('numeroOrdem').textContent = 'None' !== data.main_order ? data.main_order : 'Sem ordem criada';
+                document.getElementById('tipoOrdem').textContent = 'nan' !== data.type ? data.type : '-';
+                document.getElementById('status').textContent = 'nan' !== data.text ? 'Ação realizada: ' + data.text : 'Nenhuma ação realizada';
+                document.getElementById('responsavelOrdem').textContent = 'nan' !== data.responsible ? data.responsible : '-';
+                document.getElementById('prazoOrdem').textContent = 'nan' !== data.deadline ? data.deadline : '-';
+
+                // Expand the note container and hide the table container
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('noteContainer').classList.add('full-screen');
+                document.getElementById('tableContainer').classList.add('hidden');
+                document.getElementById('backButton2').classList.remove('hidden');
+                document.getElementById('main-title').style.display = 'none';
+                document.getElementById('keyboard').style.display = 'none';
+                document.getElementById('input-group').style.display = 'none';
+            })
+            .catch(error => {
+                hideLoading()
+                showModal();
+            });
+
+        }
+
+        function searchByWorkCenter() {
+            const workCenter = document.getElementById('workCenter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const activated = document.getElementById('activated').checked;
+
+            showLoading()
+            fetch('/manutencao/controle/consulta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ workCenter, startDate, endDate, activated })
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                const table = document.getElementById('resultsTable');
+                const table_overflow = document.getElementById('table-overflow');
+                const tbody = table.querySelector('tbody');
+                tbody.innerHTML = '';
+
+                if (data.id == 'NOT FOUND') {
+                    throw new Error("openDate is undefined");
+                }
+                hideLoading()
+
+
+                for (let i = 0; i < data.id.length; i++) {
+                    const row = document.createElement('tr');
+
+                    const idCell = document.createElement('td');
+                    const idButton = document.createElement('button');
+                    idButton.classList.add("default-button")
+                    idButton.style.fontSize = '1.5vw'
+                    idButton.textContent = data.id[i];
+                    idButton.onclick = () => viewNoteById(data.id[i]);
+                    idCell.appendChild(idButton);
+                    row.appendChild(idCell);
+
+                    const openDateCell = document.createElement('td');
+                    openDateCell.textContent = data.openDate[i];
+                    row.appendChild(openDateCell);
+
+                    const workCenterCell = document.createElement('td');
+                    workCenterCell.textContent = 'nan' !== data.equipmentName[i] ? data.equipmentName[i] : 'Não registrado';
+                    row.appendChild(workCenterCell);
+
+                    const problemCell = document.createElement('td');
+                    problemCell.textContent = data.problem[i];
+                    row.appendChild(problemCell);
+
+                    const mainOrderCell = document.createElement('td');
+                    mainOrderCell.textContent = !['None', 'nan'].includes(data.main_order[i]) ? data.main_order[i] : 'Sem ordem criada';
+                    row.appendChild(mainOrderCell);
+
+                    const responsibleCell = document.createElement('td');
+                    responsibleCell.textContent = 'nan' !== data.responsible[i] ? data.responsible[i] : '-';
+                    row.appendChild(responsibleCell);
+
+                    const deadlineCell = document.createElement('td');
+                    deadlineCell.textContent = 'nan' !== data.deadline[i] ? data.deadline[i] : '-';
+                    row.appendChild(deadlineCell);
+
+                    tbody.appendChild(row);
+                }
+
+                table.style.display = 'table';
+                table_overflow.style.height = '50vh';
+                // Expand the table container and hide the note container
+                document.getElementById('tableContainer').classList.add('full-screen');
+                document.getElementById('noteContainer').classList.add('hidden');
+                document.getElementById('backButton1').classList.remove('hidden');
+                document.getElementById('main-title').style.display = 'none';
+
+            })
+            .catch(error => {
+                hideLoading()
+                showModal();
+            });
+            
+        }
+
+        function viewNoteById(noteNumber) {
+            document.getElementById('noteNumber').value = noteNumber;
+            resetView()
+            searchNote();
+        }
+
+        function resetView() {
+            document.getElementById('tableContainer').classList.remove('full-screen');
+            document.getElementById('noteContainer').classList.remove('full-screen');
+            document.getElementById('tableContainer').classList.remove('hidden');
+            document.getElementById('noteContainer').classList.remove('hidden');
+            document.getElementById('backButton1').classList.add('hidden');
+            document.getElementById('backButton2').classList.add('hidden');
+            document.getElementById('resultsTable').style.display = 'none';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('table-overflow').style.height = '0';
+            document.getElementById('main-title').style.display = 'block';
+            document.getElementById('keyboard').style.display = 'flex';
+            document.getElementById('input-group').style.display = 'block';
+
+        }
+
+        window.onload = function() {
+            var startDateInput = document.getElementById('startDate');
+            var endDateInput = document.getElementById('endDate');
+            
+            var today = new Date();
+            var startDate = new Date();
+            startDate.setDate(today.getDate() - 20);
+            
+            var formattedToday = today.toISOString().split('T')[0];
+            var formattedStartDate = startDate.toISOString().split('T')[0];
+            
+            endDateInput.value = formattedToday;
+            startDateInput.value = formattedStartDate;
+        }
+
+        function appendNumber(number) {
+            const noteNumberInput = document.getElementById('noteNumber');
+            noteNumberInput.value += number;
+        }
+
+        function deleteNumber() {
+            const noteNumberInput = document.getElementById('noteNumber');
+            noteNumberInput.value = noteNumberInput.value.slice(0, -1);
+        }
+
+        function showModal() {
+            let modal = document.getElementById("noNotesModal");
+            modal.style.display = "block";
+        }
+
+        function closeModal() {
+            let modal = document.getElementById("noNotesModal");
+            modal.style.display = "none";
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>

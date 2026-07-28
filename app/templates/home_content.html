@@ -1,0 +1,31 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+  <source src="/static/videos/{{video}}" type="video/mp4">
+</video>
+
+<body id="content" onload="animate()">
+    <div id="logo_tdg">
+        <img id="digitaljost_logo" src="{{ url_for('static', filename= 'images/jost_white1.png') }}">
+    </div>
+    <div class="wrapper_2">
+        <button class="home_btn" id="dem_btn" onclick="openNav('dem')"><i class="far fa-list-alt"></i> Demandas</button>
+        <button class="home_btn" id="op_btn" onclick="openNav('op')"><i class="far fa-folder-open"></i> OP Meeting</button><br>
+        <button class="home_btn" id="app_btn" onclick="openNav('apps')"><i class="fas fa-chart-bar"></i> Relatórios</button>
+        <button class="home_btn" id="sol_btn" onclick="openNav('sol')"><i class="fas fa-paper-plane"></i> Solicitações</button><br>
+        <button class="home_btn" id="tdg_btn" onclick="openNav('tdg')"><i class="fa fa-desktop"></i> Transformação Digital</button>
+    </div>
+
+</body>
+
+<script>
+    {% include 'home_content.js' %}
+</script>
+
+{% endblock %}

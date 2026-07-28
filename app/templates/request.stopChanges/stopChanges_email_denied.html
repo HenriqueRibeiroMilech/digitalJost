@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificação de Alteração de Parada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            padding: 20px;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.1em;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #153A8A;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: white;
+            background-color: #153A8A;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #2e52a7;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ALTERAÇÃO DE PARADA RECUSADA - ID {{requestId}}</h1>
+        <p>SUA SOLICITAÇÃO FOI RECUSADA!</p>
+        <p><span class="highlight">{{approverName}}</span> recusou a sua solicitação de alteração de motivo de parada com ID <span class="highlight">{{requestId}}</span>.</p>
+        <p>A justificativa da não aprovação é a seguinte:<br><span class="highlight">"{{deniedText}}"</span></p>
+        <p>Abaixo, a justificativa que você definiu para a solicitação:<br><span class="highlight">"{{requestText}}"</span></p>
+        <p>Caso exista alguma dúvida, entre em contato com o responsável pela aprovação.</p>
+        <a href="http://digitaljost.randon.com.br/oee/paradas/alterar/solicitacoes/{{requestId}}" class="button">Acessar Página</a>
+    </div>
+</body>
+</html>

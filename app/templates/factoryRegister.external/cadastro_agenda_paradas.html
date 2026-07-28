@@ -1,0 +1,14 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<body onload="removeNav()">
+    <div class="iframe_container">
+        <iframe id="dash_iframe" title="Relatório Trilhos" width="1000" height="474.78" src="http://svh-aut-07/FTWeb/CadastroAgendaParada.aspx" frameborder="0"></iframe>
+    </div>
+</body>
+{% endblock %}

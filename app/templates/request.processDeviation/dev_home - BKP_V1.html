@@ -1,0 +1,41 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_documentos.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" type="video/mp4">
+</video>
+
+<body id="content" class="page_body" style="overflow: hidden;">
+
+    <div id='boa_pratica'>AVISO DE BOA PRATICA! Marque uma reunião com as demais<br> áreas para alinhar as informações antes de solicitar o desvio.</div>
+
+    <button id="select_back" style="transform:translate(0, -10%);" onclick="window.location='/'">&times;</button>
+    <p class="title" id="title">Desvios de Processo</p>
+    <p class="title_desc" id="title_desc">Transformação Digital JOST</p>
+    <div class="data_container" id="data">
+        <div class="btn_wrapper">
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/gerar'" class="docs_btn" id='criar' onmouseleave="returnSt()" onmouseover="changeData('criar')">Criar</button><br>
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/consultar'" class="docs_btn" id='hist' onmouseleave="returnSt()" onmouseover="changeData('hist')">Visualizar Desvios</button><br>
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/aprovacoes'" class="docs_btn" id='view' onmouseleave="returnSt()" onmouseover="changeData('view')">Minhas aprovações</button><br>
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/aprovadores'" class="docs_btn" id='cad' onmouseleave="returnSt()" onmouseover="changeData('cad')">Aprovadores de Desvios</button><br>
+        </div>
+
+        <div class="text_wrapper" id="text">
+            <p class="title" id="display_title">Selecione</p>
+            <p class="title_desc" id="display_desc">uma opção para continuar...</p>
+        </div>
+    </div>
+
+
+</body>
+
+<script>
+    {% include 'request.processDeviation/dev_home.js' %}
+</script>
+{% endblock %}
+

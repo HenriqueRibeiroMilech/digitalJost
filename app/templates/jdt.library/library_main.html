@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-size: 4vw;
+        }
+
+        .subtitle {
+            font-size: 1.5vw;
+            position: absolute;
+            top: 2%;
+        }
+
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            height: 50vh;
+            width: 80%;
+        }
+
+        .button-container button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 2vw;
+            border: none;
+            border-radius: 5px;
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-container button:hover {
+            background-color: #3563c8;
+        }
+
+        .description {
+            margin-bottom: 20px;
+            position: absolute;
+            bottom: 2%;
+        }
+
+        .create-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #153A8A;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .create-button:hover {
+            background-color: #2e52a7;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="text"], textarea, .dropbtn {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        textarea {
+            height: 100px;
+            resize: none;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #3e8e41;
+        }
+
+        .permission-container {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .permission-container input {
+            flex-grow: 1;
+        }
+
+        .permission-container button, #create {
+            margin-left: 10px;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #153A8A;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .permission-container button:hover, #create:hover {
+            background-color: #2e52a7;
+        }
+
+        .permission-list {
+            margin-top: 10px;
+        }
+
+        .permission-item {
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .permission-item button {
+            background-color: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .permission-item button:hover {
+            color: #ccc;
+        }
+
+        .warning {
+            margin-top: 20px;
+            color: white;
+        }
+
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2vw;
+        }
+
+        .permission-list {
+            max-height: 12vh;
+            overflow-y:scroll;
+        }
+
+        .dropdown-content::-webkit-scrollbar, .permission-list::-webkit-scrollbar {
+            width: 8px;  /* Define a largura da barra de rolagem */
+        }
+
+        .dropdown-content::-webkit-scrollbar-track, .permission-list::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        .dropdown-content::-webkit-scrollbar-thumb, .permission-list::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255); /* Cor da barra de rolagem */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/biblioteca/gerenciar'">Gerenciar criações</button>
+        <button onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    </div>
+    <div class="subtitle">
+        <h1>BIBLIOTECA DE<br>CONHECIMENTOS</h1>
+        <p>Aqui você pode procurar por soluções em problemas recorrentes.</p>
+    </div>
+
+    <div class="button-container" style="width: 100%;">
+        {% for item in libraries %}
+        <button onclick="goToPage({{ item.id }})">{{ item.title }}</button>
+        {% endfor %}
+    </div>
+    
+    <div class="description">
+        <p>Aqui você pode criar suas bibliotecas de conhecimentos.</p>
+        <button class="create-button" onclick="openModal()">Criar uma Biblioteca de Conhecimentos</button>
+    </div>
+
+    <!-- Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Criar Biblioteca de Conhecimentos</h2>
+            <form id="createLibraryForm" method="POST" onsubmit="submitForm(event)">
+                <label for="libraryName">Nome da Biblioteca:</label>
+                <input type="text" id="libraryName" name="libraryName" required>
+
+                <label for="libraryDescription">Descrição da Biblioteca:</label>
+                <textarea id="libraryDescription" name="libraryDescription" required></textarea>
+
+                <label>Áreas Impactadas:</label>
+                <div class="dropdown">
+                    <button class="dropbtn" type="button">Selecione as áreas</button>
+                    <div class="dropdown-content">
+                        <label><input type="checkbox" name="areaImpactada" value="Engenharia de Processo"> Engenharia de Processo</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Manutenção"> Manutenção</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Engenharia de Produto"> Engenharia de Produto</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Excelência Operacional"> Excelência Operacional</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Compras"> Compras</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Controladoria"> Controladoria</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Produção"> Produção</label>
+                        <label><input type="checkbox" name="areaImpactada" value="SSMA"> SSMA</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Comercial"> Comercial</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Campinas"> Campinas</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Engenharia da Qualidade"> Engenharia da Qualidade</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Logística"> Logística</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Gestão"> Gestão</label>
+                        <label><input type="checkbox" name="areaImpactada" value="Engenharia de Fornecedores"> Engenharia de Fornecedores</label>
+                        <!-- Adicione mais áreas conforme necessário -->
+                    </div>
+                </div>
+
+                <div class="permission-container">
+                    <input list='mail_list' type="text" id="permissionInput" placeholder="Adicione e-mails para ter permissão de edição">
+                    <button type="button" onclick="addPermission()">Adicionar</button>
+                </div>
+                <div class="permission-list" id="permissionList">
+                    <!-- Nomes adicionados aparecerão aqui -->
+                </div>
+
+                <button type="submit" id="create" style="margin-left:0;margin-top: 1vh;">Criar Biblioteca</button>
+                <div class="warning">
+                    <p>A biblioteca será criada apenas após a aprovação da Transformação Digital.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <datalist id='mail_list'>
+        {% for mail in mails %}
+            <option>{{mail}}</option>
+        {% endfor %}
+    </datalist>
+
+    <div id="loadingOverlay">
+        <p>Processando...</p>
+    </div>
+
+    <script>
+
+        const mails = {{mails | safe}}
+
+        function goToPage(id) {
+            window.location.href = '/biblioteca/consultar?id=' + id;
+        }
+
+        function openModal() {
+            document.getElementById("createModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("createModal").style.display = "none";
+        }
+
+
+        function addPermission() {
+            const permissionInput = document.getElementById("permissionInput");
+            const permissionList = document.getElementById("permissionList");
+
+            if (permissionInput.value.trim() !== "") {
+                if (mails.includes(permissionInput.value.trim())) {
+                    if (!permissionList.innerHTML.includes(permissionInput.value.trim())) {
+                        const div = document.createElement("div");
+                        div.className = "permission-item";
+                        div.innerHTML = `${permissionInput.value.trim()}<button onclick="removePermission(this)">x</button>`;
+                        permissionList.appendChild(div);
+                        permissionInput.value = "";
+                    } else {
+                        alert("Email já possui permissão")
+                    }
+
+                } else {
+                    alert ('Email não encontrado na nossa base de dados.')
+                }
+            }
+        }
+
+        function removePermission(button) {
+            const div = button.parentElement;
+            div.remove();
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function submitForm(event) {
+            event.preventDefault();
+            showLoading();
+
+            const libraryName = document.getElementById("libraryName").value;
+            const libraryDescription = document.getElementById("libraryDescription").value;
+            const areaImpactada = Array.from(document.querySelectorAll("input[name='areaImpactada']:checked")).map(checkbox => checkbox.value);
+            const permissions = Array.from(document.querySelectorAll(".permission-item")).map(div => div.textContent.trim().slice(0, -1));
+
+            const data = {
+                title: libraryName,
+                description: libraryDescription,
+                impactedAreas: areaImpactada,
+                permission: permissions
+            };
+
+            fetch('/biblioteca/criar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                hideLoading();
+                return response;
+            })
+            .then(data => {
+                window.location.reload();
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

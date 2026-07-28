@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_lab.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+
+    <body class="page_body">
+            <a id="select_back" style="position:fixed;transform:translate(0, -10%);" href="/demandas/detalhes?area={{area}}&projeto={{projeto}}">&times;</a>
+            <p class="lab_title" id="idreq">MATERIAL DE APOIO </p>
+
+            <p class="lab_subt">DADOS DA DEMANDA</p><br>
+            <p class="lab_desc" style="width: 72.6vw;height: auto; white-space: pre-line;" id="titulo"><b>TITULO: </b></p><br>
+            <p class="lab_desc" id="responsavel"><b>RESPONSÁVEL: </b></p>
+            <p class="lab_desc" id="area"><b>ÁREA PRINCIPAL: </b></p>
+            <p class="lab_desc" id="prazo"><b>PRAZO: </b></p>
+            <p class="lab_desc" id="status"><b>STATUS DEMANDA: </b></p><br>
+            <p class="lab_desc" style="width: 72.6vw;height: auto;white-space: pre-line;" id="descricao"><b>DESCRIÇÃO: </b></p><br>
+
+            <p class="lab_subt">DOCUMENTOS</p><br>
+            <div id="lab-container">
+                <table></table>
+            </div>
+            <form method="post" action="/demandas/detalhes/apoio?area={{area}}&projeto={{projeto}}" id="lab_form" enctype="multipart/form-data">
+                <div id="admin">
+                    <label id="placehold" class="edit_img_label" for="input">Adicione documentos...</label>
+                    <input class="img_input" id="input" type="file" name="documentos" autocomplete="off" multiple="multiple">
+                    <input type="submit" class="edit_label" id="edit_ask">
+                    <br>
+                    <a class="img_lbl" id="label">Arquivos selecionados:</a>
+                    <div class="list" id="lista"></div>
+                </div>
+            </form>
+    </body>
+
+   <script>
+       {% include 'demands/demands_detail_support.js' %}
+   </script>
+</html>

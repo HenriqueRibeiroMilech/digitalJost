@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif; margin:0; padding:0;
+            display:flex; justify-content:center; align-items:center; height:100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+        }
+        @keyframes GradientAnimation{
+            0%{ background-position:0% 50%; }
+            50%{ background-position:100% 50%; }
+            100%{ background-position:0% 50%; }
+        }
+
+        .container{
+            background:#fff; padding:30px; border-radius:10px;
+            box-shadow:0 4px 8px rgba(0,0,0,.1);
+            width:95%; max-width:1800px; text-align:center;
+        }
+        h1{ color:#153A8A; font-size:2.5em; margin:0 0 20px 0; }
+
+        .title{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .filter-container{ display:flex; justify-content:space-between; margin-bottom:20px; }
+        .filter-container input{
+            width:15%; padding:10px; font-size:1em; border:1px solid #ccc;
+            border-radius:5px; margin-right:1vw;
+        }
+
+        table{ width:100%; border-collapse:collapse; }
+        thead{ position:sticky; top:0; z-index:2; }
+        th, td{ padding:10px; text-align:left; border:1px solid #ddd; }
+        th{ background:#153A8A; color:#fff; }
+
+        button{
+            background-color:#2e52a7; color:#fff; border:none; border-radius:5px;
+            padding:10px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+        }
+        button:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(46,82,167,.25); }
+        button:active{ transform:translateY(0); box-shadow:0 2px 8px rgba(46,82,167,.25); }
+        button:disabled{ background:#ccc; cursor:not-allowed; transform:none; box-shadow:none; }
+
+        td.status-approved{ background:#4CAF50; color:#fff; }
+        td.status-pending{ background:#FFEB3B; color:#000; }
+        td.status-rejected{ background:#F44336; color:#fff; }
+
+        ::-webkit-scrollbar{ width:8px; height:8px; }
+        ::-webkit-scrollbar-track{ background:none; }
+        ::-webkit-scrollbar-thumb{ background-color:rgb(125,196,255); }
+
+        .static-buttons{ position:absolute; right:1vw; top:1vw; }
+        .static-buttons button{
+            background:rgba(0,0,0,0.5); color:#fff; border:none; border-radius:.3rem;
+            padding:.5rem; cursor:pointer; font-size:1vw;
+        }
+
+        .modal{
+            display:none; position:fixed; z-index:3; inset:0; background:rgba(0,0,0,.4);
+            justify-content:center; align-items:center;
+        }
+        .modal-content{
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%; animation: GradientAnimation 10s ease infinite;
+            color:#fff; margin:auto; padding:20px; border:none; width:80vw; border-radius:10px; text-align:center;
+        }
+        .close{ color:#fff; float:right; font-size:28px; font-weight:bold; }
+        .close:hover,.close:focus{ color:#ccc; text-decoration:none; cursor:pointer; }
+
+        .dropdown{ position:relative; display:inline-block; width:20vw; z-index:10; }
+        .dropbtn{ background:#000; color:#fff; cursor:pointer; border-radius:5px; width:100%; padding:10px; border:none; }
+        .dropdown-content{
+            display:none; position:absolute; background:#f9f9f9; box-shadow:0 8px 16px rgba(0,0,0,.2);
+            z-index:1; text-align:left; width:100%; height:auto; overflow-y:auto;
+        }
+        .dropdown-content label{ color:#000; padding:12px 16px; display:inline-flex; align-items:center; width:90%; }
+        .dropdown-content label:hover{ background:#f1f1f1; }
+        .dropdown-content input{ margin-right:10px; }
+        .dropdown:hover .dropdown-content{ display:block; }
+        .dropdown:hover .dropbtn{ background:#5a5a5a; }
+
+        .date-filters{ display:flex; align-items:center; font-size:1em; gap:.5rem; flex-wrap:wrap; }
+        .date-filters label{ margin:0 10px 0 0; font-size:1em; color:#153A8A; }
+        .date-filters input{ padding:5px; border:1px solid #ccc; border-radius:5px; font-size:1em; }
+
+        /* Empty state simples */
+        .empty-state{ padding:1rem; border:1px dashed #cfd6e6; border-radius:8px; margin:10px; color:#445; background:#fafcff; }
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="downloadFile()"><i class="fas fa-file-excel"></i> Download Excel</button>
+        <button onclick="window.location='/desvios'"><i class="fas fa-xmark"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Desvios de Processo - Consultar</h1>
+            <div class="date-filters">
+                <label>Data da Solicitação</label>
+                <label for="start_date">Início:</label>
+                <input type="date" min="2024-04-17" id="start_date" value="{{start_date}}" onchange="searchData()">
+                <label for="end_date">Fim:</label>
+                <input type="date" min="2024-04-18" id="end_date" value="{{end_date}}" onchange="searchData()">
+            </div>
+        </div>        
+        
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar - Nº Desvio" onkeyup="filterTable()">
+            <input type="text" id="filter2" placeholder="Filtrar - Solicitante" onkeyup="filterTable()">
+            <input type="text" id="filter3" placeholder="Filtrar - Motivo" onkeyup="filterTable()">
+            <input type="text" id="filter4" placeholder="Filtrar - Centro de Trabalho" onkeyup="filterTable()">
+            <input type="text" id="filter5" placeholder="Filtrar - Família" onkeyup="filterTable()">
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Selecione o status</button>
+                <div class="dropdown-content" id="filter6">
+                    <label><input checked type="checkbox" onchange="toggleExclusiveFilter()" id="filter6_group"> Selecionar todos</label>
+                    <label><input checked type="checkbox" name="filter6" value="0" onchange="filterTable()"> Aguardando aprovação</label>
+                    <label><input checked type="checkbox" name="filter6" value="1" onchange="filterTable()"> Aprovado</label>
+                    <label><input checked type="checkbox" name="filter6" value="2" onchange="filterTable()"> Recusado</label>
+                    <label><input checked type="checkbox" name="filter6" value="3" onchange="filterTable()"> Cancelado</label>
+                    <label><input checked type="checkbox" name="filter6" value="4" onchange="filterTable()"> Finalizado</label>
+                    <label><input checked type="checkbox" name="filter6" value="5" onchange="filterTable()"> Em andamento</label>
+                    <label><input checked type="checkbox" name="filter6" value="6" onchange="filterTable()"> Vencido</label>
+                </div>
+            </div>
+        </div>
+
+        <div style="height:60vh; overflow-y:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="white-space:nowrap;">Nº Desvio</th>
+                        <th>Revisão</th>
+                        <th>Solicitante</th>
+                        <th>Motivo</th>
+                        <th>Centro de Trabalho</th>
+                        <th>Família</th>
+                        <th>Data Fim</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="infoTable">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+            <div id="emptyBox" class="empty-state" style="display:none;">Nenhum registro encontrado. Ajuste os filtros e tente novamente.</div>
+        </div>
+    </div>
+
+    <!-- Modal de erro amigável -->
+    <div id="modalError" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="errorMessage"></h2>
+            <button onclick="closeModal('modalError')">Fechar</button>
+        </div>
+    </div>
+    
+    <script>
+        let tableData = [];
+        const defaultStart = '{{start_date}}';
+        const defaultEnd = '{{end_date}}';
+
+        /* ====== Modal ====== */
+        function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+
+        /* ====== Helpers ====== */
+        function safeParseList(raw){
+            // Tenta JSON.parse; se falhar, tenta quebrar por vírgula; garante array
+            try{
+                const v = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                if(Array.isArray(v)) return v;
+            }catch(e){}
+            if(typeof raw === 'string' && raw.includes(',')){
+                return raw.split(',').map(x => x.trim()).filter(Boolean);
+            }
+            return Array.isArray(raw) ? raw : [];
+        }
+        function fmtList(value){
+            const arr = safeParseList(value);
+            if(arr.length > 1) return arr.slice(0, -1).join(', ') + ' e ' + arr[arr.length - 1];
+            if(arr.length === 1) return arr[0];
+            return '';
+        }
+        function fmtDate(raw){
+            if(!raw) return '';
+            return (typeof raw === 'string' && raw.includes('T')) ? raw.split('T')[0] : String(raw);
+        }
+
+        /* ====== Renderização ====== */
+        function populateTable(data){
+            const tableBody = document.getElementById('infoTable');
+            const emptyBox  = document.getElementById('emptyBox');
+            tableBody.innerHTML = '';
+
+            if(!data || data.length === 0){
+                emptyBox.style.display = 'block';
+                return;
+            }else{
+                emptyBox.style.display = 'none';
+            }
+
+            data.forEach(info => {
+                const row = document.createElement('tr');
+
+                // Nº Desvio com link para detalhe
+                let cell = document.createElement('td');
+                let button = document.createElement('button');
+                button.textContent = info['deviationId'];
+                button.style.backgroundColor = 'black';
+                button.style.whiteSpace = 'nowrap';
+                button.onclick = () => window.location.href = `/desvios/detalhes?id=${info['deviationId']}`;
+                cell.appendChild(button);
+                row.appendChild(cell);
+
+                // Revisão
+                cell = document.createElement('td');
+                cell.textContent = info['revision'];
+                row.appendChild(cell);
+
+                // Solicitante
+                cell = document.createElement('td');
+                cell.textContent = info['requesterName'] || '';
+                row.appendChild(cell);
+
+                // Motivo
+                cell = document.createElement('td');
+                cell.textContent = info['motive'] || '';
+                row.appendChild(cell);
+
+                // Centro de Trabalho
+                cell = document.createElement('td');
+                cell.textContent = fmtList(info['workCenter']);
+                row.appendChild(cell);
+
+                // Família
+                cell = document.createElement('td');
+                cell.textContent = fmtList(info['families']);
+                row.appendChild(cell);
+
+                // Data fim (YYYY-MM-DD)
+                cell = document.createElement('td');
+                cell.textContent = fmtDate(info['finalDate']);
+                row.appendChild(cell);
+
+                // Status
+                cell = document.createElement('td');
+                const st = Number(info['status']);
+                if (st === 0) { cell.style.backgroundColor = 'yellow'; cell.style.color = 'black'; cell.innerHTML = 'Aguardando aprovação'; }
+                else if (st === 1) { cell.style.backgroundColor = '#228c22'; cell.style.color = 'white'; cell.innerHTML = 'Aprovado'; }
+                else if (st === 2) { cell.style.backgroundColor = 'red'; cell.style.color = 'white'; cell.innerHTML = 'Recusado'; }
+                else if (st === 3) { cell.style.backgroundColor = 'gray'; cell.style.color = 'white'; cell.innerHTML = 'Cancelado'; }
+                else if (st === 4) { cell.style.backgroundColor = 'gray'; cell.style.color = 'white'; cell.innerHTML = 'Finalizado'; }
+                else if (st === 5) { cell.style.backgroundColor = '#228c22'; cell.style.color = 'white'; cell.innerHTML = 'Em andamento'; }
+                else { cell.style.backgroundColor = 'red'; cell.style.color = 'white'; cell.innerHTML = 'Vencido'; }
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        /* ====== Filtro ====== */
+        function filterTable(){
+            const f1 = document.getElementById('filter1').value.toLowerCase();
+            const f2 = document.getElementById('filter2').value.toLowerCase();
+            const f3 = document.getElementById('filter3').value.toLowerCase();
+            const f4 = document.getElementById('filter4').value.toLowerCase();
+            const f5 = document.getElementById('filter5').value.toLowerCase();
+            const f6 = Array.from(document.querySelectorAll('#filter6 input[name="filter6"]:checked')).map(cb => cb.value);
+
+            const filtered = (tableData || []).filter(info => {
+                const m1 = String(info['deviationId'] || '').toLowerCase().includes(f1);
+                const m2 = String(info['requesterName'] || '').toLowerCase().includes(f2);
+                const m3 = String(info['motive'] || '').toLowerCase().includes(f3);
+                const m4 = String(fmtList(info['workCenter'])).toLowerCase().includes(f4);
+                const m5 = String(fmtList(info['families'])).toLowerCase().includes(f5);
+                const m6 = f6.includes(String(info['status']));
+                return m1 && m2 && m3 && m4 && m5 && m6;
+            });
+
+            populateTable(filtered);
+        }
+
+        function toggleExclusiveFilter(){
+            const master = document.getElementById('filter6_group');
+            const boxes  = document.getElementsByName('filter6');
+            boxes.forEach(cb => cb.checked = master.checked);
+            filterTable();
+        }
+
+        function getFilters(){
+            const s = document.getElementById('start_date');
+            const e = document.getElementById('end_date');
+            if(!s.value) s.value = defaultStart;
+            if(!e.value) e.value = defaultEnd;
+            return { start_date: s.value, end_date: e.value };
+        }
+
+        /* ====== Busca ====== */
+        function searchData(){
+            const payload = getFilters();
+
+            fetch('/desvios/consultar', {
+                method:'POST',
+                headers:{ 'Content-Type':'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if(response.status === 404){
+                    document.getElementById('errorMessage').innerHTML = 'Código de rastreabilidade não encontrado';
+                    openModal('modalError');
+                    return [];
+                }
+                if(!response.ok){ throw new Error('Erro inesperado'); }
+                return response.json();
+            })
+            .then(data => {
+                tableData = Array.isArray(data) ? data : [];
+                filterTable();
+            })
+            .catch(err => {
+                document.getElementById('errorMessage').innerHTML = err.message || 'Erro inesperado';
+                openModal('modalError');
+                tableData = [];
+                filterTable();
+            });
+        }
+
+        /* ====== Excel ====== */
+        function downloadFile(){
+            const payload = getFilters();
+
+            fetch('/desvios/consultar?excel=1', {
+                method:'POST',
+                headers:{ 'Content-Type':'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if(!response.ok) throw new Error('Erro ao gerar o arquivo');
+
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = 'desvios.xlsx';
+                if (disposition && disposition.includes('filename=')) {
+                    const matches = disposition.match(/filename="?([^"]+)"?/);
+                    if (matches?.[1]) filename = matches[1];
+                }
+
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            })
+            .catch(error => {
+                document.getElementById('errorMessage').innerHTML = error.message || 'Erro ao baixar arquivo.';
+                openModal('modalError');
+            });
+        }
+
+        /* ====== Init ====== */
+        window.onload = function(){
+            searchData();
+        }
+    </script>
+    <!-- ========== ADITIVO: tooltip leve + SweetAlert2 (Excel gerado) ========== -->
+<style>
+  /* Tooltip leve (não altera layout) */
+  .dj-tip{
+    position:fixed; z-index:2147483000; pointer-events:none;
+    background:#fff; color:#333; border:1px solid #e6e9f2; border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.12);
+    padding:10px 12px; max-width:280px; opacity:0; transform:translateY(-4px);
+    transition:opacity .15s ease, transform .15s ease; font-family:inherit;
+  }
+  .dj-tip.show{ opacity:1; transform:translateY(0); }
+  .dj-tip .t-title{ font-weight:700; color:#163A8A; margin-bottom:4px; }
+  .dj-tip .t-text { font-size:.95em; color:#444; line-height:1.35; }
+</style>
+
+<!-- Container do tooltip (não mexe no seu HTML) -->
+<div id="dj-tip" class="dj-tip" aria-hidden="true" style="display:none">
+  <div class="t-title"></div><div class="t-text"></div>
+</div>
+
+<!-- SweetAlert2: carrega só se ainda não existir -->
+<script>
+(function ensureSwal(){
+  if (window.Swal) return;
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/sweetalert2@11';
+  document.head.appendChild(s);
+})();
+</script>
+
+<script>
+(function(){
+  /* ====================== TOOLTIP (informativos) ====================== */
+  function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+  function $all(sel, ctx){ return Array.from((ctx||document).querySelectorAll(sel)); }
+
+  const tip = document.getElementById('dj-tip');
+  const tTitle = tip.querySelector('.t-title');
+  const tText  = tip.querySelector('.t-text');
+
+  function tipMove(e){
+    const off=14; let x=e.clientX+off, y=e.clientY+off;
+    const r=tip.getBoundingClientRect();
+    if (x+r.width  > innerWidth-8)  x = e.clientX - r.width  - off;
+    if (y+r.height > innerHeight-8) y = e.clientY - r.height - off;
+    tip.style.left=x+'px'; tip.style.top=y+'px';
+  }
+  function tipShow(e, title, text){
+    tTitle.textContent = title || '';
+    tText.textContent  = text  || '';
+    tip.style.display='block'; tipMove(e); tip.classList.add('show');
+  }
+  function tipHide(){ tip.classList.remove('show'); tip.style.display='none'; }
+  function bindTip(el, title, text){
+    if (!el) return;
+    el.addEventListener('mouseenter', e=>tipShow(e,title,text));
+    el.addEventListener('mousemove',  tipMove);
+    el.addEventListener('mouseleave', tipHide);
+    el.addEventListener('blur',       tipHide);
+  }
+  function bindThByText(regex, title, text){
+    // Usa a tabela existente da página (mantendo sua estrutura) [1](https://empresasrandon-my.sharepoint.com/personal/00057227_randon_com_br/Documents/Arquivos%20de%20Microsoft%20Copilot%20Chat/viewV5.txt)
+    const th = $all('table th').find(th => regex.test((th.textContent||'').trim()));
+    bindTip(th, title, text);
+  }
+
+  // Botão "Download Excel": por id="excelBtn" (se existir) ou pelo texto do botão
+  const excelBtn = document.getElementById('excelBtn')
+                 || $all('button, a').find(el => /download\s*excel/i.test((el.textContent||'').trim()));
+  bindTip(excelBtn, 'Download Excel', 'Gera e baixa a planilha conforme os filtros informados.');
+
+  // Filtros (presentes na tela) [1](https://empresasrandon-my.sharepoint.com/personal/00057227_randon_com_br/Documents/Arquivos%20de%20Microsoft%20Copilot%20Chat/viewV5.txt)
+  bindTip(document.getElementById('start_date'), 'Data inicial', 'Limite inferior do período da consulta.');
+  bindTip(document.getElementById('end_date'),   'Data final',   'Limite superior do período da consulta.');
+  bindTip(document.getElementById('status'),     'Status',       'Selecione um ou mais status para refinar a busca.');
+
+  // Cabeçalhos existentes da sua tabela (por texto) [1](https://empresasrandon-my.sharepoint.com/personal/00057227_randon_com_br/Documents/Arquivos%20de%20Microsoft%20Copilot%20Chat/viewV5.txt)
+  bindThByText(/nº?\s*desvio/i,          'Nº Desvio',   'Identificador base do desvio.');
+  bindThByText(/revisão/i,               'Revisão',     'Número da revisão mais recente.');
+  bindThByText(/solicitante/i,           'Solicitante', 'Quem abriu o desvio.');
+  bindThByText(/motivo/i,                'Motivo',      'Motivo principal informado.');
+  bindThByText(/centro.*trabalho/i,      'Centro de Trabalho','CT relacionado.');
+  bindThByText(/família/i,               'Família',     'Família do produto.');
+  bindThByText(/data\s*fim/i,            'Data Fim',    'Prazo final informado.');
+  bindThByText(/status/i,                'Status',      'Situação atual do desvio.');
+
+  document.addEventListener('scroll', tipHide, {passive:true});
+
+  /* ====================== Toast "Excel gerado" (SVG + SweetAlert2) ====================== */
+  const EXCEL_SVG_ICON = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+         viewBox="0 0 48 48" fill="none" style="vertical-align:-3px;margin-right:6px">
+      <path fill="#1E7D47" d="M8 6h21a3 3 0 0 1 3 3v5h8a2 2 0 0 1 2 2v21a 3 3 0 0 1-3 3H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"/>
+      <path fill="#fff" d="M18.6 33h-3.1l-3.7-5.8L8.2 33H5.1l5.1-8-4.8-7.5h3.2l3.4 5.6 3.4-5.6h3.2L14 25l4.6 8Z"/>
+      <rect x="26" y="10" width="14" height="4" rx="1" fill="#fff" opacity=".9"/>
+    </svg>`;
+
+  function ensureSwalReady(cb){
+    if (window.Swal){ cb(); return; }
+    let tries=0; (function wait(){
+      if (window.Swal) return cb();
+      if (tries++>40) return; // ~3s
+      setTimeout(wait,75);
+    })();
+  }
+
+  // Expõe um helper global para ser chamado onde você já faz o download do Excel
+  window.toastExcelSuccess = function(filename){
+    ensureSwalReady(function(){
+      (window.Toast ||= Swal.mixin({
+        toast:true, position:'top-end', showConfirmButton:false, timer:2600, timerProgressBar:true,
+        didOpen:(t)=>{ t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
+      })).fire({ icon:'success', iconHtml:EXCEL_SVG_ICON, title:`${filename} gerado` });
+    });
+  };
+
+  window.toastExcelError = function(){
+    ensureSwalReady(function(){
+      (window.Toast ||= Swal.mixin({
+        toast:true, position:'top-end', showConfirmButton:false, timer:2600, timerProgressBar:true
+      })).fire({ icon:'error', title:'Falha ao gerar Excel' });
+    });
+  };
+})();
+</script>
+
+<!-- ========== BIND NÃO-INTRUSIVO ao download atual (= NÃO altera sua estrutura) ========== -->
+<script>
+(function(){
+  function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+  function $all(sel, ctx){ return Array.from((ctx||document).querySelectorAll(sel)); }
+
+  // Descobre o botão "Download Excel" por id ou texto (sem mudar HTML)
+  const excelBtn = document.getElementById('excelBtn')
+                 || $all('button, a').find(el => /download\s*excel/i.test((el.textContent||'').trim()));
+
+  // Se você já tem um listener próprio, não removemos; apenas acrescentamos o nosso
+  if (excelBtn) {
+    excelBtn.addEventListener('click', function onClickExcel(e){
+      // Se o seu handler já chama a geração, mantemos — este bloco só injeta o toast no sucesso.
+      // Interceptador opcional: se quiser garantir o toast aqui, descomente e ajuste ao seu fetch:
+      /*
+      e.preventDefault();
+      const payload = {
+        start_date: document.getElementById('start_date')?.value || '',
+        end_date:   document.getElementById('end_date')?.value   || ''
+      };
+      fetch('/desvios/consultar?excel=1', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r=>{
+        if(!r.ok) throw new Error('Erro ao gerar o arquivo');
+        const disp = r.headers.get('Content-Disposition');
+        let filename = 'desvios.xlsx';
+        if (disp && disp.includes('filename=')) {
+          const m = disp.match(/filename="?([^"]+)"?/);
+          if (m?.[1]) filename = m[1];
+        }
+        return r.blob().then(blob => ({ blob, filename }));
+      })
+      .then(({ blob, filename })=>{
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.style.display='none'; a.href=url; a.download=filename;
+        document.body.appendChild(a); a.click();
+        URL.revokeObjectURL(url); a.remove();
+
+        // ✅ Toast premium
+        if (typeof window.toastExcelSuccess === 'function') window.toastExcelSuccess(filename);
+      })
+      .catch(()=> typeof window.toastExcelError === 'function' && window.toastExcelError());
+      */
+    }, false);
+  }
+
+  // Se o seu código de download já existe em outro script, apenas certifique-se
+  // de chamar window.toastExcelSuccess(filename) no sucesso e window.toastExcelError() no catch.
+})();
+</script>
+
+
+
+</body>
+</html>

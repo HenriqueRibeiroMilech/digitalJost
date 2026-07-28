@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        h1, h2 {
+            color: #1a73e8;
+        }
+        #status-container {
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #1a73e8;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            height: 60px;
+        }
+        #status, #reason, #timeInStatus {
+            margin: 0;
+        }
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 60px;
+        }
+        .chart {
+            width: 24%;
+            height: 43vh;
+            min-width: 300px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .gauge-chart {
+            margin-top: auto;
+            height: 82%; /* reduz base para destacar versao tall */
+            width: 100%;
+        }
+        /* Versão mais alta para charts só com título + gráfico */
+        .chart--tall .gauge-chart { height: 95%; }
+        .chart-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.7em;
+            font-weight: bold;
+        }
+        .info {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .info div {
+            flex: 1;
+            text-align: center;
+        }
+
+        .info-title {
+            font-weight: bold;
+            font-size: 1.7em;
+        }
+        .info-numer {
+            font-size: 1.7em;
+        }
+
+        /* Novo layout flex para o header */
+        .sc-left, .sc-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        .sc-left { justify-content: flex-start; }
+        .sc-center { display: flex; justify-content: center; align-items: center; }
+        .sc-right { justify-content: flex-end; gap: 1vw; }
+        #workcenter { text-align: left; }
+        #timeInStatus { color: white; }
+        #shiftStatus { background-color: black; padding: 0.2em; border-radius: 5px; cursor: pointer; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1em;
+        }
+
+        .image-div {
+            height: 35%;
+            width: 100%;
+            display: flex;
+            position: relative;
+            justify-content: center; /* Centraliza horizontalmente */
+            align-items: center; /* Centraliza verticalmente */
+        }
+
+        .image-div img {
+            height: 100%;
+        }
+
+        /* ===================== RESPONSIVIDADE ===================== */
+        #status-container { font-size: clamp(1.1rem, 2.2vw, 2rem); }
+        .chart-title { font-size: clamp(1.1rem, 1.4vw, 1.7rem); }
+        .info-title, .info-numer { font-size: clamp(1rem, 1.3vw, 1.7rem); }
+        /* Ajustes refinados para operadores e peça atual */
+        #operators { 
+            line-height: 1.02;
+            flex-direction: row;
+            gap: .35em;
+        }
+        #operators .operator-value { 
+            font-weight: 700; 
+            font-size: clamp(3.4rem, 7.2vw, 6.2rem); 
+            letter-spacing: -1px;
+        }
+        #operators .operator-separator { 
+            font-weight: 500; 
+            font-size: clamp(.8rem, 1.2vw, 1.4rem); 
+            opacity: .85;
+            align-self: center; /* centraliza verticalmente */
+            display: flex;
+            align-items: center; /* garante centralização mesmo se altura mudar */
+            margin: 0 .25rem; /* remove margin-bottom que empurrava para baixo */
+        }
+        /* Desktop (tela normal) ainda maior */
+        @media (min-width: 1400px) and (min-height: 720px) {
+            #operators .operator-value { font-size: clamp(4rem, 8.2vw, 7.5rem); }
+        }
+        @media (max-width: 1000px) {
+            #operators .operator-value { font-size: clamp(2.4rem, 8vw, 4.6rem); }
+            #operators .operator-separator { font-size: clamp(.7rem, 1.8vw, 1.1rem); }
+        }
+        @media (max-width: 680px) {
+            #operators .operator-value { font-size: clamp(2.6rem, 11vw, 3.8rem); }
+            #operators .operator-separator { font-size: clamp(.65rem, 2.2vw, 1rem); margin-bottom: .15rem; }
+        }
+
+        #currentPart { 
+            font-size: clamp(.85rem, 1.05vw, 1.35rem) !important; 
+            line-height: 1.2; 
+            word-break: break-word; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            display: -webkit-box; 
+            line-clamp: 3; /* padrão */
+            -webkit-line-clamp: 3; 
+            -webkit-box-orient: vertical; 
+        }
+
+        /* Tabela de materiais com wrapper scrollável */
+        .material-table-wrapper {
+            max-height: clamp(100px, 12vh, 140px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        /* Customizar scrollbar do wrapper */
+        .material-table-wrapper::-webkit-scrollbar {
+            width: 4px;
+        }
+        .material-table-wrapper::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+        .material-table-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+        .material-table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .material-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: clamp(.7rem, 0.85vw, 1rem);
+            margin-top: 0;
+            line-height: 1.3;
+        }
+        .material-table th {
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: clamp(0.2rem, 0.4vw, 0.3rem) clamp(0.15rem, 0.3vw, 0.25rem);
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            font-size: clamp(.65rem, 0.8vw, 0.95rem);
+        }
+        .material-table td {
+            padding: clamp(0.2rem, 0.4vw, 0.3rem) clamp(0.15rem, 0.3vw, 0.25rem);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            vertical-align: top;
+        }
+        .material-table tr:last-child td {
+            border-bottom: none;
+        }
+        .material-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: clamp(100px, 15vw, 150px);
+        }
+        .deviation-link {
+            color: #1a73e8;
+            text-decoration: underline;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-block;
+            line-height: 1.4;
+            font-size: clamp(.65rem, 0.8vw, 0.95rem);
+        }
+        .deviation-link:hover {
+            color: #5a9cf5;
+        }
+        .deviation-status {
+            white-space: nowrap;
+            display: inline-block;
+            line-height: 1.4;
+            font-size: clamp(.65rem, 0.8vw, 0.95rem);
+        }
+        .deviation-status.vencido {
+            color: #DC4B3C;
+            font-weight: 600;
+        }
+        .deviation-status.andamento {
+            color: #FFA500;
+        }
+        /* Relógio e wrapper inferior */
+        .time-shift-wrapper { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            gap: .8rem; 
+            width: 100%; 
+            padding: .3rem .4rem; 
+            background: rgba(255,255,255,0.06); 
+            border-radius: 6px; 
+        }
+        #currentTime { 
+            font-family: monospace; 
+            font-weight: 600; 
+            letter-spacing: .5px; 
+            font-size: clamp(.9rem, 1vw, 1.45rem); 
+            white-space: nowrap; 
+        }
+        #shiftStatus { 
+            /* aumentado */
+            font-size: clamp(.8rem, 1.05vw, 1.25rem); 
+            padding: .4em .85em; 
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        /* Mantém 4 colunas até ~1480px para evitar quebra prematura em 1536px */
+        @media (max-width: 1700px) {
+            .chart { width: 24%;height: 42vh; }
+            .gauge-chart { height: 55%; }
+            .chart--tall .gauge-chart { height: 85%; }
+            .chart-container { margin-top: 3.5rem; }
+        }
+        @media (max-width: 1480px) {
+            .gauge-chart { height: 70%; }
+            .chart--tall .gauge-chart { height: 85%; }
+        }
+
+        @media (max-width: 1350px) {
+            .chart { width: 48%; height: 42vh; }
+            .gauge-chart { height: 65%; }
+            .chart--tall .gauge-chart { height: 80%; }
+            .chart-container { justify-content: space-evenly; }
+            #operators .operator-value { font-size: clamp(2.8rem, 6.2vw, 5.2rem); }
+            body { overflow-y: auto; }
+            .material-table-wrapper { max-height: clamp(90px, 10vh, 120px); }
+            .material-table th, .material-table td { padding: 0.25rem 0.2rem; }
+        }
+
+    @media (max-width: 1000px) {
+            #status-container { flex-wrap: wrap; height: auto; row-gap: .4rem; padding: 10px 14px; }
+            .sc-left, .sc-center, .sc-right { flex: 1 1 100%; justify-content: center; }
+            .sc-left { order: 1; }
+            .sc-center { order: 2; }
+            .sc-right { order: 3; gap: 2rem; }
+            #timeInStatus, #shiftStatus { font-size: .55em; }
+            .chart-container { margin-top: calc(60px + 4.5rem); height: auto; }
+            .material-table { font-size: clamp(.65rem, 1.8vw, .85rem); }
+            .material-table th { font-size: clamp(.6rem, 1.6vw, .8rem); }
+            .deviation-link, .deviation-status { font-size: clamp(.6rem, 1.6vw, .8rem); line-height: 1.35; }
+            .chart { width: 48%; height: 320px; }
+            .gauge-chart { height: 62%; }
+            .chart--tall .gauge-chart { height: 78%; }
+            #currentTime { font-size: clamp(.85rem, 2vw, 1.15rem); }
+            #shiftStatus { font-size: clamp(.7rem, 1.6vw, 1.05rem); padding: .35em .75em; }
+        }
+
+    @media (max-width: 680px) {
+            .chart { width: 100%; height: 300px; }
+            .gauge-chart { height: 60%; }
+            .chart--tall .gauge-chart { height: 75%; }
+            .info { flex-wrap: wrap; row-gap: .4rem; }
+            #status-container { font-size: clamp(1rem, 4.2vw, 1.5rem); }
+            #timeInStatus, #shiftStatus { font-size: .6em; }
+            #operators { font-size: 3rem !important; }
+            #currentPart { line-clamp: 4; -webkit-line-clamp: 4; }
+            .image-div { height: 28%; }
+            #currentTime { font-size: clamp(.85rem, 4vw, 1.1rem); }
+            #shiftStatus { font-size: clamp(.65rem, 3.2vw, .95rem); }
+            .material-table-wrapper { max-height: 85px; }
+            .material-table { font-size: .7rem; line-height: 1.25; }
+            .material-table th { font-size: .65rem; padding: 0.2rem 0.15rem; }
+            .material-table td { padding: 0.2rem 0.15rem; }
+            .deviation-link, .deviation-status { font-size: .65rem; line-height: 1.3; }
+        }
+
+        /* Telas com altura limitada (como 1536x730 inner 730) */
+        @media (max-height: 780px) and (min-width: 1200px) {
+            .gauge-chart { height: 58%; }
+            .chart--tall .gauge-chart { height: 90%; }
+            #status-container { padding: 12px 16px; }
+            .material-table-wrapper { max-height: 100px; }
+            .material-table th, .material-table td { padding: 0.25rem 0.2rem; }
+            .chart-title { font-size: clamp(1rem, 1.2vw, 1.4rem); }
+            .info-title, .info-numer { font-size: clamp(.9rem, 1.05vw, 1.2rem); }
+        }
+        @media (max-height: 750px) {
+            body { overflow-y: auto; }
+            .chart-container { height: auto; }
+        }
+
+    </style>
+    
+    <script src="{{ url_for('static', filename= 'plotly-latest.min.js') }}" charset="utf-8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+    <div id="status-container">
+        <div class="sc-left">
+            <div id="workcenter"></div>
+        </div>
+        <div class="sc-center">
+            <div id="status"><span id="centerStatus"></span><span id="stopReason" style="display:none;"></span></div>
+        </div>
+        <div class="sc-right">
+            <div id="timeInStatus"></div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        
+        <div class="chart">
+            <div class="chart-title">PERFORMANCE %</div>
+            <div class="info">
+                <div>
+                    <div class="info-title">PRODUZIDO</div>
+                    <div class="info-numer" id="produced-performance"></div>
+                </div>
+                
+                <div>
+                    <div class="info-title">META</div>
+                    <div class="info-numer" id="goal-performance"></div>
+                </div>
+                
+            </div>
+            <div id="performanceChart" class="gauge-chart"></div>
+        </div>
+
+        <div class="chart">
+            <div class="chart-title">DISPONIBILIDADE %</div>
+            <div class="info">
+                <div>
+                    <div class="info-title">PRODUZINDO</div>
+                    <div class="info-numer" id="producing-availability"></div>
+                </div>
+                <div>
+                    <div class="info-title">PARADO</div>
+                    <div class="info-numer" id="stopped-availability"></div>
+                </div>
+            </div>
+            <div id="availabilityChart" class="gauge-chart"></div>
+        </div>
+
+        <div class="chart">
+            <div class="chart-title">QUALIDADE %</div>
+            <div class="info">
+                <div>
+                    <div class="info-title">APROVADO</div>
+                    <div class="info-numer" id="approved-quality"></div>
+                </div>
+            </div>
+            <div id="qualityChart" class="gauge-chart"></div>
+        </div>
+
+        <div class="chart">
+            <div class="chart-title">OEE %</div>
+            <div class="info">
+                <div>
+                    <div class="info-title">TURNO</div>
+                    <div class="info-numer" id="shift-oee"></div>
+                </div>
+                <div>
+                    <div class="info-title">META</div>
+                    <div class="info-numer" id="goal-oee"></div>
+                </div>
+            </div>
+            <div id="oeeChart" class="gauge-chart"></div>
+        </div>
+
+        <div class="chart chart--tall">
+            <div class="chart-title">PEÇAS PRODUZIDAS / HORA</div>
+            <div id="productionRateChart" class="gauge-chart"></div>
+        </div>
+
+        <div class="chart chart--tall">
+            <div class="chart-title">TOP 5 PARADAS</div>
+            <div id="stopsChart" class="gauge-chart"></div>
+        </div>
+
+        <div class="chart chart--tall">
+            <div class="chart-title">TOP 5 PROBLEMAS QUALIDADE</div>
+            <div id="qualityIssuesChart" class="gauge-chart" style="height: 35%;"></div>
+            <div class="info info-title" style='margin-top: auto;padding: 0.5rem;'>
+                <div style="width: 100%;">
+                    <div style="text-align: center; font-size: 1.1em; margin-bottom: 0.3rem;">PRODUZINDO</div>
+                    <div class="material-table-wrapper">
+                        <table class="material-table" id="materialTable">
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Desvio</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materialTableBody">
+                                <!-- Preenchido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart">
+            <div class="chart-title" style="margin-bottom: 0;">OPERADORES</div>
+            <div id="operators" style="font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center;margin-top: 0;"></div>
+            
+            <div class="image-div" id="image-div" style="margin-top: 0;">
+                <div class="chart-title" style="margin-right: 5%;" id="image-div-text"></div>
+                <img id="image-div-img"></img>
+            </div>
+            
+            <div class="time-shift-wrapper info-title" style="margin-top:0;">
+                <span id="currentTime"></span>
+                <!-- <span id="shiftStatus" onclick="window.location='/monitoramento/quadro?ct={{workcenter}}'">Quadro Hora</span> -->
+            </div>
+        </div>
+    </div>
+
+    <div id="errorModal" class="modal" style="z-index: 1000;">
+        <div class="modal-content" style="width: 50%;">
+            <h1 id="errorModalMessage" style="color: white;"></h1>
+        </div>
+    </div>
+
+
+    <script>
+        let globalData = null;
+        const user = '{{user}}'
+        console.log({ inner: window.innerWidth + 'x' + window.innerHeight, outer: window.outerWidth + 'x' + window.outerHeight, screen: screen.width + 'x' + screen.height, avail: screen.availWidth + 'x' + screen.availHeight, dpr: window.devicePixelRatio })
+        document.addEventListener('DOMContentLoaded', function() {
+
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                modal.style.display = 'flex';
+            }
+
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                modal.style.display = 'none';
+            }
+
+            function updateDashboard() {
+                axios.post('/monitoramento/oee?ct={{workcenter}}').then(response => {
+                    closeModal('errorModal')
+                    globalData = response.data;
+                    updateUI(globalData);
+                }).catch(async error => {
+                    console.error('Error updating dashboard:', error);
+
+                    async function hasInternetConnection() {
+                        try {
+                            await fetch('https://jost.on.plex.com', { mode: 'no-cors' });
+                            return true;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+
+                    const online = await hasInternetConnection();
+                    let message;
+
+
+                    if (!online) {
+                        message = `Sem conexão de internet.${user === 'fabrica_jost' ? '<br><br>Comunique a sua liderança.' : ''}`;
+                    } else if (!error.response) {
+                        message = `Não foi possível conectar ao Digital JOST.${user === 'fabrica_jost' ? '<br><br>Comunique a sua liderança.' : ''}`;
+                    } else if (error.response.status == 404) {
+                        message = `Centro não encontrado - {{workcenter}}`;
+                    } else {
+                        message = `Erro ao atualizar o dashboard: ${error.response.status}.${user === 'fabrica_jost' ? '<br><br>Comunique a sua liderança.' : ''}`;
+                    }
+
+                    document.getElementById('errorModalMessage').innerHTML = message;
+                    openModal('errorModal', null);
+
+                });
+            }
+
+            function updateUI(data) {
+                document.getElementById('workcenter').innerText = `${data.workcenter}`;
+                document.getElementById('centerStatus').innerText = data.status;
+                document.getElementById('timeInStatus').innerText = `Tempo: ${data.statusTime}`;
+
+                document.getElementById('produced-performance').innerHTML = `${data.totalParts} PÇs`
+                document.getElementById('goal-performance').innerHTML = `${data.expectedParts} PÇs`
+                document.getElementById('producing-availability').innerHTML = `${data.producingAvailability} min`
+                document.getElementById('stopped-availability').innerHTML = `${data.stoppedAvailability} min`
+                document.getElementById('approved-quality').innerHTML = `${data.approvedQuality} PÇs`
+                document.getElementById('shift-oee').innerHTML = data.shiftOee
+                document.getElementById('goal-oee').innerHTML = `${data.oeeGoal}%`
+
+                if (data.reason != '-') {
+                    document.getElementById('stopReason').style.display = 'inline';
+                    document.getElementById('stopReason').innerText = ` ${data.reason}`;
+                    document.getElementById('status-container').style.backgroundColor = '#DC4B3C'; // Vermelho
+                    document.getElementById('centerStatus').innerText = ''; // Verde
+                } else {
+                    document.getElementById('stopReason').style.display = 'none';
+                    document.getElementById('status-container').style.backgroundColor = '#1FA11D'; // Verde
+                }
+
+                // Atualizar os gráficos de porcentagem
+                updateGauge('performanceChart', data.performance, 'Performance', data.oeeGoal);
+                updateGauge('availabilityChart', data.availability, 'Availability', data.oeeGoal);
+                updateGauge('qualityChart', data.quality, 'Quality', data.oeeGoal);
+                updateGauge('oeeChart', data.oee, 'OEE', data.oeeGoal);
+
+                // Atualizar o gráfico de linha
+                updateLineChart('productionRateChart', data.piecesProducedPerHour);
+
+                // Atualizar o gráfico de barra
+                updateBarChart('stopsChart', data.topStops.sort((a, b) => a.time - b.time));
+                updateBarChart('qualityIssuesChart', data.topQualityProblems.sort((a, b) => a.time - b.time));
+
+                // Atualizar o status dos operadores
+                const operatorsElement = document.getElementById('operators');
+                // Valores maiores (~30%) e 'de' pequeno
+                operatorsElement.innerHTML = `
+                    <span class="operator-value current-op">${data.currentOperators}</span>
+                    <span class="operator-separator">de</span>
+                    <span class="operator-value expected-op">${data.expectedOperators}</span>
+                `;
+
+                // Atualizar a cor dos operadores
+                if (data.currentOperators == data.expectedOperators) {
+                    operatorsElement.style.color = '#ffffff'; // Branco
+                } else {
+                    operatorsElement.style.color = '#DC4B3C'; // Vermelho
+                }
+
+                // Construir tabela de materiais
+                const materialTableBody = document.getElementById('materialTableBody');
+                materialTableBody.innerHTML = ''; // Limpar conteúdo anterior
+
+                // Obter lista de materiais (máximo 4)
+                const materials = Object.values(data.part).slice(0, 4);
+
+                if (materials.length === 0) {
+                    // Nenhum material selecionado
+                    materialTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="3" style="text-align: center; padding: 1rem;">
+                                Nenhum material selecionado
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    // Preencher tabela com materiais
+                    materials.forEach((material, index) => {
+                        const materialName = material.replace("-SAP", "");
+                        
+                        // Buscar desvios relacionados a este material
+                        // Como não temos campo específico, vamos mostrar todos os desvios únicos
+                        const seen = new Set();
+                        const uniqueDeviations = data.deviation.filter(dev => {
+                            if (seen.has(dev.deviationId)) {
+                                return false;
+                            }
+                            seen.add(dev.deviationId);
+                            return true;
+                        });
+
+                        const row = document.createElement('tr');
+                        
+                        // Coluna Material
+                        const materialCell = document.createElement('td');
+                        materialCell.innerHTML = `<div class="material-name" title="${materialName}">${materialName}</div>`;
+                        row.appendChild(materialCell);
+
+                        // Se houver desvios, mostrar apenas na primeira linha
+                        if (index === 0 && uniqueDeviations.length > 0) {
+                            // Coluna Desvio - um por linha
+                            const deviationCell = document.createElement('td');
+                            const deviationLinks = uniqueDeviations.map(dev => 
+                                `<span class="deviation-link" onclick="window.open('/desvios/detalhes/fisico?id=${dev.deviationId}')">${dev.deviationId}</span>`
+                            ).join('<br>');
+                            deviationCell.innerHTML = deviationLinks;
+                            deviationCell.rowSpan = materials.length;
+                            row.appendChild(deviationCell);
+
+                            // Coluna Status - um por linha
+                            const statusCell = document.createElement('td');
+                            const statuses = uniqueDeviations.map(dev => {
+                                const statusText = dev.status === 6 ? "Vencido" : "Em andamento";
+                                const statusClass = dev.status === 6 ? "vencido" : "andamento";
+                                return `<span class="deviation-status ${statusClass}">${statusText}</span>`;
+                            }).join('<br>');
+                            statusCell.innerHTML = statuses;
+                            statusCell.rowSpan = materials.length;
+                            row.appendChild(statusCell);
+                        } else if (uniqueDeviations.length === 0 && index === 0) {
+                            // Sem desvios
+                            const noDeviationCell = document.createElement('td');
+                            noDeviationCell.textContent = '-';
+                            noDeviationCell.colSpan = 2;
+                            noDeviationCell.style.textAlign = 'center';
+                            row.appendChild(noDeviationCell);
+                        }
+
+                        materialTableBody.appendChild(row);
+                    });
+                }
+
+
+                const grades = {
+                    '1': 'OURO',
+                    '2': 'PRATA',
+                    '3': 'BRONZE',
+                    '4': 'LOCAL AUDITADO'
+                }
+
+                document.getElementById('image-div-img').src = `/static/images/medal${data.medal}.png`
+                document.getElementById('image-div-text').innerHTML = `PROGRAMA 5S<br><span style="font-size: 0.7em">${grades[data.medal]}</span>`
+            }
+
+            function updateGauge(id, value, title, goal) {
+                let barColor;
+
+                if (title == 'Performance' || title == 'Quality') {
+                    goal = 100
+                }
+
+                if (value >= goal) {
+                    barColor = '#1FA11D';  // Verde se o valor for maior
+                } else {
+                    barColor = '#DC4B3C';  // Vermelho para qualquer outro valor
+                }
+
+                const data = [{
+                    type: 'indicator',
+                    mode: 'gauge+number',
+                    value: value,
+                    gauge: { 
+                        axis: { range: [null, 100], tickcolor: 'rgba(255, 255, 255, 0.0)', showticklabels: false }, // showticklabels: true
+                        bar: { color: barColor },
+                        borderwidth: 2,
+                        bordercolor: 'rgba(255, 255, 255, 0.0)' // white
+                    },
+                    number: {
+                            valueformat: '.0f',  // Formato do número sem casas decimais
+                            suffix: '%',         // Adiciona o símbolo de porcentagem
+                            font: { color: 'white' }
+                        },  
+                    }];
+
+                const layout = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: 'white' },
+                    margin: { t: 0, r: 30, b: 0, l: 30 }
+                };
+
+                Plotly.newPlot(id, data, layout, {displayModeBar: false});
+            }
+
+            function updateLineChart(id, values) {
+                if (values.length === 0) {
+                    const layout = {
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: '#ffffff' },
+                        xaxis: { color: '#ffffff', showgrid: false, visible: false },
+                        yaxis: { color: '#ffffff', showgrid: false, visible: false },
+                        margin: { t: 0, r: 0, b: 15, l: 20 },
+                        annotations: [
+                            {
+                                text: "Nenhuma peça registrada",
+                                xref: "paper",
+                                yref: "paper",
+                                showarrow: false,
+                                font: {
+                                    size: 14,
+                                    color: '#ffffff'
+                                },
+                                x: 0.5,
+                                y: 0.5
+                            }
+                        ]
+                    };
+
+                    Plotly.newPlot(id, [], layout, { displayModeBar: false });
+                    return;
+                }
+
+                const data = [{
+                    x: values.map(v => v.x),
+                    y: values.map(v => v.y),
+                    text: values.map(v => v.y),
+                    textposition: 'top center',
+                    mode: "text+lines+markers",
+                    type: 'scatter',
+                    line: { color: '#1a73e8' },
+                    marker: {
+                        size: 10,  // Define o tamanho dos marcadores
+                        color: '#1a73e8',  // Cor dos marcadores
+                    },
+                    textfont: {
+                        size: 20  // ajuste o tamanho da fonte conforme necessário
+                    }
+                }];
+
+                const maxY = Math.max(...values.map(v => v.y));
+                const buffer = Math.max(5, Math.ceil(maxY * 0.15)); // 15% buffer or at least 5
+                const maxYReason = maxY + buffer;
+
+                const layout = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#ffffff' },
+                    xaxis: { color: '#ffffff', showgrid: false },
+                    yaxis: { color: '#ffffff', showgrid: false, range: [0, maxYReason], showticklabels: false},
+                    margin: { t: 0, r: 0, b: 15, l: 20 }
+                };
+
+                Plotly.newPlot(id, data, layout, { displayModeBar: false });
+            }
+
+            function updateBarChart(id, values) {
+                if (values.length === 0) {
+                    const layout = {
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: '#ffffff' },
+                        xaxis: { color: '#ffffff', visible: false },
+                        yaxis: { color: '#ffffff', visible: false },
+                        margin: { t: 0, r: 0, b: 15, l: 200 },
+                        annotations: [
+                            {
+                                text: "Nenhum problema registrado",
+                                xref: "paper",
+                                yref: "paper",
+                                showarrow: false,
+                                font: {
+                                    size: 14,
+                                    color: '#ffffff'
+                                },
+                                x: 0.5,
+                                y: 0.5
+                            }
+                        ]
+                    };
+
+                    Plotly.newPlot(id, [], layout, { displayModeBar: false });
+                    return;
+                }
+
+                const data = [{
+                    y: values.map(v => v.reason),
+                    x: values.map(v => v.time),
+                    text: values.map(v => v.time),
+                    textposition: 'outside',
+                    mode: 'markers+text',
+                    type: 'bar',
+                    orientation: 'h',
+                    marker: { color: '#1a73e8' },
+                    textfont: {
+                        size: 20  // ajuste o tamanho da fonte conforme necessário
+                    }
+                }];
+
+                const maxValue = Math.max(...values.map(v => v.time)) * 1.3;
+                const layout = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#ffffff' },
+                    xaxis: { color: '#ffffff', showgrid: false, showticklabels: false,  range: [0, maxValue]},
+                    yaxis: { 
+                        color: '#ffffff', 
+                        showgrid: false,
+                        tickfont: {
+                            size: 15,
+                            weight: 'bold'
+                        }
+                    },
+                    autosize: true,
+                    margin: { t: 0, r: 0, b: 15, l: 250 },
+                    showgrid: false
+                };
+
+                Plotly.newPlot(id, data, layout, { displayModeBar: false });
+            }
+
+            updateDashboard();
+            setInterval(updateDashboard, 30000);
+
+            // Resize handler: debounce and resize Plotly charts for responsiveness
+            const plotIds = ['performanceChart','availabilityChart','qualityChart','oeeChart','productionRateChart','stopsChart','qualityIssuesChart'];
+            function resizeCharts() {
+                plotIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && el.data) { // existing plot
+                        try { Plotly.Plots.resize(el); } catch(e) { /* ignore */ }
+                    } else if (globalData) {
+                        // If not yet rendered (rare), re-run minimal update
+                        updateUI(globalData);
+                    }
+                });
+            }
+            window.addEventListener('resize', () => {
+                resizeCharts();
+            });
+        });
+
+
+        const currentTimeElement = document.getElementById('currentTime');
+
+        const updateTime = () => {
+            const now = new Date();
+            const year = now.getFullYear();  // Obtém o ano
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');  // Obtém o mês (adiciona 1 porque os meses são indexados de 0)
+            const day = now.getDate().toString().padStart(2, '0');  // Obtém o dia do mês
+
+            const hours = now.getHours().toString().padStart(2, '0');  // Obtém as horas
+            const minutes = now.getMinutes().toString().padStart(2, '0');  // Obtém os minutos
+            const seconds = now.getSeconds().toString().padStart(2, '0');  // Obtém os segundos
+
+            currentTimeElement.innerText = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        };
+
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        
+    </script>
+</body>
+</html>

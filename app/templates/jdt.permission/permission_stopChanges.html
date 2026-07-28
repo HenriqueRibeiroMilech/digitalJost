@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80vw;
+            height: 80vh;
+            color: #153A8A;
+            overflow: auto;
+        }
+        .container-info {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .left-side {
+            width: 60%;
+            margin-right: 20px;
+        }
+
+        .right-side {
+            width: 40%;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .filter {
+            width: 48%;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #153A8A;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #2e52a7;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        thead th {
+            position: sticky;
+            background-color: #2e52a7;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            z-index: 2;
+            top:0;
+        }
+
+        tbody td {
+            padding: 10px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .table-container {
+            height: 50vh;
+            overflow-y: auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/usuarios'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <h1>Aprovadores de Alteração de Paradas</h1>
+        <div class="container-info">
+            <div class="left-side">
+                <h2>{{ areaName }}</h2>
+                <div class="filters">
+                    <div class="filter">
+                        <label for="filterMatricula">Filtrar por Matrícula:</label>
+                        <input type="text" id="filterMatricula" placeholder="Digite a matrícula..." onkeyup="filterTable()">
+                    </div>
+                    <div class="filter">
+                        <label for="filterNome">Filtrar por Nome:</label>
+                        <input type="text" id="filterNome" placeholder="Digite o nome..." onkeyup="filterTable()">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="aprovadoresTable">
+                        <thead>
+                            <tr>
+                                <th>USUÁRIO</th>
+                                <th>NOME</th>
+                                <th>CARGO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Linhas da tabela geradas pelo JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="right-side">
+                <div class="input-group">
+                    <label style="color:red">Digite a matrícula do responsável para aprovação de alteração de parada da sua área:</label>
+                </div>
+                <div class="input-group" id="inputFields">
+                    <!-- Campos de input gerados dinamicamente pelo JavaScript -->
+                </div>
+                <button onclick="submitMatricula()">Atualizar</button>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="userDatalist">
+        {% for user in users %}
+        <option value="{{ user.id }}"></option>
+        {% endfor %}
+    </datalist>
+
+    <script>
+
+        const tableData = JSON.parse({{ table | tojson }});
+        const areaName = "{{ areaName }}";
+        const areaId = "{{ areaId }}";
+        const approvers = JSON.parse({{ approvers | tojson }});
+
+        function populateTable(newTableData) {
+            const tableBody = document.querySelector('#aprovadoresTable tbody');
+            tableBody.innerHTML = ''
+
+            newTableData.forEach(aprovador => {
+                const row = document.createElement('tr');
+
+                const matriculaCell = document.createElement('td');
+                matriculaCell.textContent = aprovador.id;
+
+                const nomeCell = document.createElement('td');
+                nomeCell.textContent = aprovador.name;
+
+                const cargoCell = document.createElement('td');
+                cargoCell.textContent = aprovador.position;
+
+                row.appendChild(matriculaCell);
+                row.appendChild(nomeCell);
+                row.appendChild(cargoCell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const inputContainer = document.getElementById('inputFields');
+            populateTable(tableData)
+
+            const inputField = document.createElement('input');
+            inputField.setAttribute('list', 'userDatalist');
+            inputField.type = 'text';
+            inputField.name = 'userId';
+
+            if (['Engenharia de Processo', 'Manutenção', 'Engenharia da Qualidade'].includes(areaName)) {
+                const label = document.createElement('label');
+                label.textContent = 'Matrícula Geral:';
+                inputContainer.appendChild(label);
+                inputField.value = approvers[0].userId;
+                inputField.id = 'shift_0'
+                inputContainer.appendChild(inputField);
+            } else if (['Logística', 'Produção'].includes(areaName)) {
+                ['Turno 1', 'Turno 2', 'Turno 3'].forEach(turno => {
+                    const turnoLabel = document.createElement('label');
+                    turnoLabel.textContent = `Matrícula ${turno}:`;
+                    const turnoInput = inputField.cloneNode();
+                    turnoInput.value = approvers[parseInt(turno.split(' ')[1]) - 1].userId;
+                    turnoInput.id = `shift_${turno.split(' ')[1]}`
+                    inputContainer.appendChild(turnoLabel);
+                    inputContainer.appendChild(turnoInput);
+                });
+            }
+        });
+
+        function submitMatricula() {
+            const userIds = Array.from(document.querySelectorAll("input[name='userId']"))
+                                .map(input => ({
+                                    user: input.value,
+                                    shift: input.id.split('_')[1]
+                                }));
+
+            for (const info of userIds) {
+                if (!{{ users | tojson }}.map(user => user.id).includes(info.user)) {
+                    alert('Matrícula inválida preenchida!');
+                    return;
+                }
+            }
+
+            if (userIds) {
+                fetch('/usuarios/paradas?area=' + areaId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userIds: userIds })
+                })
+                .then(response => {
+                    window.location.reload()
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                });
+            } else {
+                alert('Por favor, preencha uma matrícula válida.');
+            }
+        }
+
+        function filterTable() {
+            const userIdInput = document.getElementById('filterMatricula').value.toLowerCase();
+            const userNameInput = document.getElementById('filterNome').value.toLowerCase();
+            const filteredData = tableData.filter(user => 
+                user['id'].toLowerCase().includes(userIdInput) &&
+                user['name'].toLowerCase().includes(userNameInput)
+            );
+            populateTable(filteredData);
+        }
+
+
+    </script>
+</body>
+</html>

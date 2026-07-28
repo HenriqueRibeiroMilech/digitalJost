@@ -1,0 +1,14 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<body onload="changeNav()">
+    <div class="iframe_container">
+        <iframe id="dash_iframe" title="Relatório Qualidade V2" src="https://app.powerbi.com/view?r=eyJrIjoiZTAzOTBkN2EtMDk0NS00MmM1LWE0NTEtMmNkMmQ2NjQwZmUyIiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9&pageName=ReportSection287ffbfcda09a003de4c" frameborder="0"></iframe>
+    </div>
+</body>
+{% endblock %}

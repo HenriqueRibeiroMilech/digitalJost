@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>Digital JOST</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+          </head>
+
+    <body class="page_body" onload="animate()">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="login_error">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+        {% endwith %}
+        
+        <div class="message_container">
+            <div id="logo_tdg">
+                <img id="digitaljost_logo" src="{{ url_for('static', filename='images/jost_black.png') }}">
+            </div>
+        </div>
+        
+        <div class="wrapper">
+            <form method="post">
+                <div id="mat_field" class="login_form">
+                    <label id="mat_label" class="login_label">Usuário</label>
+                    <input autofocus id="mat" class="login_input" type="text" required placeholder="Digite seu usuário..." autocomplete="off" name="matricula" maxlength="10" onkeyup="this.value=this.value.replace(/'/g, '')">
+                </div>
+                <input type="submit" hidden />
+            </form>
+        </div>
+    </body>
+
+    <script>
+        function animate() {
+            document.querySelector(".page_body").style.opacity= "1";
+            document.querySelector(".page_body").style.marginTop= "0vh";
+        }
+    </script>
+</html>

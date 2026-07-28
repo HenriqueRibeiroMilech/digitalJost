@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .title {
+            display: flex;
+            flex-wrap: wrap; /* permite quebra de linha */
+            justify-content: space-between; /* Alinha o título à esquerda e os filtros à direita */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: right;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15vw;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-section > div {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 calc(25% - 10px); /* quatro campos por linha */
+        }
+
+        .form-section > div label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .extra-input, .form-section > div input,
+        .form-section > div select {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .image-container {
+            position: relative;
+            display: inline-block;
+            justify-content: center;
+            display: flex;
+            margin-top: 2vh;
+        }
+
+        .image-container div {
+            font-size: 1vw;
+        }
+
+        .image-container img {
+            display: block;
+            max-width: 60%;
+            width: 60%;
+            border-radius: 30px;
+        }
+
+
+        .text-overlay {
+            position: absolute;
+            color: black;
+            font-size: 16px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 15vw;
+        }
+
+        .dropbtn {
+            background-color: #000000;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 10;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 5px;
+            text-decoration: none;
+            display: inline-flex; 
+            align-items: center;
+            width: auto;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #5a5a5a;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: white;
+            width: 90%;
+            justify-content: space-between;
+            border: 1px solid #ccc;
+        }
+        
+        .input-wrapper:focus-within {
+            outline: -webkit-focus-ring-color auto 1px;
+        }
+
+        .input-wrapper input:focus-visible {
+            outline: none;
+        }
+
+        .date-filters {
+            display: flex;
+            flex-wrap: wrap; /* permite quebra de linha nos filtros */
+            align-items: center;
+            font-size: 1em;
+        }
+
+        .date-filters label {
+            margin: 0 10px;
+            font-size: 1em;
+            color: #153A8A;
+        }
+
+        .date-filters input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(8vh + 9vw);
+            width: calc(8vh + 9vw);
+            margin: 5% auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="downloadFile()">Download Excel</button>
+        <button onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Produção - Consulta de Sinal</h1>
+
+            <div class="date-filters">
+                <label for="last_week">Início:</label>
+                <input type="datetime-local" min='2024-09-11' id="last_week" value="{{last_week}}">
+                <label for="this_week">Fim:</label>
+                <input type="datetime-local" min='2024-09-11' id="this_week" value="{{this_week}}">
+                <div class="dropdown" style="margin-left: 1vw;margin-right: 1vw;">
+                    <button class="dropbtn" type="button">Filtrar - Centro de Trabalho</button>
+                    <div class="dropdown-content">
+                        <label><input oninput="toggleExclusiveFilter('workcenter')" style="width: auto;margin: 0 10px 0 0;" type="checkbox" id="workcenter">Selecionar todos</label>
+                        {% for workcenter in workcenters %}
+                            <label><input style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="workcenter" value="{{ workcenter.Workcenter_Code }}">{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button onclick="searchData()">Pesquisar</button>
+            </div>
+        </div>        
+        
+        <div class="filter-container" style="width: 100%;">
+
+
+            <input type="text" id="filter1" placeholder="Filtrar - Ordem de Produção" onkeyup="filterTable()">
+            <input type="text" id="filter2" placeholder="Filtrar - Material" onkeyup="filterTable()" style="margin-right: 0;">
+
+        </div>
+        <div style='height: 60vh;overflow-y: auto;' id="tableContainer">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Centro de Trabalho</th>
+                        <th>Ordem de Produção</th>
+                        <th>Material</th>
+                        <th>Fim</th>
+                        <th>Sinal * Fator = Peças</th>
+                        <th>Tempo de sinal / Peças</th>
+                        <th>Tempo de Roteiro</th>
+                    </tr>
+                </thead>
+                <tbody id="infoTable">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+            <div class="loader"></div>
+        </div>
+
+    </div>
+
+    <div id="modalError" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="errorMessage"></h2>
+            <button onclick="closeModal('modalError')">Fechar</button>
+        </div>
+    </div>
+    
+
+    <script>
+        let tableData;
+
+        // FUNÇÕES PARA ABRIR OS MODAIS
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+
+        // FUNÇÕES PARA INSERIR AS TABELAS
+        
+        function populateTable(data) {
+
+            function formatMinutesToHHMMSS(minutes) {
+
+                if (isNaN(minutes)) return '';
+                const totalSeconds = Math.round(minutes * 60);
+                const hrs = Math.floor(totalSeconds / 3600);
+                const mins = Math.floor((totalSeconds % 3600) / 60);
+                const secs = totalSeconds % 60;
+                return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            const tableBody = document.getElementById('infoTable');
+            tableBody.innerHTML = '';
+
+            data.forEach(info => {
+
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                cell.textContent = info['Workcenter_Code'] + '-' + info['Name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['Job'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['Part'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['Record_Time'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = info['Signal'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                const durationPerSignal = parseInt(info['Signal']) < 0 ? '' : info['Duration'] / parseInt(info['Signal']);
+
+                cell.textContent = durationPerSignal === '' ? '' : formatMinutesToHHMMSS(durationPerSignal);
+
+                if (durationPerSignal !== '') {
+                    cell.className = durationPerSignal > info['Routing_Time'] ? 'status-rejected' : 'status-approved';
+                } else {
+                    cell.className = 'status-pending';
+                }
+
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = formatMinutesToHHMMSS(info['Routing_Time']);
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+
+            let piecesSum = 0;
+
+            let parts = new Set();
+
+            data.forEach(info => {
+                piecesSum = info['Part'] != '' ? piecesSum + parseInt(info['Signal']) : piecesSum + 0;
+                parts.add(info['Part']);
+            });
+
+            console.log(piecesSum)
+            console.log(parts)
+
+        }
+
+        function filterTable() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+
+            const filteredData = tableData.filter(user => {
+                
+                const filter1Match = user['Job'].toString().toLowerCase().includes(filter1);
+                const filter2Match = user['Part'].toString().toLowerCase().includes(filter2);
+            
+                return filter1Match && filter2Match;
+            });
+
+            populateTable(filteredData);
+        }
+
+        
+        // FUNÇÃO PARA PESQUISAR OS DADOS DE SINAIS 
+
+        function searchData() {
+
+            const workcenters_mic = Array.from(document.querySelectorAll(`input[name='workcenter']:checked`)).filter(checkbox => checkbox.value == '1').map(checkbox => checkbox.parentElement.innerText)
+            const workcenters_plex = Array.from(document.querySelectorAll(`input[name='workcenter']:checked`)).filter(checkbox => checkbox.value != '1').map(checkbox => checkbox.value)
+
+            const payload = {
+                start_date: document.getElementById('last_week').value
+                , end_date: document.getElementById('this_week').value
+                , workcenters_mic: workcenters_mic
+                , workcenters_plex: workcenters_plex
+            }
+
+            if (!payload.start_date || !payload.end_date || workcenters_plex.length === 0 && workcenters_mic.length === 0) {
+                document.getElementById('errorMessage').innerHTML = `Preencha todos os seguintes campos: data de inicio, data de fim e centro de trabalho.`
+                openModal('modalError')
+                return
+            }
+            
+            document.getElementById('infoTable').innerHTML = '';
+            document.querySelectorAll('.loader').forEach(function(loader) {
+                loader.style.display = 'block';
+            });
+
+            fetch(`/oee/sinal`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+
+                document.querySelectorAll('.loader').forEach(function(loader) {
+                    loader.style.display = 'none';
+                });
+
+                if (response.status === 404) {
+                    document.getElementById('errorMessage').innerHTML = `Código de rastreabilidade não encontrado`
+                    openModal('modalError');                
+                } else if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Erro inesperado');
+                }
+            })
+            .then(received_data => {
+                tableData = received_data.data
+                filterTable()
+            })
+            .catch(err => {
+                console.error('Erro na requisição:', err);
+            });
+            
+        }
+
+
+        // FUNÇÕES GERAIS
+
+        // seleciona todos os checkbox
+        function toggleExclusiveFilter(group) {
+            const input = document.getElementById(group);
+            const checkboxes = document.getElementsByName(group)
+
+            if (input.checked) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = false);
+            }
+        }
+
+
+        // faz o download do excel
+        function downloadFile() {
+
+            const workcenters_mic = Array.from(document.querySelectorAll(`input[name='workcenter']:checked`)).filter(checkbox => checkbox.value == '1').map(checkbox => checkbox.parentElement.innerText)
+            const workcenters_plex = Array.from(document.querySelectorAll(`input[name='workcenter']:checked`)).filter(checkbox => checkbox.value != '1').map(checkbox => checkbox.value)
+
+            const payload = {
+                start_date: document.getElementById('last_week').value
+                , end_date: document.getElementById('this_week').value
+                , workcenters_mic: workcenters_mic
+                , workcenters_plex: workcenters_plex
+            }
+
+            if (!payload.start_date || !payload.end_date || workcenters_plex.length === 0 && workcenters_mic.length === 0) {
+                document.getElementById('errorMessage').innerHTML = `Preencha todos os seguintes campos: data de inicio, data de fim e centro de trabalho.`
+                openModal('modalError')
+                return
+            }
+            
+            fetch(`/oee/sinal/excel`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao gerar o arquivo');
+
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = 'download';
+
+                if (disposition && disposition.includes('filename=')) {
+                    const matches = disposition.match(/filename="?([^"]+)"?/);
+                    if (matches?.[1]) filename = matches[1];
+                }
+
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+
+        }
+
+        
+    </script>
+</body>
+</html>

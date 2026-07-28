@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            color: #fff;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(21, 58, 138, 0.9);
+            z-index: 10;
+        }
+        .login-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: #000;
+        }
+
+        #main {
+            position: absolute;
+            left: 2vw;
+            top: 2vw;
+        }
+
+        .title {
+            font-size: 3vw;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .sub-title {
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        .input-container {
+            margin-bottom: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .input-container label {
+            margin-bottom: 5px;
+        }
+        .input-container input {
+            width: 90%;
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .input-container input:focus,
+        .input-container input.selected {
+            outline: none;
+            border: 2px solid #2e52a7;
+        }
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            width: 30vw;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .key {
+            flex: 1 1 20%;
+            margin: 5px;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #153A8A;
+            color: #fff;
+            text-align: center;
+            font-size: 2vw;
+            cursor: pointer;
+        }
+        .key.empty {
+            background: none;
+        }
+        .key:hover {
+            background-color: #2e52a7;
+        }
+        .login-button {
+            margin-top: 1vw;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #153A8A;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .login-button:hover {
+            background-color: #2e52a7;
+        }
+        .boxes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100vw;
+        }
+        .box {
+            width: 250px;
+            height: 250px;
+            margin: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1vw;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .blue {
+            background-color: #1c3772;
+            cursor: pointer;
+        }
+        .blue:hover {
+            background-color: #172f66;
+        }
+
+        .red {
+            background-color: #a72e2e;
+        }
+        .red:hover {
+            background-color: #932020;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+            width: auto;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button id='userName'>REALIZE O LOGIN</button>
+        <button onclick="window.location='/manutencao/controle/consulta'"><i class="fas fa-x"></i></button>
+    </div>
+    <div class="container" id="mainScreen" style="display: none;">
+        <div class="title" id="main">A JOST EVOLUI</div>
+        <div class="boxes">
+            {% for team in teams %}
+            <div class="box blue" onclick="submitForm({{ team.team }})">{{ team.title }}</div>
+            {% endfor %}
+            <div class="box red">Não Entregou</div>
+            <div class="box red">Não entregou</div>
+            <div class="box red">Não entregou</div>
+            <div class="box red">Não entregou</div>
+        </div>
+    </div>
+    <div class="modal" id="loginScreen">
+        <div class="login-box">
+            <div class="title">Realize o login</div>
+            <div class="sub-title">Clique no campo e Leia o crachá para fazer login</div>
+            <div class="input-container">
+                <label for="matricula">Matrícula</label>
+                <input type="text" id="matricula" placeholder="Preencha a matrícula" oninput="verify()" autocomplete="off">
+            </div>
+            <button class="login-button" onclick="login()">Fazer Login</button>
+        </div>
+    </div>
+
+    <!-- Formulário oculto para envio dos dados -->
+    <form id="redirectForm" method="POST" action="/gincana/inovacao/posts" style="display: none;">
+        <input type="hidden" name="user" id="hiddenUser">
+        <input type="hidden" name="id" id="hiddenId">
+    </form>
+
+    <script>
+
+        document.getElementById('matricula').addEventListener('paste', function(event) {
+            event.preventDefault();
+            alert('Colar não é permitido neste campo.');
+        });
+
+        if ('{{user}}' != '000') {
+            console.log({{user}})
+            document.getElementById('matricula').value = '{{user}}'
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'flex';
+            login()
+        }
+
+
+        let focusedInput = 'matricula';
+        document.getElementById(focusedInput).classList.add('selected');
+        let currentUser;
+        let inputStart = 0;
+        let inputEnd = 0;
+
+        function verify() {
+            const matricula = document.getElementById('matricula');
+
+            if (inputStart === 0) {
+                inputStart = new Date().getTime();
+            }
+            // Armazena o tempo final
+            inputEnd = new Date().getTime();
+            if ((inputEnd - inputStart) > 15) {
+                matricula.value = ''
+                inputStart = 0
+            } else if (matricula.value.length == 12) {
+                console.log(matricula.value)
+                if (matricula.value.startsWith('2300')) {
+                    matricula.value = matricula.value.slice(4);
+                    inputStart = 0
+                } else {
+                    matricula.value = ''
+                    inputStart = 0
+                    alert('Má leitura de crachá, segure mais tempo!');
+                }
+            }
+        }
+
+        function login() {
+            const matricula = document.getElementById('matricula').value;
+            if (matricula.length == 8) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/gincana/inovacao/login", true);
+                xhr.setRequestHeader("Content-type","application/json");
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            currentUser = matricula;
+                            document.getElementById('loginScreen').style.display = 'none';
+                            document.getElementById('mainScreen').style.display = 'flex';
+
+                            document.getElementById('userName').innerText = xhr.responseText.split(';')[1]
+                        } else {
+                            alert('Matricula não encontrada!');
+                        }
+                    }
+                }
+                xhr.send(JSON.stringify({user: matricula}))
+            } else {
+                alert('Matricula não preenchida!');
+            }
+        }
+
+        function submitForm(id) {
+            document.getElementById('hiddenUser').value = currentUser;
+            document.getElementById('hiddenId').value = id;
+            document.getElementById('redirectForm').submit();
+        }
+
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.09;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="op_qual_body" onload="removeNav()">
+    <div id="header_banner">
+        <h1 id="op_qual_header"><i class="fa fa-bullhorn"></i> Informativo da Qualidade</h1>
+        <div id="hist_filters">
+            <p class="op_btn_wrapper">
+                <a href="/op/qualidade" id="header_view_btn" class="header_btn">Visualizar Pirâmide</a>
+                <a href="/op/qualidade/add" id="header_add_btn" class="header_btn">Adicionar Entrada</a>
+                <a href="/op/qualidade/edit_select" id="header_edit_btn" class="header_btn">Editar Entradas</a>
+            </p>
+        </div>
+    </div>
+
+    <form id="op_qual_post" method="post" action="/op/qualidade/update?entryID={{entry}}&command=edit" enctype="multipart/form-data">
+
+        <label class="op_label" style="width: 20vw;">Unidade JOST:</label><br>
+        <select class="input_qual" name="unidade" id="unidade">
+            <option value="0">Caxias do Sul</option>
+            <option value="1">Campinas</option>
+        </select><br>
+
+        <label class="op_label" id="op_lista_1_label" for="op_local_ocorr" style="width: 20vw;">Local da Ocorrência da Não Conformidade:</label><br>
+        <select class="input_qual" id='op_local_ocorr' name="op_local_ocorr">
+            <option>Interno</option>
+            <option>Cliente (Não Formal)</option>
+            <option>Fornecedor</option>
+            <option>Cliente (Formal)</option>
+            <option>Cliente (Logística)</option>
+        </select>
+        <br>
+
+        <label class="op_label" for="op_local_info" style="width: 20vw;">Local especifico:</label><br>
+        <input class="input_qual" autocomplete="off" id="op_local_info" name="op_local_info" placeholder="Digite aqui..." required
+               type="text" onkeyup="this.value=this.value.replace(/'/g, '')">
+        <br>
+
+        <label class="op_label" for="ct" style="width: 20vw;">Centro de Trabalho:</label><br>
+        <input class="input_qual" oninput="filter(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" placeholder="Selecione uma opção..." autocomplete="off" list="ct" name="ct" id="center">
+        <datalist id="ct" style="margin-bottom:1vh;">
+            <option value="" disabled selected>Selecione uma opção...</option>
+            {% for workcenter in workcenters %}
+              <option>{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}</option>
+            {% endfor %}
+        </datalist>
+        <br>
+
+        <label class="op_label" for="ct" style="width: 20vw;">Código do Produto:</label><br>
+        <div id="produto">
+            <input class="input_qual" oninput="searchProduct(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" value="Aguardando seleção..." autocomplete="off" name="id_mater" id="id_mater">
+        </div><br>
+
+        <span>Descrição do Produto</span>
+        <p id="desc">Aguardando seleção...</p>
+
+        <label class="op_label" id="op_familia_label" style="width: 20vw;">Informe a família de produtos: </label><br>
+        <input class="input_qual" required autocomplete="off" type="text" name="op_familia" id="op_familia" placeholder="Digite a família de produtos..." onkeyup="this.value=this.value.replace(/'/g, '')" list="familia">
+        <datalist id="familia" style="margin-bottom:1vh;">
+            <option>QR</option>
+            <option>QR + MESA</option>
+            <option>AO</option>
+            <option>SP 3° EIXO</option>
+            <option>SP SR</option>
+            <option>EE</option>
+            <option>PR</option>
+            <option>AL</option>
+            <option>VT</option>
+            <option>EA</option>
+            <option>PE</option>
+            <option>EC</option>
+        </datalist>
+        <br>
+
+        <br>
+        <p><a id="problema_label">Descrição do Problema:</a></p>
+        <input class="input_qual" required type="text" autocomplete="off" name="op_problema" id="op_problema" placeholder="Descreva o problema..." onkeyup="this.value=this.value.replace(/'/g, '')"/>
+
+        <br>
+        <label class="op_label" id="op_reincidente_label" for="op_reincidente" style="width: 20vw;">Marque se o problema é reincidente </label>
+        <input type="checkbox" name="op_reincidente" id="op_reincidente">
+        <br>
+
+        <label class="op_label" id="op_cont_label" style="width: 20vw;">Informe sobre a contenção do problema: </label><br>
+        <input required class="op_cont" type="text" autocomplete="off" name="op_cont_1" id="op_cont_1" placeholder="O que foi feito?" onkeyup="this.value=this.value.replace(/'/g, '')">
+        <br>
+        <input required class="op_cont" type="text" autocomplete="off" name="op_cont_2" id="op_cont_2" placeholder="Como foi feito?" onkeyup="this.value=this.value.replace(/'/g, '')">
+        <br>
+        <input required class="op_cont" type="text" autocomplete="off" name="op_cont_3" id="op_cont_3" placeholder="Quem fez?" onkeyup="this.value=this.value.replace(/'/g, '')">
+        <br>
+
+        <br>
+        <label id="op_input_label_1" for="op_img_input_1" style="width: 20vw;">Adicione as Imagens 'NOK'...</label>
+        <input class="input_qual" id="op_img_input_1" type="file" name="file_nok" autocomplete="off" multiple="multiple" accept="image/*">
+        <br>
+        <a id="lista_label_1">Arquivos selecionados para categoria 'NOK':</a>
+        <div id="lista_1"></div>
+
+        <label id="op_input_label_2" for="op_img_input_2" style="width: 20vw;">Adicione as Imagens 'OK'...</label>
+        <input class="input_qual" id="op_img_input_2" type="file" name="file_ok" autocomplete="off" multiple="multiple" accept="image/*">
+        <br>
+        <a id="lista_label_2">Arquivos selecionados para categoria 'OK':</a>
+        <div id="lista_2"></div>
+
+        <label class="op_label" id="op_date_label" style="width: 20vw;">Informe a data de abertura: </label><br>
+        <input class="input_qual" required type="date" name="op_date" id="op_date">
+        <br>
+
+        <label class="op_label" id="op_turno_label" style="width: 20vw;">Informe o turno onde ocorreu o problema: </label><br>
+        <input type="checkbox" value="1" name="turno1" id="turno1"> - Turno 1<br>
+        <input type="checkbox" value="2" name="turno2" id="turno2"> - Turno 2<br>
+        <input type="checkbox" value="3" name="turno3" id="turno3"> - Turno 3<br>
+        <input type="checkbox" value="NA" name="NA" id="NA"> - Não Aplicavel<br>
+
+        <input type="hidden" name="deletar1" id="deletar1">
+        <input type="hidden" name="deletar2" id="deletar2">
+        <input type="submit" class="op_inputs" value="Atualizar" >
+    </form>
+    <br>
+    <br>
+</body>
+
+<script>
+{% include 'operation.qual/op_qual_edit.js' %}
+</script>
+
+{% endblock %}

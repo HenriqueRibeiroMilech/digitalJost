@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_lab.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+   </head>
+    
+    <body class="page_body">
+        <a id="select_back" href="/solicitar" style="position: absolute;">&times;</a>
+        <div class="topnav">
+            <p class="title" id="id_detail"><i class="fas fa-paper-plane"></i> </p> <br>
+        </div>
+
+        <div class="edit_body" id="body">
+
+            <p class="edit_label">Solicitante: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="requester"><br>
+
+            <p class="edit_label">Área requisitada: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="area"><br>
+
+            <p class="edit_label">Data de abertura: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="openDate"><br>
+
+            <p class="lab_subt">DADOS GERAIS</p>
+
+            <p class="edit_label">Título: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="title"><br>
+
+            <p class="edit_label">Nível de urgência: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="urgency"><br>
+
+            <p class="edit_label">Descrição: </p>
+            <br>
+            <textarea class="edit_filter" style="width:50vw" id="desc" readonly></textarea><br>
+
+            <p class="edit_label" style="margin-bottom:0;width:84vw">Documentos anexados:</p>
+            <div id="lab-container" style="margin-top:0">
+                <table></table>
+            </div>
+
+            <p class="lab_subt">STATUS DA SOLICITAÇÃO</p>
+
+            <p class="edit_label">Status geral: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="status"><br>
+
+            <p class="edit_label">Responsável: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="respName"><br>
+
+            <div id="extra">
+            </div>
+
+            <div id="deadline">
+                <p class="edit_label">Data de Início: </p>
+                <input class="edit_filter" style="width:50vw" readonly type="text" id="startDate"><br>
+
+                <p class="edit_label">Prazo de conclusão: </p>
+                <input class="edit_filter" style="width:50vw" readonly type="text" id="deliveryDate"><br>
+
+                <p class="edit_label">Reprogramações: </p>
+                <input class="edit_filter" style="width:50vw" readonly type="text" id="reprogs"><br>
+
+                <p class="edit_label" style="margin-bottom:0;width:91.5vw">Pausas durante o desenvolvimento:</p>
+            </div>
+
+
+            <div id="lab-container2" style="margin-top:0">
+                <table></table>
+            </div>
+
+            <div id="admin">
+            </div>
+
+        </div>
+        
+    </body>
+    <script>
+       {% include 'request.improvements/improvements_small_detail.js' %}
+    </script>
+</html>
+

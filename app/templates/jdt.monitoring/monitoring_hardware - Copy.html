@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sidebar {
+            width: 12vw;
+            background-color: #153A8A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar-text {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .sidebar button {
+            background-color: white;
+            color: #153A8A;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 1em;
+            width: 80%;
+        }
+
+        .sidebar button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .legend {
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .legend p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .legend .color-box {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
+
+        .color-green { background-color: green; }
+        .color-red { background-color: red; }
+        .color-gray { background-color: gray; }
+        .color-blue { background-color: #153A8A;}
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            flex-grow: 1;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            align-items: center;
+        }
+
+        .image-div {
+            height: 100%;
+            display: block;
+            position: relative;
+
+        }
+
+        .image-div img {
+            height: 100%;
+            z-index:4;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 60%;
+            max-width: 700px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .title {
+            margin-bottom: 10px;
+            font-size: 2em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .filter-checkbox {
+            margin: 10px;
+            font-size: 1.5em;
+            width: 45%;
+            text-align: left;
+        }
+
+        .filter-checkbox input {
+            transform: scale(1.5);
+        }
+
+        .apply-button {
+            background-color: white;
+            color: #153A8A;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        .apply-button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+            z-index: 5;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .circle {
+            position: absolute;
+            width: 20px; /* Diameter of the circle */
+            height: 20px; /* Diameter of the circle */
+            border-radius: 50%;
+            cursor: grab;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: gray;
+
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        .edit-button {
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-button:hover {
+            background-color: #2e52a7;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .bullet-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 1.5em;
+            width: 100%;
+        }
+
+        .bullet-container ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .bullet-container li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info {
+            margin-right: 10px;
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+
+        .bullet-container .connected {
+            background-color: green;
+        }
+
+        .bullet-container .not-connected {
+            background-color: red;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 45%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/monitoramento'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-text">Hardwares<br>Industriais</div>
+        
+        <div class="legend">
+            <p style="width: 100%; text-align: center;">Legenda</p>
+            <p><span class="color-green color-box"></span>Ativo</p>
+            <p><span class="color-red color-box"></span>Sem Conexão</p>
+            <p><span class="color-gray color-box"></span>Carregando</p>
+        </div>
+        <button style="margin-top: auto;" onclick="openModal('tableModal')">Visualizar em tabela</button>
+        <button style="margin-top: 1vh;" onclick="openModal('newModal')">Adicionar novo computador</button>
+    </div>
+
+    <div class="container">
+        <div class="image-div" id="image-div">
+            <img src="/static/images/layout.PNG" alt="Hardware Image">
+        </div>
+        <div style="height:80%;width: 40%; padding: 20px; margin: 20px; display: flex;flex-direction: column;justify-content: flex-start;">
+            <div class="bullet-container">
+                <h2>Resumo das Conexões</h2>
+                <ul>
+                    <li><span class="info connected"></span>PCs MES com conexão <span id="pcs-mes-ativos"></span></li>
+                    <li><span class="info not-connected"></span>PCs MES sem conexão <span id="pcs-mes-sem-conexao"></span></li><br>
+                    <li><span class="info connected"></span>PCs TVs com conexão <span id="pcs-tvs-ativos"></span></li>
+                    <li><span class="info not-connected"></span>PCs TVs sem conexão <span id="pcs-tvs-sem-conexao"></span></li><br>
+                    <li><span class="info connected"></span>Switches com conexão <span id="switches-ativos"></span></li>
+                    <li><span class="info not-connected"></span>Switches sem conexão <span id="switches-sem-conexao"></span></li>
+                </ul>
+            </div>
+    
+            <div id="info-div" style="width: 100%; padding: 20px; background-color: #f7f7f7; border-radius: 10px;margin-top: auto;">
+                <h3>Informações do Hardware</h3>
+                <p id="info-text">Selecione um círculo para ver as informações.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="tableModal" class="modal">
+        <div class="modal-content" style="height: 80vh;">
+            <span onclick="closeModal('tableModal')" class="close">&times;</span>
+            <p class="title">Modo Tabela</p>
+            <p>Aqui você pode visualizar e editar os dados dos RJs.</p>
+            <div class="filter-container">
+                <input type="text" id="filterUserId" placeholder="Filtrar por HOSTNAME" onkeyup="filterTable()">
+                <input type="text" id="filterUserName" placeholder="Filtrar por TIPO" onkeyup="filterTable()">
+            </div>
+            <div style='max-height: 55vh;overflow-y: auto;'>         
+                <table>
+                    <thead>
+                        <tr>
+                            <th>RJ</th>
+                            <th>Tipo</th>
+                            <th>Centro de Trabalho</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hardwareTableBody">
+                        <!-- Conteúdo gerado via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="newModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('newModal')" class="close">&times;</span>
+            <p class="title">Adicionar Novo Computador</p>
+            <p>Os novos computadores ficaram inicialmente no canto direito superior.</p>
+            <input type='text' placeholder="Digite o HOSTNAME do computador">
+            
+            <select>
+                <option>PCs MES</option>
+                <option>Switches</option>
+                <option>PCs TVs</option>
+            </select>
+
+        </div>
+    </div>
+
+    <script>
+
+        var hardwareData = JSON.parse({{data | tojson}})
+
+        function populateTable(tableData) {
+            const tableBody = document.getElementById('hardwareTableBody');
+            tableBody.innerHTML = ''; 
+
+            tableData.forEach(hardware => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                cell.textContent = hardware['rj'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = hardware['type'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = hardware['workCenter'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                const button = document.createElement('button');
+                button.textContent = 'Editar';
+                button.className = 'edit-button color-blue'
+                button.onclick = () => editHardware(hardware['rj']);
+                cell.appendChild(button);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Deletar';
+                deleteButton.className = 'edit-button color-red';
+                deleteButton.style.marginLeft = '1vw'
+                deleteButton.onclick = () => deleteHardware(hardware['rj'])
+                cell.appendChild(deleteButton);
+
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            populateTable(hardwareData)
+        }
+    
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function render() {
+            const container = document.getElementById('image-div');
+            container.innerHTML = '<img src="/static/images/layout.PNG" alt="Hardware Image">'
+
+            let pcsMesAtivos = 0, pcsMesSemConexao = 0;
+            let pcsTvsAtivos = 0, pcsTvsSemConexao = 0;
+            let switchesAtivos = 0, switchesSemConexao = 0;
+
+            hardwareData.forEach(hardware => {
+                var newCircle = document.createElement("div");
+                newCircle.id = hardware.rj
+
+                if (hardware.status == 1) {
+                    newCircle.className = "circle color-green";
+                    if (hardware.type === 'PCs MES') pcsMesAtivos++;
+                    else if (hardware.type === 'PCs TVs') pcsTvsAtivos++;
+                    else if (hardware.type === 'Switches') switchesAtivos++;
+                } else if (hardware.status == 0) {
+                    newCircle.className = "circle color-red";
+                    if (hardware.type === 'PCs MES') pcsMesSemConexao++;
+                    else if (hardware.type === 'PCs TVs') pcsTvsSemConexao++;
+                    else if (hardware.type === 'Switches') switchesSemConexao++;
+                } else {
+                    newCircle.className = "circle color-gray";
+                }
+
+                newCircle.style.left = hardware.coord_x;
+                newCircle.style.top = hardware.coord_y;
+
+                newCircle.addEventListener("mousedown", function(e) {
+                    newCircle.style.cursor = "grabbing";
+                    e.preventDefault();
+
+                    document.addEventListener("mousemove", onMouseMove);
+                    document.addEventListener("mouseup", onMouseUp);
+
+                    function onMouseMove(e) {
+                        pos_x = (e.clientX - container.getBoundingClientRect().left)
+                        pos_y = (e.clientY - container.getBoundingClientRect().top)
+
+                        let hardwareInfo = hardwareData.find(item => item.rj === hardware.rj);
+
+                        if (pos_x >= 20 && pos_x <= container.offsetWidth - 20) {
+                             var newPositionX = (pos_x - 10) / container.offsetWidth * 100 + "%";
+                             newCircle.style.left = newPositionX
+                             hardwareInfo.coord_x = newPositionX
+
+                        }
+
+                        if (pos_y >= 20 && pos_y <= container.offsetHeight - 20) {
+                            var newPositionY = (pos_y - 10) / container.offsetHeight * 100 + "%";
+                            newCircle.style.top = newPositionY
+                            hardwareInfo.coord_y = newPositionY
+                        }
+                    }
+
+                    function onMouseUp() {
+                        document.removeEventListener("mousemove", onMouseMove);
+                        document.removeEventListener("mouseup", onMouseUp);
+                        newCircle.style.cursor = "grab"
+                    }
+                });
+
+                newCircle.addEventListener("click", function() {
+                    showHardwareInfo(hardware);
+                });
+
+                container.append(newCircle)
+            });
+
+            document.getElementById('pcs-mes-ativos').innerHTML = ": " + pcsMesAtivos;
+            document.getElementById('pcs-mes-sem-conexao').textContent = ": " + pcsMesSemConexao;
+            document.getElementById('pcs-tvs-ativos').textContent = ": " + pcsTvsAtivos;
+            document.getElementById('pcs-tvs-sem-conexao').textContent = ": " + pcsTvsSemConexao;
+            document.getElementById('switches-ativos').textContent = ": " + switchesAtivos;
+            document.getElementById('switches-sem-conexao').textContent = ": " + switchesSemConexao;
+
+        }
+
+        function showHardwareInfo(hardware) {
+            const infoDiv = document.getElementById('info-div');
+            const infoText = document.getElementById('info-text');
+
+            infoText.innerHTML = `
+                <strong>RJ:</strong> ${hardware.rj}<br>
+                <strong>Tipo:</strong> ${hardware.type}<br>
+                <strong>Centro de Trabalho:</strong> ${hardware.workCenter}<br>
+                <strong>Status:</strong> ${hardware.status == 1 ? 'Ativo' : hardware.status == 0 ? 'Sem Conexão' : 'Carregando'}
+            `;
+        }
+
+        function updateStatus() {
+            fetch('/monitoramento/hardware', {
+                method: 'POST'
+            }).then(response => response.json()).then(data => {
+                hardwareData = data
+                render(); 
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            render() 
+            setInterval(updateStatus, 60000)
+        });
+
+        function filterTable() {
+            const userIdInput = document.getElementById('filterUserId').value.toLowerCase();
+            const userNameInput = document.getElementById('filterUserName').value.toLowerCase();
+            const filteredData = hardwareData.filter(hardware => 
+                hardware['rj'].toLowerCase().includes(userIdInput) &&
+                hardware['type'].toLowerCase().includes(userNameInput)
+            );
+
+            populateTable(filteredData);
+        }
+
+    </script>
+</body>
+</html>

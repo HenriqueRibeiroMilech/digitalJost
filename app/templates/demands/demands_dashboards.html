@@ -1,0 +1,98 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao_dash.css') }}">
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body id="gestao_dash">
+    <div class="dash_select_div">
+        <a class="title" id="select_back" style="position:fixed;transform:translate(0, -10%);" href="/">&times;</a>
+        <p class="select_title" id="test" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{area}}</p>
+        <div class="dash_div">
+            <p class="select_desc" style="display: inline">Dashboards
+                <button class="add_btn" onclick="window.location='/demandas?area={{area}}'" style="display: inline;margin-right:2vw">Gestão de demandas</button>
+                <button type='button' class="filter_btn" onclick="valor_botao(this)" style="display: inline;" id="atrasado" value="Atrasado">Atrasado</button>
+                <button type='button' class="filter_btn" onclick="valor_botao(this)" style="display: inline;" id="concluido" value="NULO">Concluído</button>
+                <button type='button' class="filter_btn" onclick="valor_botao(this)" style="display: inline;" id="andamento" value="Em Andamento">Em Andamento</button>
+            </p>
+        </div>
+        <form id="filters" method="post" action="" class="dash_form">
+            <div id="list2" class="dash_filter">
+                <span class="anchor">Filtrar por RESPONSÁVEL</span>
+                <ul class="items" id="lista">
+                  {% for o in names %}
+                    <li ondblclick="selecionar(this)" ><input type="checkbox" checked name="{{o}}" onclick="myFunction(this)" value=""/> {{o}}</li>
+                  {% endfor %}
+                </ul>
+            </div>
+            <div id="list3" class="dash_filter">
+                <span class="anchor">Filtrar por PROCESSO</span>
+                <ul class="items" id="lista2">
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="fabricacao" onchange="myFunction(this)" name="Pré Fabricação" value=""/> Pré Fabricação</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="usinagem" onclick="myFunction(this)" name="Usinagem" value=""/> Usinagem</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="solda" name="Solda" onclick="myFunction(this)" value=""/> Solda</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="montagem" name="Montagem" onclick="myFunction(this)" value=""/> Montagem</li>
+                </ul>
+            </div>
+            <div id="list4" class="dash_filter">
+                <span class="anchor">Filtrar por FAMILIA</span>
+                <ul class="items" id="lista3">
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="QR" name="QR" onclick="myFunction(this)" value=""/> Quinta Roda</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="QR_MESA" name="QR + MESA" onclick="myFunction(this)" value=""/> Quinta Roda + Mesa</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="AO" name="AO" onclick="myFunction(this)" value=""/> Articulação de ônibus</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="SP_3_EIXO" name="SP 3° EIXO" onclick="myFunction(this)" value=""/> Suspensor Pneumático 3° Eixo</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="SP_SR" name="SP SR" onclick="myFunction(this)" value=""/> Suspensor Pneumático Semi Reboque</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="EE" name="EE" onclick="myFunction(this)" value=""/> Engate Esférico</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="PR" name="PR" onclick="myFunction(this)" value=""/> Pino Rei</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="AL" name="AL" onclick="myFunction(this)" value=""/> Aparelho de Levantamento</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="VT" name="VT" onclick="myFunction(this)" value=""/> Semi-Varão</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="EA" name="EA" onclick="myFunction(this)" value=""/> Engate Automático</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="PE" name="PE" onclick="myFunction(this)" value=""/> Porta Estepe</li>
+                    <li ondblclick="selecionar(this)"><input type="checkbox" checked id="EC" name="EC" onclick="myFunction(this)" value=""/> Engate de Contêiner</li>
+                </ul>
+            </div>
+        </form>
+    </div>
+    <div class="dash_container" id="overview" style="margin-left: 18vw">
+        <div class="loader"></div>
+    </div>
+
+    <div class="dash_container" id="os_process">
+        <div class="loader"></div>
+    </div>
+
+    <div class="dash_bar" id="person_bars" style="margin-left: 18vw">
+        <div class="loader"></div>
+    </div>
+
+    <div class="dash_bar" id="os_teste" style="margin-left: 18vw">
+        <div class="loader"></div>
+    </div>
+
+    <div class="dash_bar" id="teste_graph" style="margin-left: 18vw">
+        <div class="loader"></div>
+    </div>
+
+    <div class="dash_container" id="tarefa_status" style="margin-left: 18vw">
+        <div class="loader"></div>
+    </div>
+
+    <div class="dash_container" id="tarefa_processos_status">
+        <div class="loader"></div>
+    </div>
+
+    <div class="dash_bar" id="tarefa_pessoas" style="margin-left: 18vw">
+        <div class="loader"></div>
+    </div>
+</body>
+
+<script>
+    {% include 'demands/demands_dashboards.js' %}
+</script>
+
+{% endblock %}

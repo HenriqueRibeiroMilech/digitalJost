@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <style>
+            .quebra-pagina { page-break-before: always; }
+            @media print { #select_back { display: none; } }
+        </style>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_dev.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+
+    <body class="dev_body">
+        <div class="qual_event" style="margin-bottom:1vh">
+            <div class="qual_title_wrap" name="barra_titulo">
+                <img style="padding-left:2vw" class="qual_logo" src="/static/images/jost_logo_white.png"/>
+                <p class="qual_title" name="idreq">DADOS DO DSV Nº </p>
+                <p class="qual_desc" style='font-weight: bold;' name='status_dev'>Status: </p>
+            </div>
+        </div>
+        
+        <p class="lab_subt" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto;">    
+            <span style="float: left;">DADOS GERAIS</span>
+            <span style="float: right;margin-right: 1vh;color:black" id="gerais">Período de Concessão: </span>
+        </p><br>
+
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="solicitante"><b>SOLICITANTE: </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="equipe"><b>EQUIPE: </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="uni_jost"><b>APLICAÇÃO DA CONCESSÃO: </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="ct"><b>CENTRO DE TRABALHO: </b></p>
+
+        <p class="lab_subt" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto;">
+            <span style="float: left;">DADOS DO PRODUTO</span>
+            <span style="float: right;margin-right: 1vh;color:black" id="rastreabilidade">Rastreabilidade: </span>
+        </p><br>
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="cod_produto"><b>CÓDIGO DO PRODUTO: </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="fam_produto"><b>FAMÍLIA DO PRODUTO: </b></p>
+        <p class="lab_desc" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto; white-space: pre-line;" id="desc_produto"><b>DESCRIÇÃO DO PRODUTO: </b></p><br>
+
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="it"><b>INSTRUÇÃO DE TRABALHO: </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto;" id="doc_relacionado"><b>DOCUMENTO RELACIONADO: </b></p>
+        <p class="lab_subt" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto;">MOTIVO DA CONCESSÃO </p><br>
+        <p class="lab_desc" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto; white-space: pre-line;" id="motivo"><b></b></p><br>
+        <p class="lab_desc" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto; " id="imagens"><b></b></p><br>
+
+        <p class="lab_subt" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto;">
+            <span style="float: left;">ANÁLISE DE RISCO </span>
+            <span style="float: right;margin-right: 1vh;color:black" id="risco">Impacta caracteristicas: </span>
+        </p><br>
+
+        <p class="lab_desc" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto; white-space: pre-line;" id="ana_risco"><b></b></p><br>
+        <p class="lab_subt" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto;">PROCEDIMENTOS A SEREM SEGUIDOS </p><br>
+        <p class="lab_desc" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto; white-space: pre-line;" id="procedimentos"><b></b></p>
+        <p class="lab_desc" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto; " id="imagens2"><b></b></p><br>
+        
+        <div class="quebra-pagina"></div>
+
+        <div class="qual_event" style="margin-bottom:1vh">
+            <div class="qual_title_wrap" name="barra_titulo">
+                <img style="padding-left:2vw" class="qual_logo" src="/static/images/jost_logo_white.png"/>
+                <p class="qual_title" name="idreq">DADOS DO DSV Nº </p>
+                <p class="qual_desc" style='font-weight: bold;' name='status_dev'>Status: </p>
+            </div>
+        </div>
+
+        <p class="lab_subt" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto;">PLANO DE AÇÃO PARA O PROBLEMA </p><br>
+        <div id="plano_acao"></div>
+
+        <p class="lab_subt" style="width: calc(100vw - calc(calc(0.1vh + 0.2vw) * 2));height: auto;">FLUXO DE APROVAÇÃO</p><br>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>FORNECEDOR </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>CLIENTE </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Eng. Fornecedores"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Qualidade Cliente"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>PRODUÇÃO </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>SEGURANÇA DO TRABALHO </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Produção"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="SSMA"><b></b></p><br>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>LOGÍSTICA </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>ENGENHARIA DE PROCESSO </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Logística"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Eng. Processo"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>MANUTENÇÃO </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>ENGENHARIA DE PRODUTO </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Manutenção"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Eng. Produto"><b></b></p><br>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>COMPRAS </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>QUALIDADE DE FÁBRICA </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Compras"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Qualidade de Fábrica"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" ><b>SISTEMAS DA QUALIDADE </b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;"><b>CAMPINAS </b></p><br>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" name="Sistemas de Qualidade"><b></b></p>
+        <p class="lab_desc" style="width: 45vw;height: auto; white-space: pre-line;" id="unitCampinas" name="Campinas"><b></b></p>
+
+        <div id="quebra-final"></div>
+
+        <div class="qual_event" style="margin-bottom:2vh;">
+            <div style="display:none" id='barra-just' class="qual_title_wrap" name="barra_titulo">
+                <img style="padding-left:2vw" class="qual_logo" src="/static/images/jost_logo_white.png"/>
+                <p class="qual_title" name="idreq">DADOS DO DSV Nº </p>
+                <p class="qual_desc" style='font-weight: bold;' name='status_dev'>Status: </p>
+            </div>
+        </div>
+
+        <!-- placeholders de justificativas por setor -->
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Compras"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Eng. Fornecedores"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Eng. Processo"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Eng. Produto"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Logística"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Manutenção"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Produção"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Qualidade Cliente"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Qualidade de Fábrica"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="SSMA"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Sistemas de Qualidade"><b></b></p>
+        <p class="lab_desc" style="width: auto;height: 100%; white-space: pre-line;display:none" name="Campinas"><b></b></p>
+    </body>
+
+    <script>
+       {% include 'request.processDeviation/dev_detail_physical.js' %}
+    </script>
+</html>

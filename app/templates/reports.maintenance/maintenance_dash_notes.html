@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            font-size: 3vw;
+            margin:0;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .filter-container {
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(21, 58, 138, 0.9);
+            border-radius: 0 5px 5px 0;
+            position: absolute;
+            left: 0;
+            top: calc(100% - (80% + 1vw) - 40px);
+            width: 20%;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .filter-container label {
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .filter-container .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .filter-container select, .filter-container input, .filter-container button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .filter-container-button {
+            width: 28%;
+            cursor: pointer;
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .filter-container-button:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .filter-container-button.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .dropbtn:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .chart-container {
+            width: 75%;
+            height: 80%;
+            align-items: center;
+            overflow-y: hidden;
+            position: absolute;
+            bottom: 1vw;
+            right: 1vw;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+            display: flex;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .half-chart {
+            width: 50%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .scroll-buttons {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            position: absolute;
+        }
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(23vh + 9vw);
+            width: calc(23vh + 9vw);
+            margin: 10% auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilo para o contêiner da tabela com rolagem horizontal */
+        .table-container {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* Estilo da tabela */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px; /* Define a largura mínima da tabela */
+        }
+
+        /* Estilo das células e cabeçalhos */
+        th, td {
+            border: 1px solid #dcdcdc; /* Borda cinza claro */
+            padding: 10px;
+            text-align: left;
+        }
+
+        /* Estilo para a primeira coluna */
+        thead:first-child {
+            position: sticky;
+            background-color: #007bff; /* Azul para a primeira coluna */
+            color: white;
+            z-index: 2; /* Faz com que a coluna fixa fique acima das outras células */
+            top:0;
+        }
+        
+
+        /* Estilo das linhas alternadas */
+        tr:nth-child(even) {
+            background-color: #f8f9fa; /* Cinza muito claro */
+        }
+
+        tr:nth-child(odd) {
+            background-color: #ffffff; /* Branco para linhas ímpares */
+        }
+
+        /* Estilo dos botões dentro das células, se houver */
+        td button {
+            background-color: #007bff; /* Azul padrão */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 1em; /* Tamanho do texto do botão */
+        }
+
+        td button:hover {
+            background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
+        }
+
+        /* Estilo do cabeçalho da tabela */
+        th {
+            background-color: #007bff; /* Azul padrão */
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <button id='back_button' class="scroll-buttons" style="top:1vw;right:1vw;font-size: 1vw;" onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    <h1>Controle de Notas e Ordens</h1>
+
+    <div class="container">
+        <div class="filter-container">
+            <div class="filter-row">
+                <label>Status das notas:</label>
+                <button name="status" class="filter-container-button selected" value="Abertas" onclick="toggle(this)">Abertas</button>
+                <button name="status" class="filter-container-button selected" value="Fechadas" onclick="toggle(this)">Fechadas</button>
+            </div>
+            <div class="filter-row">
+                <label>Turno de trabalho:</label>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="1">1</button>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="2">2</button>
+                <button name="shift" class="filter-container-button selected" onclick="toggle(this)" value="3">3</button>
+            </div>
+            <div>
+                <label for="start_date" style="font-weight: bold;color:white">Data início:</label>
+                <input oninput="update()" type="date" id="start_date" name="start_date" style="float:right;width: 40%;">
+            </div>
+            <div>
+                <label for="end_date" style="font-weight: bold;color:white">Data fim:</label>
+                <input oninput="update()" type="date" id="end_date" name="end_date" style="float:right;width: 40%;"> 
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por responsaveis</button>
+                <div class="dropdown-content" id="responsaveis">
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked oninput="update()" type="checkbox" name="responsible" value="None"> Sem responsável</label>
+                    {% for name in names %}
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked oninput="update()" type="checkbox" name="responsible" value="{{name}}"> {{name}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por área</button>
+                <div class="dropdown-content" id="areas">
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked oninput="update()" type="checkbox" name="area" value="MEC_01"> Mecanica</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked oninput="update()" type="checkbox" name="area" value="ELE_01"> Elétrica</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked oninput="update()" type="checkbox" name="area" value="FER_01"> Ferramentaria</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked oninput="update()" type="checkbox" name="area" value="TER_01"> Terceiros</label>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por centro de trabalho</button>
+                <div class="dropdown-content" id="cts">
+                    {% for equipment in equipments %}
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked oninput="update()" type="checkbox" name="equipment" value="{{equipment}}"> {{equipment}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="chart-container" id='chart-container'>
+            <div class='chart'id='table-chart' style='overflow-y: auto;height: 100%;'>
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data de abertura</th>
+                            <th>N° Nota</th>
+                            <th>Descrição do equipamento</th>
+                            <th>Problema</th>
+                            <th>Responsável</th>
+                            <th>Prazo</th>
+                            <th>N° Ordem</th>
+                            <th>Tipo de ordem</th>
+                            <th>Status da ordem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div class="chart" id="chart1"><div class='loader'></div></div>
+            <div class="half-chart" id="chart2"><div class='loader'></div></div>
+            <div class="half-chart" id="chart3"><div class='loader'></div></div>
+            <div class="half-chart" id="chart4"><div class='loader'></div></div>
+            <div class="half-chart" id="chart5"><div class='loader'></div></div>
+            <div class="chart" id="chart6"><div class='loader'></div></div>
+        </div>
+    </div>
+    <div style="position: absolute;left: 18%;bottom: 1vw;">
+        <button class="filter-container-button" id="up" onclick="scrollSmooth('up')" style="width: 100%;height: 10vh;margin-bottom: 1vh;font-size: 3vh;border-radius: 4px;"><b>&uarr;</b></button>
+        <button class="filter-container-button" id="down" onclick="scrollSmooth('down')" style="width: 100%;height: 10vh;font-size: 3vh;border-radius: 4px;"><b>&darr;</b></button>
+    </div>
+
+    <div style="position: absolute;left: 1vw;bottom:1vw;">
+        <button class="filter-container-button" style="width: 15vw;font-size: 2vw;height: 20vh;" id='qtt_div'>TOTAL DE NOTAS<br><a style='font-size: 4vw;' id='qtt_notes'></a></button>
+    </div>
+
+    <script>
+
+        var data = {};
+        var xhr = new XMLHttpRequest();
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            var today = new Date();
+            document.getElementById('end_date').value = today.toISOString().slice(0, 10);
+
+            var dayOfWeek = today.getDay();
+            var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+            var lastMonday = new Date(today.setDate(diff));
+            document.getElementById('start_date').value =  lastMonday.toISOString().slice(0, 10);
+
+            window.addEventListener('resize', function () {
+                updateUI();
+            });
+
+            update()
+        });
+
+        function updateUI() {
+
+            function createPieChart(data, title, elementId) {
+
+                var layout = {
+                    title: {text: title, font: {size: 25}},
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    legend: {
+                        itemclick: false,
+                        itemdoubleclick: false,
+                        font: {size: 20}
+                    }
+
+                };
+                var trace = {
+                    labels: data.map(item => item.LABELS),
+                    values: data.map(item => item.QTT),
+                    type: 'pie',
+                    textinfo: 'percent+value', // Exibe rótulos, porcentagem e valor
+                    textposition: 'inside',         // Coloca o texto dentro das fatias
+                    hoverinfo: 'label+percent+value',
+                    textfont: {
+                        size: 20  // Define o tamanho da fonte do texto
+                    }
+                };
+                Plotly.newPlot(elementId, [trace], layout, {displayModeBar: false});
+            }
+
+            function createBarChart(data, title, elementId) {
+                var layout = {
+                    title: {text: title, font: {size: 25}},
+                    barmode: 'stack',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    xaxis: {
+                        tickangle: -45,
+                        automargin: true  
+                    },
+                    legend: {
+                        itemclick: false,
+                        itemdoubleclick: false,
+                        font: {size: 20}
+                    }
+                    
+                };
+
+                if (elementId == 'chart1') {
+                    var colors = {
+                        'Concluído': '#4CAF50',
+                        'Em processamento': '#F6E6B2',
+                        'Em aberto': '#900D09',
+                        'Adiado': '#A9A9A9'
+                    };
+                } else {
+
+                    var colors = {
+                        'Preventiva': 'rgb(0, 204, 150)',
+                        'Programada': 'rgb(239, 85, 59)',
+                        'Corretiva': 'rgb(181, 10, 10)',
+                        'Ferramentaria': 'rgb(13, 55, 13)',
+                        'Melhoria': 'rgb(70, 48, 255)',
+                        'Preditiva': 'rgb(99, 110, 250)',
+                        'Manutenção TPM': 'rgb(171, 99, 250)',
+                        'Investimento': 'rgb(221, 141, 0)'
+                    };
+                }
+
+                var statuses = [...new Set(data.map(item => item.PHASE))];
+                // Criar traces dinamicamente
+                var traces = statuses.map(status => {
+                    return {
+                        x: data.filter(item => item.PHASE == status).map(item => item.KTEXT),
+                        y: data.filter(item => item.PHASE == status).map(item => item.QTT),
+                        name: status,
+                        type: 'bar',
+                        marker: {
+                            color: colors[status]
+                        },
+                        text: data.filter(item => item.PHASE == status).map(item => item.QTT),
+                        textposition: 'auto', // ou 'outside' se quiser os valores fora das barras
+                        textfont: {
+                            size: 20  // Define o tamanho da fonte do texto
+                        }
+                    };
+                });
+                
+                Plotly.newPlot(elementId, traces, layout, {displayModeBar: false});
+            }
+            
+            function configTable(data) {
+
+                const tableBody = document.querySelector('#data-table tbody');
+                tableBody.innerHTML = ''
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    // Criação de células com valores dos dados
+                    Object.values(item).forEach(value => {
+                        const cell = document.createElement('td');
+                        cell.textContent = value !== null ? value : '-'; // Mostrar 'N/A' se o valor for null
+                        row.appendChild(cell);
+                    });
+
+                    // Adiciona a linha ao corpo da tabela
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            configTable(data.table)
+            createBarChart(data.barChart2, "Notas por Centro de Trabalho", "chart1");
+            createPieChart(data.pieChart1, 'Notas por Status', "chart2");
+            createPieChart(data.pieChart2, 'Notas por Tipo', "chart3");
+            createPieChart(data.pieChart3, 'Ordens por Status', "chart4");
+            createPieChart(data.pieChart4, 'Ordens por Tipo', "chart5");
+            createBarChart(data.barChart1, "Horas Trabalhadas por Técnico", "chart6");
+            
+        }
+
+        function toggle(button) {
+            if (button.value == "") {
+                button.classList.add('selected');
+                button.value = button.innerText
+            } else {
+                button.classList.remove('selected');
+                button.value = ""
+            }
+
+            update()
+        }
+
+        function scrollSmooth(direction) {
+            var chartContainer = document.getElementById('chart-container');
+            var containerHeight = chartContainer.offsetHeight - 40;
+            var scrollAmount = containerHeight;
+            chartContainer.scrollBy({
+                top: direction === 'up' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        function toggleExclusiveFilter(label) {
+            const input = label.querySelector('input');
+            const filterType = input.name;
+            const checkboxes = document.querySelectorAll(`input[name='${filterType}']`);
+
+            if (input.checked && checkboxes.length > 1 && Array.from(checkboxes).filter(cb => cb.checked).length === 1) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = false);
+                input.checked = true;
+            }
+
+            update();
+        }
+
+        function update() {
+
+            if (xhr && xhr.readyState !== XMLHttpRequest.UNSENT) {
+                document.getElementById('table-chart').innerHTML = document.getElementById('table-chart').innerHTML.replace('<div class="loader"></div>', '');
+
+                document.getElementById('chart1').innerHTML = ""
+                document.getElementById('chart2').innerHTML = ""
+                document.getElementById('chart3').innerHTML = ""
+                document.getElementById('chart4').innerHTML = ""
+                document.getElementById('chart5').innerHTML = ""
+                document.getElementById('chart6').innerHTML = ""
+                // A requisição foi iniciada, então podemos cancelá-la
+                xhr.abort();
+            }
+
+            const responsible = Array.from(document.querySelectorAll("input[name='responsible']:checked")).map(checkbox => checkbox.value);
+            const equipment = Array.from(document.querySelectorAll("input[name='equipment']:checked")).map(checkbox => checkbox.value);
+            const area = Array.from(document.querySelectorAll("input[name='area']:checked")).map(checkbox => checkbox.value);
+            const status = Array.from(document.querySelectorAll("button[name='status']")).map(button => button.value);
+            const shift = Array.from(document.querySelectorAll("button[name='shift']")).map(button => button.value);
+
+            const start_date = document.getElementById("start_date").value;
+            const end_date = document.getElementById("end_date").value;
+
+            const data_to_send = {
+                responsible: responsible,
+                workCenter: equipment,
+                area: area,
+                start_date: start_date,
+                end_date: end_date,
+                status: status,
+                shift: shift
+            };
+
+            xhr.open("POST", "/manutencao/controle", true);
+            xhr.setRequestHeader("Content-type","application/json");
+            xhr.onreadystatechange = function () {
+
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    
+                    data['barChart1'] = JSON.parse(JSON.parse(xhr.responseText)['barChart1'])
+                    data['barChart2'] = JSON.parse(JSON.parse(xhr.responseText)['barChart2'])
+                    data['pieChart1'] = JSON.parse(JSON.parse(xhr.responseText)['pieChart1'])
+                    data['pieChart2'] = JSON.parse(JSON.parse(xhr.responseText)['pieChart2'])
+                    data['pieChart3'] = JSON.parse(JSON.parse(xhr.responseText)['pieChart3'])
+                    data['pieChart4'] = JSON.parse(JSON.parse(xhr.responseText)['pieChart4'])
+                    data['table'] = JSON.parse(JSON.parse(xhr.responseText)['table'])
+                    document.getElementById('qtt_notes').innerHTML = JSON.parse(xhr.responseText)['totalNotes']
+                    document.getElementById('qtt_div').innerHTML = document.getElementById('qtt_div').innerHTML
+                    
+                    document.getElementById('table-chart').innerHTML = document.getElementById('table-chart').innerHTML.replace('<div class="loader"></div>', '');
+
+                    document.getElementById('chart1').innerHTML = ""
+                    document.getElementById('chart2').innerHTML = ""
+                    document.getElementById('chart3').innerHTML = ""
+                    document.getElementById('chart4').innerHTML = ""
+                    document.getElementById('chart5').innerHTML = ""
+                    document.getElementById('chart6').innerHTML = ""
+                    updateUI()
+                }
+            }
+            
+            tableBody = document.querySelector('#data-table tbody').innerHTML = ''
+            document.getElementById('table-chart').innerHTML += "<div class='loader'></div>"
+
+
+            document.getElementById('chart1').innerHTML = "<div class='loader'></div>"
+            document.getElementById('chart2').innerHTML = "<div class='loader'></div>"
+            document.getElementById('chart3').innerHTML = "<div class='loader'></div>"
+            document.getElementById('chart4').innerHTML = "<div class='loader'></div>"
+            document.getElementById('chart5').innerHTML = "<div class='loader'></div>"
+            document.getElementById('chart6').innerHTML = "<div class='loader'></div>"
+            xhr.send(JSON.stringify(data_to_send))
+        }
+
+    </script>
+</body>
+</html>

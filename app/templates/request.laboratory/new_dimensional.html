@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/static_buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/default/overlay.css') }}">
+
+    <style>
+        /* Corpo principal e fundo */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Container principal */
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            
+            width: clamp(300px, 90%, 800px); /* Ajusta dinamicamente entre 300px e 800px */
+            height: clamp(400px, 80vh, calc(100vh - 120px)); /* Ajusta dinamicamente com base na altura da tela */
+
+            margin: clamp(10px, 5vh, 30px); /* Ajusta dinamicamente entre 10px e 30px */
+            padding: clamp(15px, 2vw, 30px);
+
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .form-section {
+            text-align: left;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .form-section h2 {
+            color: #153A8A;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        /* Estilo para alinhar labels e inputs na mesma linha */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #153A8A;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .form-input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            margin-bottom: 1vh;
+        }
+
+        /* Estilos para upload de arquivos */
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        .file-label {
+            background-color: #153A8A;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .file-label:hover {
+            background-color: #2e52a7;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 12px;
+        }
+
+        .file-name {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #333;
+            text-align: left;
+        }
+
+        .delete-file {
+            background-color: transparent;
+            color: #e74c3c;
+            border: none;
+            cursor: pointer;
+            padding: 0 5px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-left: 10px;
+            flex-shrink: 0;
+            width: auto;
+        }
+
+        .delete-file:hover {
+            color: #c0392b;
+            background-color: transparent;
+        }
+
+        /* Botões */
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            background-color: #153A8A;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2e52a7;
+        }
+
+        button[type="submit"] {
+            background-color: #228C22;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #1c7a1c;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/lab'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <!-- Container principal -->
+    <div class="container">
+        <h1 style="margin-top: 0;">Solicitar Serviço de Laboratório - Dimensional</h1>
+
+        <form id="lab-form" method="post" action="/lab/{{area}}/solicitar" enctype="multipart/form-data">
+            <!-- Seção de Identificação do Material -->
+            <div class="form-section">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="motive">Motivo da solicitação:</label>
+                        <select class="form-input" name="motive" id="motive" required onchange="handleMotiveChange(this.value)">
+                            <option value="" disabled selected>Selecione uma opção...</option>
+                            {% for motive in motives %}
+                                <option value="{{motive.id}}">{{motive.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" id="share-container" style="display: none;">
+                        <label for="logis">Comunicar logística?</label>
+                        <select class="form-input" name="logis" id="logis">
+                            <option value="1">Sim</option>
+                            <option value="0" selected>Não</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h2>Identificação do Material</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_draw">Código desenho:</label>
+                        <input class="form-input" type="text" name="id_draw" id="id_draw" required placeholder="Digite aqui..." autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_mater">Código material:</label>
+                        <input class="form-input" type="text" name="id_mater" id="id_mater" required placeholder="Digite aqui..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="descs">Descrição desenho:</label>
+                        <textarea name="desc" id="descs" placeholder="Digite aqui..." required></textarea>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rev">Revisão:</label>
+                        <input class="form-input" type="text" name="rev" id="rev" required placeholder="Digite aqui..." autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fam">Família:</label>
+                        <select class="form-input" name="fam" id="fam" required autocomplete="off">
+                            <option value="" disabled selected>Selecione uma opção.</option>
+                            {% for o in options %}
+                                <option value="{{o}}">{{o}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qtd">Quantidade:</label>
+                        <input class="form-input" type="number" name="qtd" id="qtd" required placeholder="Digite aqui..." autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="supplier">Fornecedor:</label>
+                        <input class="form-input" type="text" name="supplier" id="supplier" required placeholder="Digite aqui..." autocomplete="off">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Seção de Projeto -->
+            <div class="form-section">
+                <h2>Informações do Projeto</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_proj">Projeto:</label>
+                        <input class="form-input" type="text" name="id_proj" id="id_proj" required placeholder="Digite aqui..." autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="acc_proj">Conta projeto:</label>
+                        <input class="form-input" type="text" name="acc_proj" id="acc_proj" required placeholder="Digite aqui..." autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção Específica Material -->
+            <div class="form-section">
+                <h2>Análise de Dimensional</h2>
+                <div class="form-group">
+                    <label for="interests">Cotas de Interesse:</label>
+                    <textarea name="interest" id="interests" placeholder="Digite aqui..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="textarea">Observações:</label>
+                    <textarea name="obs" id="textarea" placeholder="Digite aqui..."></textarea>
+                </div>
+
+            </div>
+
+            <!-- Seção de Upload de Arquivos -->
+            <div class="form-section">
+                <h2>Documentação</h2>
+                <div class="file-upload">
+                    <label for="input_1" class="file-label" id="placehold_1">Adicione desenhos...</label>
+                    <input id="input_1" class="file-input" type="file" name="draw_file" multiple="multiple">
+                    <div class="file-list" id="lista_1"></div>
+                </div>
+            </div>
+
+            <!-- Botões de ação -->
+            <div class="button-container">
+                <button type="submit">Enviar Solicitação</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Notificação -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Overlay de confirmação -->
+    <div class="overlay" id="confirm-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Confirmar Envio</div>
+            <p>Tem certeza que deseja enviar esta solicitação?</p>
+            <div class="overlay-buttons">
+                <button class="overlay-button cancel-button" id="confirm-cancel">Cancelar</button>
+                <button class="overlay-button confirm-button" id="confirm-submit">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de bloqueio -->
+    <div class="overlay" id="blocked-overlay">
+        <div class="overlay-content">
+            <div class="overlay-title">Atenção!</div>
+            <p>Você possui solicitações aguardando retirada. Por favor, retire-as antes de fazer uma nova solicitação.</p>
+            <div class="overlay-buttons">
+                <button class="overlay-button confirm-button" id="blocked-ok">Entendi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Contador para checkboxes
+        const areaName = '{{area}}'
+        
+        // Sistema de gerenciamento de arquivos
+        class FileManager {
+            constructor(inputId) {
+                this.inputId = inputId;
+                this.input = document.getElementById(inputId);
+                this.placeholderId = 'placehold_' + inputId.split('_')[1];
+                this.listaId = 'lista_' + inputId.split('_')[1];
+                this.placehold = document.getElementById(this.placeholderId);
+                this.lista = document.getElementById(this.listaId);
+                this.fileMap = new Map();
+                
+                // No localStorage loading anymore - files reset on page load
+                
+                this.setupEventListeners();
+                this.renderFileList();
+            }
+            
+            setupEventListeners() {
+                // When user selects new files
+                this.input.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        // Add new files to the map
+                        for (let i = 0; i < e.target.files.length; i++) {
+                            const file = e.target.files[i];
+                            const uniqueId = Date.now() + '-' + i; // Unique ID for each file
+                            this.fileMap.set(uniqueId, {
+                                name: file.name,
+                                size: this.formatFileSize(file.size),
+                                file: file
+                            });
+                        }
+                        
+                        // Update the UI
+                        this.renderFileList();
+                        
+                        // Clear the input to allow selecting the same file again
+                        this.input.value = '';
+                    }
+                });
+            }
+            
+            formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + " B";
+                else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + " KB";
+                else return (bytes / 1048576).toFixed(2) + " MB";
+            }
+            
+            deleteFile(uniqueId) {
+                // Remove file from the map
+                this.fileMap.delete(uniqueId);
+                
+                // Update the UI
+                this.renderFileList();
+            }
+            
+            renderFileList() {
+                // Clear current list
+                this.lista.innerHTML = '';
+                
+                // Check if there are files to show
+                if (this.fileMap.size === 0) {
+                    this.lista.style.display = 'none';
+                    return;
+                }
+                
+                // Show the list
+                this.lista.style.display = 'block';
+                
+                // Create table structure like in detail_material.html
+                const table = document.createElement("table");
+                table.style.width = "100%";
+                table.style.borderCollapse = "collapse";
+                table.style.marginTop = "15px";
+                
+                // Table header
+                const thead = document.createElement("thead");
+                thead.innerHTML = `
+                    <tr>
+                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Nome do Arquivo</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Tamanho</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ddd;">Ações</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                // Table body
+                const tbody = document.createElement("tbody");
+                
+                // Add each file to the list
+                for (const [uniqueId, fileObj] of this.fileMap.entries()) {
+                    const row = document.createElement("tr");
+                    row.style.borderBottom = "1px solid #eee";
+                    
+                    // Get appropriate icon based on file extension
+                    let iconClass = "fa-file";
+                    const extension = fileObj.name.split('.').pop().toLowerCase();
+                    
+                    if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
+                        iconClass = "fa-file-image";
+                    } else if (extension === "pdf") {
+                        iconClass = "fa-file-pdf";
+                    } else if (["doc", "docx"].includes(extension)) {
+                        iconClass = "fa-file-word";
+                    } else if (["xls", "xlsx"].includes(extension)) {
+                        iconClass = "fa-file-excel";
+                    }
+                    
+                    row.innerHTML = `
+                        <td style="padding: 8px;"><i class="fas ${iconClass}" style="margin-right: 10px;"></i>${fileObj.name}</td>
+                        <td style="padding: 8px;">${fileObj.size}</td>
+                        <td style="padding: 8px;">
+                            <button onclick="fileManager.deleteFile('${uniqueId}')" style="background-color: #e74c3c; padding: 5px 10px;">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                }
+                
+                table.appendChild(tbody);
+                this.lista.appendChild(table);
+            }
+            
+            // Method to get all selected files as an array
+            getFiles() {
+                return Array.from(this.fileMap.values()).map(fileObj => fileObj.file);
+            }
+            
+            // Method to check if there are selected files
+            hasFiles() {
+                return this.fileMap.size > 0;
+            }
+            
+            // Clear all files
+            clearFiles() {
+                this.fileMap.clear();
+                this.renderFileList();
+            }
+        }
+
+        // Verificar se o usuário está bloqueado
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar o gerenciador de arquivos
+            window.fileManager = new FileManager('input_1');
+            
+            {% if userBlocked != 0 %}
+                showOverlay('blocked-overlay');
+            {% endif %}
+
+            // Inicializar campos com dados da URL se disponíveis
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('id')) {
+                fetch(`/lab/${areaName}/detalhes/${urlParams.get('id')}/dados`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data) {
+                            fillFormData(data);
+                        }
+                    });
+            }
+            
+            // Modificar o comportamento do formulário
+            document.getElementById('lab-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Verificar se tem arquivos selecionados
+                if (!fileManager.hasFiles()) {
+                    showNotification('Selecione pelo menos um arquivo!');
+                    return;
+                }
+                
+                showOverlay('confirm-overlay');
+            });
+            
+            document.getElementById('confirm-submit').addEventListener('click', function() {
+                closeOverlay('confirm-overlay');
+                
+                // Create loading indication
+                showNotification('Enviando solicitação...');
+                
+                // Create FormData to send the form with files
+                const formData = new FormData(document.getElementById('lab-form'));
+                
+                // Add files from fileManager to FormData
+                const files = fileManager.getFiles();
+                files.forEach(file => {
+                    if (file) { // Check if file is valid
+                        formData.append('draw_file', file);
+                    }
+                });
+                
+                // Send the form using fetch
+                fetch(`/lab/${areaName}/solicitar`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Erro ao enviar solicitação');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    showNotification(data.message || 'Solicitação enviada com sucesso!');
+                    fileManager.clearFiles(); // Clear saved files
+                    
+                    // Let frontend decide what to do based on response
+                    setTimeout(() => {
+                        window.history.back();
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.log(error)
+                    showNotification('Erro: ' + (error.message || 'Falha ao processar solicitação'));
+                });
+            });
+            
+            document.getElementById('confirm-cancel').addEventListener('click', function() {
+                closeOverlay('confirm-overlay');
+            });
+            
+            document.getElementById('blocked-ok').addEventListener('click', function() {
+                window.history.back();
+            });
+        });
+
+
+        function handleMotiveChange(value) {
+            const shareContainer = document.getElementById('share-container');
+            const logisSelect = document.getElementById('logis');
+            
+            if (value === '3' && areaName === 'dimensional') {
+                shareContainer.style.display = 'block';
+                logisSelect.required = true;
+            } else {
+                shareContainer.style.display = 'none';
+                logisSelect.required = false;
+            }
+        }
+
+        function fillFormData(data) {
+            document.getElementById('id_mater').value = data.materId;
+            document.getElementById('id_draw').value = data.drawId;
+            document.getElementById('qtd').value = data.qtd;
+            document.getElementById('descs').value = data.descText;
+            document.getElementById('supplier').value = data.supplier;
+            document.getElementById('rev').value = data.revId;
+            document.getElementById('id_proj').value = data.projId;
+            document.getElementById('acc_proj').value = data.accProj;
+            document.getElementById('fam').value = data.prodFamily;
+            document.getElementById('motive').value = data.motiveId;
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+
+        function showOverlay(id) {
+            const overlay = document.getElementById(id);
+            if (overlay) overlay.classList.add('active');
+        }
+
+        function closeOverlay(id) {
+            const overlay = document.getElementById(id);
+            if (overlay) overlay.classList.remove('active');
+        }
+    </script>
+</body>
+</html>

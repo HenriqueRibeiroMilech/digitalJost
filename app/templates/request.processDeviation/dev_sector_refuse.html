@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>TDG - JOST Brasil</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+
+    <body class="page_body" onload="animate()">
+        <div class="message_container" style="margin-top:20vh;">
+            <p class="title">Justifique a não aprovação!</p><br>
+            <p class="desc">Descreva o motivo de não aprovar a solicitação de desvio de processo:</p><br>
+            <form action='/desvios/atualizar?recusar=1&id={{id}}' method="post">
+                <textarea id="textarea" name="justificativa" required class="edit_filter"></textarea>
+                <br>
+                <button id="edit_ask" type="submit" style="font-size: calc(1vh + 2vw)">Recusar</button>
+            </form>
+        </div>
+    </body>
+    
+    <script>
+        function animate() {
+            document.querySelector(".page_body").style.opacity= "1";
+            document.querySelector(".page_body").style.marginTop= "0vh";
+        }
+    </script>
+    
+</html>

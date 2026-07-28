@@ -1,0 +1,56 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.05;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/video.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="seg_content">
+    <a id="select_back" href="/">&times;</a>
+    <div class="seg_wrapper" id="seg_sidenav">
+        <p class="seg_title">Cruz de SSMA</p>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma/add')">Adicionar Entradas</button>
+        <button class="seg_btn" onclick="changeLoc('/op/ssma/edit_select')" style="margin-bottom: 1vh;">Editar Entradas</button>
+        <div class="seg_topic" id="sem_wrap"><p class="seg_desc" id="dias_sem">Estamos a <b><i>{{dias_sem}}</i></b> dias sem acidentes com perda de tempo</p></div>
+        <div class="seg_topic" id="ano_wrap"><p class="seg_desc" id="dias_ano">Faltam <b><i>{{dias_ano}}</i></b> dias para um ano sem acidentes com perda de tempo</p></div>
+    </div>
+
+    <div class="seg_wrapper" id="cross">
+        <div id="seg_cross">
+            <div class="seg_cross_section" id="seg_cross_1"></div>
+            <div class="seg_cross_section" id="seg_cross_2"></div>
+            <div class="seg_cross_section" id="seg_cross_3"></div>
+        </div>
+    </div>
+
+
+
+    <div class="seg_wrapper" id="seg_bottom">
+        <div class="seg_desc" style="font-size: 3vh;">
+            <select onchange="changeState(this.value)" id="select_city">
+                <option value='Caxias do Sul'>Caxias do Sul</option>
+                <option value='Campinas'>Campinas</option>
+                <option selected>Geral</option>
+            </select>
+        </div>
+        <div class="seg_topic" id="month_wrap"><p class="seg_desc" id="month">{{month}}</p></div>
+        <div class="seg_topic"><div class="seg_topic_color" id="grey"></div><p class="seg_desc">Em análise</p></div>
+        <div class="seg_topic"><div class="seg_topic_color" id="yellow"></div><p class="seg_desc">Atendimento ambulatorial</p></div>
+        <div class="seg_topic"><div class="seg_topic_color" id="gray-red"></div><p class="seg_desc">Acidente sem perda de tempo</p></div>
+        <div class="seg_topic"><div class="seg_topic_color" id="red"></div><p class="seg_desc">Acidente com perda de tempo</p></div>
+        <div class="seg_topic"><div class="seg_topic_color" id="blue"></div><p class="seg_desc">Incidente ambiental</p></div>
+        <div class="seg_topic"><div class="seg_topic_color" id="orange"></div><p class="seg_desc">Incidente de segurança</p></div>
+        <div class="seg_topic"><div class="seg_topic_color" id="green"></div><p class="seg_desc">Sem ocorrências</p></div>
+
+    </div>
+</body>
+
+<script>
+    {% include 'operation.ssma/op_sec_cross.js' %}
+</script>
+{% endblock %}

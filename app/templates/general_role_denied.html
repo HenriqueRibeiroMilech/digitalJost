@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>Digital JOST</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+    
+    <video autoplay muted loop id="myVideo">
+        <source src="/static/videos/net1.mp4" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+    </video>
+    
+    <body class="deny_body">
+        <div class="message_container">
+            <p class="welcome_msg" id="welcome" style="width:60vw;margin-left:20vw;">Acesso negado!</p>
+            <p class="welcome_msg" id="welcome_desc" style="width:70vw;margin-left:15vw;color:white;">Você está tentando acessar uma página restrita ao seu usuário! Retorne para a página inicial.</p>
+            <br><br>
+            <a class="new_btn" href="/">Voltar</a>
+        </div>
+    </body>
+    
+</html>

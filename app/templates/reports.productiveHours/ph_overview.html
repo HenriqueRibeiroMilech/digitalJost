@@ -1,0 +1,73 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_native_dash.css') }}">
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/{{video}}" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+</video>
+
+<body id="content">
+    <div class="chp_head_wrap">
+        <a class="dash_btn_b" id="chp_back" href="/dashboards/chp">VOLTAR</a>
+    </div>
+    <div class="chp_dash">
+        <p class="chp_title">HORAS PRODUTIVAS</p>
+        <p class="chp_desc">INDICADORES - GERAL</p>
+
+        <div class="chp_ind_wrap">
+            <div class="chp_ind_lbl">
+                <p class="chp_ind_text">AUSENTES</p>
+            </div>
+
+            <div class="chp_ind">
+                <p class="chp_ind_num" id="aus">...</p>
+            </div>
+        </div>
+
+        <div class="chp_ind_wrap">
+            <div class="chp_ind_lbl">
+                <p class="chp_ind_text">NO CT DE ORIGEM</p>
+            </div>
+
+            <div class="chp_ind">
+                <p class="chp_ind_num" id="ct">...</p>
+            </div>
+        </div>
+
+        <div class="chp_ind_wrap">
+            <div class="chp_ind_lbl">
+                <p class="chp_ind_text">EM EMPRÉSTIMO</p>
+            </div>
+
+            <div class="chp_ind">
+                <p class="chp_ind_num" id="emps">...</p>
+            </div>
+        </div>
+
+        <div class="chp_ind_wrap">
+            <div class="chp_ind_lbl">
+                <p class="chp_ind_text">NÃO ALOCADOS</p>
+            </div>
+
+            <div class="chp_ind">
+                <p class="chp_ind_num" id="nalloc">...</p>
+            </div>
+        </div>
+
+        <div id="general" class="chp_chart">
+            <div class="chp_loader"></div>
+        </div>
+    </div>
+</body>
+
+<script>
+    {% include 'reports.productiveHours/ph_overview.js' %}
+</script>
+
+{% endblock %}

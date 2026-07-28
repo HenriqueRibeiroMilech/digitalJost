@@ -1,0 +1,71 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_native_dash.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/{{video}}" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+</video>
+
+<body id="content" onload="removeNav()" style="overflow-y: hidden">
+
+    <div class="hardware_box2" id="normal">
+        <p style="color:black;font-weight: bold;font-size: calc(3vh + 1.2vw);" id="WORK_TITLE">DADOS GERAIS</p>
+        <a onclick="closeBoxData()" id="closeBox">&times;</a>
+        <div class="chart_wrapper" style="margin-top:5vh;">
+            <div id="setup_tbl" class="chart"></div>
+        </div>
+    </div>
+
+    <div class="blur_wrap">
+        <div class="dash_headers" style="display: block;">
+            <a id="select_back" href="/">&times;</a>
+            <p class="dash_title" id="title" style="display: inline-block;">Consulta Setup - Geral</p>
+            <div class="loader" id="setup"></div>
+        </div>
+
+        <div class="dash_filters" id="filters" style="height:7vh;margin-top:0;">
+            <div class="dash_navcontent" style="margin-top:0;">
+                <form id="dash_period" method="post" enctype="multipart/form-data" action="/dashboards/setup/material">
+                    <a class="dash_flbl">Data de Início</a>
+                    <input oninput="redefine()" id="start" name="start" required type="date" autocomplete="off" class="dash_filter" value="{{filter_start}}">
+                    <a class="dash_flbl">Data do Fim</a>
+                    <input oninput="redefine()" id="final" name="final" required type="date" autocomplete="off" class="dash_filter" value="{{filter_end}}">
+                    <input type="hidden" name="material" id="material" value=""/>
+                    <input type="hidden" name="ct" id="ct" value=""/>
+                </form>
+            </div>
+        </div>
+
+        <div id="principal" style="display: flex;align-items: center;justify-content: center;">
+            <button class="box4" type="button" value='Montagem' onclick="changeBorder(this)">Montagem <i class="fa fa-search"></i></button>
+            <button class="box4" type="button" value='Usinagem' onclick="changeBorder(this)">Usinagem <i class="fa fa-search"></i></button>
+            <button class="box4" type="button" value='Soldagem' onclick="changeBorder(this)">Soldagem <i class="fa fa-search"></i></button>
+            <button class="box4" type="button" value='Pré-Fabricação' onclick="changeBorder(this)">Pré-Fabricação <i class="fa fa-search"></i></button>
+        </div>
+
+
+        <div class="page-container">
+            <div class="square-container" id="squareContainer">
+            </div>
+        </div>
+
+        <div style="float:left;width:37vw">
+            <p class="dash_title" style="display: inline-block;">DADOS GERAIS</p><br><br>
+            <p class="dash_desc"  id="data1">{{total_qtt}} PARADAS DE SETUP REALIZADAS</p>
+            <p class="dash_desc"  id="data2">{{total_min}} MINUTOS DE SETUP REALIZADOS</p>
+            <p class="dash_desc" id="data4">{{not_min}}</p>
+
+        </div>
+    </div>
+
+</body>
+
+<script>
+    {% include 'reports.setup/setup_general.js' %}
+</script>
+
+{% endblock %}

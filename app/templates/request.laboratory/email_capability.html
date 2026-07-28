@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificação de Alteração de Parada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            padding: 20px;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.1em;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #153A8A;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: white;
+            background-color: #153A8A;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #2e52a7;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SSL {{areaName}} - {{requestId}}</h1>
+        <p>O usuário <span class="highlight">{{name}}</span> iniciou o processo de abertura de SSL, devido a questões de Capabilidade. Por favor, proceda com a criação da ordem de produção e notifique a equipe de processo conforme o procedimento POP0273</p>
+        <p>Caso exista alguma dúvida, entre em contato com o responsável da área de laboratório.</p>
+        <a href="http://digitaljost.randon.com.br/lab/{{areaName}}/detalhes/{{requestId}}" class="button">Acessar SSL</a>
+    </div>
+</body>
+</html>
+
+

@@ -1,0 +1,56 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/net1.mp4" type="video/mp4">
+</video>
+
+<body id="cadastro_body">
+    <div class="blur_mask">
+        <div class="topnav_content">
+            <a class="title">Cadastro - Parametros de SETUP</a><br>
+            <a class="backBtn" href="/">Voltar</a>
+            <a class="backBtn" onclick="addData()">Adicionar Material</a>
+            <input type="text" id="mat_filter" class="cad_filter" placeholder="Material..." onkeyup="filter_dynamic()"/>
+        </div>
+
+        <div id="table-container" style="width:75vw;height:70vh;margin:2.8vw"></div>
+    </div>
+    <div class="cad_container">
+        <p class="title" style="margin:0;font-size: calc(1.2vh + 0.9vw);">Informe os dados do Material:</p>
+        <select style="padding-top:0;padding-bottom:0;padding-right:0;" class="cad_input" id="setup_area" oninput="filterByArea(this.value)">
+            <option style="color:gray" value="" disabled selected>Área</option>
+            {% for o in ahrea %}
+            <option value="{{o}}">{{o}}</option>
+            {% endfor %}
+        </select>
+        <select style="padding-top:0;padding-bottom:0;padding-right:0;" class="cad_input" id="setup_ct" oninput="filterByCt(this.value)">
+            <option style="color:gray" value="" disabled selected>Centro de Trabalho</option>
+            {% for o in cts %}
+            <option value="{{o}}">{{o}}</option>
+            {% endfor %}
+        </select>
+        <select style="padding-top:0;padding-bottom:0;padding-right:0;" class="cad_input" id="setup_material">
+            <option style="color:gray" value="" disabled selected>Material</option>
+            {% for o in produtos %}
+            <option value="{{o}}">{{o}}</option>
+            {% endfor %}
+        </select>
+
+        <input type="text" placeholder="Ferramentas / Dispositivos" onkeyup="this.value=this.value.replace(/'/g, '')" class="cad_input" name="setup_tools"/>
+        <input type="number" placeholder="Tempo de Setup" onkeyup="this.value=this.value.replace(/'/g, '')" class="cad_input" name="time"/>
+
+        <button class="cad_btn" onclick="toNormal()">OK</button>
+        <button class="cad_btn" onclick="closeData()">FECHAR</button>
+    </div>
+</body>
+
+<script>
+    {% include 'consulta_setup_parametros.js' %}
+</script>
+{% endblock %}

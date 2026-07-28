@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    
+        <title>Digital JOST</title>
+        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </head>
+    
+    <video autoplay muted loop id="myVideo">
+        <source src="/static/videos/net1.mp4" style="transform:translate(0, -{{res}}%)" type="video/mp4">
+    </video>
+    
+    <body class="deny_body">
+        <div class="message_container" style="margin-top:10vh">
+            <p class="welcome_msg" id="welcome" style="width:60vw;margin-left:20vw;">Departamento não registrado!</p>
+            <p class="welcome_msg" id="welcome_desc" style="width:70vw;margin-left:15vw;color:white;">O seu departamento SAP não está cadastrado nos dados da Transformação Digital da JOST. Entre em contato com um representante.</p>
+            <br><br>
+        </div>
+    </body>
+    
+</html>

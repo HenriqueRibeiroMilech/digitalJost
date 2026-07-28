@@ -1,0 +1,29 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+
+</head>
+
+<body id="gestao_body" onload="loadPage()">
+    <div class="select_div">
+        <a class="title" id="select_back" style="position:fixed;transform:translate(0, -10%);" href="/demandas/admin?area={{area}}">&times;</a>
+        <p class="select_title" id="test" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{area}}</p>
+        <p class="select_desc" style="overflow:hidden;white-space:nowrap;transform: translate(0, -50%);">Gestão de demandas - Modo Apresentação
+            <button class="add_btn" onclick="window.location='/demandas/dashboards?area={{area}}'">Dashboards</button>
+        </p>
+    </div>
+
+    <form id="table_form" method="post" action="">
+        <div id="table-container" style="margin-left:2%;margin-right:2%;">
+        </div>
+    </form>
+</body>
+
+<script>
+    {% include 'demands/demands_presentation.js' %}
+</script>
+{% endblock %}

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between; /* Alinha o título à esquerda e os filtros à direita */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .date-filters {
+            display: flex;
+            align-items: center;
+            font-size: 1em;
+        }
+
+        .date-filters label {
+            margin: 0 10px;
+            font-size: 1em;
+            color: #153A8A;
+        }
+
+        .date-filters input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        table td button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        table td button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 18%;
+            z-index: 5;
+        }
+
+        .dropbtn {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: auto;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #3e8e41;
+        }
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/oee/paradas/alterar'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+
+        <div class="title">
+            <h1>Solicitações - Alteração de Paradas</h1>
+            <div class="date-filters">
+                <label>Datas da solicitação</label>
+                <label for="last_week">Início:</label>
+                <input type="date" id="last_week" value="{{last_week}}" onchange="searchData()">
+                <label for="this_week">Fim:</label>
+                <input type="date" id="this_week" value="{{this_week}}" onchange="searchData()">
+            </div>
+        </div>
+
+
+        <div class="filter-container">
+            <input type="text" id="filterRequestId" placeholder="Filtrar por ID da Solicitação" onkeyup="filterTable()">
+            <input type="text" id="filterCenter" placeholder="Filtrar por Centro de Trabalho" onkeyup="filterTable()">
+            <input type="text" id="filterUserName" placeholder="Filtrar por Nome do Funcionário" onkeyup="filterTable()">
+            <input type="text" id="filterMotive1" placeholder="Filtrar por Motivo Anterior" onkeyup="filterTable()">
+            <input type="text" id="filterMotive2" placeholder="Filtrar por Motivo Novo" onkeyup="filterTable()">
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Selecione o Status</button>
+                <div class="dropdown-content" id="statusFilter">
+                    <label><input type="checkbox" name="status" value="Aguardando aprovação" onchange="filterTable()"> Aguardando aprovação</label>
+                    <label><input type="checkbox" name="status" value="Solicitação aprovada" onchange="filterTable()"> Solicitação aprovada</label>
+                    <label><input type="checkbox" name="status" value="Solicitação reprovada" onchange="filterTable()"> Solicitação reprovada</label>
+                </div>
+            </div>
+        </div>
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table>
+                <thead>
+                    <tr>
+                        <th>Acessar</th>
+                        <th>Centro de Trabalho</th>
+                        <th>Solicitante</th>
+                        <th>Data da Solicitação</th>
+                        <th>Data da Parada</th>
+                        <th>Duração (Min.)</th>
+                        <th>Motivo Anterior</th>
+                        <th>Motivo Novo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        let tableData = {}
+
+        const defaultLastWeek = '{{last_week}}';
+        const defaultThisWeek = '{{this_week}}';
+
+        function searchData() {
+            const last_week = document.getElementById('last_week');
+            const this_week = document.getElementById('this_week');
+
+
+            if (last_week.value === "") {
+                last_week.value = defaultLastWeek;
+            }
+            if (this_week.value === "") {
+                this_week.value = defaultFirstWeek;
+            }
+
+            fetch('/oee/paradas/alterar/solicitacoes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    last_week: last_week.value,
+                    this_week: this_week.value
+                })
+            })
+            .then(response => response.json()) 
+            .then(data => {
+                tableData = data
+                filterTable();
+            });
+        }
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';  // Limpa o conteúdo anterior
+
+            data.forEach(user => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                const button = document.createElement('button');
+                button.textContent = user['requestId'];
+                button.onclick = () => window.location.href = `/oee/paradas/alterar/solicitacoes/${user['requestId']}`;
+                cell.appendChild(button);
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['Workcenter_Name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['openDate'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['tStart'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = user['dDuration'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = `${user['motive1']} - ${user['motiveDesc1']}`;
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = `${user['motive2']} - ${user['motiveDesc2']}`;
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                if (user['approverStatus1'] == 2 || user['approverStatus2'] == 2) {
+                    cell.textContent = 'Solicitação reprovada';
+                    cell.className = 'status-rejected';
+                } else if (user['approverStatus1'] == 1 && user['approverStatus2'] == 1) {
+                    cell.textContent = 'Solicitação aprovada';
+                    cell.className = 'status-approved';
+                } else {
+                    cell.textContent = 'Aguardando aprovação';
+                    cell.className = 'status-pending';
+                }
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function filterTable() {
+            const requestIdFilter = document.getElementById('filterRequestId').value.toLowerCase();
+            const centerFilter = document.getElementById('filterCenter').value.toLowerCase();
+            const userNameFilter = document.getElementById('filterUserName').value.toLowerCase();
+            const motive1Filter = document.getElementById('filterMotive1').value.toLowerCase();
+            const motive2Filter = document.getElementById('filterMotive2').value.toLowerCase();
+            const statusFilters = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(input => input.value.toLowerCase());
+
+            const filteredData = tableData.filter(user => {
+                const requestIdMatch = user['requestId'].toString().toLowerCase().includes(requestIdFilter);
+                const centerMatch = user['Workcenter_Name'].toLowerCase().includes(centerFilter);
+                const userNameMatch = user['name'].toLowerCase().includes(userNameFilter);
+                const motive1Match = `${user['motive1']} - ${user['motiveDesc1']}`.toLowerCase().includes(motive1Filter);
+                const motive2Match = `${user['motive2']} - ${user['motiveDesc2']}`.toLowerCase().includes(motive2Filter);
+
+                let status = '';
+                if (user['approverStatus1'] == 2 || user['approverStatus2'] == 2) {
+                    status = 'solicitação reprovada';
+                } else if (user['approverStatus1'] == 1 && user['approverStatus2'] == 1) {
+                    status = 'solicitação aprovada';
+                } else {
+                    status = 'aguardando aprovação';
+                }
+                
+                // Filtrar pelo status derivado
+                const statusMatch = !statusFilters.length || statusFilters.includes(status);
+
+                
+                return requestIdMatch && centerMatch && userNameMatch && statusMatch && motive1Match && motive2Match;
+            });
+
+            populateTable(filteredData);
+        }
+
+        window.onload = function() {
+            searchData();
+        }
+        
+    </script>
+</body>
+</html>

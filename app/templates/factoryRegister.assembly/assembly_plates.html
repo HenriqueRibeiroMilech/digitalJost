@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between; /* Alinha o título à esquerda e os filtros à direita */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-section > div {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 calc(25% - 10px); /* quatro campos por linha */
+        }
+
+        .form-section > div label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .extra-input, .form-section > div input,
+        .form-section > div select {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .image-container {
+            position: relative;
+            display: inline-block;
+            justify-content: center;
+            display: flex;
+            margin-top: 2vh;
+        }
+
+        .image-container div {
+            font-size: 1vw;
+        }
+
+        .image-container img {
+            display: block;
+            max-width: 60%;
+            width: 60%;
+            border-radius: 30px;
+        }
+
+
+        .text-overlay {
+            position: absolute;
+            color: black;
+            font-size: 16px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 93%;
+        }
+
+        .dropbtn {
+            background-color: #000000;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: auto;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: inline-flex; 
+            align-items: center;
+            width: 90%;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #5a5a5a;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: white;
+            width: 90%;
+            justify-content: space-between;
+            border: 1px solid #ccc;
+        }
+        
+        .input-wrapper:focus-within {
+            outline: -webkit-focus-ring-color auto 1px;
+        }
+
+        .input-wrapper input:focus-visible {
+            outline: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="downloadFile()">Download Excel</button>
+        <button onclick="window.location='/rastreabilidade/qr'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Rastreabilidade Quinta Roda - Plaquetas</h1>
+            <div style="display: flex; flex-direction: row;min-height: calc(2.5em + 20px);gap:20px">
+                <button style="font-size: 1vw;background-color: black;" onclick="openModal('modalClient')" id="show2">Cadastro de Clientes</button>
+                <button style="font-size: 1vw;" onclick="openModal('modalRequest')">Registar Nova Plaqueta</button>
+            </div>
+        </div>        
+        
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar - Cód. Rastreabilidade" onkeyup="filterPlatesTable()">
+            <input type="text" id="filter2" placeholder="Filtrar - Motivo" onkeyup="filterPlatesTable()">
+            <input type="text" id="filter3" placeholder="Filtrar - Data de Envio" onkeyup="filterPlatesTable()">
+            <input type="text" id="filter4" placeholder="Filtrar - Cliente" onkeyup="filterPlatesTable()">
+            <input type="text" id="filter5" placeholder="Filtrar - Registrado Por" onkeyup="filterPlatesTable()">
+        </div>
+        <div style='height: 60vh;overflow-y: auto;'>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cód. Rastreabilidade</th>
+                        <th>Motivo</th>
+                        <th>Data de Envio</th>
+                        <th>Cliente</th>
+                        <th>Registrado Por</th>
+                        <th>Data de Registro</th>
+                        <th>Anexo</th>
+                    </tr>
+                </thead>
+                <tbody id="platesTable">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="modalRequest" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalRequest')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Registrar Nova Plaqueta</h2>
+    
+            <!-- Formulário de cadastro de material -->
+            <form id="materialForm">
+
+                <div class="form-section">
+                    
+                    <div>
+                        <label for="motive">Motivo do Registro</label>
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Selecione</button>
+                            <div class="dropdown-content" id="motive">
+                                {% for motive in motives %}
+                                    <label><input oninput="toggleExclusiveFilter('motive', this)" style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="motive" value="{{motive.id}}">{{motive.name}}</label>
+                                {% endfor %}
+                                <label><input oninput="toggleExclusiveFilter('motive', this)" style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="motive" value="" id="otherCheckBox">Outro:<input type="text" class="extra-input" style="margin-left: 10%;" placeholder="Digite aqui o motivo" oninput="changeCheckBoxValue(this.value)"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="codRast">Cód. Rastreabilidade</label>
+                        <div class="input-wrapper" tabindex="0" onclick="document.getElementById('codRast').focus()">
+                            <input style="border: none;padding: 0;width: 80%;" type="text" id="codRast" required>
+                            <i class="fa fa-search" style="color: black;cursor: pointer;" onclick="searchPlate()"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="attachments">Adicione o Anexo</label>
+                        <input type="file" id="attachments" multiple onchange="validateFile(event)">
+                    </div>
+
+                </div>
+
+                <div class="form-section" style="margin-top: 1vh;">
+
+                    <div>
+                        <label for="client">Cliente</label>
+                        <div class="dropdown">
+                            <button class="dropbtn" type="button">Selecione</button>
+                            <div class="dropdown-content" id="client">
+                                {% for client in clients %}
+                                    <label><input oninput="toggleExclusiveFilter('client', this)" style="width: auto;margin: 0 10px 0 0;" type="checkbox" name="client" value="{{client.id}}">{{client.clientName}}</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="internalResponsibleId">Responsável pelo Cliente</label>
+                        <select type="date" id="internalResponsibleId" required>
+                            <option value="" selected disabled>Selecione um Responsável</option>
+                            {% for responsible in responsibles %}
+                                <option value="{{responsible.id}}">{{responsible.name}}</option>
+                            {% endfor %}
+                        </select>   
+                    </div>
+
+                    <div>
+                        <label for="expectedDate">Data de Envio</label>
+                        <input type="date" id="expectedDate" required>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 2vh;display: flex;flex-direction: row;justify-content: center;">
+                    <button type="button" onclick="registerPlate()">Cadastrar</button>
+                </div>
+
+                <div class="image-container">
+                    <img src="/static/images/qr_plate.png" alt="Imagem de exemplo">
+                
+                    <div id="text1" class="text-overlay" style="top: 11.5%; left: 48.8%;">XXX -XX XXXX</div>
+                    <div id="text2" class="text-overlay" style="top: 81.5%; left: 43.9%;">XXX -X</div>
+                    <div id="text3" class="text-overlay" style="top: 81.5%; left: 49.6%;">XXXX</div>
+                    <div id="text4" class="text-overlay" style="top: 81.5%; left: 55.5%;">XXX</div>
+                    <div id="text5" class="text-overlay" style="top: 61%; left: 25%;">XXX XXXXXXXX</div>
+                    <div id="text6" class="text-overlay" style="top: 35.5%; left: 47.5%;">XXX XXXXXX</div>
+                    <div id="text7" class="text-overlay" style="top: 55.5%; left: 46.5%;">XXXXXXXXXXXX</div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+
+    <div id="modalClient" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalClient')" class="close">&times;</span>
+    
+            <div class="filter-container" style="justify-content: space-between">
+                <h1 style="margin-left: 0; margin: 0;color: white;">Cadastro de Clientes</h1>
+
+                <div style="display: flex; flex-direction: column; margin-left: auto; gap: 1vh;font-weight: bold;">
+                
+                    <div style="display: flex; align-items: center; gap: 0.5vw;justify-content: right;">
+                        <label for="clientName" style="font-size: 1.5em;">Nome cliente</label>
+                        <input type="text" id="clientName" style="width: 20vw; margin: 0;">
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.5vw;justify-content: right;">
+                        <label for="clientResponsible" style="font-size: 1.5em;">Responsável</label>
+                        <input type="text" id="clientResponsible" style="width: 20vw; margin: 0;">
+                    </div>
+
+                </div>
+                
+                <button type="button" style="max-width: 10vw; background-color: black; color: white;margin-left: 1vw;margin-right: 1vw;" onclick="saveClient('insert')">Cadastrar</button>
+            </div>
+    
+            <div style='height: 50vh;overflow-y: auto;'>         
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Responsável</th>
+                            <th>Adicionado em</th>
+                            <th>Por</th>
+                            <th>Status</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsTable" style="background-color: white;color: black;">
+                        <!-- Conteúdo gerado via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalError" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="errorMessage"></h2>
+            <button onclick="closeModal('modalError')">Fechar</button>
+        </div>
+    </div>
+    
+
+    <script>
+        const tableData = JSON.parse('{{ plates | tojson}}');
+        const clientsData = JSON.parse('{{ clients | tojson |safe}}');
+
+        let traceIsValid = false
+
+
+
+        // FUNÇÕES PARA ABRIR OS MODAIS
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+
+            if (modalId == 'modalRequest') {
+                document.getElementById('materialForm').reset();
+
+                document.getElementById('text1').innerHTML = 'XXX -XX XXXX'
+                document.getElementById('text2').innerHTML = 'XXX -X'
+                document.getElementById('text3').innerHTML = 'XXXX'
+                document.getElementById('text4').innerHTML = 'XXX'
+                document.getElementById('text5').innerHTML = 'XXX XXXXXXXX'
+                document.getElementById('text6').innerHTML = 'XXX XXXXXX'
+                document.getElementById('text7').innerHTML = 'XXXXXXXXXXXX'
+            }
+        }
+
+
+        // FUNÇÕES PARA INSERIR AS TABELAS
+        
+        function populateClientsTable(data) {
+
+            function buttonStyle(id) {
+                const button = document.getElementById(id)
+                const nowActive = button.textContent === 'Ativar';
+                button.textContent = nowActive ? 'Desativar' : 'Ativar';
+                button.value = nowActive ? '1' : '0';
+                button.parentNode.className = nowActive ? 'status-approved' : 'status-rejected';
+            }
+
+            const tableBody = document.getElementById('clientsTable');
+            tableBody.innerHTML = '';
+
+            data.forEach(info => {
+                const row = document.createElement('tr');
+
+
+                let cell = document.createElement('td');
+
+                let input = document.createElement('input');
+                input.id = `inputClient_${info['id']}`
+                input.value = info['clientName'];
+                input.className = 'extra-input'
+
+                cell.appendChild(input)
+                row.appendChild(cell);
+
+
+                cell = document.createElement('td');
+
+                input = document.createElement('input');
+                input.id = `inputResponsible_${info['id']}`
+                input.value = info['clientResponsible'];
+                input.className = 'extra-input'
+
+                cell.appendChild(input)
+                row.appendChild(cell);
+
+
+                cell = document.createElement('td');
+                cell.textContent = info['changeDate'];
+                row.appendChild(cell);
+
+
+                cell = document.createElement('td');
+                cell.textContent = info['creatorName'];
+                row.appendChild(cell);
+
+
+                cell = document.createElement('td');
+                cell.className = info['status'] == true ? 'status-approved' : 'status-rejected';                
+                
+                let button = document.createElement('button');
+                button.textContent = info['status'] == true ? 'Desativar' : 'Ativar';
+                button.value = info['status'] == true ? '1' : '0'
+                button.id = `inputClientStatus_${info['id']}`
+                button.style.backgroundColor = 'black'
+                button.onclick = () => buttonStyle(`inputClientStatus_${info['id']}`)
+
+                cell.appendChild(button)
+                row.appendChild(cell);
+
+
+                cell = document.createElement('td');
+
+                button = document.createElement('button');
+                button.textContent = 'Atualizar';
+                button.onclick = () => saveClient('update', info['id']);
+
+                cell.appendChild(button);
+                row.appendChild(cell);
+
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function populatePlatesTable(data) {
+            const tableBody = document.getElementById('platesTable');
+            tableBody.innerHTML = '';
+
+            data.forEach(info => {
+
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                cell.textContent = info['treaceabilityId'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['motive'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['expectedDate'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['clientName'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['responsibleName'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = info['createDate'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                let button = document.createElement('button');
+                button.textContent = 'Download';
+                button.style.backgroundColor = 'black'
+                button.onclick = () => downloadFile(info['id'])
+
+                cell.append(button)
+                row.append(cell)
+
+
+                tableBody.appendChild(row);
+            });
+
+        }
+
+        function filterPlatesTable() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+            const filter3 = document.getElementById('filter3').value.toLowerCase();
+            const filter4 = document.getElementById('filter4').value.toLowerCase();
+            const filter5 = document.getElementById('filter5').value.toLowerCase();
+
+            const filteredData = tableData.filter(user => {
+                
+                const filter1Match = user['treaceabilityId'].toString().toLowerCase().includes(filter1);
+                const filter2Match = user['motive'].toString().toLowerCase().includes(filter2);
+                const filter3Match = user['expectedDate'].toLowerCase().includes(filter3);
+                const filter4Match = user['clientName'].toString().toLowerCase() == filter4;
+                const filter5Match = user['responsibleName'].toString().toLowerCase().includes(filter5);
+            
+                return filter1Match && filter2Match && filter3Match && filter4Match && filter5Match;
+            });
+
+            populatePlatesTable(filteredData);
+        }
+
+        
+        // FUNÇÕES PARA CADASTRAR E EDITAR OS CLIENTES
+
+        function saveClient(type, client) {
+
+            let payload
+
+            if (client) {
+                payload  = {
+                    name: document.getElementById(`inputClient_${client}`).value
+                    , responsible: document.getElementById(`inputResponsible_${client}`).value
+                    , status: document.getElementById(`inputClientStatus_${client}`).value
+                    , id: client
+                }
+            } else {
+                payload  = {
+                    name: document.getElementById('clientName').value
+                    , responsible: document.getElementById('clientResponsible').value
+                }
+            }
+
+            fetch(`/rastreabilidade/qr/plaquetas?type=client&extra=${type}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {                    
+                    window.location.reload()
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('errorMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('modalError')
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Erro na requisição:', err);
+            });
+        }
+
+
+        // FUNÇÕES PARA CADASTRAR UMA NOVA PLAQUETA
+
+        // Verifica se o cadastro de rastreabilidade é valido e preenche a imagem da plaqueta com os dados
+        function searchPlate() {
+
+            fetch(`/rastreabilidade/qr/plaquetas?type=plate&extra=search`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({id: document.getElementById('codRast').value})
+            })
+            .then(response => {
+                if (response.status === 404) {
+                    document.getElementById('errorMessage').innerHTML = `Código de rastreabilidade não encontrado`
+                    openModal('modalError');                
+                } else if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Erro inesperado');
+                }
+            })
+            .then(data => {
+                data = data[0]
+                traceIsValid = true
+                document.getElementById('text1').innerHTML = data.PLAQUETA_CAMPO1
+                document.getElementById('text2').innerHTML = data.PLAQUETA_CAMPO2
+                document.getElementById('text3').innerHTML = data.PLAQUETA_CAMPO3
+                document.getElementById('text4').innerHTML = data.PLAQUETA_CAMPO4
+                document.getElementById('text5').innerHTML = data.PLAQUETA_CAMPO5
+                document.getElementById('text6').innerHTML = data.PLAQUETA_CAMPO6
+                document.getElementById('text7').innerHTML = document.getElementById('codRast').value
+                
+            })
+            .catch(err => {
+                console.error('Erro na requisição:', err);
+            });
+            
+        }
+
+        // Verifica se existem no maximo 3 arquivos anexados
+        function validateFile(event) {
+            const files = event.target.files;
+
+            if (files.length > 3) {
+                document.getElementById('errorMessage').innerHTML = `Você só pode enviar no máximo 3 arquivos.`
+                openModal('modalError');  
+                event.target.value = '';
+            }
+        }
+
+        // Comuncação com o backend
+        function registerPlate() {
+
+            const payload = {
+                treaceabilityId: document.getElementById('codRast').value
+                , clientId: document.querySelector("input[name='client']:checked")?.value
+                , motiveId: document.querySelector("input[name='motive']:checked")?.value
+                , internalResponsibleId: document.getElementById('internalResponsibleId').value
+                , expectedDate: document.getElementById('expectedDate').value
+            };
+
+
+            const noFilled = Object.values(payload).some(value => !value);
+
+            if (noFilled) {
+                document.getElementById('errorMessage').innerHTML = 'Todos os campos são obrigatórios.';
+                openModal('modalError');
+                return;
+            } else if (!traceIsValid) {
+                document.getElementById('errorMessage').innerHTML = 'Verifique se o código de rastreabilidade está correto.';
+                openModal('modalError');
+                return;
+            }
+
+            const formData = new FormData();
+            
+            Object.entries(payload).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            const fileInput = document.getElementById('attachments');
+            const file = fileInput.files[0];
+
+            if (file) {
+                formData.append('attachments', file);
+            } else {
+                document.getElementById('errorMessage').innerHTML = 'Adicione o anexo .eml ou .msg!';
+                openModal('modalError');
+                return;
+            }    
+            
+            fetch(`/rastreabilidade/qr/plaquetas?type=plate&extra=insert`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {             
+                    window.location.reload()
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('errorMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('modalError')
+                    });
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+        }
+
+
+        // FUNÇÕES GERAIS
+
+        // seleciona os checkbox
+        function toggleExclusiveFilter(group, clickedCheckbox) {
+            const checkboxes = document.getElementsByName(group);
+
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+            });
+
+            clickedCheckbox.checked = true;
+        }
+
+        // altera o valor do checkcox outros com base no input
+        function changeCheckBoxValue(value) {
+            document.getElementById('otherCheckBox').value = value
+        }
+
+        // faz o download do excel ou do anexo
+        function downloadFile(id) {
+
+            let url, payload
+            if (id) {
+                url = `/rastreabilidade/qr/plaquetas?type=plate&extra=attachments`
+                payload = {id: id}
+            } else {
+                url = `/rastreabilidade/qr/excel`
+                payload = {}
+            }
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao gerar o arquivo');
+
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = 'download';
+
+                if (disposition && disposition.includes('filename=')) {
+                    const matches = disposition.match(/filename="?([^"]+)"?/);
+                    if (matches?.[1]) filename = matches[1];
+                }
+
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+
+        }
+
+        window.onload = function() {
+            populateClientsTable(clientsData)
+            populatePlatesTable(tableData);
+        }
+        
+    </script>
+</body>
+</html>

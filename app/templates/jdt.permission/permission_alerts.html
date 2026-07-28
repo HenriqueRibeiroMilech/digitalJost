@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: calc(100vw - 10vh);
+            height: 90vh;
+            margin: 5vh;
+            color: #153A8A;
+            overflow: auto;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #2e52a7;
+            color: white;
+            z-index: 2;
+        }
+
+        tbody td, thead th {
+            padding: 10px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+
+        tbody td {
+            position: relative;
+        }
+
+        tbody th {
+            position: sticky;
+            left: 0;
+            background-color: #153A8A;
+            color: white;
+            z-index: 1;
+            border: 2px solid #ddd;
+        }
+
+        .symbol {
+            font-size: 1.5em;
+        }
+
+        .center-group {
+            background-color: #153A8A;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 5;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .edit-button {
+            float: right;
+            background-color: #153A8A;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-button:hover {
+            background-color: #2e52a7;
+        }
+
+        .dropbtn {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: none;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #3e8e41;
+        }
+
+        .dropdown-content-up {
+            bottom: 100%;
+            top: auto;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/{{back}}'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="downtimeTitle">Editar alerta de parada</h2>
+            <label>Áreas:</label>
+            <div class="dropdown" id="check_area">
+                <button class="dropbtn" type="button">Selecione as áreas</button>
+                <div class="dropdown-content" style="height: auto;">
+                    {% for group in groups %}
+                    <label><input onchange="filterWorkcenters('{{ group.Workcenter_Group }}', this.checked)" type="checkbox" name="area_selected" value="{{ group.Workcenter_Group }}"> {{ group.Workcenter_Group }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <label>Centro de Trabalho:</label>
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Selecione os centros de trabalhos</button>
+                <div class="dropdown-content" id="check_workcenters">
+                    {% for workcenter in workCenters %}
+                    <label><input type="checkbox" name="{{ workcenter.Workcenter_Group }}" value="{{ workcenter.Workcenter_Code }}"> {{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <button onclick="submitForm()" id="edit" class="edit-button">Salvar</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Alerta de Paradas Teams</h1>
+        <p>Aqui você pode selecionar quais alertas de paradas você gostaria de receber no Teams.</p>
+        <div class="container-table" style='height: calc(54vh + 6vw);overflow-y: auto;'>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // Cabeçalho com as Áreas e Centros
+            const headerRow = document.createElement('tr');
+            const areaHeaderRow = document.createElement('tr');
+
+            const blankCell = document.createElement('th');
+            blankCell.rowSpan = 2; // Espaço para o eixo Y (Paradas)
+            blankCell.style.position = 'sticky';
+            blankCell.style.left = '0';
+            blankCell.style.backgroundColor = '#2e52a7';
+            blankCell.style.color = 'white';
+            blankCell.style.zIndex = '4';
+            blankCell.innerHTML = 'Paradas';
+            blankCell.style.fontSize = '2vw'
+
+            headerRow.appendChild(blankCell);
+            areaHeaderRow.appendChild(blankCell);
+
+            const groups = {{ groups|tojson|safe }};
+            const workcenters = {{ workCenters|tojson|safe }};
+
+            // Preenchendo cabeçalhos de área e centro
+            groups.forEach(group => {
+                const groupCell = document.createElement('th');
+                groupCell.colSpan = workcenters.filter(center => center.Workcenter_Group === group.Workcenter_Group).length;
+                groupCell.textContent = group.Workcenter_Group;
+                groupCell.style.position = 'sticky';
+                groupCell.style.top = '0';
+                groupCell.style.backgroundColor = '#2e52a7';
+                groupCell.style.color = 'white';
+                groupCell.style.zIndex = '2';
+
+                areaHeaderRow.appendChild(groupCell);
+
+                workcenters
+                    .filter(center => center.Workcenter_Group === group.Workcenter_Group)
+                    .forEach(center => {
+                        const centerCell = document.createElement('th');
+                        centerCell.textContent = center.Workcenter_Code;
+                        centerCell.style.position = 'sticky';
+                        centerCell.style.top = '40px';
+                        centerCell.style.backgroundColor = '#2e52a7';
+                        centerCell.style.color = 'white';
+                        centerCell.style.zIndex = '1';
+
+                        headerRow.appendChild(centerCell);
+                    });
+            });
+
+            thead.appendChild(areaHeaderRow);
+            thead.appendChild(headerRow);
+
+            const status = JSON.parse({{ status|tojson|safe }});
+            const userData = JSON.parse({{ userData|tojson|safe }});
+
+            // Criando linhas para cada parada
+            status.forEach(item => {
+                const row = document.createElement('tr');
+
+                const button_info = userData.find(u => u.downtimeId == item.Code) || { area: [], workcenter: [] };
+
+                const downtimeCell = document.createElement('td');
+                downtimeCell.style.width = '20vw';  // Define a largura da primeira coluna
+                downtimeCell.style.minWidth = '20vw';  // Define a largura da primeira coluna
+                downtimeCell.innerHTML = `<a style='float:left'>${item.Code}-${item.Description}</a><button class="edit-button" onclick="openModal('${item.Code}', '${button_info.area}', '${button_info.workcenter}')">Editar</button>`;
+                downtimeCell.style.position = 'sticky';
+                downtimeCell.style.left = '0';
+                downtimeCell.style.backgroundColor = '#f9f9f9';
+                downtimeCell.style.zIndex = '2';
+
+                row.appendChild(downtimeCell);
+
+                workcenters.forEach(center => {
+                    const centerCell = document.createElement('td');
+                    centerCell.style.textAlign = 'center';
+
+                    // Verifica se a área do usuário inclui o grupo do centro de trabalho
+                    const user = userData.find(u => parseInt(u.downtimeId) === parseInt(item.Code) && (u.workcenter.includes(center.Workcenter_Code) || u.area.includes(center.Workcenter_Group)));
+                    const icon = document.createElement('i');
+
+                    if (user) {
+                        icon.classList.add('fas', 'fa-check-circle');
+                        icon.style.color = 'green';
+                    }
+
+                    centerCell.appendChild(icon);
+                    row.appendChild(centerCell);
+                });
+
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+
+            document.querySelector('.container-table').appendChild(table);
+        });
+
+        function openModal(downtimeId, selectedAreas, selectedWorkcenters) {
+            // Abrir o modal
+            const modal = document.getElementById("createModal");
+            modal.style.display = "flex";
+
+            // Atualizar o título do modal
+            const modalTitle = document.getElementById('downtimeTitle');
+            modalTitle.textContent = `Editar alerta de parada: ${downtimeId}`;
+
+            // Preencher os checkboxes com os valores recebidos
+            const areaCheckboxes = modal.querySelectorAll("input[name='area_selected']");
+            areaCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectedAreas.includes(checkbox.value);
+                filterWorkcenters(checkbox.value, selectedAreas.includes(checkbox.value));
+            });
+
+            const workcenterCheckboxes = document.querySelectorAll("#check_workcenters  input[type='checkbox']");
+            workcenterCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectedWorkcenters.includes(checkbox.value);
+            });
+
+        }
+
+        function closeModal() {
+            document.getElementById("createModal").style.display = "none";
+        }
+
+        function filterWorkcenters(Workcenter_Group, isChecked) {
+            Array.from(document.getElementById('check_workcenters').children).forEach(label => {
+                const checkbox = label.querySelector('input');
+                if (checkbox.name == Workcenter_Group) {
+                    label.style.display = isChecked ? 'none' : '';
+                    checkbox.checked = false;
+                }
+            });
+        }
+
+        function submitForm() {
+            const area = Array.from(document.querySelectorAll("#check_area input:checked")).map(checkbox => checkbox.value);
+            const workcenter = Array.from(document.querySelectorAll("#check_workcenters input:checked")).map(checkbox => checkbox.value);
+
+            const data = {
+                area: area,
+                workcenter: workcenter,
+                event: document.getElementById('downtimeTitle').textContent.split(': ')[1]
+            };
+        
+            fetch('/usuarios/alertas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                window.location.reload()
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+    </script>
+</body>
+</html>

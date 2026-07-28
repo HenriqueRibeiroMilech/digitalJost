@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            font-size: 3vw;
+            margin:0;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .filter-container {
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(21, 58, 138, 0.9);
+            border-radius: 0 5px 5px 0;
+            position: absolute;
+            left: 0;
+            top: calc(100% - (80% + 1vw) - 40px);
+            width: 20%;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .filter-container label {
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .filter-container .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .filter-container select, .filter-container input, .filter-container button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .filter-container-button {
+            width: 50%;
+            cursor: pointer;
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .filter-container-button:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .filter-container-button.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .dropbtn {
+            background-color: #2e52a7;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .dropbtn:hover {
+            background-color: #4CAF50;
+            transform: scale(1.05);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            text-align: left;
+            width: 100%;
+            height: 30vh;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+
+        .dropdown-content label {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content input {
+            margin-right: 10px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .chart-container {
+            width: 75%;
+            height: 80%;
+            align-items: center;
+            overflow-y: hidden;
+            position: absolute;
+            bottom: 1vw;
+            right: 1vw;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+            display: flex;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .separate-chart {
+            width: 50%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .scroll-buttons {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            position: absolute;
+        }
+
+        .loader {
+            border: 2vh solid #163a8a;
+            border-top: 2vh solid #3498db;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+            height: calc(10vh + 9vw);
+            width: calc(10vh + 9vw);
+            margin: 10vh auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: none; }
+        ::-webkit-scrollbar-thumb { background-color: rgb(125, 196, 255); }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .bullets-main {
+            color: white;
+            background-color: rgba(21, 58, 138, 0.9);
+            border-radius: 5px;
+            font-size: 1vw;
+            text-align: left;
+            padding-left: 1vh;
+            padding-right: 1vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="static-buttons">
+        <!-- Mantive como você já tinha (não mexe em rotas do dash) -->
+        <button onclick="window.location='{{ url_for('request_improvements.improvements_get') }}'">
+            <i class="fas fa-x"></i>
+        </button>
+    </div>
+
+    <h1>Indicadores de Solicitações p/ Transformação Digital</h1>
+
+    <div class="container">
+        <div class="filter-container">
+            <label style="width: 100%;text-align: center;color: white;font-weight: bold;">Data das Solicitações</label>
+
+            <div>
+                <label for="start_date" style="font-weight: bold;color:white">Criação:</label>
+                <input type="date" id="start_date" name="start_date" style="float:right;width: 40%;">
+            </div>
+
+            <div>
+                <label for="end_date" style="font-weight: bold;color:white">Fim:</label>
+                <input type="date" id="end_date" name="end_date" style="float:right;width: 40%;">
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por Status</button>
+                <div class="dropdown-content" id="status_filter" style="height: auto;">
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="0"> Em Análise</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="1"> Em Andamento</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="4"> Pausado</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="2"> Concluído</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="3"> Recusado</label>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por Nível de Urgência</button>
+                <div class="dropdown-content" id="urgency_filter" style="height: auto;">
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="Imediata"> Imediata</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="Alta"> Alta</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="Média"> Média</label>
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="Baixa"> Baixa</label>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por Responsável</button>
+                <div class="dropdown-content" id="responsible_filter" style="height: auto;">
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="NULL"> Sem responsável</label>
+                    {% for person in responsible %}
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="{{person.id}}"> {{person.name}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn" type="button">Filtre por Solicitante</button>
+                <div class="dropdown-content" id="requester_filter">
+                    {% for person in requester %}
+                    <label ondblclick="toggleExclusiveFilter(this)"><input checked type="checkbox" value="{{person.id}}"> {{person.name}}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button onclick="update()" style="cursor: pointer;">Procurar Dados</button>
+        </div>
+
+        <div class="chart-container" id="chart-container">
+            <div class="chart" id="chart1"><div class="loader"></div></div>
+            <div class="chart" id="chart2" style="margin-top: 20px;"><div class="loader"></div></div>
+        </div>
+    </div>
+
+    <div style="position: absolute;left: 17.5%;bottom: 1vw;">
+        <button class="filter-container-button" id="up" onclick="scrollSmooth('up')"
+                style="width: 100%;height: 10vh;margin-bottom: 1vh;font-size: 3vh;border-radius: 4px;"><b>&uarr;</b></button>
+        <button class="filter-container-button" id="down" onclick="scrollSmooth('down')"
+                style="width: 100%;height: 10vh;font-size: 3vh;border-radius: 4px;"><b>&darr;</b></button>
+    </div>
+
+    <script>
+        var data = {};
+        var xhr = new XMLHttpRequest();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var today = new Date();
+            var isoDate = today.toISOString().slice(0, 10);
+            document.getElementById('end_date').value = isoDate;
+
+            var dayOfWeek = today.getDay();
+            today.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+            document.getElementById('start_date').value = today.toISOString().slice(0, 10);
+
+            window.addEventListener('resize', function () {
+                updateGraph();
+            });
+        });
+
+        function updateGraph() {
+
+            function createBarChart(dataArr, title, elementId) {
+                var trace = {
+                    x: dataArr.map(item => item.label),
+                    y: dataArr.map(item => item.count),
+                    name: 'Minutos Parados',
+                    type: 'bar',
+                    marker: { color: 'orange' },
+                    text: dataArr.map(item => item.count),
+                    textfont: {
+                        size: 12,
+                        family: 'Arial Black, sans-serif',
+                        weight: 'bold',
+                        color: 'black'
+                    },
+                    textposition: 'outside'
+                };
+
+                var layout = {
+                    title: { text: title, font: { size: 25 } },
+                    barmode: 'group',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    xaxis: { tickangle: -45, automargin: true },
+                    legend: { itemclick: false, itemdoubleclick: false, font: { size: 20 } }
+                };
+
+                Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false });
+            }
+
+            function createBarChart1(dataArr, title, elementId) {
+                const toNumber = (v) => {
+                    const n = Number(v);
+                    return isNaN(n) ? 0 : n;
+                };
+
+                const pct = (value, total) => {
+                    if (!total || total <= 0) return "0.0";
+                    return (value / total * 100).toFixed(1);
+                };
+
+                const labels = dataArr.map(item => item.label);
+                const qtt0 = dataArr.map(item => toNumber(item.qtt0_final));
+                const qtt1 = dataArr.map(item => toNumber(item.qtt1_final));
+                const totals = qtt0.map((v, i) => v + qtt1[i]);
+
+                const trace0 = {
+                    x: labels,
+                    y: qtt0,
+                    name: 'Atrasadas',
+                    type: 'bar',
+                    marker: { color: '#FF4C4C' },
+                    text: qtt0.map((v, i) => `${v} QTD<br>${pct(v, totals[i])}%`),
+                    textfont: { size: 12, family: 'Arial Black, sans-serif', weight: 'bold', color: 'black' },
+                    textposition: 'auto'
+                };
+
+                const trace1 = {
+                    x: labels,
+                    y: qtt1,
+                    name: 'Entregues no Prazo',
+                    type: 'bar',
+                    marker: { color: '#4CAF50' },
+                    text: qtt1.map((v, i) => `${v} QTD<br>${pct(v, totals[i])}%`),
+                    textfont: { size: 12, family: 'Arial Black, sans-serif', weight: 'bold', color: 'black' },
+                    textposition: 'auto'
+                };
+
+                const trace2 = {
+                    x: labels,
+                    y: totals,
+                    name: 'Total',
+                    type: 'scatter',
+                    mode: 'text',
+                    text: totals.map(total => `${total} QTD`),
+                    textposition: 'top center',
+                    textfont: { size: 12, family: 'Arial Black, sans-serif', weight: 'bold', color: 'black' },
+                    hoverinfo: 'none',
+                    showlegend: false
+                };
+
+                const layout = {
+                    title: { text: title, font: { size: 25 } },
+                    barmode: 'stack',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    xaxis: { tickangle: -45, automargin: true },
+                    yaxis: { title: 'Quantidade', automargin: true },
+                    legend: { itemclick: false, itemdoubleclick: false, font: { size: 20 } }
+                };
+
+                Plotly.newPlot(elementId, [trace0, trace1, trace2], layout, { displayModeBar: false });
+            }
+
+            createBarChart1(data.barchart1 || [], "Demandas Concluídas no Prazo Estipulado", "chart1");
+            createBarChart(data.barchart2 || [], "Tempo Médio (h) Solicitação até Entrega por Nivel de Urgência", "chart2");
+        }
+
+        function scrollSmooth(direction) {
+            var chartContainer = document.getElementById('chart-container');
+            var containerHeight = chartContainer.offsetHeight - 20;
+            var scrollAmount = containerHeight;
+
+            chartContainer.scrollBy({
+                top: direction === 'up' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        function update() {
+
+            showLoaders();
+
+            if (xhr && xhr.readyState !== XMLHttpRequest.UNSENT) {
+                xhr.abort();
+            }
+
+            const start_date_filter = document.getElementById("start_date").value;
+            const end_date_filter = document.getElementById("end_date").value;
+
+            const status_filter = Array.from(document.querySelectorAll('#status_filter input:checked')).map(cb => cb.value);
+            const urgency_filter = Array.from(document.querySelectorAll('#urgency_filter input:checked')).map(cb => cb.value);
+            const responsible_filter = Array.from(document.querySelectorAll('#responsible_filter input:checked')).map(cb => cb.value);
+            const requester_filter = Array.from(document.querySelectorAll('#requester_filter input:checked')).map(cb => cb.value);
+
+            const data_to_send = {
+                status: status_filter,
+                urgency: urgency_filter,
+                responsible: responsible_filter,
+                requester: requester_filter,
+                start_date: start_date_filter,
+                end_date: end_date_filter
+            };
+
+            // ✅ MODIFICAÇÃO AQUI: sem url_for (evita BuildError)
+            const postUrl = "/solicitar/dash";
+
+            xhr.open("POST", postUrl, true);
+            xhr.setRequestHeader("Content-type", "application/json");
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+
+                    if (xhr.status === 200) {
+                        data = {};
+
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+
+                            if (typeof resp.barchart1 === "string") {
+                                data.barchart1 = JSON.parse(resp.barchart1);
+                            } else {
+                                data.barchart1 = resp.barchart1;
+                            }
+
+                            if (typeof resp.barchart2 === "string") {
+                                data.barchart2 = JSON.parse(resp.barchart2);
+                            } else {
+                                data.barchart2 = resp.barchart2;
+                            }
+
+                        } catch (e) {
+                            console.error("Erro ao fazer parse do retorno:", e, xhr.responseText);
+                            data.barchart1 = [];
+                            data.barchart2 = [];
+                        }
+
+                        hideLoaders();
+                        updateGraph();
+                    } else {
+                        hideLoaders();
+                        console.error("Erro HTTP:", xhr.status, xhr.responseText);
+                        alert("Não foi possível carregar os dados (HTTP " + xhr.status + "). Veja o console (F12).");
+                    }
+                }
+            };
+
+            xhr.send(JSON.stringify(data_to_send));
+        }
+
+        function showLoaders() {
+            document.querySelectorAll('.chart, .separate-chart').forEach(function(el) {
+                el.innerHTML = '<div class="loader"></div>';
+            });
+        }
+
+        function hideLoaders() {
+            document.querySelectorAll('.chart, .separate-chart').forEach(function(el) {
+                el.innerHTML = '';
+            });
+        }
+
+        function toggleExclusiveFilter(label) {
+            const input = label.querySelector('input');
+            const checkboxes = label.parentElement.querySelectorAll('input');
+
+            if (input.checked && checkboxes.length > 1 && Array.from(checkboxes).filter(cb => cb.checked).length === 1) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = false);
+                input.checked = true;
+            }
+        }
+    </script>
+</body>
+</html>

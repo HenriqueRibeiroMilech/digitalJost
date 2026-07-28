@@ -1,0 +1,39 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<video style="opacity:0.05;" autoplay muted loop id="myVideo">
+    <source src="/static/videos/video.mp4" style="transform:translate(0, -0%)" type="video/mp4">
+</video>
+
+<body id="seg_content" style="overflow: hidden; height: 100%;">
+    <a id="select_back" href="/op/ssma">&times;</a>
+    <div class="seg_wrapper" id="seg_sidenav">
+        <p class="seg_title" style="margin-top:0">Editar Entradas</p>
+        <input type="text" class="seg_btn" onkeyup="myFunction()" placeholder='Filtrar por SETOR...' id="setor" name="setor">
+        <input type="text" class="seg_btn" onkeyup="myFunction()" placeholder='Filtrar por LOCAL...' id="local" name="local">
+        <input type="text" class="seg_btn" onkeyup="myFunction()" placeholder='Filtrar por TIPO...' id="coord" name="coord">
+        <input type="text" class="seg_btn" onkeyup="myFunction()" placeholder='Filtrar por UNIDADE...' id="state" name="state">
+
+    </div>
+    <div class="datas">
+        <p class="seg_subtitle">Inicio:</p>
+        <input style="float:right" type="date" class="seg_btn" id="filtro_data" oninput="myFunction()" placeholder='Filtar por DATA...'>
+        <p class="seg_subtitle">Fim:</p>
+        <input style="float:right" type="date" class="seg_btn" id="filtro_data2" oninput="myFunction()" placeholder='Filtar por DATA...'>
+    </div>
+
+    <div id="seg_form">
+    </div>
+    <p class="seg_text" id="qtd"></p>
+
+</body>
+
+<script>
+   {% include 'operation.ssma/op_seg_select.js' %}
+</script>
+{% endblock %}

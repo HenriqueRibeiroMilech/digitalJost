@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            background-size: 400% 400%;
+            animation: gradientAnimation 60s ease infinite;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .date-time {
+            position: absolute;
+            bottom: 10%;
+            left: 44.5%;
+        }
+
+        .center-text {
+            width: 100%;
+            text-align: center;
+            font-size: 3vw;
+            font-weight: bold;
+        }
+
+        .center-text h1 {
+            font-size: 2.5vw;
+        }
+
+        .bottom-bar img {
+            height: 85%;
+            
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="bottom-bar" id='bar'>
+</div>
+
+<script>
+
+    function adjustLayout(id) {
+        bar = document.getElementById('bar')
+
+        switch (id) {
+            case 0:
+                bar.innerHTML = '<div class="center-text" style="width: 100%">Transformação Digital</div>'
+                break;
+            case 1:
+                bar.innerHTML = '<img src="/static/images/inovacao.png" alt="Logo da Empresa">'
+                break;
+            case 2:
+                bar.innerHTML = '<div class="center-text"><h1 id="text-sended"></h1></div><div class="date-time"></div>'
+                break;
+            default:
+                break;
+        }
+    }
+
+    adjustLayout({{id}});
+
+
+
+    if ('{{id}}' == '2') {
+        function updateDateTime() {
+            const dateTimeElement = document.querySelector('.date-time');
+            
+            const now = new Date();
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            
+            const date = now.toLocaleDateString('pt-BR', dateOptions);
+            const time = now.toLocaleTimeString('pt-BR', timeOptions);
+
+            dateTimeElement.textContent = `${date}, ${time}`;
+        }
+        
+        updateDateTime();
+        setInterval(updateDateTime, 1000); // Atualiza a cada 1 segundo
+
+        function updateText() {
+            const centerTextElement = document.getElementById('text-sended');
+            
+            // Requisição POST para atualizar o texto
+            var xhr = new XMLHttpRequest();
+            var postUrl = '/cockpit/fabrica_barra';
+
+            xhr.open('POST', postUrl, true);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    centerTextElement.textContent = response.novoTexto;
+                }
+            };
+            xhr.send(JSON.stringify({ parametro: 'valor' }));
+
+            scheduleNextUpdate();
+        }
+
+        
+        function scheduleNextUpdate() {
+            const now = new Date();
+            const nextHour = new Date();
+
+            nextHour.setHours(now.getHours() + 1);
+            nextHour.setMinutes(0);
+            nextHour.setSeconds(0);
+            nextHour.setMilliseconds(0);
+
+            const timeUntilNextHour = nextHour - now;
+
+            setTimeout(() => {
+                updateText();
+            }, timeUntilNextHour);
+        }
+
+        updateText()
+        scheduleNextUpdate();
+    }
+</script>
+</body>
+</html>
+

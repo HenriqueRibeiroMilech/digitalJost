@@ -1,0 +1,28 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_documentos.css') }}">
+</head>
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" type="video/mp4">
+</video>
+
+<body id="content" class="page_body">
+
+    <button id="select_back" style="transform:translate(0, -10%);" onclick="window.location='/demandas?area={{area}}'">&times;</button>
+    <div class="desv_sidenav" id="desv_sidenav">
+    </div>
+
+    <div class="desv_form_container" id="desv_form_container">
+    </div>
+
+</body>
+
+<script>
+   {% include 'demands/demands_create.js' %}
+</script>
+{% endblock %}
+

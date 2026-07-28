@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        table td.status-approved {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table td.status-pending {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        table td.status-rejected {
+            background-color: #F44336;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 80vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-section > div {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 calc(25% - 10px);
+        }
+
+        .form-section > div label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        input, select {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .text-overlay {
+            position: absolute;
+            color: black;
+            font-size: 16px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="window.location='/matriz'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Matriz de Versatilidade - Cadastro de Operadores</h1>
+            <div style="display: flex; flex-direction: row;min-height: calc(2.5em + 20px) ">
+                <button style="font-size: 1vw;margin-right: 1vw;" onclick="openModal('modalPosition')">Verificar Posições</button>
+                <button style="font-size: 1vw;" onclick="openModal('modalRequest')">Adicionar Novo Operador</button>
+            </div>
+        </div>        
+        
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar - Crachá" onkeyup="filterUsers()">
+            <input type="text" id="filter2" placeholder="Filtrar - Nome" onkeyup="filterUsers()">
+            <input type="text" id="filter3" placeholder="Filtrar - Posição" onkeyup="filterUsers()">
+            <input type="text" id="filter4" placeholder="Filtrar - Liderança" onkeyup="filterUsers()">
+            <input type="text" id="filter5" placeholder="Filtrar - Turno" onkeyup="filterUsers()">
+            <input type="text" id="filter6" placeholder="Filtrar - Status" onkeyup="filterUsers()">
+        </div>
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table>
+                <thead>
+                    <tr >
+                        <th colspan="8" style="background-color: black;text-align: center;">Tabela Geral</th>
+                    </tr>
+                    <tr>
+                        <th>Crachá</th>
+                        <th>Nome</th>
+                        <th>Posição</th>
+                        <th>Liderança</th>
+                        <th>Turno</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="modalRequest" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalRequest')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Cadastro de Operador</h2>
+    
+            <!-- Formulário de cadastro de material -->
+            <form id="userForm">
+                <div class="form-section">
+                    <div>
+                        <label for="registration">Matricula</label>
+                        <input type="text" id="registration" required value="00000000" minlength="8">
+                    </div>
+                    <div>
+                        <label for="name">Nome</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    <div>
+                        <label for="position">Cargo</label>
+                        <select id="position" required>
+                            <option value="" selected disabled>Selecione um Cargo</option>
+                            {% for info in position %}
+                            <option value="{{info.id}}">{{info.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="bossName">Liderança</label>
+                        <select id="bossName" required>
+                            <option value="" selected disabled>Selecione um Líder</option>
+                            {% for info in boss %}
+                            <option value="{{info.id}}">{{info.name}}</option>
+                            {% endfor %}
+                        </select>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="shift">Turno</label>
+                        <select id="shift" required>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="status">Status</label>
+                        <select id="status" required>
+                            <option value="1">Ativo</option>
+                            <option value="0">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2vh;display: flex;flex-direction: row;justify-content: center;">
+                    <button type="button" id="typeButton">Cadastrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalPosition" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalPosition')" class="close">&times;</span>
+            <h1 style="color: white;margin-top: 2vh;">Visualizar Posições</h1>
+            <h2 style="margin-left: 0; margin-right: 0;">Adicionar Posições</h2>
+    
+            <input type="text" id="positionName" required style="width: 20vw" placeholder="Digite o nome do Cargo">
+            <button type="button" id="addPosition" onclick="sendPosition()">Cadastrar</button>
+
+            <div style='height: 40vh;overflow-y: auto;margin-top: 2vh;'>         
+                <table >
+                    <thead>
+                        <tr >
+                            <th colspan="4" style="background-color: black;text-align: center;">Tabela de Cadastros</th>
+                        </tr>
+                        <tr>
+                            <th>Identificador</th>
+                            <th>Descrição</th>
+                            <th>Quantidade de Pessoas Cadastradas</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionTableBody" style="background-color: white;color: black;">
+                        <!-- Conteúdo gerado via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="badFill" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+    
+
+    <script>
+
+        let userData = JSON.parse('{{users | tojson}}');
+        let positionData = JSON.parse('{{position | tojson}}')
+
+        const translate = {
+            id: 'Matrícula',
+            bossId: 'Liderança',
+            name: 'Nome',
+            shift: 'Turno',
+            position: 'Cargo',
+            status: 'Status'
+        }
+
+        function populateUsers(data) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';  // Limpa o conteúdo anterior
+
+            data.forEach(user => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                cell.textContent = user['id'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['positionName'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = user['bossName'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.textContent = user['shift'];
+                row.appendChild(cell);
+                
+                
+                cell = document.createElement('td');
+
+                if (user['status'] == 0 ) {
+                    cell.className = 'status-rejected';
+                    cell.textContent = 'Inativo';
+                } else {
+                    cell.className = 'status-approved';
+                    cell.textContent = 'Ativo';
+                }
+
+                row.appendChild(cell);
+
+
+                cell = document.createElement('td');
+                const button = document.createElement('button');
+                button.textContent = 'Editar';
+                button.onclick = () => openModal('modalRequest', user);
+                button.id = user['id'];
+                cell.append(button)
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function populatePositions(data) {
+            const tableBody = document.getElementById('positionTableBody');
+            tableBody.innerHTML = '';
+
+            data.forEach(info => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                cell.textContent = info['id'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['name'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['qtt'];
+                row.appendChild(cell);
+                
+                cell = document.createElement('td');
+                cell.innerHTML = `
+                    <select style="width: 90%" class="status-select" onchange="changePositionStatus(${info.id}, this.value)">
+                        <option value="1" ${info.status == 1 ? 'selected' : ''}>Ativo</option>
+                        <option value="0" ${info.status == 0 ? 'selected' : ''}>Inativo</option>
+                    </select>
+                `;
+
+                if (info['status'] == 0 ) {
+                    cell.className = 'status-rejected';
+                } else {
+                    cell.className = 'status-approved';
+                }
+
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function filterUsers() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+            const filter3 = document.getElementById('filter3').value.toLowerCase();
+            const filter4 = document.getElementById('filter4').value.toLowerCase();
+            const filter5 = document.getElementById('filter5').value.toLowerCase();
+            const filter6 = document.getElementById('filter6').value.toLowerCase();
+
+            const filteredData = userData.filter(user => {
+                
+                const filter1Match = user['id'].toString().toLowerCase().includes(filter1);
+                const filter2Match = user['name'].toLowerCase().includes(filter2);
+                const filter3Match = user['positionName'].toLowerCase().includes(filter3);
+                const filter4Match = user['bossName'].toString().toLowerCase().includes(filter4);
+                const filter5Match = user['shift'].toString().toLowerCase().includes(filter5);
+                const filter6Match = user['status'].toString().toLowerCase().includes(filter6);
+            
+                return filter1Match && filter2Match && filter3Match && filter4Match && filter5Match && filter6Match;
+            });
+
+            populateUsers(filteredData);
+        }
+
+        function openModal(modalId, info) {
+            document.getElementById(modalId).style.display = 'flex';
+
+            if (modalId == 'modalRequest') {
+                if (info) {
+
+                    document.getElementById('registration').readOnly = true;
+
+                    document.getElementById('registration').value = info.id || '';
+                    document.getElementById('name').value = info.name || '';
+                    document.getElementById('bossName').value = info.bossId || '';
+                    document.getElementById('position').value = info.positionId || '';
+                    document.getElementById('shift').value = info.shift || '';
+                    document.getElementById('status').value = info.status.toString() || '';
+                    document.getElementById('typeButton').onclick = () => sendUser('old');
+
+                } else {
+
+                    document.getElementById('registration').readOnly = false;
+
+                    document.getElementById('typeButton').onclick = () => sendUser('new');
+
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+
+            if (modalId == 'modalRequest') {
+                document.getElementById('userForm').reset()
+            }
+        }
+
+        function sendUser(type) {
+
+            const payload = {
+                id: document.getElementById('registration').value,
+                bossId: document.getElementById('bossName').value,
+                name: document.getElementById('name').value,
+                shift: document.getElementById('shift').value,
+                position: document.getElementById('position').value,
+                status: document.getElementById('status').value
+            };
+
+            const noFilled = []; // Lista para armazenar os campos vazios
+            
+            // Iterar sobre as propriedades do objeto
+            for (const field in payload) {
+                if (payload[field] === "") {
+                    noFilled.push(translate[field]); 
+                }
+            }
+
+            // Retornar mensagem
+            if (noFilled.length > 0) {
+                document.getElementById('badFillMessage').innerHTML = `Os seguintes campos estão vazios: ${noFilled.join(", ").replace(/_/g, " ")}`;
+                openModal('badFill', null)
+
+                return
+            } else if (document.getElementById('registration').value.length != 8) {
+                document.getElementById('badFillMessage').innerHTML = `O campo Matricula deve ter 8 dígitos. Ex: 00002134`;
+                openModal('badFill', null)
+
+                return     
+            }
+            
+            fetch(`/matriz/operadores?type=${type}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                console.log(data)
+                populateUsers(data.users)
+                userData = data.users
+                populatePositions(data.position)
+                positionData = data.position
+                closeModal('modalRequest')
+            })
+        }
+
+        function sendPosition() {
+
+            const payload = {
+                name: document.getElementById('positionName').value
+            };
+
+            fetch(`/matriz/operadores?type=position`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                populateUsers(data.users)
+                userData = data.users
+                populatePositions(data.position)
+                positionData = data.position
+                document.getElementById('positionName').value = ''
+            })
+        }
+
+        function changePositionStatus(id, value) {
+
+            fetch(`/matriz/operadores?type=status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({status: value, id: id})
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null);
+                        throw new Error(err.error || 'Erro desconhecido');
+                    });
+                }
+            })
+            .then(data => {
+                populateUsers(data.users)
+                userData = data.users
+                populatePositions(data.position)
+                positionData = data.position
+                document.getElementById('positionName').value = ''
+            })
+        }
+
+        window.onload = function() {
+            populateUsers(userData);
+            populatePositions(positionData);
+        }
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .sidebar {
+            width: 12vw;
+            background-color: #153A8A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar-text {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .sidebar button {
+            background-color: white;
+            color: #153A8A;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 1em;
+            width: 80%;
+        }
+
+        .sidebar button:hover {
+            background-color: #2e52a7;
+            color: white;
+        }
+
+        .legend {
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .legend p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .color-box {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 colunas */
+            grid-template-rows: repeat(2, auto); /* 2 linhas */
+            gap: 10px; /* Espaçamento entre os itens */
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            width: calc(88vw - 60px);
+        }
+
+        .event-box {
+            width: 86%;
+            padding: 10px;
+            margin: 0;
+            border-radius: 5px;
+            background-color: #CAD5D3;;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Alinha os itens com espaço entre eles */
+            align-items: center; /* Centraliza os itens horizontalmente */
+            border: 10px solid #a7aaaa;
+            height: auto;
+        }
+
+        .event-box p {
+            margin: 0; /* Remove a margem padrão dos parágrafos */
+            text-align: center;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 4 colunas de largura igual */
+            gap: 10px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .grid-item {
+            background: #f3f3f3;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: calc(0.4vw + 2vh);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .grid-item.total {
+            background-color: #e0e0e0;
+        }
+
+        .grid-item:hover, .grid-item.total:hover {
+            background: #908f8f;
+        }
+
+        .quantity {
+            display: block;
+            font-weight: normal;
+            font-size: calc(0.5vw + 3vh);
+            margin-top: 5px;
+            color: #333;
+        }
+
+        .event-box-title {
+            font-size: calc(0.5vw + 3vh);
+            font-weight: bold;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 90%;
+            height: 90%;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+            z-index: 5;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background-color: #153A8A;
+            color: white;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: white;
+            color: black;
+            transition: 0.5s;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        pre { padding: 10px; border-radius: 5px; color: #fff; margin: 0; }
+        .string { color: #98c379; }
+        .number { color: #d19a66; }
+        .boolean { color: #e5c07b; }
+        .null { color: #c678dd; }
+        .key { color: #61afef; }
+
+        .xml-tag { color: #e06c75; font-weight: bold; }
+
+
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons"> 
+        <button onclick="window.location='/monitoramento'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="sidebar">
+        
+        <div class="sidebar-text">Visão de<br>Erros</div>
+
+        <div class="legend">
+            <p style="width: 100%; text-align: center;">Legenda KPIs</p>
+            <p>1. Turno Atual</p>
+            <p>2. Turno Anterior</p>
+            <p>3. Outros (Turnos passados)</p>
+            <p>4. Total (somatório)</p>
+            <br><br>
+            <p>Clique nos KPIs para<br>abrir tabela com dados.</p>
+
+        </div>
+
+        <button style="margin-top: auto;" onclick="window.open('http://10.3.36.2:302/')">Acessar Mach2</button>
+    </div>
+
+    <div class="container">
+
+        <div class="event-box">
+            <p class="event-box-title">Fila de Impressão</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+        
+        <div class="event-box">
+            <p class="event-box-title">Sol. de Ordem de Manutenção</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+        <div class="event-box">
+            <p class="event-box-title">Ordem de Produção</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+        <div class="event-box">
+            <p class="event-box-title">Movimentação</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+
+        <div class="event-box">
+            <p class="event-box-title">Material</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+        <div class="event-box">
+            <p class="event-box-title">Dados Gerais</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+
+        <div class="event-box">
+            <p class="event-box-title">Ordem de Manutenção</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+        <div class="event-box">
+            <p class="event-box-title">Conf. de Ordem de Produção</p>
+            <div class="grid-container">
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'actual')">Atual <span class="quantity quantity-actual">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'past')">Anterior <span class="quantity quantity-past">0</span></div>
+                <div class="grid-item" onclick="openModal('modal1', this.closest('.event-box'), 'others')">Outros <span class="quantity quantity-others">0</span></div>
+                <div class="grid-item total" onclick="openModal('modal1', this.closest('.event-box'), 'total')">Total <span class="quantity quantity-total">0</span></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="modal1" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modal1')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;" id="modal1Title"></h2>
+            <div style='height: 85%;overflow-y: auto;'>         
+                <table id="stopsTable">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Texto</th>
+                            <th>Quantiade Enviadas</th>
+                            <th>Horário</th>
+                            <th>Solicitação/Extra/Reposta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="infoTable" style="background-color: white;color: black;">
+                        <!-- Conteúdo gerado via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    
+    <div id="modal2" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modal2')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Detalhes</h2>
+            <div style='height: auto;overflow-y: auto;'>         
+                <table id="stopsTable">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Texto</th>
+                            <th>Quantiade Enviadas</th>
+                            <th>Horário</th>
+                        </tr>
+                    </thead>
+                    <tbody style="background-color: white;color: black;">
+                        <tr>
+                            <td id="infoId"></td>
+                            <td id="infoText"></td>
+                            <td id="infoSent"></td>
+                            <td id="infoDate"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid-container" style="height: 75%;margin-top: 2%;grid-template-columns: repeat(5, 2fr);grid-template-rows: auto 1fr;">
+                <h2>Solicitação SAP</h2>
+                <h2>Resposta SAP</h2>
+                <h2>Solicitação PLEX</h2>
+                <h2>Resposta PLEX</h2>
+                <h2>Extra</h2>
+
+                <div style="overflow: auto;background: #282c34;text-align: left"><div id="requestSAP"></div></div>
+                <div style="overflow: auto;background: #282c34;text-align: left;"><div id="responseSAP"></div></div>
+                <div style="overflow: auto;background: #282c34;text-align: left;"><div id="requestPLEX"></div></div>
+                <div style="overflow: auto;background: #282c34;text-align: left;"><div id="responsePLEX"></div></div>
+                <div style="overflow: auto;background: #282c34;text-align: left;"> <div id="Extra"></div> </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        let first = true;
+
+        let data = {}
+        let groupedData = {};
+
+        const alias = {
+                'NOTIFICATION_QUEUE': 'Fila de Impressão',
+                'WORKCENTER_REQUEST_MAINTENANCE_STATUS': 'Sol. de Ordem de Manutenção',
+                'PRODUCTION_ORDER_STATUS': 'Ordem de Produção',
+                'MOVING_STATUS': 'Movimentação',
+                'MATERIAL_STATUS': 'Material',
+                'MASTERDATA_STATUS': 'Dados Gerais',
+                'MAINTENANCE_NOTE_STATUS': 'Ordem de Manutenção',
+                'PRODUCTION_ORDER_CONFIRMATION_STATUS': 'Conf. de Ordem de Produção'
+        };
+
+        // FUNCÇÕES PARA ABRIR E FECHAR MODAL
+
+        function openModal(id, element, type) {
+
+            
+            document.getElementById(id).style.display = 'flex';
+
+            if (id == "modal1") {
+                const eventTitle = element.querySelector('.event-box-title').innerText
+                document.getElementById('modal1Title').innerText = eventTitle
+
+                const infoTable = document.getElementById('infoTable')
+                infoTable.innerHTML = ''
+                
+                data.filter(item => alias[item.data] == eventTitle && (type === "total" || item.shift == type)).forEach(item => {
+                    addRowToTable(infoTable, item)
+                })
+            } else {
+                document.getElementById('infoId').innerText = element.ID;
+                document.getElementById('infoText').innerText = element.LastResponse;
+                document.getElementById('infoSent').innerText = element.SentCount;
+                document.getElementById('infoDate').innerText = element.DDatePTBR;
+
+                document.getElementById('requestSAP').innerHTML = element.RequestSAP != null ?  `<pre>${formatXML(element.RequestSAP)}</pre>` : ''
+                document.getElementById('responseSAP').innerHTML = element.ResponseSAP != null ?  `<pre>${formatXML(element.ResponseSAP)}</pre>` : ''
+                document.getElementById('requestPLEX').innerHTML = element.RequestPLEX != '' ? `<pre>${syntaxHighlight(JSON.stringify(JSON.parse(element.RequestPLEX), null, 4))}</pre>` : '';
+                document.getElementById('responsePLEX').innerHTML = element.ResponsePLEX != '' ?  `<pre>${syntaxHighlight(JSON.stringify(JSON.parse(element.ResponsePLEX), null, 4))}</pre>` : '';
+                document.getElementById('Extra').innerHTML = element.Extra != '' ?  `<pre>${syntaxHighlight(JSON.stringify(JSON.parse(element.Extra), null, 4))}</pre>` : '';
+            }
+
+        }
+    
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // FUNÇÃO CHAMADA A PARTIR DO openModal PARA CRIAR A TABELA DAS INFORMAÇÕE
+        function addRowToTable(tableBody, item) {
+            const row = document.createElement("tr");
+
+            let cell = document.createElement('td');
+            cell.innerHTML = `<strong>${item.ID}</strong>`;
+            cell.style.cursor = 'pointer';
+            row.appendChild(cell);
+
+            cell = document.createElement('td');
+            cell.innerHTML = `${item.LastResponse}`;
+            cell.style.fontWeight = 'bold'
+            row.appendChild(cell);
+
+            cell = document.createElement('td');
+            cell.innerHTML = `${item.SentCount}`;
+            cell.style.fontWeight = 'bold'
+            row.appendChild(cell);
+
+            cell = document.createElement('td');
+            cell.innerHTML = `${item.DDatePTBR}`;
+            cell.style.fontWeight = 'bold'
+            row.appendChild(cell);
+
+            cell = document.createElement('td');
+            let button = document.createElement('button');
+            button.innerHTML = 'Visualizar';
+            button.style.fontWeight = 'bold';
+            button.onclick = function() {openModal('modal2', item, null)};
+            cell.appendChild(button);           
+            row.appendChild(cell);
+
+            tableBody.appendChild(row);
+        }
+
+
+        // FUNÇÕES PARA CAPTURAR OS DADOS E CARREGAR NA TELA
+
+        function loadData() {
+
+            fetch('/monitoramento/erros', {method: 'POST'})
+            .then(response => response.json()).then(received_data => {
+                data = received_data.filter(item => item.IStatus != 1);
+                renderData();
+            });
+
+            if (first) {
+                setInterval(loadData, 30000);
+                first = false
+            }
+        }
+
+        function renderData() {
+
+            // Armazena os dados agrupados por categoria e intervalo de tempo
+            const now = new Date();
+            groupedData = {}
+            data.forEach(item => {
+                const eventTitle = alias[item.data] || item.data;
+
+                if (!groupedData[eventTitle]) {
+                    groupedData[eventTitle] = { 'actual': 0, 'past': 0, 'others': 0};
+                }
+
+                groupedData[eventTitle][item.shift] += 1;
+            });
+
+            // Atualiza o DOM
+            document.querySelectorAll('.event-box').forEach(box => {
+                const titleElement = box.querySelector('.event-box-title');
+                if (titleElement) {
+                    const eventTitle = titleElement.textContent.trim();
+
+                    // Atualiza as quantidades por categoria de tempo
+                    ['actual', 'past', 'others'].forEach(timeCategory => {
+                        const quantityElement = box.querySelector(`.quantity-${timeCategory}`);
+                        if (quantityElement) {
+                            quantityElement.textContent = groupedData[eventTitle]?.[timeCategory] || '0';
+                        }
+                    });
+
+                    box.querySelector('.quantity-total').textContent = Object.values(groupedData[eventTitle] || { actual: 0, past: 0, others: 0 }).reduce((sum, value) => sum + value, 0);
+                }
+            });
+        }
+
+
+        // FUNÇÕES PARA ESTILIZAR OS DADOS EM XML/JSON
+
+        // Função para adicionar cores à exibição do JSON
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, function (match) {
+                let cls = "number";
+                if (/^"/.test(match)) {
+                    cls = /:$/.test(match) ? "key" : "string";
+                } else if (/true|false/.test(match)) {
+                    cls = "boolean";
+                } else if (/null/.test(match)) {
+                    cls = "null";
+                }
+                return `<span class="${cls}">${match}</span>`;
+            });
+        }
+
+        function formatXML(xml) {
+            try {
+                // Formatar com indentação
+                let formatted = "";
+                const reg = /(>)(<)(\/*)/g;
+                xml = xml.replace(reg, "$1\n$2$3"); // Adiciona quebras de linha entre tags
+
+                let pad = 0;
+                xml.split("\n").forEach((node) => {
+                    let indent = 0;
+                    if (node.match(/.+<\/\w[^>]*>$/)) {
+                        indent = 0; // Linha única <tag>conteúdo</tag>
+                    } else if (node.match(/^<\/\w/)) {
+                        pad -= 1; // Fecha tag, reduz indentação
+                    } else if (node.match(/^<\w[^>]*[^\/]>.*$/)) {
+                        indent = 1; // Abre tag, aumenta indentação
+                    }
+
+                    formatted += "  ".repeat(pad) + node + "\n"; // Aplica indentação
+                    pad += indent;
+                });
+
+                // Escapar caracteres especiais para HTML
+                formatted = formatted.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+                // Destacar tags XML com cores
+                return formatted.replace(/(&lt;\/?[^&]+&gt;)/g, '<span class="xml-tag">$1</span>');
+            } catch (error) {
+                console.error("Erro ao formatar XML:", error);
+                return xml;
+            }
+        }
+
+
+
+        window.onload = function() {
+            loadData()
+        };
+
+    </script>
+    
+</body>
+</html>

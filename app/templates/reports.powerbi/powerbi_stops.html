@@ -1,0 +1,14 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<body onload="changeNav()">
+    <div class="iframe_container">
+        <iframe id="dash_iframe" title="Paradas" src="https://app.powerbi.com/view?r=eyJrIjoiMjI3NDEzNzItYmI1Ni00OTNiLWFkMTgtZGY0M2FjOTgwMjk4IiwidCI6IjgxMmE2YmQwLTU4MjktNDE5Ni1iMmJlLWQwNTgwYjdiZDBjYiJ9" frameborder="0"></iframe>
+    </div>
+</body>
+{% endblock %}

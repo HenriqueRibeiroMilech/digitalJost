@@ -1,0 +1,221 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_documentos.css') }}">
+</head>
+
+
+    <style>
+        /* =====================================================
+           HOVERS - BOTÕES DE CONFIGURAÇÃO DO POP
+           ===================================================== */
+
+        #pop_config_btn {
+            transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+
+        #pop_config_btn:hover {
+            background-color: rgba(100, 132, 212, 0.6) !important;
+            transform: translateY(-2px) rotate(22deg);
+            box-shadow: 0 8px 22px rgba(0,0,0,.35) !important;
+        }
+
+        #pop_config_btn:active {
+            transform: translateY(0) rotate(0deg);
+            box-shadow: 0 3px 10px rgba(0,0,0,.25) !important;
+        }
+
+        #pop_config_close {
+            transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+
+        #pop_config_close:hover {
+            background-color: #a80000 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(168,0,0,.28);
+        }
+
+        #pop_config_submit {
+            transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+
+        #pop_config_submit:hover {
+            background-color: rgba(100, 132, 212, 0.6) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(100, 132, 212, 0.28);
+        }
+
+        #pop_config_submit:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(100, 132, 212, 0.20);
+        }
+
+        #pop_config_submit:disabled {
+            background-color: #999 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+
+
+<video autoplay muted loop id="myVideo">
+    <source src="/static/videos/docs.mp4" type="video/mp4">
+</video>
+
+<body id="content" class="page_body" style="overflow: hidden;">
+
+    <div id='boa_pratica'>AVISO DE BOA PRATICA! Marque uma reunião com as demais<br> áreas para alinhar as informações antes de solicitar o desvio.</div>
+
+    <button id="select_back" style="transform:translate(0, -10%);" onclick="window.location='/'">&times;</button>
+    
+    {% if admin == '1' %}
+        <button id="pop_config_btn"
+                type="button"
+                title="Alterar POP"
+                onclick="openPopConfigModal()"
+                style="
+                    position:fixed;
+                    left:1.5vw;
+                    top:2vh;
+                    z-index:9999;
+                    width:46px;
+                    height:46px;
+                    border-radius:50%;
+                    border:none;
+                    background:rgba(0,0,0,.55);
+                    color:white;
+                    cursor:pointer;
+                    font-size:20px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    box-shadow:0 4px 12px rgba(0,0,0,.25);
+                ">
+            <i class="fas fa-cog"></i>
+        </button>
+    {% endif %}
+
+    <p class="title" id="title">Desvios de Processo</p>
+    <p class="title_desc" id="title_desc">Transformação Digital JOST</p>
+    <div class="data_container" id="data">
+        <div class="btn_wrapper">
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/gerar'" class="docs_btn" id='criar' onmouseleave="returnSt()" onmouseover="changeData('criar')">Criar</button><br>
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/consultar'" class="docs_btn" id='hist' onmouseleave="returnSt()" onmouseover="changeData('hist')">Visualizar Desvios</button><br>
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/acoes'" class="docs_btn" id='Action' onmouseleave="returnSt()" onmouseover="changeData('Action')">Minhas Ações</button><br>             
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/aprovacoes'" class="docs_btn" id='view' onmouseleave="returnSt()" onmouseover="changeData('view')">Minhas aprovações</button><br>
+            <button style='margin-bottom:1vh' onclick="window.location='/desvios/aprovadores'" class="docs_btn" id='cad' onmouseleave="returnSt()" onmouseover="changeData('cad')">Aprovadores de Desvios</button><br>
+        </div>
+
+        <div class="text_wrapper" id="text">
+            <p class="title" id="display_title">Selecione</p>
+            <p class="title_desc" id="display_desc">uma opção para continuar...</p>
+        </div>
+    </div>
+    
+    {% if admin == '1' %}
+        <div id="pop_config_modal"
+            style="
+                display:none;
+                position:fixed;
+                inset:0;
+                z-index:10000;
+                background:rgba(0,0,0,.55);
+                align-items:center;
+                justify-content:center;
+            ">
+
+            <div style="
+                width:520px;
+                max-width:90vw;
+                background:white;
+                border-radius:12px;
+                padding:24px;
+                box-shadow:0 8px 28px rgba(0,0,0,.28);
+                font-family:Arial, sans-serif;
+                text-align:center;
+            ">
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    margin-bottom:16px;
+                ">
+                    <h2 style="margin:0;color:#163A8A;">Alterar POP</h2>
+
+                    <button id="pop_config_close"
+                            type="button"
+                            onclick="closePopConfigModal()"
+                            style="
+                                border:none;
+                                background:#d33;
+                                color:white;
+                                border-radius:6px;
+                                padding:8px 12px;
+                                cursor:pointer;
+                                font-size:16px;
+                            ">
+                        &times;
+                    </button>
+
+                </div>
+
+                <p style="font-size:15px;color:#333;text-align:left;line-height:1.4;">
+                    Selecione o novo arquivo PDF do POP. Após confirmar, o POP vigente será substituído
+                    e todos os usuários precisarão ler e aceitar novamente antes de criar novos desvios.
+                </p>
+
+                <form id="pop_config_form" enctype="multipart/form-data">
+                    <input id="pop_pdf_input"
+                        type="file"
+                        name="pop_pdf"
+                        accept="application/pdf,.pdf"
+                        required
+                        style="
+                                width:100%;
+                                margin-top:12px;
+                                margin-bottom:18px;
+                                padding:10px;
+                                border:1px solid #ccc;
+                                border-radius:6px;
+                        ">
+
+                    <button id="pop_config_submit"
+                            type="submit"
+                            style="
+                                background:#163A8A;
+                                color:white;
+                                border:none;
+                                border-radius:6px;
+                                padding:14px 22px;
+                                cursor:pointer;
+                                font-size:16px;
+                                font-weight:bold;
+                                width:100%;
+                            ">
+                        Atualizar POP e resetar aceites
+                    </button>
+                </form>
+
+                <p id="pop_config_message"
+                style="
+                        margin-top:14px;
+                        font-size:14px;
+                        font-weight:bold;
+                        color:#163A8A;
+                        display:none;
+                ">
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+</body>
+
+<script>
+    {% include 'request.processDeviation/dev_home.js' %}
+</script>
+{% endblock %}
+

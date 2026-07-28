@@ -1,0 +1,50 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+
+</head>
+
+<body id="gestao_body" onload="loadPage()">
+    <div class="select_div">
+        <a class="title" id="select_back" style="position:fixed;transform:translate(0, -10%);" href="/">&times;</a>
+        <p class="select_title" id="test" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{area}}</p>
+        <p class="select_desc" style="overflow:hidden;white-space:nowrap;transform: translate(0, -50%);">Gestão de demandas
+            <button class="add_btn" onclick="window.location='/demandas/dashboards?area={{area}}'">Dashboards</button>
+            <button class="add_btn" onclick="window.location='/demandas/tarefas?area={{area}}'">Tarefas</button>
+            <button class="add_btn" onclick="window.location='/demandas/criar?area={{area}}'">Adicionar nova demanda</button>
+            <button class="add_btn" id="cadastrar" onclick="window.location='/demandas/entrada?area={{area}}'">Gestão de Entradas</button>
+            <button class="add_btn" onclick="window.location='/demandas/admin?area={{area}}'">Admin</button>
+        </p>
+        
+        <form id="filters" method="post" action="">
+            <input type="text" autocomplete='off' class="filter" onkeyup="myFunction()" placeholder='Filtrar por DEMANDA' value="{{f_title}}" name="titulo" id="titulo">
+            <input type="text" autocomplete='off' class="filter" onkeyup="myFunction()" placeholder='Filtrar por DESCRIÇÃO' value="{{f_desc}}" name="descricao" id="descricao">
+            <select class="filter" name="entrada" id="entrada" onclick="myFunction()">
+            </select>
+            <input type="text" autocomplete='off' class="filter" onkeyup="myFunction()" placeholder='Filtrar por PROCESSO' value="{{f_process}}" id="processo" name="processo">
+            <input type="text" autocomplete='off' class="filter" onkeyup="myFunction()" placeholder='Filtrar por RESPONSÁVEL' value="{{f_leader}}" id="leader" name="leader">
+            <div id="list1" style="display: inline-block" class="filter">
+                <span class="anchor">Filtrar por STATUS</span>
+                <ul class="items">
+                    <li><input type="checkbox" onclick="myFunction()" checked id="andamento"  name="andamento"/> Andamento</li>
+                    <li><input type="checkbox" onclick="myFunction()" checked id="atrasado"  name="atrasado"/> Atrasado</li>
+                    <li><input type="checkbox" onclick="myFunction()" id="concluido" name="concluido" /> Concluído</li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <form id="table_form" method="post" action="">
+        <div id="table-container" style="margin-left:2%;margin-right:2%;">
+        </div>
+    </form>
+</body>
+
+<script>
+    {% include 'demands/demands_principal.js' %}
+</script>
+{% endblock %}

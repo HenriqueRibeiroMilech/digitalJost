@@ -1,0 +1,71 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+</head>
+
+<body id="gestao_body" onload="config()">
+    <div class="select_div" style="width:100vw">
+        <button class="title" id="select_back" style="position:fixed;transform:translate(0, -10%);" onclick="window.location='/demandas?area={{area}}'">&times;</button>
+        <p style="margin-bottom:0.5vh" class="select_title">PÁGINA DO ADMINISTRADOR</p>
+        <button class="add_btn" onclick="apresentacao()" style="align:center;margin-bottom:1vh"><b>MODO APRESENTAÇÃO</b></button>
+        <p class="desc" style="width: 100%;"><b>Gerencie as demandas mais importantes da sua área</b></p><br>
+
+        <div id="info" style="float:left; width:50vw">
+            <p class="desc" style="width: 44%;margin-right:0.5%;padding-right:0">
+                <input type="text" class="table_input" id="titulo" placeholder="Titulo da demanda..." autocomplete="off">
+                <datalist id="opcoes"></datalist>
+                <button id="pesquisar" class="add_btn" onclick="buscar()">⌕</button>
+            </p>
+            <p class="desc" style="width: 45%;text-align: right;">
+                <select class="filter" name="admin" id="admin" onclick="">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                    <option>6</option>
+                    <option>7</option>
+                    <option>8</option>
+                    <option>9</option>
+                    <option>10</option>
+                    <option>Resetar</option>
+                </select>
+                <button id='alterar' class="add_btn" onclick="alterar()">ALTERAR</button>
+            </p> <br>
+
+            <p class="desc" style="width: 90%;"><b>TITULO: </b> <a id="info_titulo"> </a> </p><br>
+            <p class="desc" style="width: 90%;"><b>RESPONSÁVEL: </b> <a id="info_resp"> </a> </p><br>
+            <p class="desc" style="width: 44%;margin-right:0.5%"><b>ENTRADA: </b> <a id="info_entrada"> </a>  </p>
+            <p class="desc" style="width: 45%;"><b>PROCESSO: </b> <a id="info_processo"> </a>  </p><br>
+            <p class="desc" style="width: 44%;margin-right:0.5%"><b>PRAZO: </b><input readonly type="date" id="info_prazo" class="table_input"/>  </p>
+            <p class="desc" id="campo_status" style="width: 45%;"><b>STATUS: </b> <a id="info_status"> </a>  </p><br>
+            <p class="desc" style="width: 90%;"><b>DESCRIÇÃO: </b> <a id="info_desc"> </a>  </p>
+        </div>
+
+        <form id="table_form" method="post" action="" style="float:right: margin:0">
+            <div id="table-container3" style="float:left; margin:0">
+            </div>
+        </form>
+
+    </div>
+
+    <form id="filters" method="post" action="" style="clear:both">
+        <input type="hidden" value="{{f_title}}" name="titulo">
+        <input type="hidden" value="{{f_desc}}" name="descricao">
+        <input type="hidden" value="{{f_entry}}" name="entrada">
+        <input type="hidden" value="{{f_process}}" name="processo">
+        <input type="hidden" value="{{f_leader}}" name="leader">
+        <input type="hidden" value="{{f_going}}" name="andamento">
+        <input type="hidden" value="{{f_late}}" name="atrasado">
+        <input type="hidden" value="{{f_finished}}" name="concluido">
+    </form>
+</body>
+
+<script>
+    {% include 'demands/demands_admin.js' %}
+</script>
+{% endblock %}
+

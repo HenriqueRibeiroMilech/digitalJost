@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+            cursor: pointer;
+        }
+
+        th.sorted-asc::after {
+            content: ' ▲'; /* Sinal para ordenação crescente */
+        }
+
+        th.sorted-desc::after {
+            content: ' ▼'; /* Sinal para ordenação decrescente */
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 40vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-section > div {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 calc(40% - 10px);
+        }
+
+        .form-section > div label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .form-section > div input,
+        .form-section > div select {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="static-buttons">
+        <button onclick="downloadExcel()">Download Excel</button>
+        <button onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Cadastro de Fatores</h1>
+            <div style="display: flex; flex-direction: column;min-height: calc(2.5em + 20px) ">
+                <button style="font-size: 1vw;" onclick="openModal('modalRequest')">Adicionar Novo Fator</button>
+            </div>
+        </div>        
+        
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar - Centro de Trabalho" onkeyup="filterTable()">
+            <input type="text" id="filter2" placeholder="Filtrar - Material" onkeyup="filterTable()">
+        </div>
+        <div style='height: 60vh;overflow-y: auto;'>         
+            <table id="infoTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Centro de Trabalho</th>
+                        <th onclick="sortTable(1)">Material</th>
+                        <th onclick="sortTable(2)">QTD. Sinais de Coleta</th>
+                        <th onclick="sortTable(3)">QTD. Peças Produzidas</th>
+                    </tr>
+                </thead>
+                <tbody id="infoTableBody1">
+                    <!-- Conteúdo gerado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="modalRequest" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal('modalRequest')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Cadastro de Fatores</h2>
+    
+            <form id="infoForm">
+                <h3 class="subtitulo">Informações Gerais</h3>
+                <div class="form-section">
+                    <div>
+                        <label for="workcenter">Centro de Trabalho</label>
+                        <select id="workcenter" required>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="material">Material</label>
+                        <input type="text" id="material" required>
+                    </div>
+                    <div>
+                        <label for="signals">QTD. Sinais de Coleta</label>
+                        <input type="number" step="1" oninput="this.value = Math.round(this.value);" min="0" id="signals" required>
+                    </div>
+
+                    <div>
+                        <label for="pieces">QTD. Peças Produzidas</label>
+                        <input type="number" step="1" oninput="this.value = Math.round(this.value);" min="0" id="pieces" required>
+                    </div>
+                </div>
+    
+                <div style="margin-top: 2vh;display: flex;flex-direction: row;justify-content: center;">
+                    <button type='button' id='statusButton' style="margin-right: 2vw;"></button>
+                    <button type="button" id="typeButton">Cadastrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="badFill" class="modal">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+    
+
+    <script>
+        const tableData = JSON.parse('{{data|tojson}}');
+        const workcenters = JSON.parse('{{workcenters|tojson}}');
+        const admin = '{{admin}}'
+
+        // FUNÇÕES PARA MANIPULAÇÃO DA TABELA
+
+        const sortDirections = {
+            'infoTableBody1': [true, true, true, true],
+        };
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('infoTableBody1');
+            tableBody.innerHTML = '';
+
+            data.forEach(info => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                const button = document.createElement('button');
+
+                button.textContent = `${info['Workcenter_Code']} - ${info['Name']}`;
+                button.onclick = () => openModal('modalRequest', info);
+                cell.appendChild(button);
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['part_no'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['signals'];
+                row.appendChild(cell);
+
+                cell = document.createElement('td');
+                cell.textContent = info['parts_produced'];
+                row.appendChild(cell);
+
+                tableBody.appendChild(row);
+            });
+
+        }
+
+        function filterTable() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+
+            const filteredData = tableData.filter(user => {
+                
+                const filter1Match = `${user['Workcenter_Code']} - ${user['Name']}`.toString().toLowerCase().includes(filter1);
+                const filter2Match = user['part_no'].toString().toLowerCase().includes(filter2);
+            
+                return filter1Match && filter2Match;
+            });
+
+            populateTable(filteredData);
+        }
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('infoTable');
+            const tbody = table.querySelector('tbody');
+
+            const rows = Array.from(tbody.rows);
+            const isAscending = sortDirections['infoTableBody1'][columnIndex];
+
+            // Ordena as linhas
+            rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].innerText;
+                const cellB = b.cells[columnIndex].innerText;
+
+                if (columnIndex == 2 || columnIndex == 3) {
+                    const minutesA = parseFloat(cellA);
+                    const minutesB = parseFloat(cellB);
+                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                } else {
+                    return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+
+            // Limpa o tbody e adiciona as linhas ordenadas
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Alterna a direção da ordenação
+            sortDirections['infoTableBody1'][columnIndex] = !isAscending;
+
+            // Remove os estilos de ordenação
+            Array.from(table.getElementsByTagName('th')).forEach((th, index) => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (index === columnIndex) {
+                    th.classList.toggle('sorted-desc', sortDirections['infoTableBody1'][columnIndex]);
+                    th.classList.toggle('sorted-asc', !sortDirections['infoTableBody1'][columnIndex]);
+                }
+            });
+        }
+
+        // FUNÇÕES PARA MANIPULAR MODAL DE CRIAÇÃO E EDIÇÃO
+
+        function openModal(modalId, info) {
+
+            document.getElementById(modalId).style.display = 'flex';
+
+            if (modalId == 'modalRequest') {
+
+                if (admin != "1") {
+                    document.getElementById('badFillMessage').innerHTML = `Sem permissão para editar dados.`;
+                    openModal('badFill', null)
+
+                    return
+                }
+
+                if (info) {
+
+                    const selectElement = document.getElementById('workcenter');
+                    const option = document.createElement('option');
+                    option.value = info.Workcenter_Code;
+                    option.textContent = info.Name;
+                    selectElement.appendChild(option);
+
+
+                    document.getElementById('workcenter').value = info.Workcenter_Code
+                    document.getElementById('workcenter').disabled = true
+
+                    document.getElementById('material').value = info.part_no
+                    document.getElementById('material').disabled = true
+
+
+                    document.getElementById('signals').value = info.signals
+                    document.getElementById('pieces').value = info.parts_produced
+
+
+                    document.getElementById('typeButton').onclick = () => sendForm('old');
+
+                    document.getElementById('statusButton').style.display = 'flex';
+                    document.getElementById('statusButton').innerHTML = 'Deletar';
+                    document.getElementById('statusButton').onclick = () => deleteInfo(info);
+
+
+                } else {
+
+                    const selectElement = document.getElementById('workcenter');
+                    selectElement.innerHTML = ''
+
+                    const excludedKeys = tableData.map(item => item.Workcenter_Code);
+
+                    workcenters.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.Workcenter_Code;
+                        option.textContent = item.Name;
+                        selectElement.appendChild(option);
+                    });
+
+                    document.getElementById('typeButton').onclick = () => sendForm('new');
+                    document.getElementById('workcenter').disabled = false;
+                    document.getElementById('material').disabled = false;
+                    document.getElementById('statusButton').style.display = 'none';
+
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+
+            if (modalId == 'modalRequest') {
+                document.getElementById('infoForm').reset();
+            }
+        }
+
+
+        // FUNÇÕES PARA CRUD
+
+        function sendForm(type) {
+
+            const payload = {
+                workcenter: document.getElementById('workcenter').value,
+                material: document.getElementById('material').value,
+                signals: document.getElementById('signals').value,
+                pieces: document.getElementById('pieces').value
+            };
+
+            const fieldName = {
+                workcenter: 'Centro de Trabalho PLEX',
+                material: 'Material',
+                signals: 'QTD. Sinais de Coleta',
+                pieces: 'QTD. Peças Produzidas'
+            }
+
+            const noFilled = [];
+            
+            for (const field in payload) {
+                if (payload[field] == "") {
+                    noFilled.push(fieldName[field]);
+                }
+            }
+
+            // Retornar mensagem
+            if (noFilled.length > 0) {
+                document.getElementById('badFillMessage').innerHTML = `Os seguintes campos estão vazios: ${noFilled.join(", ").replace(/_/g, " ").replace(/, ([^,]*)$/, " e $1")}`;
+                openModal('badFill', null)
+
+                return
+            }
+            
+            fetch(`/cadastros/fatores?type=${type}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal('modalRequest');
+                    
+                    payload['Name'] = workcenters.find(item => item.Workcenter_Code == payload['workcenter']).Name;
+                    payload['Workcenter_Group'] = workcenters.find(item => item.Workcenter_Code == payload['workcenter']).Workcenter_Group;
+                    payload['Workcenter_Code'] = workcenters.find(item => item.Workcenter_Code == payload['workcenter']).Workcenter_Code;
+                    payload['part_no'] = payload['material']
+                    payload['parts_produced'] = payload['pieces']
+
+                    if (type === 'old') {
+                        const index = tableData.findIndex(item => item.workcenter == payload.workcenter && item.part_no == payload.material);
+
+                        if (index !== -1) {
+                            tableData[index] = payload;
+                            populateTable(tableData);
+                        }
+
+                    } else {
+                        
+                        tableData.push(payload);
+                        populateTable(tableData);
+                    }
+
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null)     
+                    });
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+        }
+
+        function deleteInfo(info) {
+
+            const payload = {
+                workcenter: info.workcenter,
+                material: info.part_no
+            }
+
+            fetch(`/cadastros/fatores?type=delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    closeModal('modalRequest');
+
+                    const index = tableData.findIndex(item => item.workcenter == info.workcenter && item.part_no == info.material);
+                    if (index !== -1) {
+                        tableData.splice(index, 1);
+                        populateTable(tableData);
+                    }
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+        }
+
+
+        // FUNÇÃO PARA DOWNLOAD DOS DADOS EM EXCEL
+
+        function downloadExcel() {
+
+
+            fetch("/cadastros/excel/fatores", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar o Excel');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'cadastros.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+
+            }
+
+            
+        window.onload = function() {
+            populateTable(tableData);
+        }
+        
+    </script>
+</body>
+</html>

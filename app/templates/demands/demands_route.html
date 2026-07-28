@@ -1,0 +1,24 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_gestao.css') }}">
+</head>
+
+<body id="gestao_body" onload="removeNav()">
+    <a class="title" id="select_back" href="/">&times;</a>
+    <div class="title_block">
+        <p class="title">GESTÃO DE DEMANDAS</p>
+        <p class="title_desc">Selecione uma área para visualização das demandas...</p>
+        <form action="/gestao/demandas">
+            <select required autocomplete="off" class="add_button" name="area" id="option">
+                <option style="color:#CCC;" id="disable" value="" disabled selected>Selecione uma opção...</option>
+                <option value="Engenharia de Processo">Eng. de Processos</option>
+            </select>
+            <br>
+            <input style="margin-top: 2%;" type="submit" class="add_button" value="Prosseguir">
+        </form>
+    </div>
+</body>
+{% endblock %}

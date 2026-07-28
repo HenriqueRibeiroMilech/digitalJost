@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            animation: GradientAnimation 10s ease infinite;
+        }
+
+        @keyframes GradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #153A8A;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .filter-container input, .filter-container select {
+            width: 15%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 1vw;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            position: relative;
+        }
+
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        #generalHeader, td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+        }
+
+        
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #153A8A;
+            color: white;
+        }
+
+        th.sorted-asc::after {
+            content: ' ▲'; /* Sinal para ordenação crescente */
+        }
+
+        th.sorted-desc::after {
+            content: ' ▼'; /* Sinal para ordenação decrescente */
+        }
+
+        button {
+            background-color: #2e52a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: none;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(125, 196, 255);
+        }
+
+        .static-buttons {
+            position: absolute;
+            right: 1vw;
+            top: 1vw;
+        }
+
+        .static-buttons button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1vw;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(270deg, #153A8A, #2e52a7, #3563c8);
+            background-size: 600% 600%;
+            animation: GradientAnimation 10s ease infinite;
+            color: white;
+            margin: auto;
+            padding: 20px;
+            border: none;
+            width: 40vw;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ccc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-section > div {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 calc(40% - 10px);
+        }
+
+        .form-section > div label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .form-section > div input,
+        .form-section > div select, .table-input {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <datalist id="workcenters">
+        {% for workcenter in workcenters %}
+            <option value="{{workcenter.Workcenter_Code}}">{{workcenter.Name}}</option>
+        {% endfor %}
+    </datalist>
+
+    <div class="static-buttons">
+        <button onclick="downloadExcel()">Download Excel</button>
+        <button onclick="window.location='/'"><i class="fas fa-x"></i></button>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>Cadastro de Auditorias - 5s</h1>
+            
+            <div style="display: flex; flex-direction: row;min-height: calc(2.5em + 20px) ">
+                <button style="font-size: 1vw;" onclick="openModal('modalPlace')">Adicionar Local Auditado</button>
+                <button style="font-size: 1vw;margin-left: 1vw;" onclick="openModal('modalAudit')">Adicionar Nova Auditoria</button>
+            </div>
+        </div>        
+        
+        <div class="filter-container">
+            <input type="text" id="filter1" placeholder="Filtrar - Local" onkeyup="filterTable()">
+            <select id="filter2" required onchange="filterTable()">
+                <option value="" selected>Filtrar - Tv OEE</option>
+                <option value="1">Sim</option>
+                <option value="0">Não</option>
+            </select>
+            <input type="text" id="filter3" placeholder="Filtrar - Auditoria" onkeyup="filterTable()">
+        </div>
+        <div style='height: 60vh;overflow: auto;width: 100%;'>         
+            <table id="infoTable1" >
+                <thead>
+                    <tr>
+                        <th style="background-color: black;text-align: center;min-width: 20VW" rowspan="2" id="generalHeader">Informações Gerais</th>
+                        <th style="background-color: black;text-align: center;" id="auditHeader">Auditorias</th>
+                    </tr>
+                    <tr id="infoTableHeader1">
+                    </tr>
+                </thead>
+                <tbody id="infoTableBody1">
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div class="modal" id="modalPlace">
+        <div class="modal-content">
+            <span onclick="closeModal('modalPlace')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Cadastro de Local Auditado</h2>
+    
+            <form id="formPlace">
+                <h3 class="subtitulo">Informações Gerais</h3>
+                <div class="form-section">
+
+                    <div>
+                        <label for="industrial">Possui Tv OEE?</label>
+                        <select id="industrial" required>
+                            <option value="1">Sim</option>
+                            <option value="0">Não</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="workcenter">Local</label>
+                        <input id="workcenter" required list="workcenters">
+                    </div>
+                </div>
+    
+                <div style="margin-top: 2vh;display: flex;flex-direction: row;justify-content: center;">
+                    <button type='button' id='placeStatus' style="margin-right: 2vw;background-color: black;"></button>
+                    <button type="button" id="placeType" style="background-color: black;">Cadastrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="modalAudit">
+        <div class="modal-content">
+            <span onclick="closeModal('modalAudit')" class="close">&times;</span>
+            <h2 style="margin-left: 0; margin-right: 0;">Cadastro de Nova Auditoria</h2>
+    
+            <form id="formAudit">
+                <h3 class="subtitulo">Informações Gerais</h3>
+                <div class="filter-container" style="width: 100%;justify-content: center">
+                    <div style="width: 90%;">
+                        <h2 style="font-size: 1em;margin: 10px 0;">Nome</h2>
+                        <input id="name" required style="width: 100%;">
+                    </div>
+
+                </div>
+
+                <div style='height: 50vh;overflow-y: auto;display: block;'>         
+                    <table id="infoTable1">
+                        <thead>
+                            <tr>
+                                <th>Local</th>
+                                <th>Tv OEE</th>
+                                <th>Nota (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="infoTableBody2" style="background-color: white;color: black;">
+                            <!-- Conteúdo gerado via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+    
+                <div style="margin-top: 2vh;display: flex;flex-direction: row;justify-content: center;">
+                    <button type='button' id="auditStatus" style="background-color: black;"></button>
+                    <button type="button" id="auditType" style="margin-left: 2vw;background-color: black;">Cadastrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="badFill">
+        <div class="modal-content" style="width: 50%;">
+            <h2 id="badFillMessage"></h2>
+            <button onclick="closeModal('badFill')">Fechar</button>
+        </div>
+    </div>
+    
+
+    <script>
+        const data_place = JSON.parse('{{data_place|tojson}}');
+        const data_audit = JSON.parse('{{data_audit|tojson}}');
+        const data_grade = JSON.parse('{{data_grade|tojson}}');
+
+        const workcenters = JSON.parse('{{workcenters|tojson}}');
+        const admin = '{{admin}}'
+
+        // FUNÇÕES PARA MANIPULAÇÃO DA TABELA
+
+        function populateTable(data0, data1, data2) {
+
+            const tableHeaders = document.getElementById('infoTableHeader1');
+            tableHeaders.innerHTML = `
+            `;
+
+            data1.forEach(info => {
+                let cell = document.createElement('th');
+                cell.textContent = `${info.name}`;
+                cell.style.whiteSpace = 'nowrap';
+
+                const button = document.createElement('button');
+                button.textContent = `Editar`;
+                button.style.marginLeft = '1vw'
+
+                button.onclick = () => openModal('modalAudit', info);
+                cell.appendChild(button);
+
+                tableHeaders.append(cell)
+            });
+
+            document.getElementById("auditHeader").setAttribute("colspan", data1.length);
+
+            const tableBody = document.getElementById('infoTableBody1');
+            tableBody.innerHTML = '';
+
+            data0.forEach(info => {
+                const row = document.createElement('tr');
+
+                let cell = document.createElement('td');
+                cell.style.display = 'flex';
+                cell.style.alignItems = 'center';
+                cell.style.gap = '0.5vw'; // Espaço entre o botão e o texto
+                cell.style.whiteSpace = 'nowrap'; // Evita quebra de linha
+                cell.style.backgroundColor = 'white'
+
+                const button = document.createElement('button');
+
+                if (info.Workcenter_Code != undefined) {
+                    button.textContent = `${info.Workcenter_Code} - ${info.Name}`;
+                } else {
+                    button.textContent = `${info.place}`;
+                }
+
+                button.onclick = () => openModal('modalPlace', info);
+
+                const text = document.createElement('span');
+                text.textContent = info.industrial ? 'Com TV de OEE' : 'Sem TV de OEE';
+
+                cell.appendChild(button);
+                cell.appendChild(text);
+
+                row.appendChild(cell);
+
+                data1.forEach(item => {
+
+                    const element = data2.find(search => search.auditId == item.id && search.placeId == info.id)
+                    cell = document.createElement('td');
+
+                    if (element) {
+                        cell.textContent = `${element.grade}%`;
+                    } else {
+                        cell.textContent = '-';
+                    }
+
+                    row.appendChild(cell);
+                });
+
+                tableBody.appendChild(row);
+            });
+
+        }
+
+        function filterTable() {
+
+            const filter1 = document.getElementById('filter1').value.toLowerCase();
+            const filter2 = document.getElementById('filter2').value.toLowerCase();
+            const filter3 = document.getElementById('filter3').value.toLowerCase();
+
+            const filteredData0 = data_place.filter(info => {
+                
+                let filter1Compare;
+                if (info.Workcenter_Code != undefined) {
+                    filter1Compare = `${info.Workcenter_Code} - ${info.Name}`;
+                } else {
+                    filter1Compare = `${info.place}`;
+                }
+
+                const filter1Match = filter1Compare.toString().toLowerCase().includes(filter1);
+                const filter2Match = (info.industrial ? '1' : '0').includes(filter2);
+
+                return filter1Match && filter2Match;
+            });
+
+            
+            const filteredData1 = data_audit.filter(info => {
+                
+                const filter3Match = info.name.toString().toLowerCase().includes(filter3);
+            
+                return filter3Match;
+            });
+
+            populateTable(filteredData0, filteredData1, data_grade);
+        }
+
+
+        // FUNÇÕES PARA MANIPULAR MODAL DE CRIAÇÃO E EDIÇÃO
+
+        function openModal(modalId, values) {
+
+            if (admin != "1") {
+                document.getElementById('badFillMessage').innerHTML = `Sem permissão para editar dados.`;
+                openModal('badFill', null)
+
+                return
+            }
+
+            document.getElementById(modalId).style.display = 'flex';
+
+            if (modalId == 'modalPlace') {
+
+                if (values) {
+
+                    document.getElementById('workcenter').value = values.Workcenter_Code == undefined ? values.place : values.Workcenter_Code
+                    document.getElementById('industrial').value = values.industrial ? '1' : '0';
+
+                    document.getElementById('placeStatus').style.display = 'flex';
+                    document.getElementById('placeStatus').innerHTML = 'Deletar';
+                    document.getElementById('placeStatus').onclick = () => registerPlace('delete', values.id);
+                    document.getElementById('placeType').onclick = () => registerPlace('edit', values.id);
+
+                } else {
+
+                    document.getElementById('placeType').onclick = () => registerPlace('new', 'aaa');
+                    document.getElementById('placeStatus').style.display = 'none';
+                }
+
+            } else {
+                const tableBody = document.getElementById('infoTableBody2');
+                tableBody.innerHTML = ''
+                console.log(values)
+                data_place.forEach(info => {
+                    const row = document.createElement('tr');
+
+                    let cell = document.createElement('td');
+
+                    if (info.Workcenter_Code != undefined) {
+                        cell.textContent = `${info.Workcenter_Code} - ${info.Name}`;
+                    } else {
+                        cell.textContent = `${info.place}`;
+                    }
+
+                    row.appendChild(cell);
+
+                    cell = document.createElement('td');
+                    cell.textContent = info.industrial ? 'Sim' : 'Não';
+                    row.appendChild(cell);
+
+                    cell = document.createElement('td');
+                    const input = document.createElement('input');
+
+                    input.type = 'number';
+                    input.min = 0;
+                    input.max = 100;
+                    input.id = `grade_${info.id}`;
+                    input.name = `grade_${info.id}`;
+                    input.classList.add("table-input")
+                    
+                    input.value = data_grade.find(grade => grade.auditId == values?.id && grade.placeId == info.id)?.grade || '';
+                    console.log(info)
+
+                    cell.appendChild(input);
+                    row.appendChild(cell);
+
+                    tableBody.append(row)
+                });
+
+                if (values) {
+
+                    document.getElementById('name').value = values.name
+
+                    document.getElementById('auditStatus').style.display = 'flex';
+                    document.getElementById('auditStatus').innerHTML = 'Deletar';
+                    document.getElementById('auditStatus').onclick = () => registerAudit('delete', values.id);
+                    document.getElementById('auditType').onclick = () => registerAudit('edit', values.id);
+
+                } else {
+
+                    document.getElementById('auditType').onclick = () => registerAudit('new');
+                    document.getElementById('auditStatus').style.display = 'none';
+
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+
+            if (modalId == 'modalPlace' || modalId == 'modalAudit') {
+                document.getElementById(`form${modalId.replace("modal", "")}`).reset();
+            }
+        }
+
+
+        // FUNÇÕES PARA CRUD
+        
+        function registerPlace(func, id) {
+            
+            const workcenter = document.getElementById('workcenter').value
+            const industrial = document.getElementById('industrial').value
+
+            const payload = {
+                workcenter: workcenter,
+                industrial: industrial,
+                id: id
+            };
+
+            if (func != "delete") {
+                
+                const fieldName = {
+                    workcenter: 'Local',
+                    industrial: 'TV OEE',
+                    id: id
+                }
+
+                const noFilled = [];
+                
+                for (const field in payload) {
+                    if (payload[field] == "") {
+                        noFilled.push(fieldName[field]);
+                    }
+                }
+
+                if (noFilled.length > 0) {
+                    document.getElementById('badFillMessage').innerHTML = `Os seguintes campos estão vazios: ${noFilled.join(", ").replace(/_/g, " ").replace(/, ([^,]*)$/, " e $1")}`;
+                    openModal('badFill', null)
+
+                    return
+                } else if (industrial == '1' && workcenters.some(wc => wc.Workcenter_Code == workcenter) == false) {
+                    document.getElementById('badFillMessage').innerHTML = `Caso o local tenha Tv de OEE, ele deve ser um centro de trabalho listado.`;
+                    openModal('badFill', null)
+
+                    return
+                }
+
+
+            }
+
+            fetch(`/cadastros/5s?type=place&func=${func}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null)     
+                    });
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+
+        }
+
+        function registerAudit(func, id) {
+            
+            const name = document.getElementById('name').value
+
+            const payload = {
+                name: name,
+                id: id
+            };
+
+            if (func != "delete") {
+                
+                const fieldName = {
+                    name: 'Nome',
+                    id: id,
+                    grades: 'Notas'
+                }
+                
+                payload['grades'] = {}
+                document.getElementById("infoTableBody2").querySelectorAll("input").forEach(input => {
+                    if (input.value != '') {
+                        payload['grades'][input.id] = input.value;
+                    }
+                });
+
+                const noFilled = [];
+                
+                for (const field in payload) {
+                    if (payload[field] === "") {
+                        noFilled.push(fieldName[field]);
+                    }
+                }
+
+                if (noFilled.length > 0) {
+                    document.getElementById('badFillMessage').innerHTML = `Os seguintes campos estão vazios: ${noFilled.join(", ").replace(/_/g, " ").replace(/, ([^,]*)$/, " e $1")}`;
+                    openModal('badFill', null)
+
+                    return
+                }
+            }
+
+            fetch(`/cadastros/5s?type=audit&func=${func}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    return response.json().then(err => {
+                        document.getElementById('badFillMessage').innerHTML = `Erro ${response.status}: ${err.error || 'Erro desconhecido'}`;
+                        openModal('badFill', null)     
+                    });
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+
+        }
+
+
+        // FUNÇÃO PARA DOWNLOAD DOS DADOS EM EXCEL
+
+        function downloadExcel() {
+
+
+            fetch("/cadastros/excel/5s", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar o Excel');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'cadastros.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Erro:', error));
+
+            }
+
+        
+        window.onload = function() {
+
+            populateTable(data_place, data_audit, data_grade);
+        }
+        
+    </script>
+</body>
+</html>
