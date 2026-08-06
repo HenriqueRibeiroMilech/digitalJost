@@ -132,14 +132,24 @@ function init() {
           // =====================================================
           cell = row.insertCell();
 
-          cell.innerHTML =
-            `<button type="button"
-                     style="min-width: 7vw"
-                     class="table_btn"
-                     onclick="openAttachments('{{ deviationId }}', \`${entry[9] || ''}\`)"
-                     name="col_${i}">
-                Anexos
-             </button>`;
+          var anexosButton = document.createElement("button");
+
+          anexosButton.type = "button";
+          anexosButton.style.minWidth = "7vw";
+          anexosButton.className = "table_btn";
+          anexosButton.name = "col_" + i;
+          anexosButton.innerText = "Anexos";
+
+          anexosButton.onclick = function (e) {
+            e.stopPropagation();
+
+            openAttachments(
+              '{{ deviationId }}',
+              entry[9] || ''
+            );
+          };
+
+          cell.appendChild(anexosButton);
         }
 
         // =====================================================
@@ -201,130 +211,152 @@ function init() {
           // COLUNA AÇÕES
           // =====================================================
           cell = row.insertCell();
+          cell.innerHTML = '';
 
-          if ('{{ resp }}' == '1' || '{{ admin }}' == '1') {
-            cell.innerHTML = '';
+          var canExecuteAction = (
+            '{{ resp }}' == '1'
+            || '{{ admin }}' == '1'
+          );
 
-            if (entry[7] == 0) {
-              var finalizarButton = document.createElement("button");
+          var canEditDeadline = (
+            '{{ can_edit_deadline }}' == '1'
+          );
 
-              finalizarButton.type = "button";
-              finalizarButton.style.minWidth = "7vw";
-              finalizarButton.style.background = "rgb(45, 90, 187)";
-              finalizarButton.className = "table_btn";
-              finalizarButton.name = "col_" + i;
-              finalizarButton.innerText = "Finalizar";
+          var actionHasAttachments = hasAttachmentsFor();
+          var hasAvailableAction = false;
 
-              finalizarButton.onclick = function () {
-                tryFinalizeAction('{{ actionId }}');
-              };
+          // =====================================================
+          // AÇÃO PENDENTE
+          //
+          // Responsável ou administrador pode finalizar.
+          // O backend continuará exigindo pelo menos um anexo.
+          // =====================================================
+          if (entry[7] == 0 && canExecuteAction) {
+            var finalizarButton = document.createElement("button");
 
-              cell.appendChild(finalizarButton);
+            finalizarButton.type = "button";
+            finalizarButton.style.minWidth = "7vw";
+            finalizarButton.style.background = "rgb(45, 90, 187)";
+            finalizarButton.className = "table_btn";
+            finalizarButton.name = "col_" + i;
+            finalizarButton.innerText = "Finalizar";
 
-              /* =====================================================
-                 REGRA DE ALTERAÇÃO DE PRAZO - ALTERAÇÃO VISUAL:
-                 Somente ADM ou solicitante dono do desvio podem
-                 alterar a data da ação sem abrir novo desvio.
-                 Responsável pela ação não altera data apenas por ser responsável.
-                 Mantém o mesmo padrão visual do botão Finalizar.
-                 ===================================================== */
-              if ('{{ can_edit_deadline }}' == '1') {
-                cell.appendChild(document.createElement("br"));
-                cell.appendChild(document.createElement("br"));
+            finalizarButton.onclick = function () {
+              tryFinalizeAction('{{ actionId }}');
+            };
 
-                var alterarPrazoButton = document.createElement("button");
+            cell.appendChild(finalizarButton);
+            hasAvailableAction = true;
+          }
 
-                alterarPrazoButton.type = "button";
-                alterarPrazoButton.style.minWidth = "7vw";
-                alterarPrazoButton.style.transition = "background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease";
-                alterarPrazoButton.style.background = "rgb(45, 90, 187)";
-                alterarPrazoButton.className = "table_btn";
-                alterarPrazoButton.name = "col_" + i;
-                alterarPrazoButton.innerText = "Prazo";
+          // =====================================================
+          // AÇÃO ATRASADA COM ANEXO
+          //
+          // O botão Validar aparece somente se:
+          // - for responsável ou administrador;
+          // - existir pelo menos um arquivo anexado.
+          // =====================================================
+          if (
+            entry[7] == 5
+            && canExecuteAction
+            && actionHasAttachments
+          ) {
+            var validarButton = document.createElement("button");
 
-                var prazoHoverTimer = null;
+            validarButton.type = "button";
+            validarButton.style.minWidth = "7vw";
+            validarButton.style.background = "rgb(45, 90, 187)";
+            validarButton.className = "table_btn";
+            validarButton.name = "col_" + i;
+            validarButton.innerText = "Validar";
 
-                alterarPrazoButton.onmouseenter = function () {
-                  prazoHoverTimer = setTimeout(function () {
-                    alterarPrazoButton.style.backgroundColor = "#EF7B04";
-                    alterarPrazoButton.style.boxShadow = "0 4px 10px rgba(0,0,0,.18)";
-                  }, 180);
-                };
+            validarButton.onclick = function () {
+              tryValidateDelayedAction('{{ actionId }}');
+            };
 
-                alterarPrazoButton.onmouseleave = function () {
-                  clearTimeout(prazoHoverTimer);
-                  alterarPrazoButton.style.backgroundColor = "rgb(45, 90, 187)";
-                  alterarPrazoButton.style.boxShadow = "";
-                };
+            cell.appendChild(validarButton);
+            hasAvailableAction = true;
+          }
 
-                alterarPrazoButton.onclick = function () {
-                  tryChangeActionDeadline('{{ actionId }}', entry[6]);
-                };
-
-                cell.appendChild(alterarPrazoButton);
-              }
-
-            } else if (entry[7] == 5 && '{{ can_edit_deadline }}' == '1') {
-
-              /* =====================================================
-                 REGRA DE ALTERAÇÃO DE PRAZO - ALTERAÇÃO VISUAL:
-                 Para ação atrasada/vencida, somente ADM ou solicitante
-                 dono do desvio podem alterar a data da ação.
-                 Não abre novo desvio e mantém o padrão visual existente.
-                 ===================================================== */
-              var alterarPrazoVencidoButton = document.createElement("button");
-
-              alterarPrazoVencidoButton.type = "button";
-              alterarPrazoVencidoButton.style.minWidth = "7vw";
-              alterarPrazoVencidoButton.style.transition = "background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease";
-              alterarPrazoVencidoButton.style.background = "rgb(45, 90, 187)";
-              alterarPrazoVencidoButton.className = "table_btn";
-              alterarPrazoVencidoButton.name = "col_" + i;
-              alterarPrazoVencidoButton.innerText = "Prazo";
-
-              var prazoVencidoHoverTimer = null;
-
-              alterarPrazoVencidoButton.onmouseenter = function () {
-                prazoVencidoHoverTimer = setTimeout(function () {
-                  alterarPrazoVencidoButton.style.backgroundColor = "#EF7B04";
-                  alterarPrazoVencidoButton.style.boxShadow = "0 4px 10px rgba(0,0,0,.18)";
-                }, 180);
-              };
-
-              alterarPrazoVencidoButton.onmouseleave = function () {
-                clearTimeout(prazoVencidoHoverTimer);
-                alterarPrazoVencidoButton.style.backgroundColor = "rgb(45, 90, 187)";
-                alterarPrazoVencidoButton.style.boxShadow = "";
-              };
-
-              alterarPrazoVencidoButton.onclick = function () {
-                tryChangeActionDeadline('{{ actionId }}', entry[6]);
-              };
-
-              cell.appendChild(alterarPrazoVencidoButton);
-
-            } else {
-              const semAcao = document.createElement("button");
-
-              semAcao.type = "button";
-              semAcao.style.minWidth = "7vw";
-              semAcao.className = "table_btn";
-              semAcao.disabled = true;
-              semAcao.innerText = "Sem ação disponivel";
-
-              cell.appendChild(semAcao);
+          // =====================================================
+          // ALTERAR PRAZO
+          //
+          // Administrador ou criador pode alterar o prazo.
+          // Pode ser ação pendente ou atrasada.
+          // =====================================================
+          if (
+            canEditDeadline
+            && (entry[7] == 0 || entry[7] == 5)
+          ) {
+            if (hasAvailableAction) {
+              cell.appendChild(document.createElement("br"));
+              cell.appendChild(document.createElement("br"));
             }
 
-          } else {
-            const semPermissao = document.createElement("button");
+            var alterarPrazoButton = document.createElement("button");
 
-            semPermissao.type = "button";
-            semPermissao.style.minWidth = "7vw";
-            semPermissao.className = "table_btn";
-            semPermissao.disabled = true;
-            semPermissao.innerText = "Sem ação disponivel";
+            alterarPrazoButton.type = "button";
+            alterarPrazoButton.style.minWidth = "7vw";
+            alterarPrazoButton.style.transition =
+              "background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease";
+            alterarPrazoButton.style.background = "rgb(45, 90, 187)";
+            alterarPrazoButton.className = "table_btn";
+            alterarPrazoButton.name = "col_" + i;
+            alterarPrazoButton.innerText = "Prazo";
 
-            cell.appendChild(semPermissao);
+            var prazoHoverTimer = null;
+
+            alterarPrazoButton.onmouseenter = function () {
+              prazoHoverTimer = setTimeout(function () {
+                alterarPrazoButton.style.backgroundColor = "#EF7B04";
+                alterarPrazoButton.style.boxShadow =
+                  "0 4px 10px rgba(0,0,0,.18)";
+              }, 180);
+            };
+
+            alterarPrazoButton.onmouseleave = function () {
+              clearTimeout(prazoHoverTimer);
+              alterarPrazoButton.style.backgroundColor =
+                "rgb(45, 90, 187)";
+              alterarPrazoButton.style.boxShadow = "";
+            };
+
+            alterarPrazoButton.onclick = function () {
+              tryChangeActionDeadline(
+                '{{ actionId }}',
+                entry[6]
+              );
+            };
+
+            cell.appendChild(alterarPrazoButton);
+            hasAvailableAction = true;
+          }
+
+          // =====================================================
+          // NENHUMA AÇÃO DISPONÍVEL
+          //
+          // Se estiver atrasada e sem anexo, orienta o responsável
+          // a anexar um documento para liberar o botão Validar.
+          // =====================================================
+          if (!hasAvailableAction) {
+            var semAcao = document.createElement("button");
+
+            semAcao.type = "button";
+            semAcao.style.minWidth = "7vw";
+            semAcao.className = "table_btn";
+            semAcao.disabled = true;
+
+            if (
+              entry[7] == 5
+              && canExecuteAction
+              && !actionHasAttachments
+            ) {
+              semAcao.innerText = "Anexe para validar";
+            } else {
+              semAcao.innerText = "Sem ação disponível";
+            }
+
+            cell.appendChild(semAcao);
           }
         }
       }
@@ -342,6 +374,9 @@ function init() {
 
           } else if (i == 2) {
             cell.innerHTML = 'AÇÃO';
+          
+          } else if (i == 6) {
+            cell.innerHTML = 'PRAZO';
 
           } else {
             cell.innerHTML = info;
@@ -811,6 +846,50 @@ function tryFinalizeAction(actionId) {
   }
 }
 
+// =====================================================
+// VALIDAR AÇÃO ATRASADA
+//
+// Reutiliza a mesma finalização do backend.
+// O backend confirma a existência do anexo e altera
+// o status da ação de 5 para 1.
+// =====================================================
+function tryValidateDelayedAction(actionId) {
+  if (!hasAttachmentsFor()) {
+    if (window.Swal) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sem anexos',
+        text: 'É necessário anexar pelo menos 1 arquivo antes de validar a ação.',
+        confirmButtonText: 'OK'
+      });
+    } else {
+      alert(
+        'É necessário anexar pelo menos 1 arquivo antes de validar a ação.'
+      );
+    }
+
+    return;
+  }
+
+  if (window.Swal) {
+    Swal.fire({
+      icon: 'question',
+      title: 'Validar ação atrasada?',
+      text: 'Deseja validar e concluir esta ação?',
+      showCancelButton: true,
+      confirmButtonText: 'Validar',
+      cancelButtonText: 'Cancelar'
+    }).then(function (res) {
+      if (res.isConfirmed) {
+        doPostFinalizeAction(actionId);
+      }
+    });
+  } else {
+    if (confirm('Deseja validar e concluir esta ação?')) {
+      doPostFinalizeAction(actionId);
+    }
+  }
+}
 
 // =====================================================
 // POST FINALIZAR AÇÃO
@@ -868,3 +947,5 @@ document.addEventListener('DOMContentLoaded', function () {
   bindAttachmentInput();
   init();
 });
+
+// V1

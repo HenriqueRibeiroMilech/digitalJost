@@ -1,0 +1,238 @@
+.dash_container {
+    width: 39vw;
+    margin-left: 0.5vw;
+    height: 74vh;
+    display: inline-block;
+    position: static;
+    z-index: 1;
+    background: rgba(11, 11, 11, 0.05);
+}
+
+.dash_bar {
+    width: 79vw;
+    margin-bottom: 5vh;
+    margin-top: 5vh;
+    height: 92vh;
+    position: static;
+    background: rgba(11, 11, 11, 0.05);
+}
+
+.dash_select_div {
+    margin-left: 2%;
+    margin-top: 1%;
+    height: 19vh;
+    position: relative;
+    z-index: 2;
+}
+
+.dash_div {
+    overflow:hidden;
+    white-space:nowrap;
+    transform: translate(0, -3vh);
+    height:5vh;
+
+}
+
+.dash_form {
+    width: 5vw;
+    height: 100%;
+    position: relative;
+    margin-top:5vh;
+    user-select: none;
+}
+
+#gestao_dash{
+  background-color: #D0D7E7;
+}
+
+#overview {
+    background: rgba(11, 11, 11, 0.05);
+}
+
+.loader {
+  border: 2vh solid #163a8a;
+  border-top: 2vh solid #3498db;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+  height: calc(23vh + 9vw);
+  width: calc(23vh + 9vw);
+  margin: calc(4vh + 4vw) auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dash_filter {
+  position: sticky;
+  transform: translate(0, -100%);
+  width: 15vw;
+  margin-right: 3%;
+  background: none;
+  font-size: 1.1vw;
+  border: none;
+  border-bottom: 0.3vh solid #163A8A;
+  outline: 0;
+  color: #163A8A;
+  padding-top: 1vh;
+}
+
+.dash_filter .anchor {
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.dash_filter ul.items {
+  padding: 4%;
+  display: none;
+  background: rgba(220,220,220, 0.9);
+  position: relative;
+}
+
+.dash_filter ul.items li {
+  list-style: none;
+  font-size: calc(0.7vw + 1vh);
+  display: block;
+  position: relative;
+}
+
+.dash_filter ul.items li:hover {
+    cursor: pointer;
+}
+
+.dash_filter.visible .items {
+  display: block;
+  position: absolute;
+}
+
+.filter_btn {
+    border: none;
+    outline: none;
+    color: white;
+    padding: 0 2vh 0 2vh;
+    background-color: #EF7B04;
+    font-size: calc(0.8vw + 1.2vh);
+    transition: 0.2s;
+}
+
+#concluido, #up, #down {
+    border: none;
+    outline: none;
+    color: white;
+    padding: 0 2vh 0 2vh;
+    background-color: #163A8A;
+    font-size: calc(0.8vw + 1.2vh);
+    transition: 0.2s;
+
+}
+
+.filter_btn:hover {
+    background-color: #EF7B04;
+    cursor: pointer;
+}
+
+#concluido:hover, #up:hover, #down:hover {
+    background-color: #EF7B04;
+    cursor: pointer;
+}
+
+.manutencao_dash {
+  width: 97%;
+  height: 86%;
+  position: fixed;
+  display: inline-block;
+  transition: 0.4s;
+  overflow-y: hidden;
+}
+
+
+.title {
+  font-size: calc(2vw + 5vh);
+  font-weight: bold;
+  color: #163A8A
+}
+
+.select_title {
+  font-size: calc(1.4vw + 2vh);
+  font-weight: bold;
+  color: #163A8A;
+  margin-bottom: 2%;
+  outline: 0;
+  border: none;
+  text-overflow: ellipsis;
+  background: none;
+}
+
+.select_desc {
+  font-size: calc(0.8vw + 1.2vh);
+  color: #5B75AD;
+  outline: 0;
+  border: none;
+  font-weight: bold;
+  background: none;
+}
+
+#table_maintenance {
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overflow-x: hidden;
+  width: 79vw;
+  height: calc(100% - 4vh);
+  margin: 0;
+}
+
+#table_maintenance table {
+  border: 0;
+  outline: 0;
+  position: relative;
+  font-size: calc(10px + 0.7vh);
+  overflow-y: scroll;
+}
+
+#table_maintenance table tbody {
+  width: 75vw;
+}
+
+#table_maintenance table th {
+  text-align: center;
+  font-size: calc(12px + 1vh);
+}
+
+
+#table_maintenance td {
+  border-bottom: 1px solid #ddd;
+  padding: 15px;
+  text-align: center;
+  transition: 0.2s;
+}
+
+#table_maintenance tr:hover {
+  color: white;
+  cursor: pointer;
+  background: rgba(22,58,138,0.85)
+}
+
+#table_maintenance tr:first-child td {
+  text-align: center;
+  position: sticky;
+  top: 0;
+  font-weight: bold;
+  background-color: #163A8A;
+  color: white;
+}
+
+#table_maintenance tr:first-child  {
+  position: sticky;
+  top: 0;
+  display: inline-block;
+  width: auto;
+}
+
+#table_maintenance tr {
+  top: 0;
+  display: inline-block;
+  width: auto;
+}

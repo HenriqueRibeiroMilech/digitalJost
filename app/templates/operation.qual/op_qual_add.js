@@ -105,3 +105,58 @@ function searchProduct(name) {
     xhr.send()
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    const unidadeSelect = document.getElementById("unidade");
+    const centroTrabalhoInput = document.getElementById("centro_trabalho");
+    const centroTrabalhoDatalist = document.getElementById("ct");
+
+    // Guarda a lista original carregada pelo backend.
+    // Essa será a lista utilizada para Caxias do Sul.
+    const centrosCaxias = Array.from(
+        centroTrabalhoDatalist.querySelectorAll("option")
+    )
+        .map(function (option) {
+            return option.value;
+        })
+        .filter(function (value) {
+            return value !== "";
+        });
+
+    // Lista fixa de Centros de Trabalho de Campinas.
+    const centrosCampinas = [
+        "M101-Montagem Articulação De Onibus",
+        "M102-Montagem Trava De Quinta Roda",
+        "S101-Solda Robotizada Articulação De Onibus"
+    ];
+
+    function atualizarCentrosTrabalho() {
+        const unidadeSelecionada = unidadeSelect.value;
+
+        // Limpa o valor anteriormente selecionado.
+        centroTrabalhoInput.value = "";
+
+        // Limpa todas as opções atuais do datalist.
+        centroTrabalhoDatalist.innerHTML = "";
+
+        let centrosSelecionados;
+
+        if (unidadeSelecionada === "1") {
+            centrosSelecionados = centrosCampinas;
+        } else {
+            centrosSelecionados = centrosCaxias;
+        }
+
+        centrosSelecionados.forEach(function (centro) {
+            const option = document.createElement("option");
+            option.value = centro;
+            centroTrabalhoDatalist.appendChild(option);
+        });
+    }
+
+    unidadeSelect.addEventListener("change", atualizarCentrosTrabalho);
+
+    // Monta a lista correta assim que a página carregar.
+    atualizarCentrosTrabalho();
+});
+
+// V1

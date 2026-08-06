@@ -1,0 +1,476 @@
+/* CONTENT SECTION */
+.page_body{
+  overflow-x: hidden;
+  background-image: url('img.png');
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: 100% 100%;
+  font-family: 'Montserrat', sans-serif;
+}
+
+#myVideo {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  z-index: -1;
+  opacity: 0.28;
+}
+
+#content {
+  overflow: hidden;
+  bottom: 0;
+  background: rgba(22, 38, 110, 100);
+  width: 100%
+}
+
+#select_back {
+  font-weight: bold;
+  font-size: calc(5vw + 4vh);
+  position: absolute;
+  left: 90%;
+  transform: translate(55%, -25%);
+  text-decoration: none;
+  transition: 0.5s;
+  opacity: 0.3;
+  background: none;
+  outline: none;
+  border: none;
+}
+
+.prod_title {
+  font-size: calc(1.2vw + 1.5vh);
+  font-weight: bold;
+  display: inline-block;
+  color: white;
+  max-width: 75vw;
+  text-overflow: ellipsis;
+}
+
+.prod_header {
+  margin: 3vh 0vh 0vh 4vh;
+}
+
+.prod_btn {
+  color: white;
+  background: rgba(22,58,138, 0.5);
+  font-size: calc(1.2vh + 1vw);
+  border:none;
+  display: block;
+  padding: 2vh;
+  width: 20vw;
+  min-width: 18vh;
+  margin-left: -3vw;
+  margin-top: 3vh;
+  text-align: right;
+  transition: 0.2s;
+}
+
+.prod_btn:first-child {
+  margin-top: 0;
+}
+
+.prod_btn:hover {
+  cursor: pointer;
+  color: #17CDCD;
+}
+
+.prod_select {
+  transform: translate(0, -3%);
+  text-align: center;
+  margin-top: 2vh;
+  width: 21vw;
+  height: 86vh;
+  min-width: 20vh;
+  overflow-y: scroll;
+  display: inline-block;
+  padding-top: 1vh;
+  padding-bottom: 1vh;
+  color: white;
+}
+
+.prod_select:hover::-webkit-scrollbar-thumb {
+  background-color:  rgba(22,58,138, 1);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  transition: background-color .8s;
+}
+
+.prod_indicators {
+  width: 78vw;
+  height: 86%;
+  position: fixed;
+  display: inline-block;
+  overflow-y: scroll;
+  transition: 0.4s;
+}
+
+.prod_indicators:hover::-webkit-scrollbar-thumb {
+  background-color:  rgba(22,58,138, 1);
+}
+
+.prod_cell {
+  background: rgba(11, 11, 11, 0.4);
+  height: calc(27vh + 20vw);
+  margin-right: 1vw;
+  width: 37vw;
+  min-width: 32vh;
+  margin-bottom: 2vh;
+  display: inline-block;
+}
+
+.prod_cell_wide2 {
+  background: rgba(11, 11, 11, 0.4);
+  height: calc(27vh + 20vw);
+  width: 75vw;
+  min-width: 32vh;
+  margin-bottom: 2vh;
+  display: inline-block;
+}
+
+.prod_cell_wide {
+  background: rgba(11, 11, 11, 0.4);
+  height: calc(9vh + 6.2vw);
+  width: 75vw;
+  min-width: 32vh;
+  margin-bottom: 2vh;
+  display: inline-block;
+}
+
+.cell_btn {
+  margin: 0 auto;
+  padding 2vh;
+  width: 75vw;
+  height: calc(9vh + 6.2vw);
+  font-size: calc(3vh + 1vw);
+  color: white;
+  border: none;
+  background: none;
+  outline: 0;
+  transition: 0.3s;
+}
+
+.cell_btn:focus {
+  outline: 0;
+}
+
+.cell_btn:hover {
+  background: rgba(239,123,4, 0.6);
+  font-weight: 550;
+  letter-spacing: 1.5vh;
+  outline: 0;
+}
+
+i {
+  transition: 0.2s;
+}
+
+.prod_btn_s {
+  color: white;
+  background: rgba(22,58,138, 0.5);
+  font-size: calc(0.5vh + 0.5vw);
+  border: none;
+  display: none;
+  opacity: 0;
+  padding: 1.4vh;
+  padding-left: calc(3vh + 1.5vw);
+  width: 18vw;
+  margin-left: -3vw;
+  min-width: 16vh;
+  margin-top: 1vh;
+  text-align: right;
+  transition: 0.2s;
+  height: auto;
+}
+
+.prod_btn_s:hover {
+  cursor: pointer;
+  color: #17CDCD;
+  background: rgba(19, 170, 170, 0.25);
+}
+
+#setup {
+  height: calc(2vh + 1vw);
+  width: calc(2vh + 1vw);
+  margin: calc(1vh) auto;
+  margin-left: 2vh;
+  position: absolute;
+  display: inline-block;
+  border: 1vh solid #163a8a;
+  border-top: 1vh solid #3498db;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.dash_flbl {
+  font-size: calc(1.5vh + 0.5vw);
+  color: white;
+  margin-left: 2vh;
+  display: block;
+  font-weight: bold;
+}
+
+::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+.dash_filter {
+  font-size: calc(1.5vh + 0.5vw);
+  border: solid 0.3vh white;
+  background: none;
+  color: white;
+  margin-left: 2vh;
+  display: block;
+}
+
+.sel_filters {
+  color: white;
+  font-size: calc(1.5vh + 0.5vw);
+  background: none;
+  border: solid 0.3vh white;
+  margin-top: 2vh;
+  width: 15vw;
+  display: inline;
+}
+
+.sel_only {
+  background: rgba(239,123,4, 0.6);
+  border: none;
+  color: white;
+  padding: 1.4vh;
+  margin-top: 1vh;
+  font-size: calc(0.5vh + 0.5vw);
+  height: fit-content;
+  transition: 0.3s;
+  width: 2vw;
+  display: none;
+}
+
+.sel_only:hover {
+  background: rgba(239,123,4, 0.9);
+  width: 2.5vw;
+  cursor: pointer;
+}
+
+.loader {
+  border: 4vh solid #163a8a;
+  border-top: 4vh solid #3498db;
+  border-radius: 50%;
+  margin: calc(7vh + 5vw) auto;
+  width: calc(13.5vh + 10vw);
+  height: calc(13.5vh + 10vw);
+  animation: spin 1.5s linear infinite;
+}
+
+.bigloader {
+  border: 4vh solid #163a8a;
+  border-top: 4vh solid #3498db;
+  border-radius: 50%;
+  margin: calc(7vh + 5vw) auto;
+  width: calc(15vh + 24vw);
+  height: calc(15vh + 24vw);
+  animation: spin 1.5s linear infinite;
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.sel_turno {
+  color: white;
+  font-size: calc(1.5vh + 0.5vw);
+  background: none;
+  border: solid 0.3vh white;
+  margin-top: 2vh;
+  width: 8vw;
+  display: inline;
+}
+
+.sel_turno_ok {
+  color: white;
+  font-size: calc(1.5vh + 0.5vw);
+  background: #137087;
+  border: solid 0.3vh #137087;
+  margin-top: 2vh;
+  width: 8vw;
+  display: inline;
+}
+
+.calendar {
+  display: inline-block;
+  width: 48vw;
+  height: 47vh;
+  margin: 2vh 0 0 1vw;
+  background: rgba(19,112,135,0.34);
+  position: relative;
+  z-index: 0;
+}
+
+.change {
+  font-size: calc(1.8vh + 0.5vw);
+  font-weight: bold;
+  padding: 1vh;
+  margin: 1vh;
+  width: calc(3.5vh + 3.5vw);
+  border: none;
+  background: #137087;
+  color: white;
+  display: inline-block;
+  transition: 0.3s;
+  box-shadow: 1vh 1vh 1.5vh rgb(21 21 21 / 0.2);
+  z-index: 4;
+}
+
+.change:hover, #alyz:hover, #p_back:hover, #info:hover {
+  cursor: pointer;
+  color: white;
+  background: #ef7b04;
+}
+
+.month {
+  font-size: calc(1.8vh + 0.5vw);
+  font-weight: bold;
+  padding: 1vh;
+  margin: 0 auto;
+  background: #137087;
+  color: white;
+  text-align: center;
+  display: inline-block;
+  width: calc(calc(3.5vh + 3.5vw) * 4);
+  box-shadow: 1vh 1vh 1.5vh rgb(21 21 21 / 0.2);
+  outline: none;
+  border: none;
+}
+
+#control {
+  position: absolute;
+  top: 45.5%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+}
+
+#locate{
+  position: absolute;
+  top: 52.5%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+}
+
+#alyz {
+  width: calc(calc(3.5vh + 3.5vw) * 3.05);
+  transition: 0.3s;
+  display: inline-block;
+}
+
+#p_back, #info {
+  width: calc(calc(3.5vh + 3.5vw) * 1.5);
+  transition: 0.3s;
+  display: inline-block;
+}
+
+#p_back {
+  background: rgba(181,10,10,0.6);
+}
+
+.calendar_tt, .calendar_tb {
+  font-size: calc(1.5vh + 0.35vw);
+  font-weight: bold;
+  margin: 0 auto;
+  margin-left: 0.6vw;
+  margin-right: 0.7vw;
+  padding: 12px;
+  color: white;
+}
+
+.calendar_tb {
+  position: relative;
+  top: 93%;
+  transform: translate(0, -50%);
+  z-index: -1;
+}
+
+.calendar_tt {
+  position: relative;
+  top: 0%;
+  z-index: -1;
+}
+
+.cal_ct, .cal_cb {
+  width: 46vw;
+  margin-left: 1vw;
+  height: 37vh;
+}
+
+.cal_ct {
+  position: relative;
+  top: 13vh;
+  z-index: 3;
+  transform: translate(0, -50%);
+}
+
+.cal_cb {
+  position: relative;
+  z-index: 3;
+}
+
+.prod_day {
+  display: inline-block;
+  overflow: hidden;
+  height: calc(4.4vh + 2vw);
+  width: calc(4.4vh + 2vw);
+  margin-left: 0.6vw;
+  background: rgba(22,38,110, 0.4);
+  transition: 0.2s;
+}
+
+.prod_day:hover {
+  cursor: pointer;
+  color: white;
+  background: #ef7b04;
+}
+
+.day_num {
+  font-size: calc(1vh + 0.6vw);
+  padding: 3px;
+  color: white;
+  font-weight: bold;
+  position: absolute;
+  z-index: 5;
+}
+
+#month {
+  font-size: calc(1.8vh + 0.5vw);
+}
+
+
+.prd, .dsp, .qld {
+  height: calc(4.4vh + 2vw);
+  width: calc(calc(4.4vh + 2vw) / 3);
+  font-size:calc(1vh + 0.5vw);
+  color: white;
+  position: absolute;
+  padding: 1px;
+}
+
+.dsp {
+  margin-left: calc(calc(4.4vh + 2vw) / 3);
+}
+
+.qld {
+  margin-left: calc(calc(calc(4.4vh + 2vw) / 3) * 1.995);
+
+}
+
+.prd p, .dsp p, .qld p {
+  position: relative;
+  margin: 0 auto;
+  margin-left: 2px;
+  top: 80%;
+  transform: translate(0, -50%);
+}

@@ -115,33 +115,105 @@ def monitoring_overall_get():
 @jdt_monitoring_bp.route('/monitoramento/geral', methods=['POST'])
 def monitoring_overall_post():
 
-    engine = get_engine('jdt')
-    with engine.connect() as cnnx:
+    query_status = """
+        SELECT
+            Workcenter_Key
+            , Workcenter_Code
+            , UPPER(CONCAT(Workcenter_Code, '-' + Name)) AS Workcenter
+            , Workcenter_Group
+            , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
+            , Log_Duration
+            , Event
+            , LEFT(Event, CHARINDEX('-', Event) - 1) AS Event_Code
+            , Responsible
+        FROM TEMP_WORKCENTER_STATUS T1
 
-        query = f"""SELECT 
-                Workcenter_Code
-                , UPPER(CONCAT(Workcenter_Code, '-' + Name)) AS Workcenter
-                , Workcenter_Group
-                , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-                , Log_Duration
-                , Event
-                , LEFT(Event, CHARINDEX('-', Event) - 1) AS Event_Code
-                , Responsible
-                , Performance
-                , Availability
-                , Quality
-                , Goal1 AS Goal
-            FROM TEMP_WORKCENTER_STATUS T1
-                JOIN PLEX_REGISTER_GOAL T2 ON T1.Workcenter_Key = T2.workcenter
+        WHERE T1.Workcenter_Code NOT IN ('S18')
 
-            WHERE T1.Workcenter_Code NOT IN ('S18')
-            ORDER BY Workcenter_Group, Workcenter_Code ASC"""
+        ORDER BY Workcenter_Group, Workcenter_Code ASC
+    """
 
-        data = pd.read_sql(query, cnnx)
+    query_goal = """
+        SELECT
+            workcenter
+            , Goal1 AS Goal
+        FROM PLEX_REGISTER_GOAL
+    """
+
+    query_oee = """
+        WITH last_oee AS (
+            SELECT
+                Workcenter,
+                OEE,
+                ROW_NUMBER() OVER (
+                    PARTITION BY Workcenter
+                    ORDER BY RecordDate DESC
+                ) rn
+            FROM Mach_2_OEE_Real_Time
+        )
+
+        SELECT
+            Workcenter AS OEE_Workcenter,
+            OEE
+        FROM last_oee
+        WHERE rn = 1
+    """
+
+    with ThreadPoolExecutor() as executor:
+
+        status_future = executor.submit(
+            engine_run_query,
+            query_status,
+            'jdt'
+        )
+
+        goal_future = executor.submit(
+            engine_run_query,
+            query_goal,
+            'jdt'
+        )
+
+        oee_future = executor.submit(
+            engine_run_query,
+            query_oee,
+            'plex'
+        )
+
+    data = status_future.result()
+    goal_data = goal_future.result()
+    oee_data = oee_future.result()
+
+    data = pd.merge(
+        data,
+        goal_data,
+        left_on='Workcenter_Key',
+        right_on='workcenter',
+        how='left'
+    )
+
+    data = pd.merge(
+        data,
+        oee_data,
+        left_on='Workcenter_Code',
+        right_on='OEE_Workcenter',
+        how='left'
+    )
+
+    data.drop(
+        columns=[
+            'workcenter',
+            'OEE_Workcenter'
+        ],
+        inplace=True,
+        errors='ignore'
+    )
+
+    data['Goal'] = data['Goal'].fillna(0)
+    data['OEE'] = data['OEE'].fillna(0)
 
     if len(request.get_json()['statusFilter']) > 0:
-        return data[data['Workcenter_Group'].isin(request.get_json()['statusFilter'])].to_json(orient='records')
-    
+        data = data[data['Workcenter_Group'].isin(request.get_json()['statusFilter'])]
+
     return data.to_json(orient='records')
 
 
@@ -849,5 +921,5 @@ def monitoring_ping(ip):
 
     return jsonify(data)
 
-
+# V2
 

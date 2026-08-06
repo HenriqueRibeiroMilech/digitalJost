@@ -1,0 +1,518 @@
+#content {
+  overflow: visible;
+  font-family: 'Montserrat', sans-serif;
+}
+
+#video {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -1;
+    opacity: 0.3;
+}
+
+#contents {
+  overflow: hidden;
+  bottom: 0;
+  background: rgba(209, 103, 10, 0.9);
+  width: 100%;
+  height: 100%;
+}
+
+#paradas {
+  overflow: hidden;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.principal_box1 {
+  width: 100%;
+  height: 40vh;
+  margin-top: -100vh;
+  background-color: rgba(35, 35, 35, 1);
+  position: absolute;
+  animation-delay: 0.6s;
+  transition: 0.6s;
+  display:table;
+
+  box-shadow:  0 -6vh 20vh rgb(209 103 10 / 0.8);
+  animation: change_shadow_h 8s ease infinite;
+  animation-delay: 0.6s;
+  transition: 0.6s;
+}
+
+.principal_box2 {
+  width: 100%;
+  height: 40vh;
+  margin-top: 100vh;
+  background-color: rgba(35, 35, 35, 1);
+  position: absolute;
+  animation-delay: 0.6s;
+  transition: 0.6s;
+  display:table;
+
+  box-shadow:  0 -6vh 20vh rgb(209 103 10 / 0.8);
+  animation: change_shadow_h 8s ease infinite;
+  animation-delay: 0.6s;
+  transition: 0.6s;
+}
+
+.hardware_box1 {
+  width: 94vw;
+  height: 90vh;
+  margin-left: 3vw;
+  margin-top: 5vh;
+  background-color: rgba(35, 35, 35, 0.9);
+  position: absolute;
+  animation-delay: 0.6s;
+  transition: 0.6s;
+  display:table;
+  transition: 0.6s;
+}
+
+@keyframes change_shadow_h {
+  0% { box-shadow:  0 -6vh 20vh rgb(209 103 10 / 1); }
+  50% { box-shadow:  0 -7vh 38vh rgb(209 103 10 / 1);}
+  100% { box-shadow:  0 -6vh 20vh rgb(209 103 10 / 1); }
+}
+
+.hardware_box2 {
+    position: absolute;
+    width: 38vw;
+    top: 6.5%;
+    margin-left: 31vw;
+    opacity: 0;
+    display: none;
+    transition: 0.4s;
+    z-index: 6;
+    background: rgba(100, 132, 212, 1);
+    color: rgba(22,58,138);
+    border-radius: 15px;
+    padding: 2em;
+}
+
+#stop_creen_box {
+    background-color: rgb(100, 132, 212);
+    height: 87%;
+    width: 70vw;
+    margin-left: 15vw;
+    padding: 0;
+}
+
+
+#select_back {
+  font-weight: bold;
+  font-size: calc(5vw + 4vh);
+  position: absolute;
+  left: 90%;
+  text-decoration: none;
+  transition: 0.2s;
+  opacity: 0.8;
+  background: none;
+  outline: none;
+  border: none;
+}
+
+#select_back:hover {
+  cursor: pointer;
+  color: rgb(200 12 82/ 1);
+  opacity: 0.8;
+}
+
+.title {
+  font-weight: 700;
+  color: white;
+  text-align: center;
+  width: 100%;
+  margin-top: 12.5vh;
+  transform: translate(0, -70%);
+  font-size: calc(4vh + 2vw);
+  position: absolute;
+  transition: 0.5s;
+  transition-delay: 0.15s;
+  z-index: 1;
+}
+
+.title_desc {
+  font-size: calc(2vh + 1vw);
+  text-align: center;
+  transform: translate(0, 20%);
+  position: absolute;
+  width: 100%;
+  margin-top: 72.5vh;
+  color: white;
+  transition: 0.5s;
+  z-index: 1;
+}
+
+.hardwares_cad {
+  font-size: calc(2vh + 1vw);
+  text-align: left;
+  color: white;
+  margin: 0;
+}
+
+.hardwares_cad_title {
+  font-size: calc(1vh + 2vw);
+  text-align: left;
+  color: white;
+  margin: 0;
+}
+
+.hardwares_text {
+  font-size: 1.4vw;
+  text-align: left;
+  color: white;
+  margin: 0;
+}
+
+#hardware_desc {
+    font-size: calc(2vh + 1vw);
+    width: 100vw;
+    text-align: center;
+    float:right;
+    position: absolute;
+    bottom: 2%;
+    background-color:rgb(100, 132, 212);
+    z-index:10;
+
+}
+
+.hardware_desc_info {
+  margin-left: 0;
+  margin-top: 0;
+  margin-bottom: 3vh;
+  width: 12vw;
+  float:left;
+  font-size: 1.5vw;
+  color: white;
+
+}
+
+.hardware_imagem {
+    height: 100%;
+    width: auto;
+    z-index:4;
+    user-select: none;
+    pointer-events: none;
+}
+
+.img_div {
+    height: 84vh;
+    margin-top: 3vh;
+    margin-left: 3vw;
+    float: left;
+    position: relative;
+    z-index:3;
+}
+
+.docs_btn {
+    border: none;
+    background: rgba(100, 132, 212, 0.2);
+    color: white;
+    width: 25vw;
+    padding: 4vh;
+    height: 15vh;
+    margin-bottom: 5vh;
+    text-align: right;
+    margin-left: calc(-3vw - 2vh);
+    transition: 0.3s;
+    font-size: calc(2vh + 0.4vw);
+}
+
+.docs_btn:hover {
+  background-color: rgba(100, 132, 212, 0.6);
+  width: 30vw;
+  cursor: pointer;
+  border: none;
+}
+
+.btn_wrapper {
+  margin-top: 2vh;
+  position: absolute;
+}
+
+.text_wrapper {
+  margin: 0 auto;
+  margin-left: 30vw;
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+  width: 70vw;
+}
+
+#display_title, #display_title2 {
+  opacity: 1;
+  position: relative;
+  margin: 0 auto;
+  transform: translate(0, 0);
+  width: 70vw;
+  color: rgba(100, 132, 212, 1);
+}
+
+#display_desc, #display_desc2 {
+  opacity: 1;
+  position: relative;
+  margin: 0 auto;
+  transform: translate(0, 0);
+  width: 70vw;
+  padding: 0.4vh 3vh 0.4vh 3vh;
+}
+
+.pai_botoes {
+    margin-top:5vh;
+    height:69vh;
+    width:16vw;
+    float: left;
+}
+
+.hardware_botao {
+    background: rgba(22, 192, 245, 0.5);
+    border: 0;
+    color: white;
+    transition: 0.2s;
+    font-weight: bold;
+    font-size: calc(0.8vh + 1.1vw);
+    width: 15vw;
+    margin-bottom: 2vh;
+}
+
+.hardware_botao:hover {
+    opacity: 0.8;
+}
+
+
+.hardware_info {
+    float: right;
+    margin-right: 1vw;
+    margin-top: 3vh;
+    width: 17.8vw;
+    height: 15.8vh;
+}
+
+#info2 {
+    margin-top: 0;
+}
+
+.hardware_circulo {
+    width: 3vw;
+    height: 3vw;
+
+    border-radius: 50%;
+    float:right;
+    z-index: 5;
+}
+
+.hardware_circulo1 {
+    width: 1vw;
+    height: 1vw;
+
+    border-radius: 50%;
+    position: absolute;
+    z-index: 5;
+    transform: translate(-50%, -50%); /* Centraliza o círculo no ponteiro do mouse */
+
+}
+
+.hardware_circulo1:hover {
+    cursor:grab;
+}
+
+#conex0 {
+    background-color: #60e02d;
+}
+
+#conex1 {
+
+    background-color: #db211a;
+}
+
+
+
+.hardware_input {
+    color: white;
+    background: none;
+    font-size: calc(1.2vw + 1.2vh);
+    min-width: 30vh;
+    width: 30vw;
+    padding-left: calc(1vw + 1vh);
+    padding-right: calc(1vw + 1vh);
+    height: calc(3vh + 2vw);
+    margin-bottom: 2vh;
+    transition: 0.2s;
+    border: 0.1em solid black;
+    outline: 0;
+}
+
+.hardware_pesquisa {
+    color: white;
+    background: none;
+    font-size: 1.4vw;
+    padding-left: calc(1vw + 1vh);
+    padding-right: calc(1vw + 1vh);
+    margin-bottom: 1vh;
+    width: 15vw;
+    border: 0.1em solid white;
+    outline: 0;
+}
+
+.box {
+    width: calc(100% - 10px);
+    height: 10vh; /* Altura da caixa */
+    margin: 5px; /* Espaçamento entre as caixas dentro do quadrado */
+    background-color: #f0f0f0; /* Cor de fundo da caixa (pode ser ajustada conforme necessário) */
+    cursor: pointer;
+    align-items: center; /* Centraliza verticalmente */
+    justify-content: center; /* Centraliza horizontalmente */
+    font-size: calc(0.5vw + 1vh);
+    font-weight : bold;
+    padding-top: 0.4vh;
+    padding-right: 1vh;
+    padding-bottom: 1vh;
+    padding-left: 1vh;
+    border: 10px solid white; /* Adiciona uma borda azul */
+    transition: transform 0.5s ease-in-out; /* Adiciona uma transição suave para a animação */
+
+}
+
+/* Adicionando classes para cores específicas */
+.box-low {
+    border: 10px solid #E5D559; /* Adiciona uma borda azul */
+
+}
+
+.box-high {
+    border: 10px solid #E65850; /* Adiciona uma borda azul */
+}
+
+.box-medium {
+    border: 10px solid #F79A16; /* Adiciona uma borda azul */
+
+}
+
+.square-container {
+    width: calc(20vw + 10px); /* 1.2/4 da tela */
+    height: 97vh;
+    overflow: hidden; /* Oculta qualquer conteúdo que ultrapasse os limites da div */
+}
+
+.page-container {
+    width: auto;
+    height: auto;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top:2vh;
+    float:left;
+}
+
+.paragraph {
+    width: 100%; /* Ocupa toda a largura disponível */
+    height: 3vh;
+    margin:0;
+}
+
+.anchor {
+    display: block; /* Um elemento por linha */
+    font-size: 80%; /* Tamanho da fonte menor */
+    text-align: left; /* Alinhado à esquerda */
+    height: 2vh;
+}
+
+.centerTitle {
+    display: inline-block;
+    text-align:center;
+    font-size: 1.5vw;
+    font-weight: bold;
+    width: 90%;
+    margin-left:5%;
+    background-color: rgba(35, 35, 35, 1);
+    align-items: center;
+    justify-content: center;
+    cursor:default;
+    color:rgb(100, 132, 212);
+    z-index:6;
+
+}
+
+.texto-vertical {
+    writing-mode: vertical-rl; /* Escrever de baixo para cima */
+    text-orientation: sideways;
+    white-space: nowrap;
+    font-size: 5vh; /* Ajusta o tamanho da fonte conforme necessário */
+    float:left;
+    width:5vw;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    font-weight : bold;
+    background-color: rgba(35, 35, 35, 1);
+    height:100vh;
+    cursor:default;
+    color:rgb(100, 132, 212);
+    transform: rotate(180deg);
+}
+
+.scrolling-content {
+    height:calc(80vh + 45px);
+    overflow-y: hidden; /* Adiciona rolagem vertical conforme necessário */
+    overflow-x: hidden;
+    position: relative;
+
+}
+
+.test-scroll {
+    animation: scrolling-animation 20s linear infinite; /* ou a duração desejada */
+}
+
+@keyframes scrolling-animation {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(calc(-80vh - 45px));
+    }
+}
+
+
+.hardware_stop_btn {
+    border: none;
+    background-color: white;
+    color: black;
+    width: 25vw;
+    height: 10vh;
+    margin-bottom: 1vh;
+    font-size: calc(2vh + 0.4vw);
+    font-weight: bold;
+}
+
+.loader {
+  border: 2vh solid #163a8a;
+  border-top: 2vh solid #3498db;
+  border-radius: 50%;
+  margin: 0 auto;
+  width: 10vw;
+  height: 10vw;
+  margin-top: 10%;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.hardware_stop_back {
+    border: none;
+    background-color: rgba(35, 35, 35, 1);
+    color:rgb(100, 132, 212);
+    width: 8vw;
+    height: 10vh;
+    margin-bottom: 1vh;
+    font-size: 1vw;
+    font-weight: bold;
+    display:block;
+
+}

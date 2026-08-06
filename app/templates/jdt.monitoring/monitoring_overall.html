@@ -405,8 +405,8 @@
         function addRowToTable(tableBody, item) {
             const row = document.createElement("tr");
 
-            item.Oee = item.Performance * item.Availability * 100 / 10000;
-            if (item.Oee < 0) item.Oee = 0;
+            // item.Oee = item.Performance * item.Availability * 100 / 10000;
+            // if (item.Oee < 0) item.Oee = 0;
 
             let cell = document.createElement('td');
             cell.innerHTML = `<strong>${item.Workcenter}</strong>`;
@@ -415,20 +415,21 @@
             row.appendChild(cell);
 
             cell = document.createElement('td');
-            cell.innerHTML = `${item.Oee.toFixed(0) || 0}%`;
+            cell.innerHTML = `${Number(item.OEE || 0).toFixed(0)}%`;
             row.appendChild(cell);
 
             cell = document.createElement('td');
             cell.innerHTML = `${item.Goal}%`;
-            cell.style.fontWeight = 'bold'
+            cell.style.fontWeight = 'bold';
 
-            if (item.Oee >= item.Goal) {
-                cell.style.backgroundColor = '#28A745'
-                cell.style.color = 'black'
+            if ((item.OEE || 0) >= item.Goal) {
+                cell.style.backgroundColor = '#28A745';
+                cell.style.color = 'black';
             } else {
-                cell.style.backgroundColor = '#DC3545'
-                cell.style.color = 'white'
+                cell.style.backgroundColor = '#DC3545';
+                cell.style.color = 'white';
             }
+
             row.appendChild(cell);
 
             cell = document.createElement('td');
@@ -473,3 +474,5 @@
     
 </body>
 </html>
+
+<!-- V2 -->

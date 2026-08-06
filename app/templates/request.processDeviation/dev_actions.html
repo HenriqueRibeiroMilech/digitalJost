@@ -156,7 +156,7 @@
                         <th>Responsável</th>
                         <th>Centro de Trabalho</th>
                         <th>Família</th>
-                        <th>Data Fim</th>
+                        <th>Prazo</th>
                         <th>Status <i id="statusSortIcon" class="fas fa-sort"></i></th>
                     </tr>
                 </thead>
@@ -208,6 +208,45 @@
         function fmtDate(raw){
             if(!raw) return '';
             return (typeof raw === 'string' && raw.includes('T')) ? raw.split('T')[0] : String(raw);
+        }
+
+        function renderActionDeadline(cell, currentDeadline, deadlineHistory) {
+            cell.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.lineHeight = '16px';
+            wrapper.style.textAlign = 'center';
+
+            const historyDates = String(deadlineHistory || '')
+                .split('\n\n')
+                .map(value => value.trim())
+                .filter(Boolean);
+
+            historyDates.forEach(oldDate => {
+                const oldDateElement = document.createElement('div');
+
+                oldDateElement.textContent = oldDate;
+                oldDateElement.style.fontSize = '11px';
+                oldDateElement.style.opacity = '0.55';
+                oldDateElement.style.textDecoration = 'line-through';
+                oldDateElement.style.marginBottom = '2px';
+
+                wrapper.appendChild(oldDateElement);
+            });
+
+            const currentDateElement = document.createElement('div');
+
+            currentDateElement.textContent = fmtDate(currentDeadline);
+            currentDateElement.style.fontSize = '14px';
+            currentDateElement.style.fontWeight = '600';
+
+            wrapper.appendChild(currentDateElement);
+            cell.appendChild(wrapper);
         }
         /* ====== Ordenação por Status ====== */
         function getStatusPriority(status){
@@ -317,9 +356,15 @@
                 cell.textContent = fmtList(info['families']);
                 row.appendChild(cell);
 
-                // Data fim (YYYY-MM-DD)
+                // Prazo atual da ação + histórico de alterações
                 cell = document.createElement('td');
-                cell.textContent = fmtDate(info['finalDate']);
+
+                renderActionDeadline(
+                    cell,
+                    info['finalDate'],
+                    info['deadlineHistory']
+                );
+
                 row.appendChild(cell);
 
                 // Status
@@ -533,7 +578,7 @@
   bindThByText(/responsável/i,           'Responsável', 'Usuário responsável pela ação.');
   bindThByText(/centro.*trabalho/i,      'Centro de Trabalho','CT relacionado.');
   bindThByText(/família/i,               'Família',     'Família do produto.');
-  bindThByText(/data\s*fim/i,            'Data Fim',    'Prazo final informado.');
+  bindThByText(/prazo/i,                 'Prazo',    'Prazo atual da ação. Datas anteriores aparecem riscadas.');
   bindThByText(/status/i,                'Status',      'Situação atual da ação.');
 
   document.addEventListener('scroll', tipHide, {passive:true});

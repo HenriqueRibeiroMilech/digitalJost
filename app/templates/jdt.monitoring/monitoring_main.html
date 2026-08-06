@@ -207,7 +207,11 @@
             <p class="title">Selecione o centro de trabalho:</p>
             <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: center; margin-top: 2vh; height:40vh; overflow:auto;">
                 {% for workcenter in workcenters %}
-                    <button class="sol_btn" onclick="location.href='/monitoramento/oee?ct={{workcenter.Workcenter_Code}}'">{{workcenter.Name}}</button>
+                    <button
+                        class="sol_btn"
+                        onclick="location.href='http://digitaljost.randon.com.br:6979/monitoramento/oee?ct={{workcenter.Workcenter_Code}}'">
+                        {{workcenter.Name}}
+                    </button>
                 {% endfor %}
             </div>
         </div>
@@ -225,3 +229,5 @@
 
 </script>
 </html>
+
+<!-- V1 -->

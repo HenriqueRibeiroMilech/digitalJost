@@ -24,8 +24,11 @@
     
     <form id="op_qual_post" method="post" action="/op/qualidade/update?command=add" enctype="multipart/form-data">
 
-        <label class="op_label" id="unidade" style="width: 20vw;">Unidade JOST:</label><br>
-        <select class="input_qual" name="unidade">
+        <label class="op_label" for="unidade" style="width: 20vw;">
+            Unidade JOST:
+        </label><br>
+
+        <select class="input_qual" id="unidade" name="unidade">
             <option value="0">Caxias do Sul</option>
             <option value="1">Campinas</option>
         </select><br>
@@ -46,7 +49,15 @@
         <br>
 
         <label class="op_label" for="ct" style="width: 20vw;">Centro de Trabalho:</label><br>
-        <input class="input_qual" oninput="filter(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" placeholder="Selecione uma opção..." autocomplete="off" list="ct" name="ct">
+        <input class="input_qual"
+            id="centro_trabalho"
+            oninput="filter(this.name)"
+            required
+            onkeyup="this.value=this.value.replace(/'/g, '')"
+            placeholder="Selecione uma opção..."
+            autocomplete="off"
+            list="ct"
+            name="ct">
         <datalist id="ct" style="margin-bottom:1vh;">
             <option value="" disabled selected>Selecione uma opção...</option>
             {% for workcenter in workcenters %}
@@ -132,3 +143,5 @@
 </script>
 
 {% endblock %}
+
+<!-- V1 -->

@@ -232,7 +232,7 @@ def _has_open_actions_for_deviation(cnnx, base_id: str) -> bool:
                 SELECT TOP 1 1
                 FROM JDT_REQUEST_DEV_PLAN
                 WHERE deviationId = :did
-                  AND ISNULL(status, 0) = 0
+                  AND ISNULL(status, 0) <> 1
             """),
             {"did": latest_id}
         ).fetchone()
@@ -321,90 +321,124 @@ def _get_plan_status_col():
     return next((c for c in status_candidates if c in cols), None)
 
 
-def _get_action_effective_status(dev_status, action_finished, deadline):
+def _get_action_effective_status(
+    dev_status,
+    action_plan_status,
+    deadline
+):
     """
     Status efetivo da ação:
+
     0 = pendente
     1 = concluído
     2 = cancelado
     3 = finalizado
     4 = recusado
-    5 = vencido
+    5 = atrasado
+
+    Status persistido da ação:
+    0 = pendente
+    1 = concluído
+    5 = já ficou atrasada
     """
 
     try:
-        dev_status = int(dev_status) if dev_status is not None else None
+        dev_status = (
+            int(dev_status)
+            if dev_status is not None
+            else None
+        )
     except Exception:
         dev_status = None
 
-    # ===== HERANÇA DO DESVIO (PRIORIDADE MÁXIMA) =====
+    try:
+        action_plan_status = int(action_plan_status or 0)
+    except Exception:
+        action_plan_status = 0
+
+    # =====================================================
+    # HERANÇA DO DESVIO
+    # =====================================================
     if dev_status == 2:
         return 4  # recusado
+
     if dev_status == 3:
         return 2  # cancelado
+
     if dev_status == 4:
         return 3  # finalizado
-    if dev_status == 6:
-        return 5  # vencido
 
-    # ===== STATUS PRÓPRIO DA AÇÃO =====
-    if action_finished:
+    # =====================================================
+    # STATUS PRÓPRIO DA AÇÃO
+    # =====================================================
+    if action_plan_status == 1:
         return 1  # concluído
 
-    # ===== VENCIMENTO =====
+    # A ação já ficou atrasada em algum momento.
+    if action_plan_status == 5:
+        return 5  # atrasado
+
+    if dev_status == 6:
+        return 5  # atrasado
+
+    # =====================================================
+    # PRAZO ATUAL VENCIDO
+    # =====================================================
     try:
-        if deadline:
-            deadline_dt = pd.to_datetime(deadline, errors='coerce')
-            if pd.notna(deadline_dt):
-                today = pd.Timestamp(datetime.now().date())
-                if deadline_dt.normalize() < today:
-                    return 5  # vencido
+        if deadline is not None and pd.notna(deadline):
+            deadline_dt = pd.to_datetime(
+                deadline,
+                errors='coerce'
+            )
+
+            today = pd.Timestamp(datetime.now().date())
+
+            if (
+                pd.notna(deadline_dt)
+                and deadline_dt.normalize() < today
+            ):
+                return 5
     except Exception:
         pass
 
     return 0  # pendente
 
-def _get_action_row_by_rownum(cnnx, action_id: int):
-    """
-    Busca a ação pelo actionId global da tela /desvios/acoes,
-    mas também calcula o número da ação dentro do mesmo desvio.
 
-    Também busca:
-    - responsável da ação;
-    - criador do desvio;
-    - id do criador/solicitante do desvio;
-    - data de criação/abertura do desvio;
-    - histórico de alteração de prazo;
-    - status próprio da ação, se existir coluna de status na JDT_REQUEST_DEV_PLAN.
+# I NEW CODE
+def _get_action_by_id(cnnx, action_id: int):
+    """
+    Busca uma ação pelo actionId persistente da JDT_REQUEST_DEV_PLAN.
+
+    O actionId é uma coluna IDENTITY e não depende mais da posição
+    da ação em uma consulta ou do filtro aplicado ao usuário.
     """
 
     status_col = _get_plan_status_col()
 
     if status_col:
-        action_status_select = f"ISNULL(P.[{status_col}], 0) AS actionPlanStatus,"
+        action_status_select = (
+            f"ISNULL(P.[{status_col}], 0) AS actionPlanStatus,"
+        )
     else:
-        action_status_select = "CAST(0 AS INT) AS actionPlanStatus,"
+        action_status_select = (
+            "CAST(0 AS INT) AS actionPlanStatus,"
+        )
 
     df = pd.read_sql(
         text(f"""
-            WITH A AS (
+            WITH ActionData AS (
                 SELECT
-
-                    ROW_NUMBER() OVER (
-                        ORDER BY D.openDate DESC, P.deadline, P.[text]
-                    ) AS actionId,
-
-                    ROW_NUMBER() OVER (
-                        ORDER BY D.openDate DESC, P.deadline, P.[text]
-                    ) AS planId,
+                    P.actionId,
 
                     ROW_NUMBER() OVER (
                         PARTITION BY P.deviationId
-                        ORDER BY P.deadline, P.[text]
+                        ORDER BY
+                            P.deadline,
+                            P.[text],
+                            P.actionId
                     ) AS actionNumber,
 
                     LEFT(P.deviationId, 9) AS deviationBase,
-
 
                     P.deviationId,
                     P.[text] AS actionText,
@@ -413,52 +447,47 @@ def _get_action_row_by_rownum(cnnx, action_id: int):
                     {action_status_select}
 
                     COALESCE(R.name, P.userId) AS responsibleName,
-                    COALESCE(C.name, CONVERT(varchar(255), D.userId)) AS creatorName,
+                    COALESCE(
+                        C.name,
+                        CONVERT(varchar(255), D.userId)
+                    ) AS creatorName,
 
-                    -- =====================================================
-                    -- REGRA DE ALTERAÇÃO DE PRAZO:
-                    -- Guarda o solicitante/dono do desvio.
-                    -- Somente ADM ou solicitante dono poderá alterar a data.
-                    -- =====================================================
                     D.userId AS creatorUserId,
 
-                    -- =====================================================
-                    -- HISTÓRICO DE PRAZO:
-                    -- Guarda as datas antigas da ação para exibir riscadas
-                    -- acima da data atual no detalhe da ação.
-                    -- =====================================================
                     P.deadlineHistory,
-
                     D.openDate AS creationDate,
                     P.deadline,
                     D.status AS devStatus,
                     D.workCenter,
                     D.families
 
+                FROM JDT_REQUEST_DEV_PLAN P
 
-                FROM JDT_REQUEST_DEV D
-
-                JOIN JDT_REQUEST_DEV_PLAN P
-                  ON P.deviationId = D.deviationId
+                JOIN JDT_REQUEST_DEV D
+                  ON D.deviationId = P.deviationId
 
                 OUTER APPLY (
                     SELECT TOP 1 U.name
                     FROM JDT_USER_DETAILS U
-                    WHERE 
+                    WHERE
                         U.companyEmail = P.userId
-                        OR CONVERT(varchar(255), U.id) = CONVERT(varchar(255), P.userId)
+                        OR CONVERT(varchar(255), U.id) =
+                           CONVERT(varchar(255), P.userId)
                 ) R
 
                 OUTER APPLY (
                     SELECT TOP 1 U.name
                     FROM JDT_USER_DETAILS U
-                    WHERE 
-                        U.companyEmail = CONVERT(varchar(255), D.userId)
-                        OR CONVERT(varchar(255), U.id) = CONVERT(varchar(255), D.userId)
+                    WHERE
+                        U.companyEmail =
+                            CONVERT(varchar(255), D.userId)
+                        OR CONVERT(varchar(255), U.id) =
+                           CONVERT(varchar(255), D.userId)
                 ) C
             )
+
             SELECT *
-            FROM A
+            FROM ActionData
             WHERE actionId = :aid
         """),
         cnnx,
@@ -469,6 +498,7 @@ def _get_action_row_by_rownum(cnnx, action_id: int):
         return None
 
     return df.iloc[0]
+# F NEW CODE
 
 def _get_actions_summary_for_deviation(cnnx, base_id: str):
     """
@@ -1465,11 +1495,17 @@ def dev_create():
 
             df_plan = pd.read_sql(
                 text("""
-                    SELECT *
+                    SELECT
+                        deviationId,
+                        [text],
+                        userId,
+                        deadline
                     FROM JDT_REQUEST_DEV_PLAN
                     WHERE deviationId = :did
+                    ORDER BY actionId
                 """),
-                cnnx, params={"did": request.args['editar']}
+                cnnx,
+                params={"did": request.args['editar']}
             ).astype(str).to_json()
 
         if df is not None and not df.empty:
@@ -1585,11 +1621,26 @@ def dev_renew():
                     {"did": onapproving['deviationId'][0]}
                 )
                 cnnx.execute(
-                    text("""INSERT INTO JDT_REQUEST_DEV_REFUSED_PLAN
-                            SELECT *, GETDATE()
-                            FROM JDT_REQUEST_DEV_PLAN
-                            WHERE deviationId = :did"""),
-                    {"did": onapproving['deviationId'][0]}
+                    text("""
+                        INSERT INTO JDT_REQUEST_DEV_REFUSED_PLAN (
+                            deviationId,
+                            [text],
+                            userId,
+                            deadline,
+                            to_refused_Date
+                        )
+                        SELECT
+                            deviationId,
+                            [text],
+                            userId,
+                            deadline,
+                            GETDATE()
+                        FROM JDT_REQUEST_DEV_PLAN
+                        WHERE deviationId = :did
+                    """),
+                    {
+                        "did": onapproving['deviationId'][0]
+                    }
                 )
                 cnnx.execute(
                     text("""DELETE FROM JDT_REQUEST_DEV_PLAN WHERE deviationId = :did"""),
@@ -2777,28 +2828,84 @@ def dev_detail_attachment_download():
 
 @request_processDeviation_bp.route('/desvios/acoes/anexo/download', methods=['GET'])
 def dev_action_attachment_download():
-    action_id = int(request.args["action_id"])
-    anexo = secure_filename(request.args["anexo"])
+    try:
+        action_id = int(request.args["action_id"])
+    except (TypeError, ValueError):
+        return 'INVALID ACTION ID', 400
+
+    anexo = secure_filename(request.args.get("anexo", ""))
+
+    if not anexo:
+        return 'FILE DOES NOT EXISTS', 404
 
     engine = get_engine('jdt')
+
     with engine.connect() as cnnx:
-        action = _get_action_row_by_rownum(cnnx, action_id)
+        action = _get_action_by_id(cnnx, action_id)
 
         if action is None:
-            return 'FILE DOES NOT EXISTS'
+            return 'FILE DOES NOT EXISTS', 404
+
+        is_admin = current_user.admin or p_admin.can()
+
+        current_user_id = str(
+            current_user.id or ""
+        ).strip()
+
+        current_email = str(
+            current_user.companyEmail or ""
+        ).strip().lower()
+
+        creator_user_id = str(
+            action['creatorUserId'] or ""
+        ).strip()
+
+        responsible_email = str(
+            action['responsibleEmail'] or ""
+        ).strip().lower()
+
+        is_creator = (
+            current_user_id != ""
+            and current_user_id == creator_user_id
+        )
+
+        is_responsible = (
+            current_email != ""
+            and current_email == responsible_email
+        )
+
+        can_view_action = (
+            is_admin
+            or is_creator
+            or is_responsible
+        )
+
+        if not can_view_action:
+            return 'ACCESS DENIED', 403
 
         deviation_id = str(action['deviationId'])
-        plan_id = int(action['planId'])
 
         file_path = os.path.join(
-            APP_PATH, "app", "static", "uploads", "deviation", "request",
-            deviation_id, "action_attachment", str(plan_id), anexo
+            APP_PATH,
+            "app",
+            "static",
+            "uploads",
+            "deviation",
+            "request",
+            deviation_id,
+            "action_attachment",
+            str(action_id),
+            anexo
         )
 
         if os.path.exists(file_path):
-            return send_file(file_path, as_attachment=True, download_name=anexo)
+            return send_file(
+                file_path,
+                as_attachment=True,
+                download_name=anexo
+            )
 
-        return 'FILE DOES NOT EXISTS'
+        return 'FILE DOES NOT EXISTS', 404
 
 
 
@@ -2837,68 +2944,101 @@ def dev_actions():
 
         if not is_admin:
             filtro_sql = """
-                AND (
-                    D.userId = :uid
-                    OR P.userId = :email
+                WHERE (
+                    CONVERT(varchar(255), creatorUserId) = :uid
+                    OR LOWER(LTRIM(RTRIM(responsibleEmail))) =
+                    LOWER(LTRIM(RTRIM(:email)))
                 )
             """
 
-            params["uid"] = current_user.id
-            params["email"] = current_user.companyEmail
+            params["uid"] = str(current_user.id)
+            params["email"] = str(current_user.companyEmail or "")
 
         status_col = _get_plan_status_col()
 
         if status_col:
-            action_status_select = f"ISNULL(P.[{status_col}], 0) AS actionPlanStatus,"
+            action_status_select = (
+                f"ISNULL(P.[{status_col}], 0) AS actionPlanStatus,"
+            )
         else:
-            action_status_select = "CAST(0 AS INT) AS actionPlanStatus,"
+            action_status_select = (
+                "CAST(0 AS INT) AS actionPlanStatus,"
+            )
 
         query = f"""
+            WITH ActionList AS (
+                SELECT
+                    P.actionId AS actionId,
+
+                    ROW_NUMBER() OVER (
+                        PARTITION BY P.deviationId
+                        ORDER BY
+                            P.deadline,
+                            P.[text],
+                            P.actionId
+                    ) AS actionNumber,
+
+                    LEFT(D.deviationId, 9) AS deviationId,
+                    D.deviationId AS fullDeviationId,
+
+                    P.[text] AS actionText,
+                    P.userId AS responsibleEmail,
+
+                    {action_status_select}
+
+                    COALESCE(U.name, P.userId) AS responsibleName,
+
+                    D.userId AS creatorUserId,
+                    D.workCenter AS workCenter,
+                    D.families AS families,
+
+                    CONVERT(varchar(10), P.deadline, 103) AS finalDate,
+
+                    P.deadline AS deadline,
+                    P.deadlineHistory AS deadlineHistory,
+                    D.status AS devStatus,
+                    D.openDate AS devOpenDate
+
+                FROM JDT_REQUEST_DEV D
+
+                JOIN JDT_REQUEST_DEV_PLAN P
+                ON P.deviationId = D.deviationId
+
+                LEFT JOIN JDT_USER_DETAILS U
+                ON U.companyEmail = P.userId
+                OR CONVERT(varchar(255), U.id) =
+                    CONVERT(varchar(255), P.userId)
+
+                WHERE 1 = 1
+                    {date_filter_sql}
+            )
+
             SELECT
-                ROW_NUMBER() OVER (
-                    ORDER BY D.openDate DESC, P.deadline, P.[text]
-                ) AS actionId,
+                actionId,
+                actionNumber,
+                deviationId,
+                fullDeviationId,
+                actionText,
+                responsibleEmail,
+                actionPlanStatus,
+                responsibleName,
+                creatorUserId,
+                workCenter,
+                families,
+                finalDate,
+                deadline,
+                deadlineHistory,
+                devStatus
 
-                ROW_NUMBER() OVER (
-                    PARTITION BY P.deviationId
-                    ORDER BY P.deadline, P.[text]
-                ) AS actionNumber,
+            FROM ActionList
 
-                LEFT(D.deviationId, 9) AS deviationId,
-                D.deviationId AS fullDeviationId,
-
-                P.[text] AS actionText,
-                P.userId AS responsibleEmail,
-
-                {action_status_select}
-
-                COALESCE(U.name, P.userId) AS responsibleName,
-
-                D.workCenter AS workCenter,
-                D.families AS families,
-
-                CONVERT(varchar(10), D.finalDate, 103) AS finalDate,
-
-                P.deadline AS deadline,
-                D.status AS devStatus
-
-            FROM JDT_REQUEST_DEV D
-
-            JOIN JDT_REQUEST_DEV_PLAN P
-              ON P.deviationId = D.deviationId
-
-            LEFT JOIN JDT_USER_DETAILS U
-              ON U.companyEmail = P.userId
-              OR CONVERT(varchar(255), U.id) = CONVERT(varchar(255), P.userId)
-
-            WHERE 1 = 1
-                {date_filter_sql}
-                {filtro_sql}
+            {filtro_sql}
 
             ORDER BY
-                D.openDate DESC,
-                P.deadline,
-                P.[text]
+                devOpenDate DESC,
+                deadline,
+                actionText,
+                actionId
         """
 
         df = engine_run_query(query, 'jdt', params=params)
@@ -2918,7 +3058,7 @@ def dev_actions():
                     'Responsável',
                     'Centro de Trabalho',
                     'Família',
-                    'Data Fim',
+                    'Prazo da Ação',
                     'Status'
                 ])
 
@@ -2939,7 +3079,7 @@ def dev_actions():
         df["status"] = df.apply(
             lambda r: _get_action_effective_status(
                 r.get("devStatus"),
-                int(r.get("actionPlanStatus", 0)) == 1,
+                r.get("actionPlanStatus", 0),
                 r.get("deadline")
             ),
             axis=1
@@ -2955,6 +3095,7 @@ def dev_actions():
             "workCenter",
             "families",
             "finalDate",
+            "deadlineHistory",
             "status"
         ]].copy()
 
@@ -2980,6 +3121,18 @@ def dev_actions():
 
             excel_df = df_result.copy()
 
+            excel_df = excel_df[[
+                "actionId",
+                "actionNumber",
+                "deviationId",
+                "actionText",
+                "responsibleName",
+                "workCenter",
+                "families",
+                "finalDate",
+                "status"
+            ]].copy()
+
             excel_df["workCenter"] = excel_df["workCenter"].apply(_format_list_for_excel)
             excel_df["families"] = excel_df["families"].apply(_format_list_for_excel)
             excel_df["status"] = excel_df["status"].map(status_map).fillna('Indefinido')
@@ -2992,7 +3145,7 @@ def dev_actions():
                 "responsibleName": "Responsável",
                 "workCenter": "Centro de Trabalho",
                 "families": "Família",
-                "finalDate": "Data Fim",
+                "finalDate": "Prazo da Ação",
                 "status": "Status"
             })
 
@@ -3041,7 +3194,7 @@ def dev_action_detail(action_id):
 
     with engine.connect() as cnnx:
 
-        action = _get_action_row_by_rownum(cnnx, action_id)
+        action = _get_action_by_id(cnnx, action_id)
 
         if action is None:
             return redirect('/denied')
@@ -3049,7 +3202,7 @@ def dev_action_detail(action_id):
         deviation_id = str(action['deviationId'])
         deviation_base = str(action['deviationBase'])
         action_number = int(action['actionNumber'])
-        plan_id = int(action['planId'])
+        action_id_db = int(action['actionId'])
 
         check = engine_run_query(
             "SELECT userId FROM JDT_REQUEST_DEV WHERE deviationId = :did",
@@ -3060,35 +3213,71 @@ def dev_action_detail(action_id):
         if len(check.get('userId', [])) == 0:
             return redirect('/denied')
 
-        owner_or_admin = (
-            str(action['responsibleEmail']) == str(current_user.companyEmail)
-            or current_user.admin
-            or p_admin.can()
-        )
-
-        allowed_active_approver = _is_active_approver_for_deviation(
-            cnnx,
-            current_user.id,
-            deviation_id
-        )
-
-        resp = owner_or_admin or allowed_active_approver
-        admin = '1' if (current_user.admin or p_admin.can()) else '0'
-
         # =====================================================
-        # REGRA DE ALTERAÇÃO DE PRAZO:
-        # Somente podem alterar a data da ação:
-        # - ADM/p_admin;
-        # - solicitante/dono do desvio.
+        # PERMISSÕES DA AÇÃO
         #
-        # Responsável pela ação NÃO pode alterar a data apenas
-        # por ser responsável.
-        # Aprovador comum NÃO pode alterar a data.
+        # Visualizar:
+        # - administrador;
+        # - criador do desvio;
+        # - responsável pela ação.
+        #
+        # Executar/finalizar/anexar:
+        # - administrador;
+        # - responsável pela ação.
+        #
+        # Alterar prazo:
+        # - administrador;
+        # - criador do desvio.
         # =====================================================
-        is_deviation_owner = str(action['creatorUserId']) == str(current_user.id)
         is_admin = current_user.admin or p_admin.can()
 
-        can_edit_deadline = is_admin or is_deviation_owner
+        current_user_id = str(
+            current_user.id or ""
+        ).strip()
+
+        current_email = str(
+            current_user.companyEmail or ""
+        ).strip().lower()
+
+        creator_user_id = str(
+            action['creatorUserId'] or ""
+        ).strip()
+
+        responsible_email = str(
+            action['responsibleEmail'] or ""
+        ).strip().lower()
+
+        is_creator = (
+            current_user_id != ""
+            and current_user_id == creator_user_id
+        )
+
+        is_responsible = (
+            current_email != ""
+            and current_email == responsible_email
+        )
+
+        can_view_action = (
+            is_admin
+            or is_creator
+            or is_responsible
+        )
+
+        if not can_view_action:
+            return redirect('/denied')
+
+        can_execute_action = (
+            is_admin
+            or is_responsible
+        )
+
+        can_edit_deadline = (
+            is_admin
+            or is_creator
+        )
+
+        resp = can_execute_action
+        admin = '1' if is_admin else '0'
 
         dev_status = int(action['devStatus']) if pd.notna(action['devStatus']) else 0
 
@@ -3126,21 +3315,29 @@ def dev_action_detail(action_id):
             if pd.notna(action['creatorName']) else ''
         )
 
-        action_plan_status = int(action['actionPlanStatus']) if pd.notna(action['actionPlanStatus']) else 0
-        action_finished = action_plan_status == 1
+        action_plan_status = (
+            int(action['actionPlanStatus'])
+            if pd.notna(action['actionPlanStatus'])
+            else 0
+        )
 
         action_status = _get_action_effective_status(
             dev_status,
-            action_finished,
+            action_plan_status,
             deadline
         )
 
         action_upload_dir = os.path.join(
-            APP_PATH, "app", "static", "uploads",
-            "deviation", "request", deviation_id,
-            "action_attachment", str(plan_id)
+            APP_PATH,
+            "app",
+            "static",
+            "uploads",
+            "deviation",
+            "request",
+            deviation_id,
+            "action_attachment",
+            str(action_id_db)
         )
-
         attachments = []
         if os.path.exists(action_upload_dir):
             attachments = [
@@ -3162,7 +3359,7 @@ def dev_action_detail(action_id):
                     file_path = os.path.join(
                         APP_PATH, "app", "static", "uploads",
                         "deviation", "request", deviation_id,
-                        "action_attachment", str(plan_id), anexo
+                        "action_attachment", str(action_id_db), anexo
                     )
 
                     if os.path.exists(file_path):
@@ -3278,8 +3475,6 @@ def dev_action_detail(action_id):
                         "message": "Data inválida. Informe uma data válida."
                     }), 400
 
-                old_deadline_param = None if pd.isna(deadline) else deadline
-
                 # =====================================================
                 # VALIDAÇÃO:
                 # Se a nova data for igual à atual, não grava histórico
@@ -3304,32 +3499,48 @@ def dev_action_detail(action_id):
                 # deadlineHistory no formato dd/MM/yyyy, acumulando com
                 # separador de linha dupla.
                 # =====================================================
-                cnnx.execute(
+                result = cnnx.execute(
                     text("""
                         UPDATE JDT_REQUEST_DEV_PLAN
-                           SET deadlineHistory =
-                               ISNULL(deadlineHistory, '') +
-                               CASE
-                                   WHEN deadline IS NULL THEN ''
-                                   ELSE CONVERT(varchar(10), deadline, 103) + CHAR(10) + CHAR(10)
-                               END,
-                               deadline = :new_deadline
-                         WHERE deviationId = :did
-                           AND [text] = :txt
-                           AND userId = :uid
-                           AND (
-                                (deadline = :old_deadline)
-                                OR (deadline IS NULL AND :old_deadline IS NULL)
-                           )
+                        SET
+                            deadlineHistory =
+                                ISNULL(deadlineHistory, '') +
+                                CASE
+                                    WHEN deadline IS NULL THEN ''
+                                    ELSE
+                                        CONVERT(varchar(10), deadline, 103) +
+                                        CHAR(10) + CHAR(10)
+                                END,
+
+                            status =
+                                CASE
+                                    WHEN status = 1 THEN 1
+
+                                    WHEN deadline < CAST(GETDATE() AS DATE)
+                                    THEN 5
+
+                                    WHEN status = 5
+                                    THEN 5
+
+                                    ELSE status
+                                END,
+
+                            deadline = :new_deadline
+
+                        WHERE actionId = :action_id
                     """),
                     {
                         "new_deadline": new_deadline,
-                        "did": deviation_id,
-                        "txt": action['actionText'],
-                        "uid": action['responsibleEmail'],
-                        "old_deadline": old_deadline_param
+                        "action_id": action_id_db
                     }
                 )
+
+                if result.rowcount != 1:
+                    cnnx.rollback()
+
+                    return jsonify({
+                        "message": "A ação não foi encontrada ou mais de uma linha seria alterada."
+                    }), 409
 
                 cnnx.commit()
 
@@ -3426,29 +3637,27 @@ def dev_action_detail(action_id):
                         "message": "Não existe coluna de status na tabela JDT_REQUEST_DEV_PLAN. Não é possível concluir a ação de forma persistente."
                     }), 400
 
-                # Como ainda estamos usando ROW_NUMBER como actionId,
-                # atualizamos pela combinação da revisão + texto + responsável + prazo.
-                cnnx.execute(
+                # Atualiza exclusivamente a ação identificada pelo actionId persistente.
+                result = cnnx.execute(
                     text(f"""
                         UPDATE JDT_REQUEST_DEV_PLAN
-                           SET [{status_col}] = 1
-                         WHERE deviationId = :did
-                           AND [text] = :txt
-                           AND userId = :uid
-                           AND (
-                                (deadline = :deadline)
-                                OR (deadline IS NULL AND :deadline IS NULL)
-                           )
+                        SET [{status_col}] = 1
+                        WHERE actionId = :action_id
                     """),
                     {
-                        "did": deviation_id,
-                        "txt": action['actionText'],
-                        "uid": action['responsibleEmail'],
-                        "deadline": None if pd.isna(deadline) else deadline
+                        "action_id": action_id_db
                     }
                 )
 
+                if result.rowcount != 1:
+                    cnnx.rollback()
+
+                    return jsonify({
+                        "message": "A ação não foi encontrada ou não pôde ser concluída."
+                    }), 409
+
                 cnnx.commit()
+
 
                 # =====================================================
                 # EMAIL - AÇÃO FINALIZADA
@@ -3508,3 +3717,4 @@ def dev_pop_pdf():
     return send_file(path)
 
 
+# V1

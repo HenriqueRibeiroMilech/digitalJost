@@ -329,69 +329,119 @@ def default(logger):
     # F NEW CODE
 
     def deviation_automatic_refusal(row):
-            cursor.execute(
+        cursor.execute(
+            """
+            UPDATE JDT_REQUEST_DEV
+            SET status = 2
+            WHERE deviationId = ?
+            AND status = 0
+            """,
+            (row['deviationId'],)
+        )
+
+        affected_rows = cursor.rowcount
+
+        if affected_rows != 1:
+            logger.warning(
+                "Recusa automática não alterou o desvio %s. Rows=%s",
+                row['deviationId'],
+                affected_rows
+            )
+            return
+
+        # Confirma a recusa do desvio e as recusas dos setores
+        # executadas anteriormente na mesma conexão.
+        cnnx.commit()
+
+        logger.info(
+            "Desvio %s recusado automaticamente após 48h úteis.",
+            row['deviationId']
+        )
+
+        try:
+            df_user = pd.read_sql(
                 """
-                UPDATE JDT_REQUEST_DEV
-                SET status = 2
-                WHERE deviationId = ?
+                SELECT companyEmail
+                FROM JDT_USER_DETAILS
+                WHERE id = ?
+                AND ISNULL(active, 1) = 1
                 """,
-                (row['deviationId'],)
+                cnnx,
+                params=[row['userId']]
             )
 
-            try:
-                df_user = pd.read_sql(
-                    """
-                    SELECT companyEmail
-                    FROM JDT_USER_DETAILS
-                    WHERE id = ?
-                    AND ISNULL(active,1) = 1
-                    """,
-                    cnnx, params=[row['userId']]
-                )
-                user_mail = df_user['companyEmail'].dropna().astype(str).tolist()
-            except Exception:
-                user_mail = []
-
-            if not user_mail:
-                return
-
-            template = env.get_template('request.processDeviation/dev_email_refused.html')
-            msg_html = template.render(
-                just='Reprovado automaticamente devido ao não retorno após 48h.',
-                id=base_dev(row['deviationId']),
-                approverName='Digital JOST'
+            user_mail = (
+                df_user['companyEmail']
+                .dropna()
+                .astype(str)
+                .tolist()
             )
 
-            send_email_with_attachment(
-                subject=f"Pedido de desvio - ID {row['deviationId']}",
-                body=msg_html,
-                to=user_mail,
-                sender_name='Transformação Digital JOST',
-                sender_email='noreply.digitaljost@randon.com.br'
+        except Exception as e:
+            logger.error(
+                "Falha ao localizar solicitante do desvio %s: %s",
+                row['deviationId'],
+                e
+            )
+            user_mail = []
+
+        if not user_mail:
+            return
+
+        template = env.get_template(
+            'request.processDeviation/dev_email_refused.html'
+        )
+
+        msg_html = template.render(
+            just=(
+                'Reprovado automaticamente devido ao '
+                'não retorno após 48h.'
+            ),
+            id=base_dev(row['deviationId']),
+            approverName='Digital JOST'
+        )
+
+        email_sent = send_email_with_attachment(
+            subject=f"Pedido de desvio - ID {row['deviationId']}",
+            body=msg_html,
+            to=user_mail,
+            sender_name='Transformação Digital JOST',
+            sender_email='noreply.digitaljost@randon.com.br'
+        )
+
+        if not email_sent:
+            logger.error(
+                "Desvio %s foi recusado, mas o e-mail não foi enviado.",
+                row['deviationId']
             )
 
     def approvers_automatic_refusal(row, digital_id):
-            """
-            Marca como reprovado o setor sem retorno após 48h.
-            """
-            approver_sector = str(row.get('approverSector') or row.get('sector') or row.get('sectorId') or '')
+        """
+        Marca como reprovado o setor sem retorno após 48h.
+        """
+        approver_sector = str(row.get('approverSector') or row.get('sector') or row.get('sectorId') or '')
 
-            cursor.execute(
-                """
-                UPDATE JDT_REQUEST_DEV_CONFIG_STATUS
-                SET approverId = ?,
-                    status = 2,
-                    textDenied = ?
-                WHERE deviationId = ?
-                AND sectorId = ?
-                """,
+        cursor.execute(
+            """
+            UPDATE JDT_REQUEST_DEV_CONFIG_STATUS
+            SET approverId = ?,
+                status = 2,
+                textDenied = ?
+            WHERE deviationId = ?
+            AND sectorId = ?
+            AND ISNULL(status, 0) = 0
+            """,
+            (
+                digital_id,
                 (
-                    digital_id,
-                    f"Reprovado automaticamente pela área {approver_sector} devido ao não retorno após 48h úteis.",
-                    row['deviationId'],
-                    int(row['sectorId'])
-                )
+                    f"Reprovado automaticamente pela área "
+                    f"{approver_sector} devido ao não retorno "
+                    f"após 48h úteis."
+                ),
+                row['deviationId'],
+                int(row['sectorId'])
             )
+        )
 
 
     # ------------- Envio de e-mails -----------------------
@@ -523,11 +573,18 @@ def default(logger):
         # lembrete aos aprovadores (somente após 4h para evitar spam básico)
         mask_over_4h = (now - df_manage['openDate']) >= pd.Timedelta(hours=4)
 
+        mask_under_48h = df_manage['openDate'].apply(lambda d: business_hours_between(d, now) < 48)
+
         # só para quem está sem 'approverName' e ainda pendente
         mask_no_approver_name = df_manage.get('approverName').isna() if 'approverName' in df_manage.columns else mask_status_zero
 
-        df_manage[mask_valid_date & mask_over_4h & mask_no_approver_name] \
-            .apply(send_email_scheduled, axis=1)
+        df_manage[
+            mask_valid_date
+            & mask_over_4h
+            & mask_under_48h
+            & mask_status_zero
+            & mask_no_approver_name
+        ].apply(send_email_scheduled, axis=1)
 
     # ------------- Atualizações por desvio (tabela principal) -------------
     try:
@@ -592,7 +649,11 @@ def default(logger):
                 f"initDate={r['initDate']}"
             )
 
-        status1.apply(deviation_automatic_start, axis=1)
+        if not status1.empty:
+            status1.apply(
+                deviation_automatic_start,
+                axis=1
+            )
         # F NEW CODE
 
         '''
@@ -616,18 +677,32 @@ def default(logger):
                 f"finalDate={r['finalDate']}"
             )
 
-        status5.apply(deviation_automatic_end, axis=1)
+        if not status5.empty:
+            status5.apply(
+                deviation_automatic_end,
+                axis=1
+            )
         # F NEW CODE
 
     # ------------- AÇÕES DO PLANO (lembretes e atraso) -------------
     try:
         df_actions = pd.read_sql(
             """
-            SELECT P.id, P.deviationId, P.text, P.userId AS responsibleEmail, P.deadline,
-                   ISNULL(P.status, 0) AS status,
-                   P.lastReminderAt, P.overdueNotifiedAt
+            SELECT
+                P.actionId,
+                P.deviationId,
+                P.[text],
+                P.userId AS responsibleEmail,
+                P.deadline,
+                ISNULL(P.status, 0) AS status,
+                P.lastReminderAt,
+                P.overdueNotifiedAt,
+                D.status AS deviationStatus
             FROM JDT_REQUEST_DEV_PLAN P
-            WHERE ISNULL(P.status, 0) = 0 -- apenas abertas
+            INNER JOIN JDT_REQUEST_DEV D
+                ON D.deviationId = P.deviationId
+            WHERE ISNULL(P.status, 0) <> 1
+            AND D.status IN (5, 6)
             """,
             cnnx
         )
@@ -645,16 +720,19 @@ def default(logger):
             tpl = env.get_template(f'request.processDeviation/{name}.html')
             return tpl.render(**kwargs)
 
-        def send_to(recipients: List[str], subject: str, html: str):
-            """
-            Dispara e-mail apenas para perfis ATIVOS (sem duplicados).
-            """
+        def send_to(recipients: List[str], subject: str, html: str) -> bool:
             if not recipients:
-                return
-            recipients = _filter_active_emails(cnnx, list(dict.fromkeys(recipients)))
+                return False
+
+            recipients = _filter_active_emails(
+                cnnx,
+                list(dict.fromkeys(recipients))
+            )
+
             if not recipients:
-                return
-            send_email_with_attachment(
+                return False
+
+            return send_email_with_attachment(
                 subject=subject,
                 body=html,
                 to=recipients,
@@ -698,9 +776,12 @@ def default(logger):
             )
 
             try:
-                # D-5 / D-1 / HOJE
-                # Envia apenas ao responsável da ação.
-                if (is_d5 or is_d1 or is_today) and not already_reminded_today:
+                if (
+                    (is_d5 or is_d1 or is_today)
+                    and not already_reminded_today
+                ):
+                    email_sent = False
+
                     if is_today:
                         html = render_template_html(
                             'dev_email_action_today',
@@ -708,9 +789,10 @@ def default(logger):
                             acao=r['text'],
                             prazo=prazo_fmt
                         )
-                        send_to(
+
+                        email_sent = send_to(
                             [r['responsibleEmail']],
-                            f"Prazo HOJE — Desvio {base}",
+                            f"Prazo HOJE - Desvio {base}",
                             html
                         )
 
@@ -723,25 +805,45 @@ def default(logger):
                         )
 
                         assunto = (
-                            f"Lembrete (D-5) — Desvio {base}"
+                            f"Lembrete (D-5) - Desvio {base}"
                             if is_d5
-                            else f"Lembrete (D-1) — Desvio {base}"
+                            else f"Lembrete (D-1) - Desvio {base}"
                         )
 
-                        send_to(
+                        email_sent = send_to(
                             [r['responsibleEmail']],
                             assunto,
                             html
                         )
 
-                    # Marca lembrete do dia
-                    cursor.execute(
-                        "UPDATE JDT_REQUEST_DEV_PLAN SET lastReminderAt = GETDATE() WHERE id = ?",
-                        (int(r['id']),)
-                    )
+                    if email_sent:
+                        cursor.execute(
+                            """
+                            UPDATE JDT_REQUEST_DEV_PLAN
+                            SET lastReminderAt = GETDATE()
+                            WHERE actionId = ?
+                            """,
+                            (int(r['actionId']),)
+                        )
+
+                        logger.info(
+                            "Lembrete enviado | actionId=%s",
+                            r['actionId']
+                        )
+
+                    else:
+                        logger.warning(
+                            "Lembrete não enviado | actionId=%s",
+                            r['actionId']
+                        )
 
             except Exception as e:
-                logger.error("Falha ao enviar lembrete de ação id=%s: %s", r['id'], e)
+                logger.error(
+                    "Falha ao enviar lembrete de ação actionId=%s: %s",
+                    r['actionId'],
+                    e,
+                    exc_info=True
+                )
 
             # Atraso:
             # Só considera atraso a partir do dia seguinte ao prazo.
@@ -754,16 +856,61 @@ def default(logger):
 
             if is_late and not already_overdue_notified:
                 try:
-                    recipients = resolve_manager_for_action(cnnx, r['responsibleEmail'], r['deviationId'])
+                    recipients = resolve_manager_for_action(
+                        cnnx,
+                        r['responsibleEmail'],
+                        r['deviationId']
+                    )
+
                     if recipients:
                         html = render_template_html(
                             'dev_email_action_overdue',
-                            id=base, acao=r['text'], prazo=prazo_fmt, responsavel=r['responsibleEmail']
+                            id=base,
+                            acao=r['text'],
+                            prazo=prazo_fmt,
+                            responsavel=r['responsibleEmail']
                         )
-                        send_to(recipients, f"AÇÃO EM ATRASO — Desvio {base}", html)
-                        cursor.execute("UPDATE JDT_REQUEST_DEV_PLAN SET overdueNotifiedAt = GETDATE() WHERE id = ?", (int(r['id']),))
+
+                        email_sent = send_to(
+                            recipients,
+                            f"ACAO EM ATRASO - Desvio {base}",
+                            html
+                        )
+
+                        if email_sent:
+                            cursor.execute(
+                                """
+                                UPDATE JDT_REQUEST_DEV_PLAN
+                                SET overdueNotifiedAt = GETDATE()
+                                WHERE actionId = ?
+                                """,
+                                (int(r['actionId']),)
+                            )
+
+                            logger.info(
+                                "Aviso de atraso enviado | actionId=%s",
+                                r['actionId']
+                            )
+
+                        else:
+                            logger.warning(
+                                "Aviso de atraso não enviado | actionId=%s",
+                                r['actionId']
+                            )
+
+                    else:
+                        logger.warning(
+                            "Ação atrasada sem destinatário ativo | actionId=%s",
+                            r['actionId']
+                        )
+
                 except Exception as e:
-                    logger.error("Falha ao notificar atraso de ação id=%s: %s", r['id'], e)
+                    logger.error(
+                        "Falha ao notificar atraso da ação actionId=%s: %s",
+                        r['actionId'],
+                        e,
+                        exc_info=True
+                    )
 
 
     '''
@@ -781,56 +928,24 @@ def default(logger):
             pass
     '''
 
-    # I NEW CODE
     # ------------- Persistência ---------------------------
     try:
-
-        # TESTE TEMPORÁRIO
-        cursor.execute("""
-            SELECT deviationId, status
-            FROM JDT_REQUEST_DEV
-            WHERE deviationId IN (
-                '2026-0044-0',
-                '2026-0032-0',
-                '2026-0055-0'
-            )
-            ORDER BY deviationId
-        """)
-
-        for row in cursor.fetchall():
-            logger.info(
-                f"ANTES COMMIT -> {row[0]} = {row[1]}"
-            )
-
         logger.info("Executando COMMIT")
-
         cnnx.commit()
-
         logger.info("COMMIT executado com sucesso")
-
-        # TESTE TEMPORÁRIO
-        cursor.execute("""
-            SELECT deviationId, status
-            FROM JDT_REQUEST_DEV
-            WHERE deviationId IN (
-                '2026-0044-0',
-                '2026-0032-0',
-                '2026-0055-0'
-            )
-            ORDER BY deviationId
-        """)
-
-        for row in cursor.fetchall():
-            logger.info(
-                f"APOS COMMIT -> {row[0]} = {row[1]}"
-            )
 
     except Exception as e:
         logger.error("Falha no commit do job h_24: %s", e)
 
     finally:
         try:
+            cursor.close()
+        except Exception:
+            pass
+
+        try:
             cnnx.close()
         except Exception:
             pass
-    # F NEW CODE        
+
+# V2
