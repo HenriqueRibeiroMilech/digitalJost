@@ -21,7 +21,7 @@
         <div class="message_container" style="margin-top:20vh;">
             <p class="title">Justifique a não aprovação!</p><br>
             <p class="desc">Descreva o motivo de não aprovar a solicitação de desvio de processo:</p><br>
-            <form action='/desvios/atualizar?recusar=1&id={{id}}' method="post">
+            <form action='/desvios/atualizar?recusar=1&id={{ id }}&sectorId={{ sectorId }}' method="post">
                 <textarea id="textarea" name="justificativa" required class="edit_filter"></textarea>
                 <br>
                 <button id="edit_ask" type="submit" style="font-size: calc(1vh + 2vw)">Recusar</button>
@@ -37,3 +37,5 @@
     </script>
     
 </html>
+
+<!-- V1 -->

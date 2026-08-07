@@ -2012,7 +2012,11 @@ def dev_status_update():
             else:
                 # RECUSAR
                 if request.method == "GET":
-                    return render_template('request.processDeviation/dev_sector_refuse.html', id=request.args['id'])
+                    return render_template(
+                        'request.processDeviation/dev_sector_refuse.html',
+                        id=request.args['id'],
+                        sectorId=userSector
+                    )
                 else:
                     cnnx.execute(
                         text("""UPDATE JDT_REQUEST_DEV_CONFIG_STATUS
@@ -3717,4 +3721,4 @@ def dev_pop_pdf():
     return send_file(path)
 
 
-# V1
+# V2
