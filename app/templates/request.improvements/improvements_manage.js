@@ -92,7 +92,7 @@ function configTableSmall(table) {
                     cell.innerHTML = 'Nula';
                     cell.style.color = '#228C22';
                     cell.style.fontWeight = 'bold';
-                } else if (df_filtered[Object.keys(df_filtered)[i]][k] == 'Alta' || df_filtered[Object.keys(df_filtered)[i]][k] == 'Imediata') {
+                } else if (df_filtered[Object.keys(df_filtered)[i]][k] == 'Alta') {
                     cell.innerHTML = df_filtered[Object.keys(df_filtered)[i]][k];
                     cell.style.color = 'rgb(198, 15, 15)';
                     cell.style.fontWeight = 'bold';
@@ -122,7 +122,7 @@ function configTableSmall(table) {
                     cell.innerHTML = `<p style="color:#EF7B04;width:9vw;text-align:center"><b><i>Pausado</i></b></p>`
                 }
 
-                cell.innerHTML += `<button onclick="acessDetail('`+ df_filtered['idSolicitacao'][k] +`')" style="width:9vw;background:#ef7b04;height:calc(2vh + 3vw);" class="table_btn">Analisar melhoria</button><br><br>`
+                cell.innerHTML += `<button onclick="acessDetail('`+ df_filtered['idSolicitacao'][k] +`')" style="width:9vw;background:#ef7b04;height:calc(2vh + 3vw);" class="table_btn">Analisar demanda</button><br><br>`
                 cell.style.minWidth = "11vw";
                 cell.style.maxWidth = "11vw";
             }

@@ -40,12 +40,33 @@
             <p class="edit_label">Título: </p>
             <input class="edit_filter" style="width:50vw" readonly type="text" id="title"><br>
 
+            <p class="edit_label">Tipo de demanda: </p>
+            <input class="edit_filter" style="width:50vw" readonly type="text" id="demandType"><br>
+
             <p class="edit_label">Nível de urgência: </p>
             <input class="edit_filter" style="width:50vw" readonly type="text" id="urgency"><br>
 
-            <p class="edit_label">Descrição: </p>
+            <p class="edit_label" id="infoLabel">Objetivo da Demanda: </p>
             <br>
-            <textarea class="edit_filter" style="width:50vw" id="desc" readonly></textarea><br>
+            <textarea class="edit_filter demand_description" style="width:50vw" id="info" readonly></textarea><br>
+
+            <div class="structured-demand-field">
+                <p class="edit_label">Premissas da Demanda: </p>
+                <br>
+                <textarea class="edit_filter demand_description" style="width:50vw" id="assumptions" readonly></textarea><br>
+            </div>
+
+            <div class="structured-demand-field">
+                <p class="edit_label">Problemas Atuais: </p>
+                <br>
+                <textarea class="edit_filter demand_description" style="width:50vw" id="actualProblems" readonly></textarea><br>
+            </div>
+
+            <div class="structured-demand-field">
+                <p class="edit_label">Ganhos com a Demanda Proposta: </p>
+                <br>
+                <textarea class="edit_filter demand_description" style="width:50vw" id="benefits" readonly></textarea><br>
+            </div>
 
             <p class="edit_label" style="margin-bottom:0;width:84vw">Documentos anexados:</p>
             <div id="lab-container" style="margin-top:0">

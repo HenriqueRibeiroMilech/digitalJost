@@ -8,14 +8,26 @@ fillData()
 
 function fillData() { // funcao que preenche os dados da SSL
 
-    document.getElementById('id_detail').innerHTML += 'DADOS DA MELHORIA Nº ' + requestData['requestId'][0]
+    document.getElementById('id_detail').innerHTML += 'DADOS DA DEMANDA Nº ' + requestData['requestId'][0]
 
     document.getElementById('requester').value += requestData['requesterName'][0]
     document.getElementById('area').value += '{{area}}'
     document.getElementById('openDate').value += requestData['openDate'][0]
     document.getElementById('title').value += requestData['title'][0]
+    document.getElementById('demandType').value = getDemandTypeLabel(requestData['demandType'][0])
     document.getElementById('urgency').value += requestData['urgency'][0]
-    document.getElementById('desc').innerHTML += requestData['info'][0]
+    document.getElementById('info').value = requestData['info'][0]
+
+    if (requestData['demandType'][0] == 'erro') {
+        document.getElementById('infoLabel').textContent = 'Descrição completa do problema: '
+        document.querySelectorAll('.structured-demand-field').forEach(function(field) {
+            field.style.display = 'none'
+        })
+    } else {
+        document.getElementById('assumptions').value = requestData['assumptions'][0] || 'Não informado no registro original'
+        document.getElementById('actualProblems').value = requestData['actualProblems'][0] || 'Não informado no registro original'
+        document.getElementById('benefits').value = requestData['benefits'][0] || 'Não informado no registro original'
+    }
 
     fillImageTable()
 
@@ -220,4 +232,14 @@ function changeStatus(info, id) {
     } else if (info == 'Concluir') {
         window.location = '/solicitar/manage/def?area={{area}}&tipo={{requestType}}&cmd=finish&id=' + id;
     }
+}
+
+function getDemandTypeLabel(demandType) {
+    if (demandType == 'projeto') {
+        return 'Projeto'
+    } else if (demandType == 'erro') {
+        return 'Erro/Defeito em aplicação'
+    }
+
+    return 'Melhoria'
 }

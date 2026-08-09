@@ -7,7 +7,7 @@ function init() {
             document.querySelector('.page_body').innerHTML += `
                 <div class="message_container" style="margin-top:17vh;">
                     <p class="title">Justifique a não aprovação!</p><br>
-                    <p class="desc">Descreva o motivo de não aprovar a solicitação de melhoria do solicitante</p><br>
+                    <p class="desc">Descreva o motivo de não aprovar a demanda do solicitante</p><br>
                     <form action="/solicitar/manage/def?area={{area}}&tipo={{requestType}}&cmd=decline&id=` + reqId + `" method="post">
                         <textarea id="textarea" name="justificativa" required class="edit_filter"></textarea>
                         <br><br>
@@ -19,7 +19,7 @@ function init() {
             document.querySelector('.page_body').innerHTML += `
                 <div class="message_container" style="margin-top:20vh;">
                     <p class="title">Defina um prazo para a entrega!</p><br>
-                    <p class="desc">Informe a data de finalização da melhoria ao solicitante</p><br>
+                    <p class="desc">Informe a data de finalização da demanda ao solicitante</p><br>
                     <form action="/solicitar/manage/def?area={{area}}&tipo={{requestType}}&cmd=start&id=` + reqId + `" method="post">
                         <input style="padding:calc(0.8vh + 0.8vw);font-size:calc(1vh + 1vw);height:calc(3vh + 4vw);width:50vw;" type="date" name="prazoEntrega" required class="edit_filter">
                         <br><br>
@@ -31,7 +31,7 @@ function init() {
             document.querySelector('.page_body').innerHTML += `
                 <div class="message_container" style="margin-top:0;">
                     <p class="title">Justifique a pausa no desenvolvimento!</p><br>
-                    <p class="desc">Informe o solicitante das razões da interrupção do projeto</p>
+                    <p class="desc">Informe o solicitante das razões da interrupção da demanda</p>
                     <form action="/solicitar/manage/def?area={{area}}&tipo={{requestType}}&cmd=pause&id=` + reqId + `" method="post">
                         <textarea id="textarea" name="justificativa" required class="edit_filter" placeholder="Escreva aqui..."></textarea>
                         <br><br>
@@ -47,7 +47,7 @@ function init() {
             document.querySelector('.page_body').innerHTML += `
                 <div class="message_container" style="margin-top:20vh;">
                     <p class="title">Defina um novo prazo para a entrega!</p><br>
-                    <p class="desc">Informe a data de finalização da melhoria ao solicitante</p><br>
+                    <p class="desc">Informe a data de finalização da demanda ao solicitante</p><br>
                     <form action="/solicitar/manage/def?area={{area}}&tipo={{requestType}}&cmd=` + cmd + `&id=` + reqId + `" method="post">
                         <input style="padding:calc(0.8vh + 0.8vw);font-size:calc(1vh + 1vw);height:calc(3vh + 4vw);width:50vw;" type="date" name="prazoEntrega" required class="edit_filter">
                         <br><br>

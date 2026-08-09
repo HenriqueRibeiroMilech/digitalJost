@@ -20,18 +20,44 @@
     <body class="page_body">
         <a id="select_back" href="/solicitar" style="position: absolute;">&times;</a>
         <div class="topnav">
-            <p class="title"><i class="fas fa-paper-plane"></i>  Solicitar nova Melhoria</p><br>
+            <p class="title"><i class="fas fa-paper-plane"></i> Solicitar nova Demanda</p><br>
         </div>
         
         <div class="edit_body" id="body">
             <form method="post" action="/solicitar/melhorias?area={{area}}" enctype="multipart/form-data">
 
-                <p class="edit_label">Título da Melhoria: </p>
-                <input class="edit_filter" required type="text" name="titulo" id="solicitar_text_input" placeholder="Digite o título da melhoria.." autocomplete="off" onkeyup="this.value=this.value.replace(/'/g, '')"><br>
+                <p class="edit_label">Tipo de demanda: </p>
+                <select required autocomplete="off" class="edit_filter" name="demandType" id="demand_type">
+                    <option value="" disabled selected>Selecione o tipo...</option>
+                    <option value="melhoria">Melhoria</option>
+                    <option value="projeto">Projeto</option>
+                    <option value="erro">Erro/Defeito em aplicação</option>
+                </select><br>
+
+                <p class="edit_label">Título da Demanda: </p>
+                <input class="edit_filter" required type="text" name="titulo" id="solicitar_text_input" placeholder="Digite o título da demanda..." autocomplete="off" onkeyup="this.value=this.value.replace(/'/g, '')"><br>
                 
-                <p class="edit_label">Descreva a Melhoria: </p>
+                <p class="edit_label" id="objective_label">Objetivo da Demanda: </p>
                 <br>
-                <textarea required name="objetivo" class="edit_filter" id="textarea" placeholder="Explique o objetivo da melhoria..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                <textarea required name="objetivo" class="edit_filter demand_description" id="objective" placeholder="Explique o objetivo da demanda..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+
+                <div class="structured-demand-field">
+                    <p class="edit_label">Premissas da Demanda: </p>
+                    <br>
+                    <textarea required name="premissas" class="edit_filter demand_description" id="assumptions" placeholder="Explique as premissas da demanda..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                </div>
+
+                <div class="structured-demand-field">
+                    <p class="edit_label">Problemas Atuais: </p>
+                    <br>
+                    <textarea required name="problemas" class="edit_filter demand_description" id="actual_problems" placeholder="Descreva os problemas atuais..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                </div>
+
+                <div class="structured-demand-field">
+                    <p class="edit_label">Ganhos com a Demanda Proposta: </p>
+                    <br>
+                    <textarea required name="beneficios" class="edit_filter demand_description" id="benefits" placeholder="Descreva os ganhos esperados com a demanda..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                </div>
 
                 <p class="edit_label">Nível de urgência da solicitação: </p>
                 <select required autocomplete="off" class="edit_filter" name="options">
@@ -42,10 +68,10 @@
                 </select><br>
 
                 <p style="width: 40vw;" class="edit_label">Documentos:</p><br>
-                <a class="sol_desc">Adicione também, um fluxo da melhoria, para facilitar o processo de <br> análise, desenvolvimento e definição de prazo.</a><br>
+                <a class="sol_desc">Adicione também um fluxo da demanda para facilitar o processo de <br> análise, desenvolvimento e definição de prazo.</a><br>
                 <a class="sol_desc">Siga o exemplo a seguir, como base:</a><br>
                 <img src="/static/images/FLUXO.PNG" alt="Fluxo" style="width: 100vh; height: auto;"> <br> <br>
-                <a class="sol_desc"><b>OBS:</b> caso o fluxo da melhoria esteja incompleto, a solicitação pode <br> ter seu prazo aumentado ou até ser recusada. </a><br>
+                <a class="sol_desc"><b>OBS:</b> caso o fluxo da demanda esteja incompleto, a solicitação pode <br> ter seu prazo aumentado ou até ser recusada. </a><br>
 
                 <label id="placehold_1" class="add_img" for="input_1">Adicione documentos...</label>
                 <input multiple class="img_input" required id="input_1" type="file" name="docs" accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*">
@@ -54,13 +80,35 @@
                 <div class="lista" id="lista_1"></div>
                 <br>
 
-                <input type="submit" value="Solicitar Melhoria" class="edit_label" id="edit_ask">
+                <input type="submit" value="Solicitar Demanda" class="edit_label" id="edit_ask">
 
             </form>
         </div>
         
     </body>
     <script>
+    function updateDemandFields() {
+        var demandType = document.getElementById('demand_type').value;
+        var isError = demandType === 'erro';
+        var structuredFields = document.querySelectorAll('.structured-demand-field');
+        var structuredInputs = document.querySelectorAll('.structured-demand-field textarea');
+        var objectiveLabel = document.getElementById('objective_label');
+        var objective = document.getElementById('objective');
+
+        objectiveLabel.textContent = isError ? 'Descrição completa do problema: ' : 'Objetivo da Demanda: ';
+        objective.placeholder = isError
+            ? 'Descreva detalhadamente o erro ou defeito encontrado...'
+            : 'Explique o objetivo da demanda...';
+
+        structuredFields.forEach(function(field) {
+            field.style.display = isError ? 'none' : 'block';
+        });
+
+        structuredInputs.forEach(function(input) {
+            input.required = !isError;
+        });
+    }
+
     function createInputs() {
         var inputs = document.querySelectorAll(".img_input");
         inputs.forEach(function(item) {
@@ -89,6 +137,8 @@
         });
     }
 
+    document.getElementById('demand_type').addEventListener('change', updateDemandFields);
+    updateDemandFields();
     createInputs();
 
     </script>

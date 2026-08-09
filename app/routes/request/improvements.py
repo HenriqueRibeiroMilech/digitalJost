@@ -43,6 +43,8 @@ _AREA_REQUIRED_ROUTES = [
 ]
 
 _AREAS = {'Transformação Digital': [1, 'JostTransformacaoDigital@empresasrandon.onmicrosoft.com']}
+_DEMAND_TYPES = {'melhoria', 'projeto', 'erro'}
+_URGENCY_OPTIONS = ['Alta', 'Média', 'Baixa']
 
 request_improvements_bp = Blueprint('request_improvements', __name__)
 
@@ -74,13 +76,36 @@ def improvements_get():
 def improvements_small_new_get():
     return render_template(
         'request.improvements/improvements_small_new.html',
-        options=['Imediata', 'Alta', 'Média', 'Baixa'],
+        options=_URGENCY_OPTIONS,
         area=request.args['area']
     )
 
 
 @request_improvements_bp.route('/solicitar/melhorias', methods=['POST'])
 def improvements_small_new_post():
+
+    demand_type = request.form.get('demandType', '').strip()
+    title = request.form.get('titulo', '').strip()
+    info = request.form.get('objetivo', '').strip()
+    urgency = request.form.get('options', '').strip()
+
+    if demand_type not in _DEMAND_TYPES:
+        return abort(400, description='Tipo de demanda inválido ou não informado')
+
+    if not title or not info or urgency not in _URGENCY_OPTIONS:
+        return abort(400, description='Campos obrigatórios da demanda inválidos ou não informados')
+
+    if demand_type == 'erro':
+        assumptions = None
+        actual_problems = None
+        benefits = None
+    else:
+        assumptions = request.form.get('premissas', '').strip()
+        actual_problems = request.form.get('problemas', '').strip()
+        benefits = request.form.get('beneficios', '').strip()
+
+        if not assumptions or not actual_problems or not benefits:
+            return abort(400, description='Os quatro campos descritivos são obrigatórios para melhorias e projetos')
 
     engine = get_engine('jdt')
     with engine.connect() as cnnx:
@@ -89,37 +114,56 @@ def improvements_small_new_post():
         req_id = pd.read_sql(req_query, cnnx)['id']
         req_id = req_id[0] if req_id[0] is not None else 1
 
-        if len(request.files.getlist('docs')) > 0:
+        files = [file for file in request.files.getlist('docs') if file.filename]
+
+        if files:
 
             if not os.path.exists('app/static/uploads/improvements/' + str(req_id) + '/'):
                 os.mkdir('app/static/uploads/improvements/' + str(req_id) + '/')
 
             filesListString = ''
-            for file in request.files.getlist('docs'):
+            for file in files:
                 file.save(os.path.join(
                     rf'{os.getcwd()}\app\static\uploads\improvements\{str(req_id)}',
                     file.filename
                 ))
                 filesListString += f'{file.filename}||'
 
-            filesListString = "'" + filesListString + "'"
-
         else:
-            filesListString = 'NULL'
+            filesListString = None
 
-        query = f"""INSERT INTO JDT_REQUEST_IMPROVEMENTS_SMALL VALUES ( 
-                        '{req_id}', '{current_user.id}', '{_AREAS[request.args['area']][0]}', 
-                        '{request.form['titulo']}', '{request.form['objetivo']}', '{request.form['options']}', 
-                        GETDATE(), {filesListString}, 0, NULL, NULL, NULL, NULL, 0, NULL)"""
+        query = text("""INSERT INTO JDT_REQUEST_IMPROVEMENTS_SMALL (
+                            requestId, requesterId, areaId, title, info, urgency,
+                            openDate, images, status, respId, startDate, deliveryDate,
+                            finalDate, reprogs, deniedText, assumptions, actualProblems,
+                            benefits, demandType
+                        ) VALUES (
+                            :request_id, :requester_id, :area_id, :title, :info, :urgency,
+                            GETDATE(), :images, 0, NULL, NULL, NULL,
+                            NULL, 0, NULL, :assumptions, :actual_problems,
+                            :benefits, :demand_type
+                        )""")
 
-        cnnx.execute(text(query))
+        cnnx.execute(query, {
+            'request_id': int(req_id),
+            'requester_id': current_user.id,
+            'area_id': _AREAS[request.args['area']][0],
+            'title': title,
+            'info': info,
+            'urgency': urgency,
+            'images': filesListString,
+            'assumptions': assumptions,
+            'actual_problems': actual_problems,
+            'benefits': benefits,
+            'demand_type': demand_type
+        })
         cnnx.commit()
 
     # ✅ MODIFICAÇÃO: NÃO enviar mais para o e-mail da área (onmicrosoft)
     # Antes: recipients=[_AREAS[request.args['area']][1]]
     # Agora: não envia (recipients vazio) -> simplesmente não chama mail.send
     msg = Message(
-        'Uma melhoria foi solicitada!',
+        'Uma demanda foi solicitada!',
         sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
         recipients=[]  # <- sem destinatário, não envia
     )
@@ -127,8 +171,9 @@ def improvements_small_new_post():
     msg.html = render_template(
         'request.improvements/improvements_email_new_small.html',
         id_sol=current_user.id,
-        titulo=request.form['titulo'],
-        desc=request.form['objetivo'],
+        titulo=title,
+        desc=info,
+        demand_type=demand_type,
         area=_AREAS[request.args['area']][0]
     )
 
@@ -208,7 +253,7 @@ def improvements_view_get():
 
     if request.args['tipo'] == 'melhorias':
         database = 'JDT_REQUEST_IMPROVEMENTS_SMALL'
-        requestTypeDesc = 'Minhas melhorias'
+        requestTypeDesc = 'Minhas demandas'
         bossCondition = ''
 
     else:
@@ -217,11 +262,19 @@ def improvements_view_get():
         requestTypeDesc = 'Meus projetos'
         bossCondition = f" OR requesterBossId = '{current_user.id}'"
 
+    demand_type_column = "" if database == 'JDT_REQUEST_IMPROVEMENTS_BIG' else """
+                    CASE COALESCE(NULLIF(demandType, ''), 'melhoria')
+                        WHEN 'projeto' THEN 'Projeto'
+                        WHEN 'erro' THEN 'Erro/Defeito em aplicação'
+                        ELSE 'Melhoria'
+                    END AS TIPO,"""
+
     query = f"""SELECT 
                     title AS TÍTULO, 
-                    info AS DESCRIÇÃO, 
+                    info AS 'OBJETIVO / DESCRIÇÃO DO PROBLEMA',
                     FORMAT(openDate, 'dd/MM/yyyy HH:mm:ss') AS 'DATA SOLICITAÇÃO', 
                     status AS STATUS,
+                    {demand_type_column}
                     requestId  
             FROM {database} 
             WHERE 
@@ -252,11 +305,16 @@ def improvements_manage_get():
         query = f"""SELECT 
                         T2.name AS SOLICITANTE, 
                         T1.title AS TÍTULO, 
-                        T1.info AS DESCRIÇÃO, 
-                        T1.urgency AS URGÊNCIA, 
+                        T1.info AS 'OBJETIVO / DESCRIÇÃO DO PROBLEMA',
+                        CASE WHEN T1.urgency = 'Imediata' THEN 'Alta' ELSE T1.urgency END AS URGÊNCIA,
                         FORMAT(T1.deliveryDate, 'dd/MM/yyyy') AS PRAZO, 
                         FORMAT(T1.openDate, 'dd/MM/yyyy HH:mm:ss') AS 'DATA SOLICITAÇÃO', 
                         T1.status AS STATUS, 
+                        CASE COALESCE(NULLIF(T1.demandType, ''), 'melhoria')
+                            WHEN 'projeto' THEN 'Projeto'
+                            WHEN 'erro' THEN 'Erro/Defeito em aplicação'
+                            ELSE 'Melhoria'
+                        END AS TIPO,
                         T1.requestId as idSolicitacao
                     FROM 
                         JDT_REQUEST_IMPROVEMENTS_SMALL AS T1 
@@ -349,7 +407,7 @@ def improvements_manage_form_post():
 
             if current_user.id == requestData['respId'][0] or (not requestData['respId'][0] and area):
 
-                # CONDIÇÃO PARA DAR INICIO A UMA MELHORIA, DEFINE UM RESPONSAVEL PELA MELHORIA
+                # CONDIÇÃO PARA DAR INÍCIO A UMA DEMANDA, DEFINE UM RESPONSÁVEL
                 if request.args['cmd'] == 'start' and requestData['status'][0] == 0:
                     query = f"""UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL SET 
                                     startDate = GETDATE(), 
@@ -363,7 +421,7 @@ def improvements_manage_form_post():
                     date = format_date(datetime.now().date())
                     deliveryDate = format_date(request.form['prazoEntrega'])
 
-                    msg = Message(f'Sua melhoria - "{requestTitle}" - foi iniciada!',
+                    msg = Message(f'Sua demanda - "{requestTitle}" - foi iniciada!',
                                     sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
                                     recipients=[requesterEmail], cc=[respEmail])
 
@@ -379,7 +437,7 @@ def improvements_manage_form_post():
                     return render_template('request.improvements/improvements_notify.html',
                                             area=request.args['area'], requestType=request.args['tipo'])
 
-                # CONDIÇÃO PARA PAUSAR O ANDAMENTO DE UMA MELHORIA
+                # CONDIÇÃO PARA PAUSAR O ANDAMENTO DE UMA DEMANDA
                 elif request.args['cmd'] == 'pause' and requestData['status'][0] == 1:
                     query = f"""UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL SET 
                                     deliveryDate = NULL, 
@@ -416,7 +474,7 @@ def improvements_manage_form_post():
 
                     return render_template('request.improvements/improvements_notify.html')
 
-                # CONDIÇÃO PARA DESPAUSAR UMA MELHORIA
+                # CONDIÇÃO PARA RETOMAR UMA DEMANDA
                 elif request.args['cmd'] == 'unpause' and requestData['status'][0] == 4:
                     query = f"""UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL SET 
                                     deliveryDate = '{request.form['prazoEntrega']}', 
@@ -443,7 +501,7 @@ def improvements_manage_form_post():
                                     requestId = {request.args['id']} AND finalDate IS NULL"""
                     cnnx.execute(text(query))
 
-                    msg = Message(f'O desenvolvimento da sua melhoria - "{requestTitle}" - foi retomado!',
+                    msg = Message(f'O desenvolvimento da sua demanda - "{requestTitle}" - foi retomado!',
                                     sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
                                     recipients=[requesterEmail], cc=[respEmail])
 
@@ -464,7 +522,7 @@ def improvements_manage_form_post():
 
                     return render_template('request.improvements/improvements_notify.html')
 
-                # CONDIÇÃO REPROGRAMAR O PRAZO DE UMA MELHORIA
+                # CONDIÇÃO PARA REPROGRAMAR O PRAZO DE UMA DEMANDA
                 elif request.args['cmd'] == 'reprogram' and requestData['status'][0] == 1:
                     query = f"""UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL SET 
                                     deliveryDate = '{request.form['prazoEntrega']}', 
@@ -474,7 +532,7 @@ def improvements_manage_form_post():
                                     requestId = {request.args['id']}"""
                     cnnx.execute(text(query))
 
-                    msg = Message(f'O prazo da sua melhoria - "{requestTitle}" - foi redefinido!',
+                    msg = Message(f'O prazo da sua demanda - "{requestTitle}" - foi redefinido!',
                                     sender=(
                                     'Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
                                     recipients=[requesterEmail], cc=[respEmail])
@@ -499,7 +557,7 @@ def improvements_manage_form_post():
 
                     return render_template('request.improvements/improvements_notify.html')
 
-                # CONDIÇÃO PARA FINALIZAR UMA MELHORIA
+                # CONDIÇÃO PARA FINALIZAR UMA DEMANDA
                 elif request.args['cmd'] == 'finish' and requestData['status'][0] == 1:
                     query = f"""UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL SET 
                                     finalDate = GETDATE(), 
@@ -508,7 +566,7 @@ def improvements_manage_form_post():
                                     requestId = {request.args['id']}"""
                     cnnx.execute(text(query))
 
-                    msg = Message(f'A sua melhoria - "{requestTitle}" - foi finalizada!',
+                    msg = Message(f'A sua demanda - "{requestTitle}" - foi finalizada!',
                                     sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
                                     recipients=[requesterEmail], cc=[respEmail])
 
@@ -533,7 +591,7 @@ def improvements_manage_form_post():
 
                     return render_template('request.improvements/improvements_notify.html')
 
-                # CONDIÇÃO PARA RECUSAR UMA MELHORIA
+                # CONDIÇÃO PARA RECUSAR UMA DEMANDA
                 elif request.args['cmd'] == 'decline' and requestData['status'][0] == 0:
                     query = f"""UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL SET 
                                     finalDate = GETDATE(), 
@@ -718,7 +776,11 @@ def improvements_detail_get():
                         T2.name AS requesterName,
                         T1.title,
                         T1.info,
-                        T1.urgency,
+                        COALESCE(T1.assumptions, '') AS assumptions,
+                        COALESCE(T1.actualProblems, '') AS actualProblems,
+                        COALESCE(T1.benefits, '') AS benefits,
+                        COALESCE(NULLIF(T1.demandType, ''), 'melhoria') AS demandType,
+                        CASE WHEN T1.urgency = 'Imediata' THEN 'Alta' ELSE T1.urgency END AS urgency,
                         FORMAT(T1.openDate, 'dd/MM/yyyy HH:mm:ss') AS openDate, 
                         CASE WHEN T1.images IS NULL THEN '' ELSE T1.images END AS images,
                         T1.status,
@@ -752,7 +814,7 @@ def improvements_detail_get():
             return redirect('/denied')
 
         if len(dfPause) == 0:
-            dfPause = [['A MELHORIA NÃO SOFREU PAUSAS']]
+            dfPause = [['A DEMANDA NÃO SOFREU PAUSAS']]
         else:
             dfPause = [['INICIO DA PAUSA', 'PREVISÃO DE TERMINO DA PAUSA', 'TERMINO REAL DA PAUSA', 'JUSTIFICATIVA']] \
                         + dfPause.values.tolist()
@@ -872,7 +934,7 @@ def improvements_dash():
 
     filters = [
         f"AND [status] IN {format_tuple(received_data['status'])}" if received_data.get('status') else "",
-        f"AND urgency IN {format_tuple(received_data['urgency'])}" if received_data.get('urgency') else "",
+        f"AND CASE WHEN urgency = 'Imediata' THEN 'Alta' ELSE urgency END IN {format_tuple(received_data['urgency'])}" if received_data.get('urgency') else "",
         f"AND (respId IN {format_tuple(received_data['responsible'])})" if received_data.get('responsible') else "",
         f"AND requesterId IN {format_tuple(received_data['requester'])}" if received_data.get('requester') else "",
     ]
@@ -893,7 +955,7 @@ def improvements_dash():
             END AS [status], 
             finalDate, 
             deliveryDate,
-            urgency,
+            CASE WHEN urgency = 'Imediata' THEN 'Alta' ELSE urgency END AS urgency,
             openDate 
         FROM JDT_REQUEST_IMPROVEMENTS_SMALL 
         WHERE

@@ -237,6 +237,12 @@ tr:hover .table_input {
   margin-left: calc(0.6vh + 1vw)
 }
 
+.demand_description {
+  width: 60vw;
+  height: calc(10vh + 10vw);
+  margin-left: calc(0.6vh + 1vw);
+}
+
 #edit_ask, #edit_ask1, #edit_ask2 {
   background: rgb(22,58,138,1);
   border: 0;
