@@ -214,3 +214,5 @@ function filterData(status) {
 function acessDetail(id) {
     window.location = "/solicitar/detail?area={{area}}&tipo={{requestType}}&id=" + id
 }
+
+// V1

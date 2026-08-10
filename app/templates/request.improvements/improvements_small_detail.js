@@ -243,3 +243,5 @@ function getDemandTypeLabel(demandType) {
 
     return 'Melhoria'
 }
+
+// V1
