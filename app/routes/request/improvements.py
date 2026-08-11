@@ -29,10 +29,6 @@ from app.utils.data_utils import format_date
 from app.utils.db_utils import engine_run_query, get_engine
 from app.utils.permissions import get_permission, user_has_role
 from app.config import mail
-from app.routes.demandManagement.service import (
-    ensure_demand_management_record,
-    sync_demand_management_record,
-)
 
 
 _AREA_REQUIRED_ROUTES = [
@@ -421,13 +417,6 @@ def improvements_manage_form_post():
                                 WHERE 
                                     requestId = {request.args['id']}"""
                     cnnx.execute(text(query))
-                    ensure_demand_management_record(
-                        cnnx,
-                        request_id=request.args['id'],
-                        responsible_user_id=current_user.id,
-                        deadline=request.form['prazoEntrega'],
-                        request_status=1,
-                    )
 
                     date = format_date(datetime.now().date())
                     deliveryDate = format_date(request.form['prazoEntrega'])
@@ -456,11 +445,6 @@ def improvements_manage_form_post():
                                 WHERE 
                                     requestId = {request.args['id']}"""
                     cnnx.execute(text(query))
-                    sync_demand_management_record(
-                        cnnx,
-                        request_id=request.args['id'],
-                        status='paused',
-                    )
                     query = f"""INSERT JDT_REQUEST_PAUSES VALUES( 
                                     GETDATE(), '{request.form['dataUnpause']}', 
                                     NULL, '{request.args['id']}', '{request.form['justificativa']}')"""
@@ -499,13 +483,6 @@ def improvements_manage_form_post():
                                 WHERE 
                                     requestId = {request.args['id']}"""
                     cnnx.execute(text(query))
-                    sync_demand_management_record(
-                        cnnx,
-                        request_id=request.args['id'],
-                        status='in_progress',
-                        deadline=request.form['prazoEntrega'],
-                        update_deadline=True,
-                    )
 
                     query = f"""SELECT  
                                     FORMAT(initDate, 'dd/MM/yyyy HH:mm:ss') AS initDate,
@@ -554,13 +531,6 @@ def improvements_manage_form_post():
                                 WHERE 
                                     requestId = {request.args['id']}"""
                     cnnx.execute(text(query))
-                    sync_demand_management_record(
-                        cnnx,
-                        request_id=request.args['id'],
-                        status='in_progress',
-                        deadline=request.form['prazoEntrega'],
-                        update_deadline=True,
-                    )
 
                     msg = Message(f'O prazo da sua demanda - "{requestTitle}" - foi redefinido!',
                                     sender=(
@@ -595,11 +565,6 @@ def improvements_manage_form_post():
                                 WHERE 
                                     requestId = {request.args['id']}"""
                     cnnx.execute(text(query))
-                    sync_demand_management_record(
-                        cnnx,
-                        request_id=request.args['id'],
-                        status='completed',
-                    )
 
                     msg = Message(f'A sua demanda - "{requestTitle}" - foi finalizada!',
                                     sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
