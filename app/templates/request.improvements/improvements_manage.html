@@ -20,7 +20,11 @@
         <a id="select_back" href="/solicitar" style="position: absolute;">&times;</a>
         <div class="topnav" style="margin-top:3vh">
             <div class="topnav_content" id="filters">
-                <a class="title">Gerenciar {% if requestType == 'melhorias' %}demandas{% else %}projetos{% endif %}</a><br>
+                <a class="title">Gerenciar {% if requestType == 'melhorias' %}demandas{% else %}projetos{% endif %}</a>
+                {% if requestType == 'melhorias' %}
+                    <a class="head_btn" href="/demandas/gerenciador" style="float:right;margin-right:2vw;padding:.7rem 1rem;">Abrir Gerenciador de Demandas</a>
+                {% endif %}
+                <br>
             </div>
         </div>
         <div id="table-container3">

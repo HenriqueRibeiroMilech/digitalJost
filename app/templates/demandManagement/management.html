@@ -1,0 +1,72 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_management.css') }}">
+
+<main class="dm-page" aria-labelledby="dm-title">
+    <header class="dm-hero">
+        <div class="dm-hero__copy">
+            <p class="dm-eyebrow">Transformação Digital · fluxo aprovado</p>
+            <h1 id="dm-title">Gerenciador de Demandas</h1>
+            <p>Acompanhe capacidade, prazos e execução sem duplicar os dados da solicitação original.</p>
+        </div>
+        <div class="dm-summary" id="dm-summary" aria-label="Resumo das demandas"></div>
+    </header>
+
+    <section class="dm-toolbar" aria-label="Filtros do gerenciador">
+        <label class="dm-search">
+            <span>Buscar por título</span>
+            <span class="dm-search__control">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input id="dm-search" type="search" placeholder="Ex.: painel de produção" autocomplete="off">
+            </span>
+        </label>
+
+        <label>
+            <span>Responsável</span>
+            <select id="dm-filter-responsible"><option value="">Todos</option></select>
+        </label>
+        <label>
+            <span>Tipo</span>
+            <select id="dm-filter-type"><option value="">Todos</option></select>
+        </label>
+        <label>
+            <span>Status</span>
+            <select id="dm-filter-status"><option value="">Todos</option></select>
+        </label>
+        <label>
+            <span>Dificuldade</span>
+            <select id="dm-filter-difficulty"><option value="">Todas</option></select>
+        </label>
+        <button class="dm-button dm-button--quiet" id="dm-clear-filters" type="button">
+            Limpar filtros
+        </button>
+    </section>
+
+    <div class="dm-feedback" id="dm-loading" role="status">
+        <span class="dm-spinner" aria-hidden="true"></span>
+        Carregando demandas...
+    </div>
+
+    <section class="dm-board" id="dm-board" aria-live="polite"></section>
+</main>
+
+<div class="dm-modal" id="dm-modal" aria-hidden="true">
+    <div class="dm-modal__backdrop" data-close-modal></div>
+    <section class="dm-modal__panel" role="dialog" aria-modal="true" aria-labelledby="dm-modal-title">
+        <button class="dm-modal__close" type="button" data-close-modal aria-label="Fechar detalhes">&times;</button>
+        <div id="dm-modal-content"></div>
+    </section>
+</div>
+
+<div class="dm-toast" id="dm-toast" role="status" aria-live="polite"></div>
+
+<script>
+    window.demandManagementConfig = {
+        apiRoot: {{ url_for('demand_management.management_list') | tojson }},
+        area: {{ area | tojson }},
+        csrfToken: {{ csrf_token | tojson }}
+    };
+</script>
+<script defer src="{{ url_for('static', filename='js/demand-management/management.js') }}"></script>
+{% endblock %}

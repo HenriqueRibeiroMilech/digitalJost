@@ -1,6 +1,7 @@
 from app.config import create_app
 
 from app.routes.demands.default import demands_default_bp
+from app.routes.demandManagement import demand_management_bp
 
 from app.routes.factoryRegister.assembly import factoryRegister_assembly_bp
 from app.routes.factoryRegister.default import factoryRegister_default_bp
@@ -37,6 +38,7 @@ app = create_app()
 # INVOKE DAS CLASSES DE CADA ROTA DO WEBSITE
 # (CTRL + BTN ESQUERDO MOUSE PARA ACESSAR)
 app.register_blueprint(demands_default_bp)
+app.register_blueprint(demand_management_bp)
 
 app.register_blueprint(factoryRegister_assembly_bp)
 app.register_blueprint(factoryRegister_default_bp)

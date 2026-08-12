@@ -29,6 +29,7 @@ from app.utils.data_utils import format_date
 from app.utils.db_utils import engine_run_query, get_engine
 from app.utils.permissions import get_permission, user_has_role
 from app.config import mail
+from app.routes.demandManagement.integration import sync_approved_request
 
 
 _AREA_REQUIRED_ROUTES = [
@@ -383,14 +384,18 @@ def improvements_manage_form_post():
     if 'tipo' not in request.args:
         return abort(400)
 
+    request_id = request.args.get('id', type=int)
+    if request_id is None:
+        return abort(400)
+
     engine = get_engine('jdt')
     with engine.connect() as cnnx:
         if request.args['tipo'] == 'melhorias':
 
-            query = f"SELECT * FROM JDT_REQUEST_IMPROVEMENTS_SMALL WHERE requestId = '{request.args['id']}'"
+            query = f"SELECT * FROM JDT_REQUEST_IMPROVEMENTS_SMALL WHERE requestId = '{request_id}'"
             requestData = pd.read_sql(query, cnnx)
 
-            query = f"SELECT initDate, finalDate FROM JDT_REQUEST_PAUSES WHERE requestId = '{request.args['id']}'"
+            query = f"SELECT initDate, finalDate FROM JDT_REQUEST_PAUSES WHERE requestId = '{request_id}'"
             requestPauses = pd.read_sql(query, cnnx)[['initDate', 'finalDate']].values.tolist()
 
 
@@ -415,8 +420,9 @@ def improvements_manage_form_post():
                                     status = 1, 
                                     respId = '{current_user.id}' 
                                 WHERE 
-                                    requestId = {request.args['id']}"""
+                                    requestId = {request_id}"""
                     cnnx.execute(text(query))
+                    sync_approved_request(cnnx, request_id)
 
                     date = format_date(datetime.now().date())
                     deliveryDate = format_date(request.form['prazoEntrega'])
@@ -443,12 +449,13 @@ def improvements_manage_form_post():
                                     deliveryDate = NULL, 
                                     status = 4 
                                 WHERE 
-                                    requestId = {request.args['id']}"""
+                                    requestId = {request_id}"""
                     cnnx.execute(text(query))
                     query = f"""INSERT JDT_REQUEST_PAUSES VALUES( 
                                     GETDATE(), '{request.form['dataUnpause']}', 
-                                    NULL, '{request.args['id']}', '{request.form['justificativa']}')"""
+                                    NULL, '{request_id}', '{request.form['justificativa']}')"""
                     cnnx.execute(text(query))
+                    sync_approved_request(cnnx, request_id)
 
                     msg = Message(f'Sua solicitação - "{requestTitle}" - foi pausada!',
                                     sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
@@ -481,7 +488,7 @@ def improvements_manage_form_post():
                                     status = 1, 
                                     reprogs = {requestData['reprogs'][0] + 1} 
                                 WHERE 
-                                    requestId = {request.args['id']}"""
+                                    requestId = {request_id}"""
                     cnnx.execute(text(query))
 
                     query = f"""SELECT  
@@ -490,7 +497,7 @@ def improvements_manage_form_post():
                                 FROM 
                                     JDT_REQUEST_PAUSES 
                                 WHERE 
-                                    requestId = {request.args['id']} AND finalDate IS NULL"""
+                                    requestId = {request_id} AND finalDate IS NULL"""
 
                     initPause = pd.read_sql(query, cnnx)['initDate'][0]
                     finalDate = pd.read_sql(query, cnnx)['finalDate'][0]
@@ -498,8 +505,9 @@ def improvements_manage_form_post():
                     query = f"""UPDATE JDT_REQUEST_PAUSES SET 
                                     finalDate = GETDATE() 
                                 WHERE 
-                                    requestId = {request.args['id']} AND finalDate IS NULL"""
+                                    requestId = {request_id} AND finalDate IS NULL"""
                     cnnx.execute(text(query))
+                    sync_approved_request(cnnx, request_id)
 
                     msg = Message(f'O desenvolvimento da sua demanda - "{requestTitle}" - foi retomado!',
                                     sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
@@ -529,8 +537,9 @@ def improvements_manage_form_post():
                                     status = 1,
                                     reprogs = {requestData['reprogs'][0] + 1} 
                                 WHERE 
-                                    requestId = {request.args['id']}"""
+                                    requestId = {request_id}"""
                     cnnx.execute(text(query))
+                    sync_approved_request(cnnx, request_id)
 
                     msg = Message(f'O prazo da sua demanda - "{requestTitle}" - foi redefinido!',
                                     sender=(
@@ -563,8 +572,9 @@ def improvements_manage_form_post():
                                     finalDate = GETDATE(), 
                                     status = 2 
                                 WHERE 
-                                    requestId = {request.args['id']}"""
+                                    requestId = {request_id}"""
                     cnnx.execute(text(query))
+                    sync_approved_request(cnnx, request_id)
 
                     msg = Message(f'A sua demanda - "{requestTitle}" - foi finalizada!',
                                     sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
@@ -599,7 +609,7 @@ def improvements_manage_form_post():
                                     respId = '{current_user.id}',
                                     deniedText = '{request.form['justificativa']}' 
                                 WHERE 
-                                    requestId = {request.args['id']}"""
+                                    requestId = {request_id}"""
 
                     cnnx.execute(text(query))
 
@@ -635,7 +645,7 @@ def improvements_manage_form_post():
                         FROM JDT_REQUEST_IMPROVEMENTS_BIG AS T1
                             JOIN JDT_USER_DETAILS AS T2 ON T1.requesterId = T2.id 
                         WHERE 
-                            requestId = '{request.args['id']}'"""
+                            requestId = '{request_id}'"""
             requestData = pd.read_sql(query, cnnx)
 
             area = False
@@ -648,7 +658,7 @@ def improvements_manage_form_post():
                 query = f"""UPDATE JDT_REQUEST_IMPROVEMENTS_BIG SET 
                                 status = 1 
                             WHERE 
-                                requestId = '{request.args['id']}'"""
+                            requestId = '{request_id}'"""
 
                 cnnx.execute(text(query))
                 cnnx.commit()
@@ -677,7 +687,7 @@ def improvements_manage_form_post():
                                 status = 3,
                                 finalDate = GETDATE()  
                             WHERE 
-                                requestId = '{request.args['id']}'"""
+                                requestId = '{request_id}'"""
 
                 cnnx.execute(text(query))
                 cnnx.commit()
@@ -704,7 +714,7 @@ def improvements_manage_form_post():
                                 approverArea = '{current_user.id}',
                                 finalDate = GETDATE()  
                             WHERE 
-                                requestId = '{request.args['id']}'"""
+                            requestId = '{request_id}'"""
 
                 cnnx.execute(text(query))
                 cnnx.commit()
@@ -734,7 +744,7 @@ def improvements_manage_form_post():
                                 approverArea = '{current_user.id}',
                                 finalDate = GETDATE()  
                             WHERE 
-                                requestId = '{request.args['id']}'"""
+                            requestId = '{request_id}'"""
 
                 cnnx.execute(text(query))
                 cnnx.commit()
