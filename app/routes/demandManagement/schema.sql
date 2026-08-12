@@ -5,6 +5,7 @@
 */
 
 SET XACT_ABORT ON;
+BEGIN TRY
 BEGIN TRANSACTION;
 
 IF EXISTS (
@@ -43,14 +44,43 @@ BEGIN
         ON dbo.JDT_REQUEST_IMPROVEMENTS_SMALL (requestId);
 END;
 
+/* Reutiliza exatamente o tipo e a collation do ID de usuário do banco atual. */
+DECLARE @userIdSqlType NVARCHAR(200);
+DECLARE @userIdCollation NVARCHAR(300);
+
+SELECT
+    @userIdSqlType = CASE
+        WHEN T.name IN ('varchar', 'char', 'varbinary', 'binary') THEN
+            UPPER(T.name) + '(' + CASE WHEN C.max_length = -1 THEN 'MAX' ELSE CAST(C.max_length AS VARCHAR(10)) END + ')'
+        WHEN T.name IN ('nvarchar', 'nchar') THEN
+            UPPER(T.name) + '(' + CASE WHEN C.max_length = -1 THEN 'MAX' ELSE CAST(C.max_length / 2 AS VARCHAR(10)) END + ')'
+        WHEN T.name IN ('decimal', 'numeric') THEN
+            UPPER(T.name) + '(' + CAST(C.precision AS VARCHAR(10)) + ',' + CAST(C.scale AS VARCHAR(10)) + ')'
+        ELSE UPPER(T.name)
+    END,
+    @userIdCollation = CASE
+        WHEN C.collation_name IS NULL THEN ''
+        ELSE ' COLLATE ' + C.collation_name
+    END
+FROM sys.columns AS C
+JOIN sys.types AS T ON T.user_type_id = C.user_type_id
+WHERE C.object_id = OBJECT_ID('dbo.JDT_USER_DETAILS')
+    AND C.name = 'id';
+
+IF @userIdSqlType IS NULL
+BEGIN
+    THROW 50002, 'Não foi possível identificar o tipo de dbo.JDT_USER_DETAILS.id.', 1;
+END;
+
 IF OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT', 'U') IS NULL
 BEGIN
+    DECLARE @createManagementSql NVARCHAR(MAX) = N'
     CREATE TABLE dbo.JDT_DEMAND_MANAGEMENT (
         managementId INT IDENTITY(1, 1) NOT NULL,
         sourceRequestId INT NOT NULL,
         areaId INT NOT NULL,
         status NVARCHAR(30) NOT NULL
-            CONSTRAINT DF_JDT_DEMAND_MANAGEMENT_status DEFAULT N'A Fazer',
+            CONSTRAINT DF_JDT_DEMAND_MANAGEMENT_status DEFAULT N''A Fazer'',
         deadline DATE NULL,
         startDate DATE NULL,
         estimatedHours DECIMAL(10, 2) NULL,
@@ -58,7 +88,7 @@ BEGIN
         completedHours DECIMAL(10, 2) NULL,
         difficulty NVARCHAR(10) NULL,
         observations NVARCHAR(4000) NULL,
-        responsibleId VARCHAR(100) NULL,
+        responsibleId ' + @userIdSqlType + @userIdCollation + N' NULL,
         legacyProjectId VARCHAR(30) NULL,
         createdAt DATETIME2(0) NOT NULL
             CONSTRAINT DF_JDT_DEMAND_MANAGEMENT_createdAt DEFAULT SYSDATETIME(),
@@ -80,9 +110,9 @@ BEGIN
             FOREIGN KEY (responsibleId)
             REFERENCES dbo.JDT_USER_DETAILS (id),
         CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_status
-            CHECK (status IN (N'A Fazer', N'Em Andamento', N'Pausado', N'Concluído', N'Cancelado')),
+            CHECK (status IN (N''A Fazer'', N''Em Andamento'', N''Pausado'', N''Concluído'', N''Cancelado'')),
         CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_difficulty
-            CHECK (difficulty IS NULL OR difficulty IN (N'Baixa', N'Média', N'Alta')),
+            CHECK (difficulty IS NULL OR difficulty IN (N''Baixa'', N''Média'', N''Alta'')),
         CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_hours
             CHECK (
                 (estimatedHours IS NULL OR estimatedHours >= 0)
@@ -92,20 +122,23 @@ BEGIN
     );
 
     CREATE INDEX IX_JDT_DEMAND_MANAGEMENT_area_responsible
-        ON dbo.JDT_DEMAND_MANAGEMENT (areaId, responsibleId, status);
+        ON dbo.JDT_DEMAND_MANAGEMENT (areaId, responsibleId, status);';
+
+    EXEC sys.sp_executesql @createManagementSql;
 END;
 
 IF OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT_TASKS', 'U') IS NULL
 BEGIN
+    DECLARE @createTasksSql NVARCHAR(MAX) = N'
     CREATE TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS (
         taskId INT IDENTITY(1, 1) NOT NULL,
         managementId INT NOT NULL,
         description NVARCHAR(1000) NOT NULL,
-        responsibleId VARCHAR(100) NULL,
+        responsibleId ' + @userIdSqlType + @userIdCollation + N' NULL,
         deadline DATE NULL,
         observations NVARCHAR(2000) NULL,
         completedAt DATETIME2(0) NULL,
-        createdBy VARCHAR(100) NOT NULL,
+        createdBy ' + @userIdSqlType + @userIdCollation + N' NOT NULL,
         createdAt DATETIME2(0) NOT NULL
             CONSTRAINT DF_JDT_DEMAND_MANAGEMENT_TASKS_createdAt DEFAULT SYSDATETIME(),
         updatedAt DATETIME2(0) NOT NULL
@@ -127,10 +160,13 @@ BEGIN
     );
 
     CREATE INDEX IX_JDT_DEMAND_MANAGEMENT_TASKS_management
-        ON dbo.JDT_DEMAND_MANAGEMENT_TASKS (managementId, completedAt, deadline);
+        ON dbo.JDT_DEMAND_MANAGEMENT_TASKS (managementId, completedAt, deadline);';
+
+    EXEC sys.sp_executesql @createTasksSql;
 END;
 
 /* Carga inicial idempotente das demandas já iniciadas, pausadas ou concluídas. */
+DECLARE @backfillSql NVARCHAR(MAX) = N'
 INSERT INTO dbo.JDT_DEMAND_MANAGEMENT (
     sourceRequestId,
     areaId,
@@ -145,9 +181,9 @@ SELECT
     R.requestId,
     R.areaId,
     CASE R.status
-        WHEN 2 THEN N'Concluído'
-        WHEN 4 THEN N'Pausado'
-        ELSE N'Em Andamento'
+        WHEN 2 THEN N''Concluído''
+        WHEN 4 THEN N''Pausado''
+        ELSE N''Em Andamento''
     END,
     R.deliveryDate,
     R.startDate,
@@ -161,6 +197,14 @@ WHERE R.areaId = 1
         SELECT 1
         FROM dbo.JDT_DEMAND_MANAGEMENT AS M
         WHERE M.sourceRequestId = R.requestId
-    );
+    );';
+
+EXEC sys.sp_executesql @backfillSql;
 
 COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0
+        ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
