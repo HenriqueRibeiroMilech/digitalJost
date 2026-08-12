@@ -440,20 +440,20 @@
     function renderNewTaskForm() {
         return `
             <form class="dm-task-form" id="dm-new-task">
-                <label class="dm-field dm-task-form__description"><span>Nova tarefa</span><textarea class="dm-textarea" name="description" required placeholder="Descreva uma entrega objetiva"></textarea></label>
+                <label class="dm-field dm-task-form__description"><span>Nova tarefa</span><input class="dm-input" name="description" type="text" required maxlength="1000" placeholder="Descreva uma entrega objetiva"></label>
                 <label class="dm-field dm-task-form__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, '', 'Não informado')}</select></label>
                 <label class="dm-field dm-task-form__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date"></label>
-                <label class="dm-field dm-task-form__observations"><span>Observações</span><textarea class="dm-textarea" name="observations"></textarea></label>
                 <button class="dm-button" type="submit">Adicionar tarefa</button>
             </form>`;
     }
 
     function taskPayload(container) {
+        const observationsInput = container.querySelector('[name="observations"]');
         return {
             description: container.querySelector('[name="description"]').value,
             responsibleId: container.querySelector('[name="responsibleId"]').value || null,
             deadline: container.querySelector('[name="deadline"]').value || null,
-            observations: container.querySelector('[name="observations"]').value || null,
+            observations: observationsInput ? observationsInput.value || null : null,
             completed: Boolean(container.querySelector('[name="completed"]') && container.querySelector('[name="completed"]').checked)
         };
     }
