@@ -8,7 +8,8 @@
         options: { status: [], difficulty: [] },
         detail: null,
         collapsedOwners: new Set(),
-        updateQueues: new Map()
+        updateQueues: new Map(),
+        filtersInitialized: false
     };
 
     const elements = {
@@ -147,7 +148,7 @@
     function configureFilters() {
         const selectedResponsible = elements.responsible.value;
         const selectedType = elements.type.value;
-        const selectedStatus = elements.status.value;
+        const selectedStatus = state.filtersInitialized ? elements.status.value : 'Em Andamento';
         const selectedDifficulty = elements.difficulty.value;
 
         elements.responsible.innerHTML = '<option value="">Todos</option><option value="__unassigned__">Sem responsável</option>' +
@@ -165,6 +166,7 @@
         elements.type.value = selectedType;
         elements.status.value = selectedStatus;
         elements.difficulty.value = selectedDifficulty;
+        state.filtersInitialized = true;
     }
 
     function filteredDemands() {
@@ -243,6 +245,7 @@
 
     function field(label, fieldName, value, type, options) {
         const safeValue = escapeHtml(valueOrEmpty(value));
+        const fieldClass = `dm-field--${slug(fieldName)}`;
         let control;
         if (type === 'select') {
             control = `<select class="dm-input" data-field="${fieldName}">${optionList(options, value, 'Não informado')}</select>`;
@@ -252,7 +255,7 @@
             const step = type === 'number' ? ' step="0.25" min="0"' : '';
             control = `<input class="dm-input" data-field="${fieldName}" type="${type}"${step} value="${safeValue}">`;
         }
-        return `<label class="dm-field${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
+        return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
     }
 
     function renderCard(demand) {
@@ -422,10 +425,10 @@
             return `
                 <div class="dm-task${completed ? ' dm-task--completed' : ''}" data-task-id="${task.taskId}" data-row-version="${escapeHtml(task.rowVersion)}">
                     <input class="dm-task__check" name="completed" type="checkbox" ${completed ? 'checked' : ''} title="Marcar como concluída">
-                    <label class="dm-field"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description">${escapeHtml(task.description)}</textarea></label>
-                    <label class="dm-field"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
-                    <label class="dm-field"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"></label>
-                    <label class="dm-field"><span>Observações</span><textarea class="dm-textarea" name="observations">${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
+                    <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description">${escapeHtml(task.description)}</textarea></label>
+                    <label class="dm-field dm-task__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
+                    <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"></label>
+                    <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations">${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
                     <div class="dm-task__actions">
                         <button class="dm-button" type="button" data-save-task>Salvar</button>
                         <button class="dm-button dm-button--danger" type="button" data-delete-task>Excluir</button>
@@ -437,10 +440,10 @@
     function renderNewTaskForm() {
         return `
             <form class="dm-task-form" id="dm-new-task">
-                <label class="dm-field"><span>Nova tarefa</span><textarea class="dm-textarea" name="description" required placeholder="Descreva uma entrega objetiva"></textarea></label>
-                <label class="dm-field"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, '', 'Não informado')}</select></label>
-                <label class="dm-field"><span>Prazo</span><input class="dm-input" name="deadline" type="date"></label>
-                <label class="dm-field"><span>Observações</span><textarea class="dm-textarea" name="observations"></textarea></label>
+                <label class="dm-field dm-task-form__description"><span>Nova tarefa</span><textarea class="dm-textarea" name="description" required placeholder="Descreva uma entrega objetiva"></textarea></label>
+                <label class="dm-field dm-task-form__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, '', 'Não informado')}</select></label>
+                <label class="dm-field dm-task-form__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date"></label>
+                <label class="dm-field dm-task-form__observations"><span>Observações</span><textarea class="dm-textarea" name="observations"></textarea></label>
                 <button class="dm-button" type="submit">Adicionar tarefa</button>
             </form>`;
     }
