@@ -233,7 +233,7 @@
         return `
             <section class="dm-owner${collapsed ? ' dm-owner--collapsed' : ''}" data-owner-section="${escapeHtml(group.key)}">
                 <button class="dm-owner__header" type="button" data-owner-toggle="${escapeHtml(group.key)}" aria-expanded="${!collapsed}">
-                    <i class="fas fa-chevron-down dm-owner__chevron" aria-hidden="true"></i>
+                    <span class="dm-owner__chevron" aria-hidden="true">▼</span>
                     <span class="dm-owner__name">${escapeHtml(group.name)}</span>
                     <span class="dm-owner__capacity">${group.demands.length} demanda(s) · ${active} ativa(s)</span>
                 </button>

@@ -1,14 +1,22 @@
-{% extends 'home.html' %}
-
-{% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_management.css') }}">
-
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gerenciador de Demandas</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_management.css') }}">
+</head>
+<body>
 <main class="dm-page" aria-labelledby="dm-title">
+    <a class="dm-back" href="{{ url_for('request_improvements.improvements_manage_get', area=area, tipo='melhorias') }}">&larr; Voltar para demandas</a>
     <header class="dm-hero">
         <div class="dm-hero__copy">
-            <p class="dm-eyebrow">Transformação Digital · fluxo aprovado</p>
             <h1 id="dm-title">Gerenciador de Demandas</h1>
-            <p>Acompanhe capacidade, prazos e execução sem duplicar os dados da solicitação original.</p>
+            <p>Demandas aprovadas da Transformação Digital.</p>
         </div>
         <div class="dm-summary" id="dm-summary" aria-label="Resumo das demandas"></div>
     </header>
@@ -17,7 +25,6 @@
         <label class="dm-search">
             <span>Buscar por título</span>
             <span class="dm-search__control">
-                <i class="fas fa-search" aria-hidden="true"></i>
                 <input id="dm-search" type="search" placeholder="Ex.: painel de produção" autocomplete="off">
             </span>
         </label>
@@ -69,4 +76,5 @@
     };
 </script>
 <script defer src="{{ url_for('static', filename='js/demand-management/management.js') }}"></script>
-{% endblock %}
+</body>
+</html>
