@@ -82,23 +82,59 @@ class DemandManagementRepository:
             'area_id': area_id
         }).mappings().first()
 
+    # def list_responsibles(self, connection, area_id):
+    #     query = text("""
+    #         SELECT id, name
+    #         FROM JDT_USER_DETAILS
+    #         WHERE areaId = :area_id AND active = 1 AND generic = 0
+    #         ORDER BY name
+    #     """)
+    #     return connection.execute(query, {'area_id': area_id}).mappings().all()
+
     def list_responsibles(self, connection, area_id):
         query = text("""
-            SELECT id, name
-            FROM JDT_USER_DETAILS
-            WHERE areaId = :area_id AND active = 1 AND generic = 0
-            ORDER BY name
+            SELECT DISTINCT
+                U.id,
+                U.name
+            FROM JDT_USER_DETAILS AS U
+            JOIN JDT_DEMAND_MANAGEMENT AS M
+                ON M.responsibleId = U.id
+            WHERE M.areaId = :area_id
+                AND U.active = 1
+                AND U.generic = 0
+            ORDER BY U.name
         """)
-        return connection.execute(query, {'area_id': area_id}).mappings().all()
+        return connection.execute(query, {
+            'area_id': area_id
+        }).mappings().all()
+
+    # def responsible_belongs_to_area(self, connection, responsible_id, area_id):
+    #     query = text("""
+    #         SELECT 1
+    #         FROM JDT_USER_DETAILS
+    #         WHERE id = :responsible_id
+    #             AND areaId = :area_id
+    #             AND active = 1
+    #             AND generic = 0
+    #     """)
+    #     return connection.execute(query, {
+    #         'responsible_id': responsible_id,
+    #         'area_id': area_id
+    #     }).first() is not None
 
     def responsible_belongs_to_area(self, connection, responsible_id, area_id):
         query = text("""
             SELECT 1
-            FROM JDT_USER_DETAILS
-            WHERE id = :responsible_id
-                AND areaId = :area_id
-                AND active = 1
-                AND generic = 0
+            FROM JDT_USER_DETAILS AS U
+            WHERE U.id = :responsible_id
+                AND U.active = 1
+                AND U.generic = 0
+                AND EXISTS (
+                    SELECT 1
+                    FROM JDT_DEMAND_MANAGEMENT AS M
+                    WHERE M.responsibleId = U.id
+                        AND M.areaId = :area_id
+                )
         """)
         return connection.execute(query, {
             'responsible_id': responsible_id,
