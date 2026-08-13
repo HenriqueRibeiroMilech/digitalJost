@@ -337,13 +337,22 @@ textarea {
 }
 
 .dm-card__progress {
-    flex: 0 0 auto;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+
     min-width: 56px;
     padding: .55rem;
+
     border: 1px solid var(--dm-line);
     color: var(--dm-navy-dark);
     background: #f4f4f4;
     text-align: center;
+}
+
+.dm-card__identity {
+    min-width: 0;
+    padding-right: 80px;
 }
 
 .dm-card__progress strong {

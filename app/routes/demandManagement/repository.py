@@ -17,7 +17,10 @@ class DemandManagementRepository:
             M.completedHours,
             M.difficulty,
             M.observations,
-            M.responsibleId,
+            CASE
+                WHEN Responsible.active = 1 THEN M.responsibleId
+                ELSE NULL
+            END AS responsibleId,
             M.createdAt,
             M.updatedAt,
             M.rowVersion,
@@ -36,7 +39,10 @@ class DemandManagementRepository:
             CASE WHEN NULLIF(R.images, '') IS NULL THEN 0 ELSE 1 END AS hasAttachments,
             Requester.id AS requesterId,
             Requester.name AS requesterName,
-            Responsible.name AS responsibleName,
+            CASE
+                WHEN Responsible.active = 1 THEN Responsible.name
+                ELSE NULL
+            END AS responsibleName,
             COALESCE(TaskCount.totalTasks, 0) AS totalTasks,
             COALESCE(TaskCount.completedTasks, 0) AS completedTasks
         FROM JDT_DEMAND_MANAGEMENT AS M
@@ -46,6 +52,7 @@ class DemandManagementRepository:
             ON Requester.id = R.requesterId
         LEFT JOIN JDT_USER_DETAILS AS Responsible
             ON Responsible.id = M.responsibleId
+            AND Responsible.active = 1
         OUTER APPLY (
             SELECT
                 COUNT(*) AS totalTasks,

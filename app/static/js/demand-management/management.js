@@ -151,7 +151,7 @@
         const selectedStatus = state.filtersInitialized ? elements.status.value : 'Em Andamento';
         const selectedDifficulty = elements.difficulty.value;
 
-        elements.responsible.innerHTML = '<option value="">Todos</option><option value="__unassigned__">Sem responsável</option>' +
+        elements.responsible.innerHTML = '<option value="">Todos</option><option value="__unassigned__">Histórico de antigos colaboradores</option>' +
             optionList(state.responsibles, selectedResponsible);
         elements.type.innerHTML = '<option value="">Todos</option>' +
             Array.from(new Set(state.demands.map(function (item) { return item.demandType; })))
@@ -191,9 +191,9 @@
         const completed = state.demands.filter(function (item) { return item.status === 'Concluído'; }).length;
         elements.summary.innerHTML = [
             [state.demands.length, 'Total'],
+            [completed, 'Concluídas'],
             [active, 'Ativas'],
-            [late, 'Atrasadas'],
-            [completed, 'Concluídas']
+            [late, 'Atrasadas']
         ].map(function (item) {
             return `<div class="dm-summary__item"><strong>${item[0]}</strong><span>${item[1]}</span></div>`;
         }).join('');
@@ -217,7 +217,7 @@
             if (!groups.has(key)) {
                 groups.set(key, {
                     key: key,
-                    name: demand.responsibleName || 'Sem responsável',
+                    name: demand.responsibleName || 'Histórico de antigos colaboradores',
                     demands: []
                 });
             }
@@ -252,7 +252,7 @@
         } else if (type === 'textarea') {
             control = `<textarea class="dm-textarea" data-field="${fieldName}" placeholder="Adicione uma observação">${safeValue}</textarea>`;
         } else {
-            const step = type === 'number' ? ' step="0.25" min="0"' : '';
+            const step = type === 'number' ? ' step="1" min="0"' : '';
             control = `<input class="dm-input" data-field="${fieldName}" type="${type}"${step} value="${safeValue}">`;
         }
         return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
@@ -383,26 +383,21 @@
                         ${field('Tempo total realizado (h)', 'completedHours', demand.completedHours, 'number')}
                         ${field('Observações', 'observations', demand.observations, 'textarea')}
                     </div>
-                    <p class="dm-source-note">Os campos são salvos ao sair do controle. Alterar o responsável move o card para a seção da pessoa sem recarregar a página.</p>
                 </section>
 
                 <section class="dm-panel">
                     <h3>Solicitação original · somente leitura</h3>
                     <dl class="dm-readonly-grid">
-                        ${readonlyItem('ID da solicitação', `#${demand.sourceRequestId}`)}
-                        ${readonlyItem('Tipo', typeLabel(demand.demandType))}
-                        ${readonlyItem('Solicitante', demand.requesterName)}
-                        ${readonlyItem('Urgência', demand.urgency)}
-                        ${readonlyItem('Data da solicitação', formatDate(demand.requestDate, true))}
-                        ${readonlyItem('Reprogramações', demand.requestReprograms || 0)}
                         ${readonlyItem('Título', demand.title, true)}
                         ${readonlyItem('Descrição inicial / objetivo', demand.initialDescription, true)}
                         ${demand.demandType !== 'erro' ? readonlyItem('Premissas', demand.assumptions, true) : ''}
                         ${demand.demandType !== 'erro' ? readonlyItem('Problemas atuais', demand.actualProblems, true) : ''}
                         ${demand.demandType !== 'erro' ? readonlyItem('Ganhos esperados', demand.benefits, true) : ''}
-                        ${readonlyItem('Início no fluxo original', formatDate(demand.requestStartDate))}
-                        ${readonlyItem('Prazo no fluxo original', formatDate(demand.requestDeadline))}
-                        ${readonlyItem('Conclusão no fluxo original', formatDate(demand.requestFinalDate))}
+                        ${readonlyItem('Solicitante', demand.requesterName)}
+                        ${readonlyItem('ID da solicitação', `#${demand.sourceRequestId}`)}
+                        ${readonlyItem('Tipo', typeLabel(demand.demandType))}
+                        ${readonlyItem('Urgência', demand.urgency)}
+                        ${readonlyItem('Data da solicitação', formatDate(demand.requestDate, true))}
                         ${readonlyItem('Possui anexos', demand.hasAttachments ? 'Sim — consulte a solicitação original' : 'Não')}
                     </dl>
                     <a class="dm-button" href="${originalUrl}" target="_blank" rel="noopener">Abrir solicitação original</a>
