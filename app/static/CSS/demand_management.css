@@ -91,7 +91,9 @@ textarea {
     min-width: 82px;
     padding: .55rem .7rem;
     border: 1px solid var(--dm-line);
+    border-radius: 8px;
     background: #fff;
+    text-align: center;
 }
 
 .dm-summary__item strong {
@@ -117,6 +119,7 @@ textarea {
     margin: 0 auto 1.2rem;
     padding: .85rem;
     border: 1px solid var(--dm-line);
+    border-radius: 8px;
     background: #fff;
 }
 
@@ -231,6 +234,7 @@ textarea {
 .dm-owner {
     overflow: hidden;
     border: 1px solid var(--dm-line);
+    border-radius: 8px;
     background: #fff;
 }
 
@@ -279,38 +283,77 @@ textarea {
     display: none;
 }
 
+.dm-card:hover {
+    box-shadow: 0 4px 12px rgba(30, 38, 49, .14);
+    transform: translateY(-1px);
+}
+
+/* Aparência padrão de todos os cards */
 .dm-card {
     position: relative;
     display: grid;
     gap: 1rem;
     min-width: 0;
     padding: 1rem;
+
     border: 1px solid var(--dm-line);
-    border-top: 3px solid var(--dm-navy);
-    background: var(--dm-card);
+    border-top: 6px solid #8a96a3;
+    border-radius: 8px;
+
+    background: #ffffff;
     box-shadow: none;
     cursor: pointer;
-    transition: border-color .15s ease;
+    overflow: hidden;
+
+    transition: box-shadow .15s ease, transform .15s ease;
 }
 
-.dm-card:hover {
-    border-color: #aebbd9;
+/* A Fazer: cinza */
+.dm-card--status-a-fazer {
+    border-top-color: #8a96a3;
 }
 
-.dm-card--late {
-    border-color: #e3aaa4;
+/* Em Andamento: azul */
+.dm-card--status-em-andamento {
+    border-top-color: var(--dm-navy);
+}
+
+/* Pausado: amarelo */
+.dm-card--status-pausado {
+    border-top-color: #ffa300;
+}
+
+/* Concluído: verde */
+.dm-card--status-concluido {
+    border-top-color: var(--dm-green);
+}
+
+/* Cancelado: vermelho */
+.dm-card--status-cancelado {
     border-top-color: var(--dm-red);
-    background: #fff8f7;
+}
+
+/* Atrasado: vermelho, independentemente do status */
+.dm-card.dm-card--late {
+    border-color: var(--dm-line);
+    border-top-color: var(--dm-red);
+    background: #ffffff;
+}
+
+.dm-badge--status-a-fazer {
+    color: #56616d;
+    background: #eceff2;
+}
+
+.dm-badge--status-em-andamento {
+    color: var(--dm-navy-dark);
+    background: #e7edf9;
 }
 
 .dm-card__top {
     display: flex;
     align-items: flex-start;
     gap: .85rem;
-}
-
-.dm-card__identity {
-    min-width: 0;
 }
 
 .dm-card__title {
@@ -345,6 +388,7 @@ textarea {
     padding: .55rem;
 
     border: 1px solid var(--dm-line);
+    border-radius: 5px;
     color: var(--dm-navy-dark);
     background: #f4f4f4;
     text-align: center;

@@ -148,18 +148,21 @@
     function configureFilters() {
         const selectedResponsible = elements.responsible.value;
         const selectedType = elements.type.value;
-        const selectedStatus = state.filtersInitialized ? elements.status.value : 'Em Andamento';
+        const selectedStatus = state.filtersInitialized ? elements.status.value : '__active__';
         const selectedDifficulty = elements.difficulty.value;
 
-        elements.responsible.innerHTML = '<option value="">Todos</option><option value="__unassigned__">Histórico de antigos colaboradores</option>' +
-            optionList(state.responsibles, selectedResponsible);
+        elements.responsible.innerHTML = '<option value="">Todos</option>' +
+            optionList(state.responsibles, selectedResponsible) +
+            '<option value="__unassigned__">Histórico de antigos colaboradores</option>';
         elements.type.innerHTML = '<option value="">Todos</option>' +
             Array.from(new Set(state.demands.map(function (item) { return item.demandType; })))
                 .filter(Boolean)
                 .map(function (item) {
                     return `<option value="${escapeHtml(item)}">${escapeHtml(typeLabel(item))}</option>`;
                 }).join('');
-        elements.status.innerHTML = '<option value="">Todos</option>' + optionList(state.options.status || [], selectedStatus);
+        elements.status.innerHTML = '<option value="">Todos</option>' + 
+            '<option value="__active__">Ativas</option>' +
+            optionList(state.options.status || [], selectedStatus);
         elements.difficulty.innerHTML = '<option value="">Todas</option>' + optionList(state.options.difficulty || [], selectedDifficulty);
 
         elements.responsible.value = selectedResponsible;
@@ -177,7 +180,14 @@
                 (responsibleFilter === '__unassigned__' ? !demand.responsibleId : demand.responsibleId === responsibleFilter);
             return matchesResponsible &&
                 (!elements.type.value || demand.demandType === elements.type.value) &&
-                (!elements.status.value || demand.status === elements.status.value) &&
+                (
+                    !elements.status.value ||
+                    (
+                        elements.status.value === '__active__'
+                            ? ['A Fazer', 'Em Andamento', 'Pausado'].includes(demand.status)
+                            : demand.status === elements.status.value
+                    )
+                ) &&
                 (!elements.difficulty.value || demand.difficulty === elements.difficulty.value) &&
                 (!search || normalize(demand.title).includes(search));
         });
@@ -260,6 +270,7 @@
 
     function renderCard(demand) {
         const late = isLate(demand);
+        const statusClass = `dm-card--status-${slug(demand.status)}`;
         const taskProgress = `${demand.completedTasks || 0}/${demand.totalTasks || 0}`;
         const badges = [
             `<span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(demand.demandType))}</span>`,
@@ -269,7 +280,7 @@
         ].join('');
 
         return `
-            <article class="dm-card${late ? ' dm-card--late' : ''}" data-management-id="${demand.managementId}" tabindex="0" role="button" aria-label="Abrir detalhes de ${escapeHtml(demand.title)}">
+            <article class="dm-card ${statusClass}${late ? ' dm-card--late' : ''}" data-management-id="${demand.managementId}" tabindex="0" role="button" aria-label="Abrir detalhes de ${escapeHtml(demand.title)}">
                 <div class="dm-card__top">
                     <div class="dm-card__identity">
                         <div class="dm-badges">${badges}</div>
