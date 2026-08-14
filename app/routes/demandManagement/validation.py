@@ -92,3 +92,21 @@ def parse_row_version(value):
         return bytes.fromhex(value)
     except ValueError as error:
         raise ValidationError('Versão do registro inválida.') from error
+
+
+def validate_review_approval(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError('Dados da aprovação inválidos.')
+    deadline = _optional_date(payload.get('deadline'))
+    if deadline is None:
+        raise ValidationError('Informe o prazo da demanda.')
+    return deadline
+
+
+def validate_review_decline(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError('Dados da recusa inválidos.')
+    reason = _optional_text(payload.get('reason'), 4000)
+    if not reason:
+        raise ValidationError('Informe o motivo da recusa.')
+    return reason

@@ -4,6 +4,35 @@ from .constants import MANAGEMENT_FIELDS
 
 
 class DemandManagementRepository:
+    _REVIEW_SELECT = """
+        SELECT
+            R.requestId,
+            R.areaId,
+            COALESCE(NULLIF(R.demandType, ''), 'melhoria') AS demandType,
+            R.title,
+            R.info AS initialDescription,
+            R.assumptions,
+            R.actualProblems,
+            R.benefits,
+            CASE WHEN R.urgency = 'Imediata' THEN 'Alta' ELSE R.urgency END AS urgency,
+            R.openDate AS requestDate,
+            R.startDate,
+            R.deliveryDate AS deadline,
+            R.finalDate,
+            R.status,
+            R.deniedText,
+            R.reprogs,
+            CASE WHEN NULLIF(R.images, '') IS NULL THEN 0 ELSE 1 END AS hasAttachments,
+            Requester.id AS requesterId,
+            Requester.name AS requesterName,
+            Requester.companyEmail AS requesterEmail,
+            Responsible.id AS responsibleId,
+            Responsible.name AS responsibleName
+        FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
+        JOIN JDT_USER_DETAILS AS Requester ON Requester.id = R.requesterId
+        LEFT JOIN JDT_USER_DETAILS AS Responsible ON Responsible.id = R.respId
+    """
+
     _BASE_SELECT = """
         SELECT
             M.managementId,
@@ -72,6 +101,66 @@ class DemandManagementRepository:
                 M.managementId
         """)
         return connection.execute(query, {'area_id': area_id}).mappings().all()
+
+    def list_review_requests(self, connection, area_id):
+        query = text(self._REVIEW_SELECT + """
+            WHERE R.areaId = :area_id AND R.status IN (0, 3)
+            ORDER BY R.status, R.openDate DESC, R.requestId DESC
+        """)
+        return connection.execute(query, {'area_id': area_id}).mappings().all()
+
+    def get_review_request(self, connection, request_id, area_id, lock=False):
+        lock_hint = ' WITH (UPDLOCK, HOLDLOCK)' if lock else ''
+        query = text(self._REVIEW_SELECT.replace(
+            'FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R',
+            f'FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R{lock_hint}'
+        ) + """
+            WHERE R.requestId = :request_id AND R.areaId = :area_id
+        """)
+        return connection.execute(query, {
+            'request_id': request_id,
+            'area_id': area_id
+        }).mappings().first()
+
+    def approve_review_request(self, connection, request_id, area_id, deadline, responsible_id):
+        query = text("""
+            UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+            SET
+                startDate = GETDATE(),
+                deliveryDate = :deadline,
+                status = 1,
+                respId = :responsible_id
+            WHERE requestId = :request_id
+                AND areaId = :area_id
+                AND status = 0
+        """)
+        result = connection.execute(query, {
+            'request_id': request_id,
+            'area_id': area_id,
+            'deadline': deadline,
+            'responsible_id': responsible_id
+        })
+        return result.rowcount == 1
+
+    def decline_review_request(self, connection, request_id, area_id, reason, responsible_id):
+        query = text("""
+            UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+            SET
+                finalDate = GETDATE(),
+                status = 3,
+                respId = :responsible_id,
+                deniedText = :reason
+            WHERE requestId = :request_id
+                AND areaId = :area_id
+                AND status = 0
+        """)
+        result = connection.execute(query, {
+            'request_id': request_id,
+            'area_id': area_id,
+            'reason': reason,
+            'responsible_id': responsible_id
+        })
+        return result.rowcount == 1
 
     def get_demand(self, connection, management_id, area_id):
         query = text(self._BASE_SELECT + """

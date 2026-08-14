@@ -302,42 +302,26 @@ def improvements_manage_get():
         return abort(404)
 
     if request.args['tipo'] == 'melhorias':
+        # A fila de análise agora fica junto do novo Gerenciador de Demandas.
+        return redirect(url_for(
+            'demand_management.management_page',
+            area=request.args['area'],
+            view='requests'
+        ))
 
-        query = f"""SELECT 
-                        T2.name AS SOLICITANTE, 
-                        T1.title AS TÍTULO, 
-                        T1.info AS 'OBJETIVO / DESCRIÇÃO DO PROBLEMA',
-                        CASE WHEN T1.urgency = 'Imediata' THEN 'Alta' ELSE T1.urgency END AS URGÊNCIA,
-                        FORMAT(T1.deliveryDate, 'dd/MM/yyyy') AS PRAZO, 
-                        FORMAT(T1.openDate, 'dd/MM/yyyy HH:mm:ss') AS 'DATA SOLICITAÇÃO', 
-                        T1.status AS STATUS, 
-                        CASE COALESCE(NULLIF(T1.demandType, ''), 'melhoria')
-                            WHEN 'projeto' THEN 'Projeto'
-                            WHEN 'erro' THEN 'Erro/Defeito em aplicação'
-                            ELSE 'Melhoria'
-                        END AS TIPO,
-                        T1.requestId as idSolicitacao
-                    FROM 
-                        JDT_REQUEST_IMPROVEMENTS_SMALL AS T1 
-                        JOIN JDT_USER_DETAILS AS T2 ON T1.requesterId = T2.id
-                    
-                    """
-        aux = "ORDER BY STATUS, T1.openDate DESC"
-
-    else:
-        # return render_template('general_maintenance.html')
-        query = f"""SELECT 
-                        T2.name AS SOLICITANTE, 
-                        T1.title AS TÍTULO, 
-                        T1.objective AS OBJETIVO, 
-                        T1.info AS PREMISSAS, 
-                        FORMAT(T1.openDate, 'dd/MM/yyyy HH:mm:ss') AS 'DATA SOLICITAÇÃO', 
-                        T1.status AS STATUS, 
-                        T1.requestId as idSolicitacao 
-                    FROM 
-                        JDT_REQUEST_IMPROVEMENTS_BIG AS T1 
-                        JOIN JDT_USER_DETAILS AS T2 ON T1.requesterId = T2.id """
-        aux = "ORDER BY STATUS, 'DATA SOLICITAÇÃO'"
+    # A gestão de projetos históricos continua na tela antiga.
+    query = f"""SELECT
+                    T2.name AS SOLICITANTE,
+                    T1.title AS TÍTULO,
+                    T1.objective AS OBJETIVO,
+                    T1.info AS PREMISSAS,
+                    FORMAT(T1.openDate, 'dd/MM/yyyy HH:mm:ss') AS 'DATA SOLICITAÇÃO',
+                    T1.status AS STATUS,
+                    T1.requestId as idSolicitacao
+                FROM
+                    JDT_REQUEST_IMPROVEMENTS_BIG AS T1
+                    JOIN JDT_USER_DETAILS AS T2 ON T1.requesterId = T2.id """
+    aux = "ORDER BY STATUS, 'DATA SOLICITAÇÃO'"
 
     df = engine_run_query(query + aux, 'jdt').astype(str)
 

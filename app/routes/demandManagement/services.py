@@ -3,7 +3,14 @@ from decimal import Decimal
 
 from .constants import DIFFICULTY_OPTIONS, STATUS_OPTIONS
 from .errors import ConflictError, NotFoundError, ValidationError
-from .validation import parse_row_version, validate_management_change, validate_task
+from .integration import sync_approved_request
+from .validation import (
+    parse_row_version,
+    validate_management_change,
+    validate_review_approval,
+    validate_review_decline,
+    validate_task
+)
 
 
 def _serialize_value(value):
@@ -21,9 +28,10 @@ def _serialize_row(row):
 
 
 class DemandManagementService:
-    def __init__(self, engine, repository):
+    def __init__(self, engine, repository, review_notifier=None):
         self.engine = engine
         self.repository = repository
+        self.review_notifier = review_notifier
 
     def list_board(self, area_id):
         with self.engine.connect() as connection:
@@ -37,6 +45,49 @@ class DemandManagementService:
                 'difficulty': list(DIFFICULTY_OPTIONS)
             }
         }
+
+    def list_review_requests(self, area_id):
+        with self.engine.connect() as connection:
+            rows = self.repository.list_review_requests(connection, area_id)
+        return {'requests': [self._serialize_review(row) for row in rows]}
+
+    def get_review_request(self, request_id, area_id):
+        with self.engine.connect() as connection:
+            row = self.repository.get_review_request(connection, request_id, area_id)
+        if not row:
+            raise NotFoundError('Solicitação não encontrada.')
+        return self._serialize_review(row)
+
+    def approve_review_request(self, request_id, area_id, payload, reviewer, area_name):
+        deadline = validate_review_approval(payload)
+        with self.engine.begin() as connection:
+            review = self._pending_review(connection, request_id, area_id, reviewer['id'])
+            updated = self.repository.approve_review_request(
+                connection, request_id, area_id, deadline, reviewer['id']
+            )
+            if not updated:
+                raise ConflictError('A solicitação já foi analisada por outra pessoa.')
+
+            # Cria o card na mesma transação e impede vínculos duplicados.
+            sync_approved_request(connection, request_id)
+            if self.review_notifier:
+                self.review_notifier.approved(review, reviewer, area_name, deadline)
+
+        return self.get_review_request(request_id, area_id)
+
+    def decline_review_request(self, request_id, area_id, payload, reviewer, area_name):
+        reason = validate_review_decline(payload)
+        with self.engine.begin() as connection:
+            review = self._pending_review(connection, request_id, area_id, reviewer['id'])
+            updated = self.repository.decline_review_request(
+                connection, request_id, area_id, reason, reviewer['id']
+            )
+            if not updated:
+                raise ConflictError('A solicitação já foi analisada por outra pessoa.')
+            if self.review_notifier:
+                self.review_notifier.declined(review, reviewer, area_name, reason)
+
+        return self.get_review_request(request_id, area_id)
 
     def get_detail(self, management_id, area_id):
         with self.engine.connect() as connection:
@@ -107,3 +158,22 @@ class DemandManagementService:
             connection, responsible_id, area_id
         ):
             raise ValidationError('O responsável da tarefa deve ser um usuário ativo da área.')
+
+    def _pending_review(self, connection, request_id, area_id, reviewer_id):
+        review = self.repository.get_review_request(
+            connection, request_id, area_id, lock=True
+        )
+        if not review:
+            raise NotFoundError('Solicitação não encontrada.')
+        if review['status'] != 0:
+            raise ConflictError('Esta solicitação já foi analisada.')
+        if review['responsibleId'] and str(review['responsibleId']) != str(reviewer_id):
+            raise ConflictError('Esta solicitação está atribuída a outro responsável.')
+        return dict(review)
+
+    @staticmethod
+    def _serialize_review(row):
+        result = _serialize_row(row)
+        # O e-mail é necessário somente no servidor para enviar a notificação.
+        result.pop('requesterEmail', None)
+        return result

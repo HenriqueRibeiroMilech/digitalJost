@@ -64,10 +64,14 @@ def handle_demand_management_error(error):
 @demand_management_bp.route('/demandas/gerenciador', methods=['GET'])
 def management_page():
     area_name, _ = _current_area()
+    initial_view = request.args.get('view', 'demands')
+    if initial_view not in ('demands', 'requests'):
+        initial_view = 'demands'
     return render_template(
         'demandManagement/management.html',
         area=area_name,
-        csrf_token=_csrf_token()
+        csrf_token=_csrf_token(),
+        initial_view=initial_view
     )
 
 
@@ -75,6 +79,63 @@ def management_page():
 def management_list():
     _, area = _current_area()
     return jsonify(build_service().list_board(area['id']))
+
+
+@demand_management_bp.route('/demandas/gerenciador/api/requests', methods=['GET'])
+def review_request_list():
+    _, area = _current_area()
+    return jsonify(build_service().list_review_requests(area['id']))
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/requests/<int:request_id>',
+    methods=['GET']
+)
+def review_request_detail(request_id):
+    _, area = _current_area()
+    return jsonify(build_service().get_review_request(request_id, area['id']))
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/requests/<int:request_id>/approve',
+    methods=['POST']
+)
+def review_request_approve(request_id):
+    area_name, area = _current_area()
+    reviewer = {
+        'id': current_user.id,
+        'name': current_user.name,
+        'email': current_user.companyEmail
+    }
+    result = build_service().approve_review_request(
+        request_id,
+        area['id'],
+        request.get_json(silent=True),
+        reviewer,
+        area_name
+    )
+    return jsonify(result)
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/requests/<int:request_id>/decline',
+    methods=['POST']
+)
+def review_request_decline(request_id):
+    area_name, area = _current_area()
+    reviewer = {
+        'id': current_user.id,
+        'name': current_user.name,
+        'email': current_user.companyEmail
+    }
+    result = build_service().decline_review_request(
+        request_id,
+        area['id'],
+        request.get_json(silent=True),
+        reviewer,
+        area_name
+    )
+    return jsonify(result)
 
 
 @demand_management_bp.route('/demandas/gerenciador/api/<int:management_id>', methods=['GET', 'PATCH'])

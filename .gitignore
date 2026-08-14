@@ -50,6 +50,6 @@ logs/
 /app/static/uploads/library/*
 !app/static/uploads/library/
 
-AGENTS.md
-GUIA_TECNICO_DIGITAL_JOST.md
-README.md
+# AGENTS.md
+# GUIA_TECNICO_DIGITAL_JOST.md
+# README.md

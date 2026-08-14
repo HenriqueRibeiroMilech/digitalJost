@@ -16,46 +16,98 @@
     <header class="dm-hero">
         <div class="dm-hero__copy">
             <h1 id="dm-title">Gerenciador de Demandas</h1>
-            <p>Demandas aprovadas da Transformação Digital.</p>
+            <p id="dm-subtitle">Demandas aprovadas da Transformação Digital.</p>
         </div>
         <div class="dm-summary" id="dm-summary" aria-label="Resumo das demandas"></div>
     </header>
 
-    <section class="dm-toolbar" aria-label="Filtros do gerenciador">
-        <label class="dm-search">
-            <span>Buscar por título</span>
-            <span class="dm-search__control">
-                <input id="dm-search" type="search" placeholder="Ex.: painel de produção" autocomplete="off">
-            </span>
-        </label>
-
-        <label>
-            <span>Responsável</span>
-            <select id="dm-filter-responsible"><option value="">Todos</option></select>
-        </label>
-        <label>
-            <span>Tipo</span>
-            <select id="dm-filter-type"><option value="">Todos</option></select>
-        </label>
-        <label>
-            <span>Status</span>
-            <select id="dm-filter-status"><option value="">Todos</option></select>
-        </label>
-        <label>
-            <span>Dificuldade</span>
-            <select id="dm-filter-difficulty"><option value="">Todas</option></select>
-        </label>
-        <button class="dm-button dm-button--quiet" id="dm-clear-filters" type="button">
-            Limpar filtros
+    <nav class="dm-tabs" aria-label="Áreas do gerenciador">
+        <button class="dm-tab" type="button" data-view="demands">
+            Demandas
         </button>
+        <button class="dm-tab" type="button" data-view="requests">
+            Solicitações <span class="dm-tab__count" id="dm-pending-count">0</span>
+        </button>
+    </nav>
+
+    <section id="dm-demands-view">
+        <section class="dm-toolbar" aria-label="Filtros das demandas">
+            <label class="dm-search">
+                <span>Buscar por título</span>
+                <span class="dm-search__control">
+                    <input id="dm-search" type="search" placeholder="Ex.: painel de produção" autocomplete="off">
+                </span>
+            </label>
+
+            <label>
+                <span>Responsável</span>
+                <select id="dm-filter-responsible"><option value="">Todos</option></select>
+            </label>
+            <label>
+                <span>Tipo</span>
+                <select id="dm-filter-type"><option value="">Todos</option></select>
+            </label>
+            <label>
+                <span>Status</span>
+                <select id="dm-filter-status"><option value="">Todos</option></select>
+            </label>
+            <label>
+                <span>Dificuldade</span>
+                <select id="dm-filter-difficulty"><option value="">Todas</option></select>
+            </label>
+            <button class="dm-button dm-button--quiet" id="dm-clear-filters" type="button">
+                Limpar filtros
+            </button>
+        </section>
+
+        <div class="dm-feedback" id="dm-loading" role="status">
+            <span class="dm-spinner" aria-hidden="true"></span>
+            Carregando demandas...
+        </div>
+
+        <section class="dm-board" id="dm-board" aria-live="polite"></section>
     </section>
 
-    <div class="dm-feedback" id="dm-loading" role="status">
-        <span class="dm-spinner" aria-hidden="true"></span>
-        Carregando demandas...
-    </div>
+    <section id="dm-requests-view" hidden>
+        <section class="dm-toolbar dm-review-toolbar" aria-label="Filtros das solicitações">
+            <label class="dm-search">
+                <span>Buscar por título</span>
+                <span class="dm-search__control">
+                    <input id="dm-request-search" type="search" placeholder="Ex.: integração de dados" autocomplete="off">
+                </span>
+            </label>
+            <label>
+                <span>Tipo</span>
+                <select id="dm-request-type"><option value="">Todos</option></select>
+            </label>
+            <label>
+                <span>Status</span>
+                <select id="dm-request-status">
+                    <option value="0">Em análise</option>
+                    <option value="3">Recusadas</option>
+                    <option value="">Todas</option>
+                </select>
+            </label>
+            <label>
+                <span>Urgência</span>
+                <select id="dm-request-urgency">
+                    <option value="">Todas</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Média">Média</option>
+                    <option value="Baixa">Baixa</option>
+                </select>
+            </label>
+            <button class="dm-button dm-button--quiet" id="dm-clear-request-filters" type="button">
+                Limpar filtros
+            </button>
+        </section>
 
-    <section class="dm-board" id="dm-board" aria-live="polite"></section>
+        <div class="dm-feedback" id="dm-request-loading" role="status">
+            <span class="dm-spinner" aria-hidden="true"></span>
+            Carregando solicitações...
+        </div>
+        <section class="dm-review-grid" id="dm-request-list" aria-live="polite"></section>
+    </section>
 </main>
 
 <div class="dm-modal" id="dm-modal" aria-hidden="true">
@@ -72,7 +124,8 @@
     window.demandManagementConfig = {
         apiRoot: {{ url_for('demand_management.management_list') | tojson }},
         area: {{ area | tojson }},
-        csrfToken: {{ csrf_token | tojson }}
+        csrfToken: {{ csrf_token | tojson }},
+        initialView: {{ initial_view | tojson }}
     };
 </script>
 <script defer src="{{ url_for('static', filename='js/demand-management/management.js') }}"></script>

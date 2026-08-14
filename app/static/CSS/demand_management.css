@@ -110,6 +110,47 @@ textarea {
     text-transform: uppercase;
 }
 
+.dm-tabs {
+    display: flex;
+    gap: .35rem;
+    max-width: 1600px;
+    margin: 0 auto 1rem;
+    border-bottom: 1px solid var(--dm-line);
+}
+
+.dm-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .7rem 1rem;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    color: var(--dm-muted);
+    background: transparent;
+    font-size: .86rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dm-tab:hover,
+.dm-tab.is-active {
+    color: var(--dm-navy-dark);
+}
+
+.dm-tab.is-active {
+    border-bottom-color: var(--dm-orange);
+}
+
+.dm-tab__count {
+    min-width: 23px;
+    padding: .12rem .4rem;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--dm-navy);
+    font-size: .68rem;
+    text-align: center;
+}
+
 .dm-toolbar {
     display: grid;
     grid-template-columns: minmax(240px, 2fr) repeat(4, minmax(130px, 1fr)) auto;
@@ -121,6 +162,10 @@ textarea {
     border: 1px solid var(--dm-line);
     border-radius: 8px;
     background: #fff;
+}
+
+.dm-review-toolbar {
+    grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(145px, 1fr)) auto;
 }
 
 .dm-toolbar label,
@@ -202,6 +247,12 @@ textarea {
     border-color: #e5b8b3;
     color: var(--dm-red);
     background: #fff6f5;
+}
+
+.dm-button--danger:hover {
+    border-color: var(--dm-red);
+    color: #fff;
+    background: var(--dm-red);
 }
 
 .dm-feedback {
@@ -438,6 +489,11 @@ textarea {
 .dm-badge--difficulty-media { color: var(--dm-yellow); background: #fff1c2; }
 .dm-badge--difficulty-baixa { color: var(--dm-green); background: #e1f4eb; }
 .dm-badge--type { color: #8a3f00; background: #ffead3; }
+.dm-badge--review-pending { color: var(--dm-navy-dark); background: #e7edf9; }
+.dm-badge--review-declined { color: var(--dm-red); background: #fee7e5; }
+.dm-badge--urgency-alta { color: var(--dm-red); background: #fee7e5; }
+.dm-badge--urgency-media { color: var(--dm-yellow); background: #fff1c2; }
+.dm-badge--urgency-baixa { color: var(--dm-green); background: #e1f4eb; }
 
 .dm-card__fields {
     display: grid;
@@ -467,6 +523,60 @@ textarea {
     color: var(--dm-muted);
     background: #fff;
     text-align: center;
+}
+
+.dm-review-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.dm-review-grid > .dm-empty {
+    grid-column: 1 / -1;
+}
+
+.dm-review-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 270px;
+    padding: 1rem;
+    border: 1px solid var(--dm-line);
+    border-top: 6px solid var(--dm-orange);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+
+.dm-review-card:hover {
+    box-shadow: 0 4px 12px rgba(30, 38, 49, .14);
+    transform: translateY(-1px);
+}
+
+.dm-review-card--declined {
+    border-top-color: var(--dm-red);
+}
+
+.dm-review-card .dm-card__description {
+    margin-bottom: 1rem;
+}
+
+.dm-review-card__footer {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: .8rem;
+    margin-top: auto;
+    padding-top: .8rem;
+    border-top: 1px solid #e7e7e7;
+}
+
+.dm-review-card__footer > span {
+    color: var(--dm-muted);
+    font-size: .7rem;
 }
 
 .dm-modal {
@@ -526,6 +636,12 @@ textarea {
     font-size: clamp(1.4rem, 2.5vw, 2rem);
     font-weight: 700;
     letter-spacing: -.02em;
+}
+
+.dm-modal__meta {
+    margin: -.55rem 0 0;
+    color: var(--dm-muted);
+    font-size: .78rem;
 }
 
 .dm-modal__columns {
@@ -623,6 +739,53 @@ textarea {
     font-size: .76rem;
 }
 
+.dm-source-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 1rem;
+    text-decoration: none;
+}
+
+.dm-review-modal__columns {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+}
+
+.dm-review-decision {
+    position: sticky;
+    top: 0;
+}
+
+.dm-review-decision > p,
+.dm-decision-form > p {
+    margin: 0;
+    color: var(--dm-muted);
+    font-size: .78rem;
+    line-height: 1.5;
+}
+
+.dm-decision-form {
+    display: grid;
+    gap: .85rem;
+}
+
+.dm-decision-divider {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    margin: 1rem 0;
+    color: var(--dm-muted);
+    font-size: .7rem;
+    text-transform: uppercase;
+}
+
+.dm-decision-divider::before,
+.dm-decision-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--dm-line);
+}
+
 .dm-tasks {
     margin-top: 1rem;
 }
@@ -718,6 +881,7 @@ body.dm-modal-open { overflow: hidden; }
     .dm-toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .dm-search { grid-column: span 2; }
     .dm-owner__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dm-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dm-modal__columns { grid-template-columns: 1fr; }
     .dm-task { grid-template-columns: 28px repeat(2, minmax(0, 1fr)); }
     .dm-task__check { grid-column: 1; grid-row: 1; }
@@ -740,11 +904,15 @@ body.dm-modal-open { overflow: hidden; }
     .dm-toolbar { grid-template-columns: 1fr 1fr; }
     .dm-search { grid-column: 1 / -1; }
     .dm-owner__cards { grid-template-columns: 1fr; padding: .65rem; }
+    .dm-review-grid { grid-template-columns: 1fr; }
+    .dm-review-toolbar { grid-template-columns: 1fr 1fr; }
+    .dm-review-toolbar .dm-search { grid-column: 1 / -1; }
     .dm-card__fields,
     .dm-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dm-form-grid .dm-field { grid-column: span 1; }
     .dm-form-grid .dm-field--wide { grid-column: 1 / -1; }
     .dm-modal__panel { width: 100%; max-height: 100vh; padding: 1rem; }
+    .dm-review-decision { position: static; }
     .dm-readonly-grid { grid-template-columns: 1fr; }
     .dm-task { grid-template-columns: 28px minmax(0, 1fr); }
     .dm-task__check { grid-column: 1; grid-row: 1; justify-self: start; }
@@ -764,6 +932,8 @@ body.dm-modal-open { overflow: hidden; }
     .dm-toolbar,
     .dm-card__fields,
     .dm-form-grid { grid-template-columns: 1fr; }
+    .dm-review-toolbar { grid-template-columns: 1fr; }
+    .dm-review-card__footer { align-items: stretch; flex-direction: column; }
     .dm-form-grid .dm-field,
     .dm-form-grid .dm-field--wide { grid-column: 1; }
     .dm-card__top { display: grid; }

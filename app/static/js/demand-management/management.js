@@ -7,6 +7,9 @@
         responsibles: [],
         options: { status: [], difficulty: [] },
         detail: null,
+        requests: [],
+        requestDetail: null,
+        view: config.initialView === 'requests' ? 'requests' : 'demands',
         collapsedOwners: new Set(),
         updateQueues: new Map(),
         filtersInitialized: false
@@ -14,6 +17,10 @@
 
     const elements = {
         board: document.getElementById('dm-board'),
+        demandsView: document.getElementById('dm-demands-view'),
+        requestsView: document.getElementById('dm-requests-view'),
+        tabs: Array.from(document.querySelectorAll('[data-view]')),
+        subtitle: document.getElementById('dm-subtitle'),
         loading: document.getElementById('dm-loading'),
         summary: document.getElementById('dm-summary'),
         search: document.getElementById('dm-search'),
@@ -22,6 +29,14 @@
         status: document.getElementById('dm-filter-status'),
         difficulty: document.getElementById('dm-filter-difficulty'),
         clearFilters: document.getElementById('dm-clear-filters'),
+        requestList: document.getElementById('dm-request-list'),
+        requestLoading: document.getElementById('dm-request-loading'),
+        requestSearch: document.getElementById('dm-request-search'),
+        requestType: document.getElementById('dm-request-type'),
+        requestStatus: document.getElementById('dm-request-status'),
+        requestUrgency: document.getElementById('dm-request-urgency'),
+        clearRequestFilters: document.getElementById('dm-clear-request-filters'),
+        pendingCount: document.getElementById('dm-pending-count'),
         modal: document.getElementById('dm-modal'),
         modalContent: document.getElementById('dm-modal-content'),
         toast: document.getElementById('dm-toast')
@@ -70,6 +85,10 @@
             projeto: 'Projeto',
             erro: 'Erro'
         }[type] || display(type);
+    }
+
+    function requestStatusLabel(status) {
+        return Number(status) === 3 ? 'Recusada' : 'Em análise';
     }
 
     function isLate(demand) {
@@ -145,10 +164,66 @@
         }
     }
 
+    async function loadRequests(showLoading) {
+        if (showLoading !== false) {
+            elements.requestLoading.style.display = 'flex';
+            elements.requestList.innerHTML = '';
+        }
+        try {
+            const data = await api(`${config.apiRoot}/requests`);
+            state.requests = data.requests || [];
+            configureRequestFilters();
+            renderRequests();
+            renderNavigation();
+        } catch (error) {
+            elements.requestList.innerHTML = `<div class="dm-empty">${escapeHtml(error.message)}</div>`;
+        } finally {
+            elements.requestLoading.style.display = 'none';
+        }
+    }
+
+    function configureRequestFilters() {
+        const selected = elements.requestType.value;
+        const types = Array.from(new Set(state.requests.map(function (item) {
+            return item.demandType;
+        }))).filter(Boolean);
+        elements.requestType.innerHTML = '<option value="">Todos</option>' + types.map(function (type) {
+            return `<option value="${escapeHtml(type)}">${escapeHtml(typeLabel(type))}</option>`;
+        }).join('');
+        elements.requestType.value = selected;
+    }
+
+    function renderNavigation() {
+        const requestsSelected = state.view === 'requests';
+        elements.demandsView.hidden = requestsSelected;
+        elements.requestsView.hidden = !requestsSelected;
+        elements.tabs.forEach(function (tab) {
+            const selected = tab.dataset.view === state.view;
+            tab.classList.toggle('is-active', selected);
+            tab.setAttribute('aria-current', selected ? 'page' : 'false');
+        });
+        elements.pendingCount.textContent = state.requests.filter(function (item) {
+            return Number(item.status) === 0;
+        }).length;
+        elements.subtitle.textContent = requestsSelected
+            ? 'Solicitações aguardando análise e histórico de recusas.'
+            : 'Demandas aprovadas da Transformação Digital.';
+        renderSummary();
+    }
+
+    function changeView(view) {
+        if (!['demands', 'requests'].includes(view)) return;
+        state.view = view;
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', view);
+        window.history.replaceState({}, '', url.pathname + url.search);
+        renderNavigation();
+    }
+
     function configureFilters() {
         const selectedResponsible = elements.responsible.value;
         const selectedType = elements.type.value;
-        const selectedStatus = state.filtersInitialized ? elements.status.value : '__active__';
+        const selectedStatus = state.filtersInitialized ? elements.status.value : 'Em Andamento';
         const selectedDifficulty = elements.difficulty.value;
 
         elements.responsible.innerHTML = '<option value="">Todos</option>' +
@@ -194,6 +269,26 @@
     }
 
     function renderSummary() {
+        if (state.view === 'requests') {
+            const pending = state.requests.filter(function (item) {
+                return Number(item.status) === 0;
+            }).length;
+            const declined = state.requests.filter(function (item) {
+                return Number(item.status) === 3;
+            }).length;
+            const highPriority = state.requests.filter(function (item) {
+                return Number(item.status) === 0 && item.urgency === 'Alta';
+            }).length;
+            elements.summary.innerHTML = [
+                [state.requests.length, 'Listadas'],
+                [pending, 'Em análise'],
+                [declined, 'Recusadas'],
+                [highPriority, 'Urgentes']
+            ].map(function (item) {
+                return `<div class="dm-summary__item"><strong>${item[0]}</strong><span>${item[1]}</span></div>`;
+            }).join('');
+            return;
+        }
         const active = state.demands.filter(function (item) {
             return !['Concluído', 'Cancelado'].includes(item.status);
         }).length;
@@ -235,6 +330,45 @@
         });
 
         elements.board.innerHTML = Array.from(groups.values()).map(renderOwner).join('');
+    }
+
+    function filteredRequests() {
+        const search = normalize(elements.requestSearch.value);
+        return state.requests.filter(function (item) {
+            return (!search || normalize(item.title).includes(search)) &&
+                (!elements.requestType.value || item.demandType === elements.requestType.value) &&
+                (!elements.requestStatus.value || String(item.status) === elements.requestStatus.value) &&
+                (!elements.requestUrgency.value || item.urgency === elements.requestUrgency.value);
+        });
+    }
+
+    function renderRequests() {
+        const requests = filteredRequests();
+        if (!requests.length) {
+            elements.requestList.innerHTML = '<div class="dm-empty"><strong>Nenhuma solicitação encontrada.</strong><br>Altere os filtros para consultar outro grupo.</div>';
+            return;
+        }
+        elements.requestList.innerHTML = requests.map(renderRequestCard).join('');
+    }
+
+    function renderRequestCard(item) {
+        const status = requestStatusLabel(item.status);
+        const refused = Number(item.status) === 3;
+        return `
+            <article class="dm-review-card${refused ? ' dm-review-card--declined' : ''}" data-request-id="${item.requestId}" tabindex="0" role="button" aria-label="Abrir análise de ${escapeHtml(item.title)}">
+                <div class="dm-badges">
+                    <span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(item.demandType))}</span>
+                    <span class="dm-badge dm-badge--review-${refused ? 'declined' : 'pending'}">${escapeHtml(status)}</span>
+                    <span class="dm-badge dm-badge--urgency-${slug(item.urgency)}">Urgência ${escapeHtml(display(item.urgency))}</span>
+                </div>
+                <h2 class="dm-card__title">${escapeHtml(item.title)}</h2>
+                <div class="dm-card__requester">Solicitante: <strong>${escapeHtml(item.requesterName)}</strong> · #${item.requestId}</div>
+                <p class="dm-card__description">${escapeHtml(item.initialDescription)}</p>
+                <div class="dm-review-card__footer">
+                    <span>Solicitada em ${escapeHtml(formatDate(item.requestDate, true))}</span>
+                    <button class="dm-button" type="button" data-review-request="${item.requestId}">${refused ? 'Ver detalhes' : 'Analisar demanda'}</button>
+                </div>
+            </article>`;
     }
 
     function renderOwner(group) {
@@ -356,11 +490,25 @@
         }
     }
 
+    async function openRequestModal(requestId) {
+        elements.modal.classList.add('is-open');
+        elements.modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('dm-modal-open');
+        elements.modalContent.innerHTML = '<div class="dm-feedback"><span class="dm-spinner"></span>Carregando solicitação...</div>';
+        try {
+            state.requestDetail = await api(`${config.apiRoot}/requests/${requestId}`);
+            renderRequestModal(state.requestDetail);
+        } catch (error) {
+            elements.modalContent.innerHTML = `<div class="dm-empty">${escapeHtml(error.message)}</div>`;
+        }
+    }
+
     function closeModal() {
         elements.modal.classList.remove('is-open');
         elements.modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('dm-modal-open');
         state.detail = null;
+        state.requestDetail = null;
     }
 
     function readonlyItem(label, value, wide) {
@@ -420,6 +568,99 @@
                 <div class="dm-task-list">${renderTasks(demand.tasks || [])}</div>
                 ${renderNewTaskForm()}
             </section>`;
+    }
+
+    function renderRequestModal(item) {
+        const refused = Number(item.status) === 3;
+        const originalUrl = `/solicitar/detail?area=${encodeURIComponent(config.area)}&tipo=melhorias&id=${item.requestId}`;
+        elements.modalContent.innerHTML = `
+            <header class="dm-modal__header">
+                <div class="dm-badges">
+                    <span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(item.demandType))}</span>
+                    <span class="dm-badge dm-badge--review-${refused ? 'declined' : 'pending'}">${escapeHtml(requestStatusLabel(item.status))}</span>
+                    <span class="dm-badge dm-badge--urgency-${slug(item.urgency)}">Urgência ${escapeHtml(display(item.urgency))}</span>
+                </div>
+                <h2 id="dm-modal-title">${escapeHtml(item.title)}</h2>
+                <p class="dm-modal__meta">Solicitação #${item.requestId} · ${escapeHtml(item.requesterName)} · ${escapeHtml(formatDate(item.requestDate, true))}</p>
+            </header>
+
+            <div class="dm-modal__columns dm-review-modal__columns">
+                <section class="dm-panel">
+                    <h3>Dados da solicitação</h3>
+                    <dl class="dm-readonly-grid">
+                        ${readonlyItem('Título', item.title, true)}
+                        ${readonlyItem('Descrição inicial / objetivo', item.initialDescription, true)}
+                        ${item.demandType !== 'erro' ? readonlyItem('Premissas', item.assumptions, true) : ''}
+                        ${item.demandType !== 'erro' ? readonlyItem('Problemas atuais', item.actualProblems, true) : ''}
+                        ${item.demandType !== 'erro' ? readonlyItem('Ganhos esperados', item.benefits, true) : ''}
+                        ${readonlyItem('Solicitante', item.requesterName)}
+                        ${readonlyItem('Tipo', typeLabel(item.demandType))}
+                        ${readonlyItem('Urgência', item.urgency)}
+                        ${readonlyItem('Data da solicitação', formatDate(item.requestDate, true))}
+                        ${readonlyItem('Possui anexos', item.hasAttachments ? 'Sim — consulte a solicitação original' : 'Não')}
+                        ${refused ? readonlyItem('Responsável pela análise', item.responsibleName) : ''}
+                        ${refused ? readonlyItem('Data da recusa', formatDate(item.finalDate, true)) : ''}
+                        ${refused ? readonlyItem('Motivo da recusa', item.deniedText, true) : ''}
+                    </dl>
+                    <a class="dm-button dm-button--quiet dm-source-link" href="${originalUrl}" target="_blank" rel="noopener">Abrir solicitação original</a>
+                </section>
+
+                ${refused ? renderDeclinedRequestPanel() : renderReviewDecisionPanel()}
+            </div>`;
+    }
+
+    function renderDeclinedRequestPanel() {
+        return `
+            <aside class="dm-panel dm-review-decision">
+                <h3>Análise finalizada</h3>
+                <p>Esta solicitação foi recusada e permanece disponível apenas para consulta.</p>
+            </aside>`;
+    }
+
+    function renderReviewDecisionPanel() {
+        return `
+            <aside class="dm-panel dm-review-decision">
+                <h3>Analisar demanda</h3>
+                <form id="dm-approve-request" class="dm-decision-form">
+                    <p>Ao aprovar, a demanda será iniciada, você será definido como responsável e o card aparecerá automaticamente na aba Demandas.</p>
+                    <label class="dm-field">
+                        <span>Prazo de entrega</span>
+                        <input class="dm-input" name="deadline" type="date" required>
+                    </label>
+                    <button class="dm-button" type="submit">Aprovar e iniciar</button>
+                </form>
+                <div class="dm-decision-divider"><span>ou</span></div>
+                <form id="dm-decline-request" class="dm-decision-form">
+                    <label class="dm-field">
+                        <span>Motivo da recusa</span>
+                        <textarea class="dm-textarea" name="reason" required maxlength="4000" placeholder="Explique ao solicitante por que a demanda não será aprovada"></textarea>
+                    </label>
+                    <button class="dm-button dm-button--danger" type="submit">Recusar demanda</button>
+                </form>
+            </aside>`;
+    }
+
+    async function decideRequest(form, action) {
+        if (!state.requestDetail) return;
+        const button = form.querySelector('button[type="submit"]');
+        const payload = action === 'approve'
+            ? { deadline: form.elements.deadline.value }
+            : { reason: form.elements.reason.value };
+        button.disabled = true;
+        try {
+            await api(`${config.apiRoot}/requests/${state.requestDetail.requestId}/${action}`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            closeModal();
+            await Promise.all([loadBoard(false), loadRequests(false)]);
+            toast(action === 'approve'
+                ? 'Demanda aprovada e adicionada ao gerenciador.'
+                : 'Solicitação recusada.');
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+        }
     }
 
     function renderTasks(tasks) {
@@ -541,6 +782,17 @@
         if (card) openModal(Number(card.dataset.managementId));
     });
 
+    elements.requestList.addEventListener('click', function (event) {
+        const target = event.target.closest('[data-review-request], [data-request-id]');
+        if (target) openRequestModal(Number(target.dataset.reviewRequest || target.dataset.requestId));
+    });
+
+    elements.requestList.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') return;
+        const card = event.target.closest('[data-request-id]');
+        if (card) openRequestModal(Number(card.dataset.requestId));
+    });
+
     elements.board.addEventListener('change', function (event) {
         const input = event.target.closest('[data-field]');
         if (!input) return;
@@ -566,9 +818,16 @@
     });
 
     elements.modal.addEventListener('submit', function (event) {
-        if (event.target.id !== 'dm-new-task') return;
-        event.preventDefault();
-        createTask(event.target);
+        if (event.target.id === 'dm-new-task') {
+            event.preventDefault();
+            createTask(event.target);
+        } else if (event.target.id === 'dm-approve-request') {
+            event.preventDefault();
+            decideRequest(event.target, 'approve');
+        } else if (event.target.id === 'dm-decline-request') {
+            event.preventDefault();
+            decideRequest(event.target, 'decline');
+        }
     });
 
     [elements.responsible, elements.type, elements.status, elements.difficulty].forEach(function (filter) {
@@ -584,9 +843,27 @@
         renderBoard();
     });
 
+    [elements.requestType, elements.requestStatus, elements.requestUrgency].forEach(function (filter) {
+        filter.addEventListener('change', renderRequests);
+    });
+    elements.requestSearch.addEventListener('input', renderRequests);
+    elements.clearRequestFilters.addEventListener('click', function () {
+        elements.requestSearch.value = '';
+        elements.requestType.value = '';
+        elements.requestStatus.value = '0';
+        elements.requestUrgency.value = '';
+        renderRequests();
+    });
+    elements.tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            changeView(tab.dataset.view);
+        });
+    });
+
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && elements.modal.classList.contains('is-open')) closeModal();
     });
 
-    loadBoard();
+    renderNavigation();
+    Promise.all([loadBoard(), loadRequests()]);
 }());
