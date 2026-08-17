@@ -12,7 +12,6 @@ Não faça nenhuma destas ações por iniciativa própria:
 - importar `main`, `app.config`, módulos de rota, utilities ou jobs com Python;
 - instalar, atualizar ou remover dependências;
 - executar testes, builds, linters que importem o projeto ou ferramentas de descoberta automática;
-- executar `teste_h24.py`;
 - executar qualquer arquivo de `scripts/`;
 - executar `app/services/run_*_scheduler.py`;
 - executar funções de `app/services/jobs/`;
