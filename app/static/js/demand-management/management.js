@@ -223,7 +223,7 @@
     function configureFilters() {
         const selectedResponsible = elements.responsible.value;
         const selectedType = elements.type.value;
-        const selectedStatus = state.filtersInitialized ? elements.status.value : 'Em Andamento';
+        const selectedStatus = state.filtersInitialized ? elements.status.value : '__active__';
         const selectedDifficulty = elements.difficulty.value;
 
         elements.responsible.innerHTML = '<option value="">Todos</option>' +
@@ -280,10 +280,7 @@
                 return Number(item.status) === 0 && item.urgency === 'Alta';
             }).length;
             elements.summary.innerHTML = [
-                [state.requests.length, 'Listadas'],
                 [pending, 'Em análise'],
-                [declined, 'Recusadas'],
-                [highPriority, 'Urgentes']
             ].map(function (item) {
                 return `<div class="dm-summary__item"><strong>${item[0]}</strong><span>${item[1]}</span></div>`;
             }).join('');
