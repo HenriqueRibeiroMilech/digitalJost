@@ -12,7 +12,6 @@
         view: config.initialView === 'requests' ? 'requests' : 'demands',
         collapsedOwners: new Set(),
         updateQueues: new Map(),
-        taskUpdateQueues: new Map(),
         filtersInitialized: false
     };
 
@@ -449,7 +448,7 @@
             replaceDemand(updated);
             if (state.detail && state.detail.managementId === managementId) {
                 state.detail = updated;
-                renderModal(updated);
+                if (!hasUnsavedTaskChanges()) renderModal(updated);
             }
             renderAll();
             toast('Alteração salva.');
@@ -509,6 +508,14 @@
         state.requestDetail = null;
     }
 
+    function requestCloseModal() {
+        if (state.detail && hasUnsavedTaskChanges()) {
+            const discard = window.confirm('Existem alterações não salvas nas tarefas. Fechar e descartar essas alterações?');
+            if (!discard) return;
+        }
+        closeModal();
+    }
+
     function readonlyItem(label, value, wide) {
         return `<div class="dm-readonly${wide ? ' dm-readonly--wide' : ''}"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(display(value))}</dd></div>`;
     }
@@ -563,6 +570,10 @@
 
             <section class="dm-panel dm-tasks">
                 <h3>Tarefas · ${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</h3>
+                <div class="dm-task-warning" data-task-warning role="status" aria-live="polite" hidden>
+                    <strong>Alterações não salvas.</strong>
+                    <span data-task-warning-text>Salve a tarefa destacada antes de fechar.</span>
+                </div>
                 <div class="dm-task-list">${renderTasks(demand.tasks || [])}</div>
                 ${renderNewTaskForm()}
             </section>`;
@@ -669,14 +680,17 @@
             const taskStatus = completed ? 'Concluída' : (taskLate ? 'Atrasada' : 'Em andamento');
             return `
                 <div class="dm-task${completed ? ' dm-task--completed' : ''}" data-task-id="${task.taskId}" data-row-version="${escapeHtml(task.rowVersion)}">
-                    <input class="dm-task__check" name="completed" type="checkbox" data-task-field ${completed ? 'checked' : ''} title="Marcar como concluída">
-                    <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description" data-task-field>${escapeHtml(task.description)}</textarea></label>
-                    <label class="dm-field dm-task__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId" data-task-field>${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
-                    <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" data-task-field value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"></label>
-                    <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations" data-task-field>${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
+                    <input class="dm-task__check" name="completed" type="checkbox" ${completed ? 'checked' : ''} title="Marcar como concluída">
+                    <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description">${escapeHtml(task.description)}</textarea></label>
+                    <label class="dm-field dm-task__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
+                    <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"></label>
+                    <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations">${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
                     <div class="dm-task__actions">
-                        <span class="dm-task__save-status" data-task-save-status aria-live="polite">Salva automaticamente</span>
-                        <button class="dm-button dm-button--danger" type="button" data-delete-task>Excluir</button>
+                        <span class="dm-task__save-status" data-task-save-status aria-live="polite" hidden>Alterações não salvas</span>
+                        <div class="dm-task__buttons">
+                            <button class="dm-button" type="button" data-save-task>Salvar</button>
+                            <button class="dm-button dm-button--danger" type="button" data-delete-task>Excluir</button>
+                        </div>
                     </div>
                 </div>`;
         }).join('');
@@ -704,6 +718,10 @@
     }
 
     async function createTask(form) {
+        if (hasUnsavedTaskChanges()) {
+            toast('Salve as alterações pendentes antes de adicionar outra tarefa.', true);
+            return;
+        }
         const button = form.querySelector('button[type="submit"]');
         button.disabled = true;
         try {
@@ -720,88 +738,130 @@
         }
     }
 
-    function setTaskSaveStatus(row, message, saving, isError) {
-        if (!row) return;
-        const status = row.querySelector('[data-task-save-status]');
-        const deleteButton = row.querySelector('[data-delete-task]');
-        row.setAttribute('aria-busy', saving ? 'true' : 'false');
-        if (status) {
-            status.textContent = message;
-            status.classList.toggle('is-saving', Boolean(saving));
-            status.classList.toggle('is-error', Boolean(isError));
-        }
-        if (deleteButton) deleteButton.disabled = Boolean(saving);
+    function comparableTaskPayload(task) {
+        return {
+            description: String(valueOrEmpty(task.description)),
+            responsibleId: String(valueOrEmpty(task.responsibleId)),
+            deadline: task.deadline ? String(task.deadline).substring(0, 10) : '',
+            observations: String(valueOrEmpty(task.observations)),
+            completed: Boolean(task.completed !== undefined ? task.completed : task.completedAt)
+        };
     }
 
-    function queueTaskSave(row) {
-        if (!state.detail) return;
+    function taskHasChanges(row) {
+        if (!state.detail) return false;
+        const taskId = Number(row.dataset.taskId);
+        const original = (state.detail.tasks || []).find(function (task) {
+            return Number(task.taskId) === taskId;
+        });
+        if (!original) return false;
+
+        const current = comparableTaskPayload(taskPayload(row));
+        const saved = comparableTaskPayload(original);
+        return Object.keys(current).some(function (fieldName) {
+            return current[fieldName] !== saved[fieldName];
+        });
+    }
+
+    function updateTaskWarning() {
+        const warning = elements.modalContent.querySelector('[data-task-warning]');
+        if (!warning) return;
+        const dirtyCount = elements.modalContent.querySelectorAll('.dm-task--dirty').length;
+        warning.hidden = dirtyCount === 0;
+        const message = warning.querySelector('[data-task-warning-text]');
+        if (message) {
+            message.textContent = dirtyCount === 1
+                ? 'Uma tarefa foi modificada e ainda não foi salva.'
+                : `${dirtyCount} tarefas foram modificadas e ainda não foram salvas.`;
+        }
+    }
+
+    function markTaskChanges(row) {
+        const changed = taskHasChanges(row);
+        const status = row.querySelector('[data-task-save-status]');
+        row.classList.toggle('dm-task--dirty', changed);
+        if (status) {
+            status.hidden = !changed;
+            status.textContent = 'Alterações não salvas';
+            status.classList.remove('is-saving', 'is-error');
+        }
+        updateTaskWarning();
+    }
+
+    function hasUnsavedTaskChanges(exceptRow) {
+        return Array.from(elements.modalContent.querySelectorAll('.dm-task--dirty')).some(function (row) {
+            return row !== exceptRow;
+        });
+    }
+
+    function taskStatus(task) {
+        const completed = Boolean(task.completedAt);
+        const late = !completed && task.deadline && new Date(`${String(task.deadline).substring(0, 10)}T00:00:00`) < new Date(new Date().setHours(0, 0, 0, 0));
+        return completed ? 'Concluída' : (late ? 'Atrasada' : 'Em andamento');
+    }
+
+    function syncSavedTaskRow(row, task) {
+        row.dataset.rowVersion = task.rowVersion;
+        row.classList.remove('dm-task--dirty');
+        row.classList.toggle('dm-task--completed', Boolean(task.completedAt));
+        row.querySelector('[name="completed"]').checked = Boolean(task.completedAt);
+        row.querySelector('[name="description"]').value = valueOrEmpty(task.description);
+        row.querySelector('[name="responsibleId"]').value = valueOrEmpty(task.responsibleId);
+        row.querySelector('[name="deadline"]').value = task.deadline ? String(task.deadline).substring(0, 10) : '';
+        row.querySelector('[name="observations"]').value = valueOrEmpty(task.observations);
+        row.querySelector('.dm-task__description > span').textContent = `Tarefa · ${taskStatus(task)}`;
+        const status = row.querySelector('[data-task-save-status]');
+        status.hidden = true;
+        status.classList.remove('is-saving', 'is-error');
+        updateTaskWarning();
+    }
+
+    async function saveTask(row) {
         const taskId = Number(row.dataset.taskId);
         const managementId = state.detail.managementId;
-        const key = `${managementId}:${taskId}`;
-        let update = state.taskUpdateQueues.get(key);
-
-        if (!update) {
-            update = {
-                key: key,
-                managementId: managementId,
-                taskId: taskId,
-                rowVersion: row.dataset.rowVersion,
-                pending: null,
-                running: false,
-                row: row
-            };
-            state.taskUpdateQueues.set(key, update);
-        }
-
-        // Mantém somente o estado mais recente enquanto uma gravação está em andamento.
-        update.pending = taskPayload(row);
-        update.row = row;
-        setTaskSaveStatus(row, 'Salvando...', true, false);
-        if (!update.running) persistTaskUpdates(update);
-    }
-
-    async function persistTaskUpdates(update) {
-        update.running = true;
+        const button = row.querySelector('[data-save-task]');
+        const status = row.querySelector('[data-task-save-status]');
+        button.disabled = true;
+        status.hidden = false;
+        status.textContent = 'Salvando...';
+        status.classList.add('is-saving');
+        status.classList.remove('is-error');
         try {
-            while (update.pending) {
-                const payload = update.pending;
-                update.pending = null;
-                payload.rowVersion = update.rowVersion;
+            const payload = taskPayload(row);
+            payload.rowVersion = row.dataset.rowVersion;
+            const detail = await api(`${config.apiRoot}/${managementId}/tasks/${taskId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+            const savedTask = (detail.tasks || []).find(function (task) {
+                return Number(task.taskId) === taskId;
+            });
+            if (!savedTask) throw new Error('A tarefa salva não foi encontrada na resposta.');
 
-                const detail = await api(`${config.apiRoot}/${update.managementId}/tasks/${update.taskId}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify(payload)
-                });
-                const savedTask = (detail.tasks || []).find(function (task) {
-                    return Number(task.taskId) === update.taskId;
-                });
-                if (!savedTask) throw new Error('A tarefa salva não foi encontrada na resposta.');
-
-                update.rowVersion = savedTask.rowVersion;
-                if (update.row) update.row.dataset.rowVersion = savedTask.rowVersion;
-                replaceDemand(detail);
-                renderAll();
-                if (state.detail && state.detail.managementId === update.managementId) {
-                    state.detail = detail;
-                }
-            }
-
-            if (state.detail && state.detail.managementId === update.managementId) {
-                renderModal(state.detail);
-            }
+            state.detail = detail;
+            replaceDemand(detail);
+            renderAll();
+            syncSavedTaskRow(row, savedTask);
             toast('Tarefa salva.');
         } catch (error) {
-            update.pending = null;
-            setTaskSaveStatus(update.row, 'Não foi possível salvar', false, true);
+            status.textContent = 'Não foi possível salvar';
+            status.classList.remove('is-saving');
+            status.classList.add('is-error');
             toast(error.message, true);
         } finally {
-            update.running = false;
-            state.taskUpdateQueues.delete(update.key);
+            button.disabled = false;
         }
     }
 
     async function deleteTask(row) {
-        if (!window.confirm('Excluir esta tarefa?')) return;
+        if (hasUnsavedTaskChanges(row)) {
+            toast('Salve as alterações das outras tarefas antes de excluir.', true);
+            return;
+        }
+        const message = row.classList.contains('dm-task--dirty')
+            ? 'Excluir esta tarefa? As alterações não salvas nela serão descartadas.'
+            : 'Excluir esta tarefa?';
+        if (!window.confirm(message)) return;
         try {
             const detail = await api(`${config.apiRoot}/${state.detail.managementId}/tasks/${row.dataset.taskId}`, {
                 method: 'DELETE',
@@ -860,22 +920,29 @@
 
     elements.modal.addEventListener('click', function (event) {
         if (event.target.closest('[data-close-modal]')) {
-            closeModal();
+            requestCloseModal();
             return;
         }
+        const saveButton = event.target.closest('[data-save-task]');
+        if (saveButton) saveTask(saveButton.closest('[data-task-id]'));
         const deleteButton = event.target.closest('[data-delete-task]');
         if (deleteButton) deleteTask(deleteButton.closest('[data-task-id]'));
     });
 
     elements.modal.addEventListener('change', function (event) {
-        const taskInput = event.target.closest('[data-task-field]');
-        if (taskInput) {
-            queueTaskSave(taskInput.closest('[data-task-id]'));
+        const taskRow = event.target.closest('[data-task-id]');
+        if (taskRow) {
+            markTaskChanges(taskRow);
             return;
         }
         const input = event.target.closest('[data-field]');
         if (!input || !state.detail) return;
         updateDemand(state.detail.managementId, input.dataset.field, input.value || null, input);
+    });
+
+    elements.modal.addEventListener('input', function (event) {
+        const taskRow = event.target.closest('[data-task-id]');
+        if (taskRow) markTaskChanges(taskRow);
     });
 
     elements.modal.addEventListener('submit', function (event) {
@@ -922,7 +989,7 @@
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && elements.modal.classList.contains('is-open')) closeModal();
+        if (event.key === 'Escape' && elements.modal.classList.contains('is-open')) requestCloseModal();
     });
 
     renderNavigation();
