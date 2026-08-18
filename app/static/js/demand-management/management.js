@@ -681,8 +681,8 @@
 
         return `
             <section class="dm-panel">
-                <h3>Dados da demanda interna</h3>
-                <p class="dm-personal-note">Você criou esta demanda e pode editar estes dados.</p>
+                <h3>Dados da atividade interna</h3>
+                <p class="dm-personal-note">Esta atividade pode ser editada.</p>
                 <div class="dm-direct-grid">
                     ${directDemandField('Título', 'title', demand.title, 'text', true)}
                     ${directDemandField(
