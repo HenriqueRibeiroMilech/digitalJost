@@ -128,6 +128,10 @@ Não analise apenas GET. O projeto concentra regras em POST, PATCH, PUT e DELETE
 
 ## 6. Regras por área
 
+### Arquitetura de novas features Flask
+
+Para features novas, prefira um módulo autocontido em `app/routes/<feature>/`: `__init__.py` exporta o blueprint, `routes.py` trata HTTP, autenticação e composição, `services.py` concentra casos de uso e transações, e `repository.py` contém o acesso ao banco. Use `domain.py` para regras, validações e erros próprios da feature e `integration.py` para e-mail ou sistemas externos somente quando essas responsabilidades existirem. Não crie arquivos vazios ou camadas sem necessidade; features pequenas podem começar apenas com os quatro arquivos principais.
+
 ### Segurança e dados sensíveis
 
 - Nunca reproduza valores de credenciais, tokens, chaves, senhas ou strings de conexão.
