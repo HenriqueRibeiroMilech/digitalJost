@@ -89,6 +89,10 @@
         }[type] || display(type);
     }
 
+    function typeBadgeClass(type) {
+        return `dm-badge--type dm-badge--type-${slug(type)}`;
+    }
+
     function requestStatusLabel(status) {
         return Number(status) === 3 ? 'Recusada' : 'Em análise';
     }
@@ -107,16 +111,6 @@
             const label = typeof item === 'object' ? item.name : item;
             const isSelected = String(valueOrEmpty(selected)) === String(value) ? ' selected' : '';
             return `<option value="${escapeHtml(value)}"${isSelected}>${escapeHtml(label)}</option>`;
-        }).join('');
-    }
-
-    function typeOptionList(selected) {
-        const types = state.options.type && state.options.type.length
-            ? state.options.type
-            : ['atividade', 'projeto', 'melhoria', 'erro'];
-        return types.map(function (type) {
-            const isSelected = type === selected ? ' selected' : '';
-            return `<option value="${escapeHtml(type)}"${isSelected}>${escapeHtml(typeLabel(type))}</option>`;
         }).join('');
     }
 
@@ -367,7 +361,7 @@
         return `
             <article class="dm-review-card${refused ? ' dm-review-card--declined' : ''}" data-request-id="${item.requestId}" tabindex="0" role="button" aria-label="Abrir análise de ${escapeHtml(item.title)}">
                 <div class="dm-badges">
-                    <span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(item.demandType))}</span>
+                    <span class="dm-badge ${typeBadgeClass(item.demandType)}">${escapeHtml(typeLabel(item.demandType))}</span>
                     <span class="dm-badge dm-badge--review-${refused ? 'declined' : 'pending'}">${escapeHtml(status)}</span>
                     <span class="dm-badge dm-badge--urgency-${slug(item.urgency)}">Urgência ${escapeHtml(display(item.urgency))}</span>
                 </div>
@@ -417,7 +411,7 @@
         const statusClass = `dm-card--status-${slug(demand.status)}`;
         const taskProgress = `${demand.completedTasks || 0}/${demand.totalTasks || 0}`;
         const badges = [
-            `<span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(demand.demandType))}</span>`,
+            `<span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>`,
             demand.createdByCurrentUser ? '<span class="dm-badge dm-badge--personal">Criada por você</span>' : '',
             `<span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>`,
             demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : '',
@@ -533,9 +527,9 @@
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
                 <div class="dm-badges">
-                    <span class="dm-badge dm-badge--personal">Nova demanda pessoal</span>
+                    <span class="dm-badge dm-badge--type dm-badge--type-atividade">Nova atividade pessoal</span>
                 </div>
-                <h2 id="dm-modal-title">Criar demanda</h2>
+                <h2 id="dm-modal-title">Criar atividade</h2>
                 <p class="dm-modal__meta">Ela será atribuída automaticamente a ${escapeHtml(config.currentUserName)}.</p>
             </header>
 
@@ -543,32 +537,13 @@
                 <section class="dm-panel">
                     <h3>Dados principais</h3>
                     <div class="dm-create-grid">
-                        <label class="dm-field dm-create-grid__type">
-                            <span>Tipo</span>
-                            <select class="dm-input" name="demandType" data-create-demand-type>${typeOptionList('atividade')}</select>
-                        </label>
                         <label class="dm-field dm-create-grid__title">
                             <span>Título</span>
                             <input class="dm-input" name="title" type="text" required maxlength="250" placeholder="Ex.: Atualizar indicador semanal">
                         </label>
                         <label class="dm-field dm-create-grid__description">
-                            <span data-create-description-label>Descrição da atividade</span>
-                            <textarea class="dm-textarea" name="initialDescription" required maxlength="4000" data-create-description placeholder="Descreva o que precisa ser feito"></textarea>
-                        </label>
-                    </div>
-
-                    <div class="dm-create-structured" data-create-structured hidden>
-                        <label class="dm-field">
-                            <span>Premissas</span>
-                            <textarea class="dm-textarea" name="assumptions" maxlength="4000" placeholder="Condições consideradas para esta demanda"></textarea>
-                        </label>
-                        <label class="dm-field">
-                            <span>Problemas atuais</span>
-                            <textarea class="dm-textarea" name="actualProblems" maxlength="4000" placeholder="O que acontece hoje"></textarea>
-                        </label>
-                        <label class="dm-field">
-                            <span>Ganhos esperados</span>
-                            <textarea class="dm-textarea" name="benefits" maxlength="4000" placeholder="Qual resultado é esperado"></textarea>
+                            <span>Descrição da atividade</span>
+                            <textarea class="dm-textarea" name="initialDescription" required maxlength="4000" placeholder="Descreva o que precisa ser feito"></textarea>
                         </label>
                     </div>
                 </section>
@@ -592,7 +567,7 @@
 
                 <div class="dm-modal__footer">
                     <button class="dm-button dm-button--quiet" type="button" data-close-modal>Cancelar</button>
-                    <button class="dm-button" type="submit">Criar demanda</button>
+                    <button class="dm-button" type="submit">Criar atividade</button>
                 </div>
             </form>`;
     }
@@ -614,36 +589,14 @@
             </label>`;
     }
 
-    function updateCreateTypeFields(form) {
-        const type = form.elements.demandType.value;
-        const structured = form.querySelector('[data-create-structured]');
-        const requiresStructure = ['projeto', 'melhoria'].includes(type);
-        structured.hidden = !requiresStructure;
-        structured.querySelectorAll('textarea').forEach(function (input) {
-            input.required = requiresStructure;
-        });
-
-        const label = form.querySelector('[data-create-description-label]');
-        const description = form.querySelector('[data-create-description]');
-        label.textContent = type === 'erro'
-            ? 'Descrição completa do erro'
-            : (type === 'atividade' ? 'Descrição da atividade' : 'Descrição inicial / objetivo');
-        description.placeholder = type === 'erro'
-            ? 'Descreva o erro, quando acontece e o impacto observado'
-            : 'Descreva o que precisa ser feito';
-    }
-
     function personalDemandPayload(form) {
         function value(name) {
             return form.elements[name].value || null;
         }
         return {
-            demandType: value('demandType'),
+            demandType: 'atividade',
             title: value('title'),
             initialDescription: value('initialDescription'),
-            assumptions: value('assumptions'),
-            actualProblems: value('actualProblems'),
-            benefits: value('benefits'),
             status: value('status'),
             difficulty: value('difficulty'),
             deadline: value('deadline'),
@@ -700,9 +653,7 @@
 
     function directDemandField(label, fieldName, value, type, wide) {
         let control;
-        if (type === 'select') {
-            control = `<select class="dm-input" data-field="${fieldName}">${typeOptionList(value)}</select>`;
-        } else if (type === 'textarea') {
+        if (type === 'textarea') {
             control = `<textarea class="dm-textarea" data-field="${fieldName}" maxlength="4000">${escapeHtml(valueOrEmpty(value))}</textarea>`;
         } else {
             control = `<input class="dm-input" data-field="${fieldName}" type="text" maxlength="250" value="${escapeHtml(valueOrEmpty(value))}">`;
@@ -734,7 +685,6 @@
                 <h3>Dados da demanda interna</h3>
                 <p class="dm-personal-note">Você criou esta demanda e pode editar estes dados.</p>
                 <div class="dm-direct-grid">
-                    ${directDemandField('Tipo', 'demandType', demand.demandType, 'select')}
                     ${directDemandField('Título', 'title', demand.title, 'text')}
                     ${directDemandField(
                         demand.demandType === 'erro' ? 'Descrição completa do erro' : 'Descrição inicial / objetivo',
@@ -773,7 +723,7 @@
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
                 <div class="dm-badges">
-                    <span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(demand.demandType))}</span>
+                    <span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>
                     ${demand.createdByCurrentUser ? '<span class="dm-badge dm-badge--personal">Criada por você</span>' : ''}
                     <span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>
                     ${demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : ''}
@@ -819,7 +769,7 @@
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
                 <div class="dm-badges">
-                    <span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(item.demandType))}</span>
+                    <span class="dm-badge ${typeBadgeClass(item.demandType)}">${escapeHtml(typeLabel(item.demandType))}</span>
                     <span class="dm-badge dm-badge--review-${refused ? 'declined' : 'pending'}">${escapeHtml(requestStatusLabel(item.status))}</span>
                     <span class="dm-badge dm-badge--urgency-${slug(item.urgency)}">Urgência ${escapeHtml(display(item.urgency))}</span>
                 </div>
@@ -1102,11 +1052,6 @@
     });
 
     elements.modal.addEventListener('change', function (event) {
-        const createType = event.target.closest('[data-create-demand-type]');
-        if (createType) {
-            updateCreateTypeFields(createType.form);
-            return;
-        }
         const taskRow = event.target.closest('[data-task-id]');
         if (taskRow) {
             markTaskChanges(taskRow);

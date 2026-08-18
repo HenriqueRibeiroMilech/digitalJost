@@ -38,7 +38,6 @@ MANAGEMENT_FIELDS = {
 
 # Estes campos existem somente em demandas criadas no gerenciador.
 DIRECT_DEMAND_FIELDS = {
-    'demandType': 'demandType',
     'title': 'title',
     'initialDescription': 'initialDescription',
     'assumptions': 'assumptions',
@@ -102,10 +101,6 @@ def _optional_hours(value):
 
 def validate_management_change(field, value):
     if field in DIRECT_DEMAND_FIELDS:
-        if field == 'demandType':
-            if value not in DEMAND_TYPE_OPTIONS:
-                raise ValidationError('Tipo de demanda inválido.')
-            return value
         if field == 'title':
             title = _optional_text(value, 250)
             if not title:
@@ -147,9 +142,12 @@ def validate_personal_demand(payload):
     if not isinstance(payload, dict):
         raise ValidationError('Dados da demanda inválidos.')
 
-    demand_type = payload.get('demandType') or 'atividade'
-    if demand_type not in DEMAND_TYPE_OPTIONS:
-        raise ValidationError('Tipo de demanda inválido.')
+    # Demandas abertas diretamente no gerenciador são sempre atividades.
+    requested_type = payload.get('demandType')
+    if requested_type not in (None, '', 'atividade'):
+        raise ValidationError(
+            'Somente atividades podem ser criadas diretamente no gerenciador.'
+        )
 
     title = _optional_text(payload.get('title'), 250)
     description = _optional_text(payload.get('initialDescription'), 4000)
@@ -158,26 +156,13 @@ def validate_personal_demand(payload):
     if not description:
         raise ValidationError('Informe a descrição da demanda.')
 
-    assumptions = _optional_text(payload.get('assumptions'), 4000)
-    actual_problems = _optional_text(payload.get('actualProblems'), 4000)
-    benefits = _optional_text(payload.get('benefits'), 4000)
-    if demand_type in ('projeto', 'melhoria'):
-        if not assumptions or not actual_problems or not benefits:
-            raise ValidationError(
-                'Informe as premissas, os problemas atuais e os ganhos esperados.'
-            )
-    else:
-        assumptions = None
-        actual_problems = None
-        benefits = None
-
     return {
-        'demandType': demand_type,
+        'demandType': 'atividade',
         'title': title,
         'initialDescription': description,
-        'assumptions': assumptions,
-        'actualProblems': actual_problems,
-        'benefits': benefits,
+        'assumptions': None,
+        'actualProblems': None,
+        'benefits': None,
         'status': validate_management_change('status', payload.get('status') or 'A Fazer'),
         'deadline': validate_management_change('deadline', payload.get('deadline')),
         'startDate': validate_management_change('startDate', payload.get('startDate')),
