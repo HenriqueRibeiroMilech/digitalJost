@@ -6,23 +6,9 @@ Portal interno da JOST para operações industriais, solicitações, gestão, mo
 
 ## Documentação principal
 
-A referência técnica completa do sistema está em:
+- [AGENTS.md](AGENTS.md) — regras obrigatórias de segurança, contexto arquitetural, roteiro de análise estática e fluxo remoto de Git.
 
-- [Guia técnico do Digital JOST](GUIA_TECNICO_DIGITAL_JOST.md)
-- [Instruções para agentes e automações](AGENTS.md)
-
-O guia técnico contém:
-
-- arquitetura e ciclo das requisições;
-- autenticação e permissões;
-- bancos e integrações;
-- mapeamento de telas, templates, JavaScript e backend;
-- tabelas utilizadas por cada módulo;
-- 179 paths de rota ativos;
-- serviços Windows e tarefas agendadas;
-- módulos desativados;
-- riscos técnicos e de segurança;
-- roteiro de investigação estática.
+O próprio código é a fonte de verdade para detalhes funcionais. Comece por `main.py` e rastreie a rota, o template, o JavaScript, as tabelas e os jobs envolvidos.
 
 ## Visão geral
 
@@ -84,7 +70,6 @@ DigitalJost/
 ├── requirements.txt                # Dependências Python
 ├── README.md                       # Introdução e onboarding
 ├── AGENTS.md                       # Regras para agentes e automações
-├── GUIA_TECNICO_DIGITAL_JOST.md    # Documentação técnica detalhada
 ├── app/
 │   ├── config.py                   # Factory Flask e extensões
 │   ├── errors.py                   # Handlers de erro
@@ -103,12 +88,11 @@ DigitalJost/
 Leia nesta ordem:
 
 1. `AGENTS.md` — regras obrigatórias de segurança;
-2. `GUIA_TECNICO_DIGITAL_JOST.md` — arquitetura e mapa do sistema;
-3. `main.py` — módulos registrados;
-4. `app/config.py` — criação do Flask e ciclo global;
-5. `app/templates/home.html` — menu e navegação;
-6. `app/utils/permissions.py` — perfis;
-7. rota, template e JavaScript do módulo que será alterado.
+2. `main.py` — módulos registrados;
+3. `app/config.py` — criação do Flask e ciclo global;
+4. `app/templates/home.html` — menu e navegação;
+5. `app/utils/permissions.py` — perfis;
+6. rota, template e JavaScript do módulo que será alterado.
 
 ## Módulos ativos
 
@@ -172,8 +156,6 @@ URL no menu ou JavaScript
   → SQL, upload, e-mail ou integração externa
 ```
 
-O capítulo “Mapa completo das telas e seus vínculos” do guia técnico já documenta esse encadeamento por módulo.
-
 ## Bancos e integrações
 
 O utilitário `app/utils/db_utils.py` expõe quatro engines:
@@ -209,7 +191,7 @@ O repositório contém problemas conhecidos que devem ser tratados antes de qual
 - logs e payloads potencialmente sensíveis;
 - código legado, backups e logs rastreados no Git.
 
-Não copie credenciais para documentação, tickets, commits ou mensagens. Consulte a seção “Achados importantes e riscos” do guia técnico.
+Não copie credenciais para documentação, tickets, commits ou mensagens. Consulte as regras e os riscos conhecidos em `AGENTS.md`.
 
 ## Regra de contribuição
 
@@ -222,5 +204,4 @@ Antes de modificar qualquer funcionalidade:
 5. preserve mudanças existentes no worktree;
 6. faça alterações pequenas e localizadas;
 7. valide estaticamente enquanto não houver ambiente seguro autorizado;
-8. atualize o guia técnico se arquitetura, rotas ou fluxos mudarem.
-
+8. atualize `README.md` ou `AGENTS.md` quando arquitetura, regras de segurança ou o fluxo de manutenção mudarem.
