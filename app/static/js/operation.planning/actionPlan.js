@@ -24,6 +24,9 @@ function displayDeadlines(id, data) {
 
         // Configurando o texto da data
         if (index === 0) {
+            if(new Date (deadline.split ("/").reverse().join ("-")) < new Date()) {
+                div.style.color = "red";
+            }
             div.innerHTML = `<strong>${deadline}</strong>`;
         } else {
             div.style.textDecoration = "line-through";
@@ -181,3 +184,5 @@ function loadActionPlan(presentationArea) {
     
 
 }
+
+// V1
