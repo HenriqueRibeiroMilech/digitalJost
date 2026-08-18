@@ -260,6 +260,7 @@
                 }).join('');
         elements.status.innerHTML = '<option value="">Todos</option>' + 
             '<option value="__active__">Ativas</option>' +
+            '<option value="__late__">Atrasadas</option>' +
             optionList(state.options.status || [], selectedStatus);
         elements.difficulty.innerHTML = '<option value="">Todas</option>' + optionList(state.options.difficulty || [], selectedDifficulty);
 
@@ -274,18 +275,20 @@
         const search = normalize(elements.search.value);
         return state.demands.filter(function (demand) {
             const responsibleFilter = elements.responsible.value;
+            const statusFilter = elements.status.value;
             const matchesResponsible = !responsibleFilter ||
                 (responsibleFilter === '__unassigned__' ? !demand.responsibleId : demand.responsibleId === responsibleFilter);
+            let matchesStatus = !statusFilter;
+            if (statusFilter === '__active__') {
+                matchesStatus = ['A Fazer', 'Em Andamento', 'Pausado'].includes(demand.status);
+            } else if (statusFilter === '__late__') {
+                matchesStatus = isLate(demand);
+            } else if (statusFilter) {
+                matchesStatus = demand.status === statusFilter;
+            }
             return matchesResponsible &&
                 (!elements.type.value || demand.demandType === elements.type.value) &&
-                (
-                    !elements.status.value ||
-                    (
-                        elements.status.value === '__active__'
-                            ? ['A Fazer', 'Em Andamento', 'Pausado'].includes(demand.status)
-                            : demand.status === elements.status.value
-                    )
-                ) &&
+                matchesStatus &&
                 (!elements.difficulty.value || demand.difficulty === elements.difficulty.value) &&
                 (!search || normalize(demand.title).includes(search));
         });
