@@ -260,8 +260,8 @@
                 }).join('');
         elements.status.innerHTML = '<option value="">Todos</option>' + 
             '<option value="__active__">Ativas</option>' +
-            '<option value="__late__">Atrasadas</option>' +
-            optionList(state.options.status || [], selectedStatus);
+            optionList(state.options.status || [], selectedStatus) +
+            '<option value="__late__">Atrasadas</option>';
         elements.difficulty.innerHTML = '<option value="">Todas</option>' + optionList(state.options.difficulty || [], selectedDifficulty);
 
         elements.responsible.value = selectedResponsible;
