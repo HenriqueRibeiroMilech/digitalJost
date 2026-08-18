@@ -6,16 +6,14 @@ from .domain import (
     STATUS_OPTIONS,
     ConflictError,
     NotFoundError,
-    ValidationError
-)
-from .integration import sync_approved_request
-from .validation import (
+    ValidationError,
     parse_row_version,
     validate_management_change,
     validate_review_approval,
     validate_review_decline,
     validate_task
 )
+from .integration import sync_approved_request
 
 
 def _serialize_value(value):

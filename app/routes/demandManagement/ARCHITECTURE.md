@@ -6,10 +6,8 @@ O módulo é separado do legado, mas continua compatível com o monólito Flask.
 routes.py                HTTP, autenticação, CSRF, respostas JSON e montagem do serviço
 services.py              casos de uso e limites de transação
 repository.py            SQL parametrizado e acesso a dados
-validation.py            validações sem dependência de Flask
-domain.py                áreas, opções, whitelist de campos e erros da feature
-integration.py           sincronização dos fluxos de aprovação
-review_notifications.py  notificações da análise de solicitações
+domain.py                regras, opções, validações e erros da feature
+integration.py           sincronização e notificações dos fluxos de aprovação
 schema.sql               criação manual das tabelas do gerenciador
 ```
 
@@ -19,7 +17,8 @@ schema.sql               criação manual das tabelas do gerenciador
 - A rota é o ponto de composição das dependências concretas da feature.
 - O repositório não conhece Flask nem decide respostas HTTP.
 - O serviço controla transações e valida responsáveis da área.
-- O domínio reúne somente contratos pequenos compartilhados por mais de uma camada.
+- O domínio reúne regras e validações sem dependência de Flask ou banco.
+- As integrações externas da feature ficam juntas em um único adaptador.
 - O adaptador legado recebe uma conexão já aberta, para participar da mesma transação da aprovação.
 - Dados originais não são copiados: `sourceRequestId` relaciona o registro operacional a `JDT_REQUEST_IMPROVEMENTS_SMALL`.
 - Solicitações em análise e recusadas são lidas diretamente da tabela original; a aba não cria uma cópia desses registros.

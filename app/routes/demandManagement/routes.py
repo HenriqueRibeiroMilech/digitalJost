@@ -8,8 +8,8 @@ from app.utils.db_utils import get_engine
 from app.utils.permissions import get_permission, user_has_role
 
 from .domain import AREA_CONFIG, DEFAULT_AREA, DemandManagementError
+from .integration import RequestReviewNotifier
 from .repository import DemandManagementRepository
-from .review_notifications import RequestReviewNotifier
 from .services import DemandManagementService
 
 
