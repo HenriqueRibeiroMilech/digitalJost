@@ -31,6 +31,10 @@
     </nav>
 
     <section id="dm-demands-view">
+        <div class="dm-demand-actions">
+            <span>Registre atividades internas sem abrir uma solicitação.</span>
+            <button class="dm-button" id="dm-create-demand" type="button" disabled>+ Nova demanda</button>
+        </div>
         <section class="dm-toolbar" aria-label="Filtros das demandas">
             <label class="dm-search">
                 <span>Buscar por título</span>
@@ -125,7 +129,8 @@
         apiRoot: {{ url_for('demand_management.management_list') | tojson }},
         area: {{ area | tojson }},
         csrfToken: {{ csrf_token | tojson }},
-        initialView: {{ initial_view | tojson }}
+        initialView: {{ initial_view | tojson }},
+        currentUserName: {{ current_user_name | tojson }}
     };
 </script>
 <script defer src="{{ url_for('static', filename='js/demand-management/management.js') }}"></script>

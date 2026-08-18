@@ -21,6 +21,8 @@ STATUS_OPTIONS = (
 
 DIFFICULTY_OPTIONS = ('Baixa', 'Média', 'Alta')
 
+DEMAND_TYPE_OPTIONS = ('atividade', 'projeto', 'melhoria', 'erro')
+
 # Whitelist que relaciona o campo da API à coluna no banco.
 MANAGEMENT_FIELDS = {
     'status': 'status',
@@ -32,6 +34,16 @@ MANAGEMENT_FIELDS = {
     'difficulty': 'difficulty',
     'observations': 'observations',
     'responsibleId': 'responsibleId'
+}
+
+# Estes campos existem somente em demandas criadas no gerenciador.
+DIRECT_DEMAND_FIELDS = {
+    'demandType': 'demandType',
+    'title': 'title',
+    'initialDescription': 'initialDescription',
+    'assumptions': 'assumptions',
+    'actualProblems': 'actualProblems',
+    'benefits': 'benefits'
 }
 
 
@@ -49,6 +61,10 @@ class NotFoundError(DemandManagementError):
 
 class ConflictError(DemandManagementError):
     status_code = 409
+
+
+class ForbiddenError(DemandManagementError):
+    status_code = 403
 
 
 def _optional_text(value, max_length):
@@ -85,6 +101,23 @@ def _optional_hours(value):
 
 
 def validate_management_change(field, value):
+    if field in DIRECT_DEMAND_FIELDS:
+        if field == 'demandType':
+            if value not in DEMAND_TYPE_OPTIONS:
+                raise ValidationError('Tipo de demanda inválido.')
+            return value
+        if field == 'title':
+            title = _optional_text(value, 250)
+            if not title:
+                raise ValidationError('Informe o título da demanda.')
+            return title
+        if field == 'initialDescription':
+            description = _optional_text(value, 4000)
+            if not description:
+                raise ValidationError('Informe a descrição da demanda.')
+            return description
+        return _optional_text(value, 4000)
+
     if field not in MANAGEMENT_FIELDS:
         raise ValidationError('Campo de gerenciamento inválido.')
 
@@ -108,6 +141,52 @@ def validate_management_change(field, value):
         return _optional_text(value, 100)
 
     raise ValidationError('Campo de gerenciamento inválido.')
+
+
+def validate_personal_demand(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError('Dados da demanda inválidos.')
+
+    demand_type = payload.get('demandType') or 'atividade'
+    if demand_type not in DEMAND_TYPE_OPTIONS:
+        raise ValidationError('Tipo de demanda inválido.')
+
+    title = _optional_text(payload.get('title'), 250)
+    description = _optional_text(payload.get('initialDescription'), 4000)
+    if not title:
+        raise ValidationError('Informe o título da demanda.')
+    if not description:
+        raise ValidationError('Informe a descrição da demanda.')
+
+    assumptions = _optional_text(payload.get('assumptions'), 4000)
+    actual_problems = _optional_text(payload.get('actualProblems'), 4000)
+    benefits = _optional_text(payload.get('benefits'), 4000)
+    if demand_type in ('projeto', 'melhoria'):
+        if not assumptions or not actual_problems or not benefits:
+            raise ValidationError(
+                'Informe as premissas, os problemas atuais e os ganhos esperados.'
+            )
+    else:
+        assumptions = None
+        actual_problems = None
+        benefits = None
+
+    return {
+        'demandType': demand_type,
+        'title': title,
+        'initialDescription': description,
+        'assumptions': assumptions,
+        'actualProblems': actual_problems,
+        'benefits': benefits,
+        'status': validate_management_change('status', payload.get('status') or 'A Fazer'),
+        'deadline': validate_management_change('deadline', payload.get('deadline')),
+        'startDate': validate_management_change('startDate', payload.get('startDate')),
+        'estimatedHours': validate_management_change('estimatedHours', payload.get('estimatedHours')),
+        'dailyHours': validate_management_change('dailyHours', payload.get('dailyHours')),
+        'completedHours': validate_management_change('completedHours', payload.get('completedHours')),
+        'difficulty': validate_management_change('difficulty', payload.get('difficulty')),
+        'observations': validate_management_change('observations', payload.get('observations'))
+    }
 
 
 def validate_task(payload):

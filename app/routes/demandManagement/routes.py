@@ -82,14 +82,21 @@ def management_page():
         'demandManagement/management.html',
         area=area_name,
         csrf_token=_csrf_token(),
-        initial_view=initial_view
+        initial_view=initial_view,
+        current_user_name=current_user.name
     )
 
 
-@demand_management_bp.route('/demandas/gerenciador/api', methods=['GET'])
+@demand_management_bp.route('/demandas/gerenciador/api', methods=['GET', 'POST'])
 def management_list():
     _, area = _current_area()
-    return jsonify(_build_service().list_board(area['id']))
+    service = _build_service()
+    if request.method == 'POST':
+        detail = service.create_personal_demand(
+            area['id'], request.get_json(silent=True), current_user.id
+        )
+        return jsonify(detail), 201
+    return jsonify(service.list_board(area['id'], current_user.id))
 
 
 @demand_management_bp.route('/demandas/gerenciador/api/requests', methods=['GET'])
@@ -155,9 +162,9 @@ def management_detail(management_id):
     service = _build_service()
     if request.method == 'PATCH':
         return jsonify(service.update_demand(
-            management_id, area['id'], request.get_json(silent=True)
+            management_id, area['id'], request.get_json(silent=True), current_user.id
         ))
-    return jsonify(service.get_detail(management_id, area['id']))
+    return jsonify(service.get_detail(management_id, area['id'], current_user.id))
 
 
 @demand_management_bp.route(
@@ -185,10 +192,11 @@ def management_task_detail(management_id, task_id):
     service = _build_service()
     if request.method == 'DELETE':
         detail = service.delete_task(
-            management_id, task_id, area['id'], payload.get('rowVersion')
+            management_id, task_id, area['id'], payload.get('rowVersion'),
+            current_user.id
         )
     else:
         detail = service.update_task(
-            management_id, task_id, area['id'], payload
+            management_id, task_id, area['id'], payload, current_user.id
         )
     return jsonify(detail)

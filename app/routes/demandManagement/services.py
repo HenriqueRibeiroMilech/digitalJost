@@ -2,13 +2,17 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from .domain import (
+    DEMAND_TYPE_OPTIONS,
     DIFFICULTY_OPTIONS,
+    DIRECT_DEMAND_FIELDS,
     STATUS_OPTIONS,
     ConflictError,
+    ForbiddenError,
     NotFoundError,
     ValidationError,
     parse_row_version,
     validate_management_change,
+    validate_personal_demand,
     validate_review_approval,
     validate_review_decline,
     validate_task
@@ -36,16 +40,20 @@ class DemandManagementService:
         self.repository = repository
         self.review_notifier = review_notifier
 
-    def list_board(self, area_id):
+    def list_board(self, area_id, user_id):
         with self.engine.connect() as connection:
-            demands = [_serialize_row(row) for row in self.repository.list_demands(connection, area_id)]
+            demands = [
+                self._serialize_demand(row, user_id)
+                for row in self.repository.list_demands(connection, area_id)
+            ]
             responsibles = [_serialize_row(row) for row in self.repository.list_responsibles(connection, area_id)]
         return {
             'demands': demands,
             'responsibles': responsibles,
             'options': {
                 'status': list(STATUS_OPTIONS),
-                'difficulty': list(DIFFICULTY_OPTIONS)
+                'difficulty': list(DIFFICULTY_OPTIONS),
+                'type': list(DEMAND_TYPE_OPTIONS)
             }
         }
 
@@ -92,17 +100,27 @@ class DemandManagementService:
 
         return self.get_review_request(request_id, area_id)
 
-    def get_detail(self, management_id, area_id):
+    def get_detail(self, management_id, area_id, user_id):
         with self.engine.connect() as connection:
             demand = self.repository.get_demand(connection, management_id, area_id)
             if not demand:
                 raise NotFoundError('Demanda não encontrada.')
             tasks = self.repository.list_tasks(connection, management_id, area_id)
-        result = _serialize_row(demand)
+        result = self._serialize_demand(demand, user_id)
         result['tasks'] = [_serialize_row(row) for row in tasks]
         return result
 
-    def update_demand(self, management_id, area_id, payload):
+    def create_personal_demand(self, area_id, payload, user_id):
+        demand = validate_personal_demand(payload)
+        with self.engine.begin() as connection:
+            management_id = self.repository.create_personal_demand(
+                connection, area_id, demand, user_id
+            )
+            if management_id is None:
+                raise ConflictError('Não foi possível criar a demanda.')
+        return self.get_detail(management_id, area_id, user_id)
+
+    def update_demand(self, management_id, area_id, payload, user_id):
         if not isinstance(payload, dict):
             raise ValidationError('Dados da alteração inválidos.')
         field = payload.get('field')
@@ -110,17 +128,30 @@ class DemandManagementService:
         row_version = parse_row_version(payload.get('rowVersion'))
 
         with self.engine.begin() as connection:
-            if field == 'responsibleId' and value:
-                if not self.repository.responsible_belongs_to_area(connection, value, area_id):
-                    raise ValidationError('O responsável deve ser um usuário ativo da área.')
-            updated = self.repository.update_field(
-                connection, management_id, area_id, field, value, row_version
-            )
+            if field in DIRECT_DEMAND_FIELDS:
+                updated = self.repository.update_direct_field(
+                    connection, management_id, area_id, field, value,
+                    row_version, user_id
+                )
+            else:
+                if field == 'responsibleId' and value:
+                    if not self.repository.responsible_belongs_to_area(connection, value, area_id):
+                        raise ValidationError('O responsável deve ser um usuário ativo da área.')
+                updated = self.repository.update_field(
+                    connection, management_id, area_id, field, value, row_version
+                )
+
             if not updated:
-                if not self.repository.get_demand(connection, management_id, area_id):
+                current = self.repository.get_demand(connection, management_id, area_id)
+                if not current:
                     raise NotFoundError('Demanda não encontrada.')
+                if field in DIRECT_DEMAND_FIELDS:
+                    if current['sourceRequestId'] is not None:
+                        raise ForbiddenError('Os dados da solicitação original são somente leitura.')
+                    if str(current['directCreatorId']) != str(user_id):
+                        raise ForbiddenError('Somente quem criou a demanda pode alterar estes dados.')
                 raise ConflictError('A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.')
-        return self.get_detail(management_id, area_id)
+        return self.get_detail(management_id, area_id, user_id)
 
     def create_task(self, management_id, area_id, payload, created_by):
         task = validate_task(payload)
@@ -131,9 +162,9 @@ class DemandManagementService:
             )
             if task_id is None:
                 raise NotFoundError('Demanda não encontrada.')
-        return self.get_detail(management_id, area_id)
+        return self.get_detail(management_id, area_id, created_by)
 
-    def update_task(self, management_id, task_id, area_id, payload):
+    def update_task(self, management_id, task_id, area_id, payload, user_id):
         task = validate_task(payload)
         row_version = parse_row_version(payload.get('rowVersion'))
         with self.engine.begin() as connection:
@@ -143,9 +174,9 @@ class DemandManagementService:
             )
             if not updated:
                 raise ConflictError('A tarefa foi alterada ou não existe mais. Reabra a demanda.')
-        return self.get_detail(management_id, area_id)
+        return self.get_detail(management_id, area_id, user_id)
 
-    def delete_task(self, management_id, task_id, area_id, row_version_value):
+    def delete_task(self, management_id, task_id, area_id, row_version_value, user_id):
         row_version = parse_row_version(row_version_value)
         with self.engine.begin() as connection:
             deleted = self.repository.delete_task(
@@ -153,7 +184,7 @@ class DemandManagementService:
             )
             if not deleted:
                 raise ConflictError('A tarefa foi alterada ou não existe mais. Reabra a demanda.')
-        return self.get_detail(management_id, area_id)
+        return self.get_detail(management_id, area_id, user_id)
 
     def _validate_task_responsible(self, connection, task, area_id):
         responsible_id = task['responsibleId']
@@ -173,6 +204,17 @@ class DemandManagementService:
         if review['responsibleId'] and str(review['responsibleId']) != str(reviewer_id):
             raise ConflictError('Esta solicitação está atribuída a outro responsável.')
         return dict(review)
+
+    @staticmethod
+    def _serialize_demand(row, user_id):
+        result = _serialize_row(row)
+        creator_id = result.pop('directCreatorId', None)
+        is_direct = result.get('sourceRequestId') is None
+        result['isDirectDemand'] = is_direct
+        result['createdByCurrentUser'] = (
+            is_direct and str(creator_id) == str(user_id)
+        )
+        return result
 
     @staticmethod
     def _serialize_review(row):

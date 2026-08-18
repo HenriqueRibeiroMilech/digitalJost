@@ -1,6 +1,6 @@
 from sqlalchemy import text
 
-from .domain import MANAGEMENT_FIELDS
+from .domain import DIRECT_DEMAND_FIELDS, MANAGEMENT_FIELDS
 
 
 class DemandManagementRepository:
@@ -46,6 +46,7 @@ class DemandManagementRepository:
             M.completedHours,
             M.difficulty,
             M.observations,
+            M.createdBy AS directCreatorId,
             CASE
                 WHEN Responsible.active = 1 THEN M.responsibleId
                 ELSE NULL
@@ -53,21 +54,22 @@ class DemandManagementRepository:
             M.createdAt,
             M.updatedAt,
             M.rowVersion,
-            COALESCE(NULLIF(R.demandType, ''), 'melhoria') AS demandType,
-            R.title,
-            R.info AS initialDescription,
-            R.assumptions,
-            R.actualProblems,
-            R.benefits,
+            COALESCE(NULLIF(M.demandType, ''), NULLIF(R.demandType, ''), 'melhoria') AS demandType,
+            COALESCE(M.title, R.title) AS title,
+            COALESCE(M.initialDescription, R.info) AS initialDescription,
+            COALESCE(M.assumptions, R.assumptions) AS assumptions,
+            COALESCE(M.actualProblems, R.actualProblems) AS actualProblems,
+            COALESCE(M.benefits, R.benefits) AS benefits,
             CASE WHEN R.urgency = 'Imediata' THEN 'Alta' ELSE R.urgency END AS urgency,
-            R.openDate AS requestDate,
+            COALESCE(R.openDate, M.createdAt) AS requestDate,
             R.startDate AS requestStartDate,
             R.deliveryDate AS requestDeadline,
             R.finalDate AS requestFinalDate,
             R.reprogs AS requestReprograms,
             CASE WHEN NULLIF(R.images, '') IS NULL THEN 0 ELSE 1 END AS hasAttachments,
-            Requester.id AS requesterId,
-            Requester.name AS requesterName,
+            COALESCE(Requester.id, Creator.id) AS requesterId,
+            COALESCE(Requester.name, Creator.name) AS requesterName,
+            Creator.name AS createdByName,
             CASE
                 WHEN Responsible.active = 1 THEN Responsible.name
                 ELSE NULL
@@ -75,10 +77,12 @@ class DemandManagementRepository:
             COALESCE(TaskCount.totalTasks, 0) AS totalTasks,
             COALESCE(TaskCount.completedTasks, 0) AS completedTasks
         FROM JDT_DEMAND_MANAGEMENT AS M
-        JOIN JDT_REQUEST_IMPROVEMENTS_SMALL AS R
+        LEFT JOIN JDT_REQUEST_IMPROVEMENTS_SMALL AS R
             ON R.requestId = M.sourceRequestId
-        JOIN JDT_USER_DETAILS AS Requester
+        LEFT JOIN JDT_USER_DETAILS AS Requester
             ON Requester.id = R.requesterId
+        LEFT JOIN JDT_USER_DETAILS AS Creator
+            ON Creator.id = M.createdBy
         LEFT JOIN JDT_USER_DETAILS AS Responsible
             ON Responsible.id = M.responsibleId
             AND Responsible.active = 1
@@ -171,6 +175,44 @@ class DemandManagementRepository:
             'area_id': area_id
         }).mappings().first()
 
+    def create_personal_demand(self, connection, area_id, demand, user_id):
+        query = text("""
+            INSERT INTO JDT_DEMAND_MANAGEMENT (
+                sourceRequestId, areaId, status, deadline, startDate,
+                estimatedHours, dailyHours, completedHours, difficulty,
+                observations, responsibleId, createdBy, demandType, title,
+                initialDescription, assumptions, actualProblems, benefits,
+                createdAt, updatedAt
+            )
+            OUTPUT INSERTED.managementId
+            VALUES (
+                NULL, :area_id, :status, :deadline, :start_date,
+                :estimated_hours, :daily_hours, :completed_hours, :difficulty,
+                :observations, :user_id, :user_id, :demand_type, :title,
+                :initial_description, :assumptions, :actual_problems, :benefits,
+                GETDATE(), GETDATE()
+            )
+        """)
+        row = connection.execute(query, {
+            'area_id': area_id,
+            'status': demand['status'],
+            'deadline': demand['deadline'],
+            'start_date': demand['startDate'],
+            'estimated_hours': demand['estimatedHours'],
+            'daily_hours': demand['dailyHours'],
+            'completed_hours': demand['completedHours'],
+            'difficulty': demand['difficulty'],
+            'observations': demand['observations'],
+            'user_id': user_id,
+            'demand_type': demand['demandType'],
+            'title': demand['title'],
+            'initial_description': demand['initialDescription'],
+            'assumptions': demand['assumptions'],
+            'actual_problems': demand['actualProblems'],
+            'benefits': demand['benefits']
+        }).first()
+        return row[0] if row else None
+
     # def list_responsibles(self, connection, area_id):
     #     query = text("""
     #         SELECT id, name
@@ -243,6 +285,28 @@ class DemandManagementRepository:
             'value': value,
             'management_id': management_id,
             'area_id': area_id,
+            'row_version': row_version
+        })
+        return result.rowcount == 1
+
+    def update_direct_field(
+        self, connection, management_id, area_id, field, value, row_version, user_id
+    ):
+        column = DIRECT_DEMAND_FIELDS[field]
+        query = text(f"""
+            UPDATE JDT_DEMAND_MANAGEMENT
+            SET {column} = :value, updatedAt = GETDATE()
+            WHERE managementId = :management_id
+                AND areaId = :area_id
+                AND sourceRequestId IS NULL
+                AND createdBy = :user_id
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'value': value,
+            'management_id': management_id,
+            'area_id': area_id,
+            'user_id': user_id,
             'row_version': row_version
         })
         return result.rowcount == 1

@@ -5,7 +5,7 @@
     const state = {
         demands: [],
         responsibles: [],
-        options: { status: [], difficulty: [] },
+        options: { status: [], difficulty: [], type: [] },
         detail: null,
         requests: [],
         requestDetail: null,
@@ -29,6 +29,7 @@
         status: document.getElementById('dm-filter-status'),
         difficulty: document.getElementById('dm-filter-difficulty'),
         clearFilters: document.getElementById('dm-clear-filters'),
+        createDemand: document.getElementById('dm-create-demand'),
         requestList: document.getElementById('dm-request-list'),
         requestLoading: document.getElementById('dm-request-loading'),
         requestSearch: document.getElementById('dm-request-search'),
@@ -81,6 +82,7 @@
 
     function typeLabel(type) {
         return {
+            atividade: 'Atividade',
             melhoria: 'Melhoria',
             projeto: 'Projeto',
             erro: 'Erro'
@@ -105,6 +107,16 @@
             const label = typeof item === 'object' ? item.name : item;
             const isSelected = String(valueOrEmpty(selected)) === String(value) ? ' selected' : '';
             return `<option value="${escapeHtml(value)}"${isSelected}>${escapeHtml(label)}</option>`;
+        }).join('');
+    }
+
+    function typeOptionList(selected) {
+        const types = state.options.type && state.options.type.length
+            ? state.options.type
+            : ['atividade', 'projeto', 'melhoria', 'erro'];
+        return types.map(function (type) {
+            const isSelected = type === selected ? ' selected' : '';
+            return `<option value="${escapeHtml(type)}"${isSelected}>${escapeHtml(typeLabel(type))}</option>`;
         }).join('');
     }
 
@@ -157,6 +169,7 @@
             state.options = data.options || state.options;
             configureFilters();
             renderAll();
+            elements.createDemand.disabled = false;
         } catch (error) {
             elements.board.innerHTML = `<div class="dm-empty">${escapeHtml(error.message)}</div>`;
         } finally {
@@ -207,7 +220,7 @@
         }).length;
         elements.subtitle.textContent = requestsSelected
             ? 'Solicitações aguardando análise e histórico de recusas.'
-            : 'Demandas aprovadas da Transformação Digital.';
+            : 'Demandas aprovadas e atividades internas da Transformação Digital.';
         renderSummary();
     }
 
@@ -405,6 +418,7 @@
         const taskProgress = `${demand.completedTasks || 0}/${demand.totalTasks || 0}`;
         const badges = [
             `<span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(demand.demandType))}</span>`,
+            demand.createdByCurrentUser ? '<span class="dm-badge dm-badge--personal">Criada por você</span>' : '',
             `<span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>`,
             demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : '',
             late ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''
@@ -416,7 +430,9 @@
                     <div class="dm-card__identity">
                         <div class="dm-badges">${badges}</div>
                         <h2 class="dm-card__title">${escapeHtml(demand.title)}</h2>
-                        <div class="dm-card__requester">Solicitante: <strong>${escapeHtml(demand.requesterName)}</strong> · #${demand.sourceRequestId}</div>
+                        <div class="dm-card__requester">${demand.isDirectDemand
+                            ? `Criada por: <strong>${escapeHtml(demand.createdByName || demand.requesterName)}</strong>`
+                            : `Solicitante: <strong>${escapeHtml(demand.requesterName)}</strong> · #${demand.sourceRequestId}`}</div>
                         <p class="dm-card__description">${escapeHtml(demand.initialDescription)}</p>
                     </div>
                     <div class="dm-card__progress" title="Progresso das tarefas">
@@ -500,6 +516,176 @@
         }
     }
 
+    function openCreateDemandModal() {
+        state.detail = null;
+        state.requestDetail = null;
+        elements.modal.classList.add('is-open');
+        elements.modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('dm-modal-open');
+        renderCreateDemandModal();
+    }
+
+    function renderCreateDemandModal() {
+        const statuses = state.options.status && state.options.status.length
+            ? state.options.status
+            : ['A Fazer', 'Em Andamento', 'Pausado', 'Concluído', 'Cancelado'];
+        const difficulties = state.options.difficulty || [];
+        elements.modalContent.innerHTML = `
+            <header class="dm-modal__header">
+                <div class="dm-badges">
+                    <span class="dm-badge dm-badge--personal">Nova demanda pessoal</span>
+                </div>
+                <h2 id="dm-modal-title">Criar demanda</h2>
+                <p class="dm-modal__meta">Ela será atribuída automaticamente a ${escapeHtml(config.currentUserName)}.</p>
+            </header>
+
+            <form class="dm-create-form" id="dm-create-demand-form">
+                <section class="dm-panel">
+                    <h3>Dados principais</h3>
+                    <div class="dm-create-grid">
+                        <label class="dm-field dm-create-grid__type">
+                            <span>Tipo</span>
+                            <select class="dm-input" name="demandType" data-create-demand-type>${typeOptionList('atividade')}</select>
+                        </label>
+                        <label class="dm-field dm-create-grid__title">
+                            <span>Título</span>
+                            <input class="dm-input" name="title" type="text" required maxlength="250" placeholder="Ex.: Atualizar indicador semanal">
+                        </label>
+                        <label class="dm-field dm-create-grid__description">
+                            <span data-create-description-label>Descrição da atividade</span>
+                            <textarea class="dm-textarea" name="initialDescription" required maxlength="4000" data-create-description placeholder="Descreva o que precisa ser feito"></textarea>
+                        </label>
+                    </div>
+
+                    <div class="dm-create-structured" data-create-structured hidden>
+                        <label class="dm-field">
+                            <span>Premissas</span>
+                            <textarea class="dm-textarea" name="assumptions" maxlength="4000" placeholder="Condições consideradas para esta demanda"></textarea>
+                        </label>
+                        <label class="dm-field">
+                            <span>Problemas atuais</span>
+                            <textarea class="dm-textarea" name="actualProblems" maxlength="4000" placeholder="O que acontece hoje"></textarea>
+                        </label>
+                        <label class="dm-field">
+                            <span>Ganhos esperados</span>
+                            <textarea class="dm-textarea" name="benefits" maxlength="4000" placeholder="Qual resultado é esperado"></textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="dm-panel">
+                    <h3>Planejamento inicial</h3>
+                    <div class="dm-form-grid">
+                        ${createSelectField('Status', 'status', statuses, 'A Fazer')}
+                        ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
+                        ${createInputField('Prazo', 'deadline', 'date')}
+                        ${createInputField('Data de início', 'startDate', 'date')}
+                        ${createInputField('Tempo total estimado (h)', 'estimatedHours', 'number')}
+                        ${createInputField('Tempo diário (h)', 'dailyHours', 'number')}
+                        ${createInputField('Tempo realizado (h)', 'completedHours', 'number')}
+                        <label class="dm-field dm-field--wide">
+                            <span>Observações</span>
+                            <textarea class="dm-textarea" name="observations" maxlength="4000" placeholder="Informações adicionais"></textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="dm-modal__footer">
+                    <button class="dm-button dm-button--quiet" type="button" data-close-modal>Cancelar</button>
+                    <button class="dm-button" type="submit">Criar demanda</button>
+                </div>
+            </form>`;
+    }
+
+    function createSelectField(label, name, options, selected, emptyLabel) {
+        return `
+            <label class="dm-field dm-field--${slug(name)}">
+                <span>${escapeHtml(label)}</span>
+                <select class="dm-input" name="${name}">${optionList(options, selected, emptyLabel)}</select>
+            </label>`;
+    }
+
+    function createInputField(label, name, type) {
+        const numberOptions = type === 'number' ? ' min="0" max="99999.99" step="0.25"' : '';
+        return `
+            <label class="dm-field dm-field--${slug(name)}">
+                <span>${escapeHtml(label)}</span>
+                <input class="dm-input" name="${name}" type="${type}"${numberOptions}>
+            </label>`;
+    }
+
+    function updateCreateTypeFields(form) {
+        const type = form.elements.demandType.value;
+        const structured = form.querySelector('[data-create-structured]');
+        const requiresStructure = ['projeto', 'melhoria'].includes(type);
+        structured.hidden = !requiresStructure;
+        structured.querySelectorAll('textarea').forEach(function (input) {
+            input.required = requiresStructure;
+        });
+
+        const label = form.querySelector('[data-create-description-label]');
+        const description = form.querySelector('[data-create-description]');
+        label.textContent = type === 'erro'
+            ? 'Descrição completa do erro'
+            : (type === 'atividade' ? 'Descrição da atividade' : 'Descrição inicial / objetivo');
+        description.placeholder = type === 'erro'
+            ? 'Descreva o erro, quando acontece e o impacto observado'
+            : 'Descreva o que precisa ser feito';
+    }
+
+    function personalDemandPayload(form) {
+        function value(name) {
+            return form.elements[name].value || null;
+        }
+        return {
+            demandType: value('demandType'),
+            title: value('title'),
+            initialDescription: value('initialDescription'),
+            assumptions: value('assumptions'),
+            actualProblems: value('actualProblems'),
+            benefits: value('benefits'),
+            status: value('status'),
+            difficulty: value('difficulty'),
+            deadline: value('deadline'),
+            startDate: value('startDate'),
+            estimatedHours: value('estimatedHours'),
+            dailyHours: value('dailyHours'),
+            completedHours: value('completedHours'),
+            observations: value('observations')
+        };
+    }
+
+    async function createPersonalDemand(form) {
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            const created = await api(config.apiRoot, {
+                method: 'POST',
+                body: JSON.stringify(personalDemandPayload(form))
+            });
+            state.demands.push(created);
+            if (created.responsibleId && !state.responsibles.some(function (item) {
+                return String(item.id) === String(created.responsibleId);
+            })) {
+                state.responsibles.push({
+                    id: created.responsibleId,
+                    name: created.responsibleName
+                });
+                state.responsibles.sort(function (left, right) {
+                    return left.name.localeCompare(right.name, 'pt-BR');
+                });
+            }
+            configureFilters();
+            state.detail = created;
+            renderAll();
+            renderModal(state.detail);
+            toast('Demanda criada e atribuída a você.');
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+        }
+    }
+
     function closeModal() {
         elements.modal.classList.remove('is-open');
         elements.modal.setAttribute('aria-hidden', 'true');
@@ -512,12 +698,83 @@
         return `<div class="dm-readonly${wide ? ' dm-readonly--wide' : ''}"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(display(value))}</dd></div>`;
     }
 
-    function renderModal(demand) {
+    function directDemandField(label, fieldName, value, type, wide) {
+        let control;
+        if (type === 'select') {
+            control = `<select class="dm-input" data-field="${fieldName}">${typeOptionList(value)}</select>`;
+        } else if (type === 'textarea') {
+            control = `<textarea class="dm-textarea" data-field="${fieldName}" maxlength="4000">${escapeHtml(valueOrEmpty(value))}</textarea>`;
+        } else {
+            control = `<input class="dm-input" data-field="${fieldName}" type="text" maxlength="250" value="${escapeHtml(valueOrEmpty(value))}">`;
+        }
+        return `<label class="dm-field${wide ? ' dm-field--wide' : ''}"><span>${escapeHtml(label)}</span>${control}</label>`;
+    }
+
+    function renderDirectDemandPanel(demand) {
+        const structured = ['projeto', 'melhoria'].includes(demand.demandType);
+        if (!demand.createdByCurrentUser) {
+            return `
+                <section class="dm-panel">
+                    <h3>Dados da demanda interna</h3>
+                    <dl class="dm-readonly-grid">
+                        ${readonlyItem('Título', demand.title, true)}
+                        ${readonlyItem('Descrição', demand.initialDescription, true)}
+                        ${structured ? readonlyItem('Premissas', demand.assumptions, true) : ''}
+                        ${structured ? readonlyItem('Problemas atuais', demand.actualProblems, true) : ''}
+                        ${structured ? readonlyItem('Ganhos esperados', demand.benefits, true) : ''}
+                        ${readonlyItem('Tipo', typeLabel(demand.demandType))}
+                        ${readonlyItem('Criada por', demand.createdByName)}
+                        ${readonlyItem('Criada em', formatDate(demand.createdAt, true))}
+                    </dl>
+                </section>`;
+        }
+
+        return `
+            <section class="dm-panel">
+                <h3>Dados da demanda interna</h3>
+                <p class="dm-personal-note">Você criou esta demanda e pode editar estes dados.</p>
+                <div class="dm-direct-grid">
+                    ${directDemandField('Tipo', 'demandType', demand.demandType, 'select')}
+                    ${directDemandField('Título', 'title', demand.title, 'text')}
+                    ${directDemandField(
+                        demand.demandType === 'erro' ? 'Descrição completa do erro' : 'Descrição inicial / objetivo',
+                        'initialDescription', demand.initialDescription, 'textarea', true
+                    )}
+                    ${structured ? directDemandField('Premissas', 'assumptions', demand.assumptions, 'textarea', true) : ''}
+                    ${structured ? directDemandField('Problemas atuais', 'actualProblems', demand.actualProblems, 'textarea', true) : ''}
+                    ${structured ? directDemandField('Ganhos esperados', 'benefits', demand.benefits, 'textarea', true) : ''}
+                </div>
+            </section>`;
+    }
+
+    function renderOriginalRequestPanel(demand) {
         const originalUrl = `/solicitar/detail?area=${encodeURIComponent(config.area)}&tipo=melhorias&id=${demand.sourceRequestId}`;
+        return `
+            <section class="dm-panel">
+                <h3>Solicitação original · somente leitura</h3>
+                <dl class="dm-readonly-grid">
+                    ${readonlyItem('Título', demand.title, true)}
+                    ${readonlyItem('Descrição inicial / objetivo', demand.initialDescription, true)}
+                    ${demand.demandType !== 'erro' ? readonlyItem('Premissas', demand.assumptions, true) : ''}
+                    ${demand.demandType !== 'erro' ? readonlyItem('Problemas atuais', demand.actualProblems, true) : ''}
+                    ${demand.demandType !== 'erro' ? readonlyItem('Ganhos esperados', demand.benefits, true) : ''}
+                    ${readonlyItem('Solicitante', demand.requesterName)}
+                    ${readonlyItem('ID da solicitação', `#${demand.sourceRequestId}`)}
+                    ${readonlyItem('Tipo', typeLabel(demand.demandType))}
+                    ${readonlyItem('Urgência', demand.urgency)}
+                    ${readonlyItem('Data da solicitação', formatDate(demand.requestDate, true))}
+                    ${readonlyItem('Possui anexos', demand.hasAttachments ? 'Sim — consulte a solicitação original' : 'Não')}
+                </dl>
+                <a class="dm-button" href="${originalUrl}" target="_blank" rel="noopener">Abrir solicitação original</a>
+            </section>`;
+    }
+
+    function renderModal(demand) {
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
                 <div class="dm-badges">
                     <span class="dm-badge dm-badge--type">${escapeHtml(typeLabel(demand.demandType))}</span>
+                    ${demand.createdByCurrentUser ? '<span class="dm-badge dm-badge--personal">Criada por você</span>' : ''}
                     <span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>
                     ${demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : ''}
                     ${isLate(demand) ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''}
@@ -541,23 +798,7 @@
                     </div>
                 </section>
 
-                <section class="dm-panel">
-                    <h3>Solicitação original · somente leitura</h3>
-                    <dl class="dm-readonly-grid">
-                        ${readonlyItem('Título', demand.title, true)}
-                        ${readonlyItem('Descrição inicial / objetivo', demand.initialDescription, true)}
-                        ${demand.demandType !== 'erro' ? readonlyItem('Premissas', demand.assumptions, true) : ''}
-                        ${demand.demandType !== 'erro' ? readonlyItem('Problemas atuais', demand.actualProblems, true) : ''}
-                        ${demand.demandType !== 'erro' ? readonlyItem('Ganhos esperados', demand.benefits, true) : ''}
-                        ${readonlyItem('Solicitante', demand.requesterName)}
-                        ${readonlyItem('ID da solicitação', `#${demand.sourceRequestId}`)}
-                        ${readonlyItem('Tipo', typeLabel(demand.demandType))}
-                        ${readonlyItem('Urgência', demand.urgency)}
-                        ${readonlyItem('Data da solicitação', formatDate(demand.requestDate, true))}
-                        ${readonlyItem('Possui anexos', demand.hasAttachments ? 'Sim — consulte a solicitação original' : 'Não')}
-                    </dl>
-                    <a class="dm-button" href="${originalUrl}" target="_blank" rel="noopener">Abrir solicitação original</a>
-                </section>
+                ${demand.isDirectDemand ? renderDirectDemandPanel(demand) : renderOriginalRequestPanel(demand)}
             </div>
 
             <section class="dm-panel dm-tasks">
@@ -679,6 +920,7 @@
                     <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"></label>
                     <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations">${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
                     <div class="dm-task__actions">
+                        <span class="dm-task__pending" data-task-pending hidden>Não salvo</span>
                         <button class="dm-button" type="button" data-save-task>Salvar</button>
                         <button class="dm-button dm-button--danger" type="button" data-delete-task>Excluir</button>
                     </div>
@@ -764,7 +1006,9 @@
 
     function markTaskChanges(row) {
         const changed = taskHasChanges(row);
+        const pending = row.querySelector('[data-task-pending]');
         row.classList.toggle('dm-task--dirty', changed);
+        if (pending) pending.hidden = !changed;
         updateTaskWarning();
     }
 
@@ -858,6 +1102,11 @@
     });
 
     elements.modal.addEventListener('change', function (event) {
+        const createType = event.target.closest('[data-create-demand-type]');
+        if (createType) {
+            updateCreateTypeFields(createType.form);
+            return;
+        }
         const taskRow = event.target.closest('[data-task-id]');
         if (taskRow) {
             markTaskChanges(taskRow);
@@ -874,7 +1123,10 @@
     });
 
     elements.modal.addEventListener('submit', function (event) {
-        if (event.target.id === 'dm-new-task') {
+        if (event.target.id === 'dm-create-demand-form') {
+            event.preventDefault();
+            createPersonalDemand(event.target);
+        } else if (event.target.id === 'dm-new-task') {
             event.preventDefault();
             createTask(event.target);
         } else if (event.target.id === 'dm-approve-request') {
@@ -898,6 +1150,7 @@
         elements.difficulty.value = '';
         renderBoard();
     });
+    elements.createDemand.addEventListener('click', openCreateDemandModal);
 
     [elements.requestType, elements.requestStatus, elements.requestUrgency].forEach(function (filter) {
         filter.addEventListener('change', renderRequests);
