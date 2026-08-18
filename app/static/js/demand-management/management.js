@@ -97,11 +97,27 @@
         return Number(status) === 3 ? 'Recusada' : 'Em análise';
     }
 
-    function isLate(demand) {
-        if (!demand.deadline || ['Concluído', 'Cancelado'].includes(demand.status)) return false;
+    function daysUntilDeadline(demand) {
+        if (!demand.deadline || ['Concluído', 'Cancelado'].includes(demand.status)) return null;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return new Date(`${demand.deadline.substring(0, 10)}T00:00:00`) < today;
+        const deadline = new Date(`${demand.deadline.substring(0, 10)}T00:00:00`);
+        if (Number.isNaN(deadline.getTime())) return null;
+        return Math.round((deadline.getTime() - today.getTime()) / 86400000);
+    }
+
+    function isLate(demand) {
+        const days = daysUntilDeadline(demand);
+        return days !== null && days < 0;
+    }
+
+    function deadlineBadge(demand) {
+        const days = daysUntilDeadline(demand);
+        if (days === null || days < 0 || days > 3) return '';
+        const label = days === 0
+            ? 'Vence hoje'
+            : `Vence em ${days} dia${days === 1 ? '' : 's'}`;
+        return `<span class="dm-badge dm-badge--deadline">${label}</span>`;
     }
 
     function optionList(items, selected, emptyLabel) {
@@ -414,6 +430,7 @@
             `<span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>`,
             `<span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>`,
             demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : '',
+            deadlineBadge(demand),
             late ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''
         ].join('');
 
