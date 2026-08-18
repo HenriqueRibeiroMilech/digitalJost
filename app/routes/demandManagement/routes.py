@@ -4,14 +4,25 @@ import secrets
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user
 
+from app.utils.db_utils import get_engine
 from app.utils.permissions import get_permission, user_has_role
 
-from .composition import build_service
-from .constants import AREA_CONFIG, DEFAULT_AREA
-from .errors import DemandManagementError
+from .domain import AREA_CONFIG, DEFAULT_AREA, DemandManagementError
+from .repository import DemandManagementRepository
+from .review_notifications import RequestReviewNotifier
+from .services import DemandManagementService
 
 
 demand_management_bp = Blueprint('demand_management', __name__)
+
+
+def _build_service():
+    """Monta as dependências concretas usadas pelas rotas."""
+    return DemandManagementService(
+        engine=get_engine('jdt'),
+        repository=DemandManagementRepository(),
+        review_notifier=RequestReviewNotifier()
+    )
 
 
 def _current_area():
@@ -78,13 +89,13 @@ def management_page():
 @demand_management_bp.route('/demandas/gerenciador/api', methods=['GET'])
 def management_list():
     _, area = _current_area()
-    return jsonify(build_service().list_board(area['id']))
+    return jsonify(_build_service().list_board(area['id']))
 
 
 @demand_management_bp.route('/demandas/gerenciador/api/requests', methods=['GET'])
 def review_request_list():
     _, area = _current_area()
-    return jsonify(build_service().list_review_requests(area['id']))
+    return jsonify(_build_service().list_review_requests(area['id']))
 
 
 @demand_management_bp.route(
@@ -93,7 +104,7 @@ def review_request_list():
 )
 def review_request_detail(request_id):
     _, area = _current_area()
-    return jsonify(build_service().get_review_request(request_id, area['id']))
+    return jsonify(_build_service().get_review_request(request_id, area['id']))
 
 
 @demand_management_bp.route(
@@ -107,7 +118,7 @@ def review_request_approve(request_id):
         'name': current_user.name,
         'email': current_user.companyEmail
     }
-    result = build_service().approve_review_request(
+    result = _build_service().approve_review_request(
         request_id,
         area['id'],
         request.get_json(silent=True),
@@ -128,7 +139,7 @@ def review_request_decline(request_id):
         'name': current_user.name,
         'email': current_user.companyEmail
     }
-    result = build_service().decline_review_request(
+    result = _build_service().decline_review_request(
         request_id,
         area['id'],
         request.get_json(silent=True),
@@ -141,7 +152,7 @@ def review_request_decline(request_id):
 @demand_management_bp.route('/demandas/gerenciador/api/<int:management_id>', methods=['GET', 'PATCH'])
 def management_detail(management_id):
     _, area = _current_area()
-    service = build_service()
+    service = _build_service()
     if request.method == 'PATCH':
         return jsonify(service.update_demand(
             management_id, area['id'], request.get_json(silent=True)
@@ -155,7 +166,7 @@ def management_detail(management_id):
 )
 def management_task_create(management_id):
     _, area = _current_area()
-    detail = build_service().create_task(
+    detail = _build_service().create_task(
         management_id,
         area['id'],
         request.get_json(silent=True),
@@ -171,7 +182,7 @@ def management_task_create(management_id):
 def management_task_detail(management_id, task_id):
     _, area = _current_area()
     payload = request.get_json(silent=True) or {}
-    service = build_service()
+    service = _build_service()
     if request.method == 'DELETE':
         detail = service.delete_task(
             management_id, task_id, area['id'], payload.get('rowVersion')

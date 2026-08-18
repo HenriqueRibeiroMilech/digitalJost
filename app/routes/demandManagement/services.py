@@ -1,8 +1,13 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from .constants import DIFFICULTY_OPTIONS, STATUS_OPTIONS
-from .errors import ConflictError, NotFoundError, ValidationError
+from .domain import (
+    DIFFICULTY_OPTIONS,
+    STATUS_OPTIONS,
+    ConflictError,
+    NotFoundError,
+    ValidationError
+)
 from .integration import sync_approved_request
 from .validation import (
     parse_row_version,

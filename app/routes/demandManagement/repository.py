@@ -1,6 +1,6 @@
 from sqlalchemy import text
 
-from .constants import MANAGEMENT_FIELDS
+from .domain import MANAGEMENT_FIELDS
 
 
 class DemandManagementRepository:

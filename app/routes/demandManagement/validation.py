@@ -1,8 +1,12 @@
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
-from .constants import DIFFICULTY_OPTIONS, MANAGEMENT_FIELDS, STATUS_OPTIONS
-from .errors import ValidationError
+from .domain import (
+    DIFFICULTY_OPTIONS,
+    MANAGEMENT_FIELDS,
+    STATUS_OPTIONS,
+    ValidationError
+)
 
 
 def _optional_text(value, max_length):

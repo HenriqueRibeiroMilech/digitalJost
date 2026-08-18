@@ -17,7 +17,7 @@ STATUS_OPTIONS = (
 
 DIFFICULTY_OPTIONS = ('Baixa', 'Média', 'Alta')
 
-# Somente estes campos operacionais podem ser alterados pela API.
+# Whitelist que relaciona o campo da API à coluna no banco.
 MANAGEMENT_FIELDS = {
     'status': 'status',
     'deadline': 'deadline',
@@ -29,3 +29,19 @@ MANAGEMENT_FIELDS = {
     'observations': 'observations',
     'responsibleId': 'responsibleId'
 }
+
+
+class DemandManagementError(Exception):
+    status_code = 400
+
+
+class ValidationError(DemandManagementError):
+    pass
+
+
+class NotFoundError(DemandManagementError):
+    status_code = 404
+
+
+class ConflictError(DemandManagementError):
+    status_code = 409
