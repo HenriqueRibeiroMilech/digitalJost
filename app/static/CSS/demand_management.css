@@ -498,7 +498,7 @@ textarea {
 .dm-badge--status-concluido { color: var(--dm-green); background: #e1f4eb; }
 .dm-badge--status-pausado { color: var(--dm-yellow); background: #fff1c2; }
 .dm-badge--status-cancelado { color: var(--dm-red); background: #fee7e5; }
-.dm-badge--deadline { color: #76520a; background: #fff0c9; }
+.dm-badge--deadline,
 .dm-badge--late { color: #fff; background: var(--dm-red); }
 .dm-badge--difficulty-alta { color: var(--dm-red); background: #fee7e5; }
 .dm-badge--difficulty-media { color: var(--dm-yellow); background: #fff1c2; }
