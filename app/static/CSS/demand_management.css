@@ -504,7 +504,6 @@ textarea {
 .dm-badge--difficulty-baixa { color: var(--dm-green); background: #e1f4eb; }
 .dm-badge--type { color: #8a3f00; background: #ffead3; }
 .dm-badge--type-atividade { color: #24685f; background: #def2ee; }
-.dm-badge--personal { color: #315777; background: #e5f0f8; }
 .dm-badge--review-pending { color: var(--dm-navy-dark); background: #e7edf9; }
 .dm-badge--review-declined { color: var(--dm-red); background: #fee7e5; }
 .dm-badge--urgency-alta { color: var(--dm-red); background: #fee7e5; }
@@ -702,6 +701,11 @@ textarea {
 
 .dm-form-grid .dm-field--deadline,
 .dm-form-grid .dm-field--startdate {
+    grid-column: span 3;
+}
+
+.dm-create-planning-grid .dm-field--status,
+.dm-create-planning-grid .dm-field--difficulty {
     grid-column: span 3;
 }
 
@@ -1022,6 +1026,8 @@ body.dm-modal-open { overflow: hidden; }
     .dm-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dm-form-grid .dm-field { grid-column: span 1; }
     .dm-form-grid .dm-field--wide { grid-column: 1 / -1; }
+    .dm-create-planning-grid .dm-field--status,
+    .dm-create-planning-grid .dm-field--difficulty { grid-column: span 1; }
     .dm-modal__panel { width: 100%; max-height: 100vh; padding: 1rem; }
     .dm-review-decision { position: static; }
     .dm-readonly-grid { grid-template-columns: 1fr; }

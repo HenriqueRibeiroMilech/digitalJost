@@ -412,7 +412,6 @@
         const taskProgress = `${demand.completedTasks || 0}/${demand.totalTasks || 0}`;
         const badges = [
             `<span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>`,
-            demand.createdByCurrentUser ? '<span class="dm-badge dm-badge--personal">Criada por você</span>' : '',
             `<span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>`,
             demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : '',
             late ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''
@@ -550,7 +549,7 @@
 
                 <section class="dm-panel">
                     <h3>Planejamento inicial</h3>
-                    <div class="dm-form-grid">
+                    <div class="dm-form-grid dm-create-planning-grid">
                         ${createSelectField('Status', 'status', statuses, 'A Fazer')}
                         ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
                         ${createInputField('Prazo', 'deadline', 'date')}
@@ -685,7 +684,7 @@
                 <h3>Dados da demanda interna</h3>
                 <p class="dm-personal-note">Você criou esta demanda e pode editar estes dados.</p>
                 <div class="dm-direct-grid">
-                    ${directDemandField('Título', 'title', demand.title, 'text')}
+                    ${directDemandField('Título', 'title', demand.title, 'text', true)}
                     ${directDemandField(
                         demand.demandType === 'erro' ? 'Descrição completa do erro' : 'Descrição inicial / objetivo',
                         'initialDescription', demand.initialDescription, 'textarea', true
@@ -724,7 +723,6 @@
             <header class="dm-modal__header">
                 <div class="dm-badges">
                     <span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>
-                    ${demand.createdByCurrentUser ? '<span class="dm-badge dm-badge--personal">Criada por você</span>' : ''}
                     <span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>
                     ${demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : ''}
                     ${isLate(demand) ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''}
