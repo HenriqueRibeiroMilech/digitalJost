@@ -130,7 +130,32 @@ Não analise apenas GET. O projeto concentra regras em POST, PATCH, PUT e DELETE
 
 ### Arquitetura de novas features Flask
 
-Para features novas, prefira um módulo autocontido em `app/routes/<feature>/`: `__init__.py` exporta o blueprint, `routes.py` trata HTTP, autenticação e composição, `services.py` concentra casos de uso e transações, e `repository.py` contém o acesso ao banco. Use `domain.py` para regras, validações e erros próprios da feature e `integration.py` para e-mail ou sistemas externos somente quando essas responsabilidades existirem. Não crie arquivos vazios ou camadas sem necessidade; features pequenas podem começar apenas com os quatro arquivos principais.
+Para features novas, prefira uma organização autocontida por domínio, seguindo o padrão adotado no Gerenciador de Demandas:
+
+```text
+app/
+├── routes/<feature>/
+│   ├── __init__.py          # exporta o blueprint
+│   ├── routes.py            # HTTP, autorização, CSRF e composição
+│   ├── services.py          # casos de uso, regras e transações
+│   ├── repository.py        # SQL parametrizado e acesso a dados
+│   ├── domain.py            # opções, validações e erros da feature (opcional)
+│   └── integration.py       # e-mail e sistemas externos (opcional)
+├── templates/<feature>/
+│   └── pagina.html          # estrutura HTML e valores fornecidos pelo Jinja
+└── static/
+    ├── CSS/<feature>.css    # aparência e responsividade
+    └── js/<feature>/
+        └── pagina.js        # estado da tela, eventos, renderização e chamadas à API
+```
+
+No backend, `routes.py` deve traduzir requisições e respostas sem conter SQL ou regras extensas; `services.py` coordena os casos de uso e os limites das transações; e `repository.py` concentra as consultas ao banco sem conhecer Flask. Use `domain.py` e `integration.py` somente quando essas responsabilidades realmente existirem. Não crie arquivos vazios ou camadas artificiais: uma feature pequena pode começar apenas com `__init__.py`, `routes.py`, `services.py` e `repository.py`.
+
+No frontend, mantenha o HTML estrutural no template Jinja, o CSS em `app/static/CSS/` e o JavaScript em `app/static/js/`. Essa separação é o padrão correto do Flask: templates são renderizados no servidor, enquanto CSS e JavaScript são arquivos estáticos servidos diretamente. Use o mesmo nome ou prefixo da feature nessas pastas para que os arquivos continuem fáceis de localizar como uma unidade.
+
+O template pode expor para o JavaScript apenas uma configuração pequena gerada pelo Jinja, como URLs produzidas por `url_for`, área atual e token CSRF. A lógica de interação, estado, eventos, `fetch` e atualização da interface deve permanecer no arquivo `.js`; estilos e regras responsivas ficam no `.css`. Prefira classes CSS com prefixo da feature para evitar conflito com telas legadas. Regras de autorização e de negócio continuam obrigatoriamente no backend, mesmo quando a interface também faz validações.
+
+Arquivos JavaScript já existentes dentro de `templates` podem depender diretamente de variáveis Jinja e não devem ser movidos por estética. Para features novas, prefira JavaScript em `static` e passe os poucos valores dinâmicos necessários por um objeto de configuração no HTML, como feito no Gerenciador de Demandas.
 
 ### Segurança e dados sensíveis
 
