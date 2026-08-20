@@ -1,147 +1,197 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    
-        <!-- Bootstrap CSS -->
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
-        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style_module.css') }}">
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    
-        <title>TDG - JOST Brasil</title>
-        <link rel="icon" href="{{ url_for('static', filename= 'images/jost_icon.ico') }}">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
-   </head>
-    
-    <body class="page_body">
-        <a id="select_back" href="/solicitar" style="position: absolute;">&times;</a>
-        <div class="topnav">
-            <p class="title"><i class="fas fa-paper-plane"></i> Solicitar nova Demanda</p><br>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solicitações de Demandas</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/request_improvements.css') }}">
+</head>
+<body>
+<main class="ri-page" aria-labelledby="ri-title">
+    <a class="ri-back" href="{{ url_for('request_improvements.improvements_get') }}">&larr; Voltar para demandas</a>
+
+    <header class="ri-hero">
+        <div>
+            <p class="ri-eyebrow">Transformação Digital</p>
+            <h1 id="ri-title">Solicitações de Demandas</h1>
+            <p>Envie uma nova necessidade e acompanhe suas solicitações em um só lugar.</p>
         </div>
-        
-        <div class="edit_body" id="body">
-            <form method="post" action="/solicitar/melhorias?area={{area}}" enctype="multipart/form-data">
+        <div class="ri-summary" id="ri-summary" aria-label="Resumo das solicitações"></div>
+    </header>
 
-                <p class="edit_label">Tipo de demanda: </p>
-                <select required autocomplete="off" class="edit_filter" name="demandType" id="demand_type">
-                    <option value="" disabled selected>Selecione o tipo...</option>
-                    <option value="melhoria">Melhoria</option>
-                    <option value="projeto">Projeto</option>
-                    <option value="erro">Erro/Defeito em aplicação</option>
-                </select><br>
+    <nav class="ri-tabs" aria-label="Áreas das solicitações">
+        <button class="ri-tab" type="button" data-tab="nova" aria-controls="ri-new-view">
+            Nova solicitação
+        </button>
+        <button class="ri-tab" type="button" data-tab="minhas" aria-controls="ri-requests-view">
+            Minhas solicitações
+            <span class="ri-tab__count">{{ requests|length }}</span>
+        </button>
+    </nav>
 
-                <p class="edit_label">Título da Demanda: </p>
-                <input class="edit_filter" required type="text" name="titulo" id="solicitar_text_input" placeholder="Digite o título da demanda..." autocomplete="off" onkeyup="this.value=this.value.replace(/'/g, '')"><br>
-                
-                <p class="edit_label" id="objective_label">Objetivo da Demanda: </p>
-                <br>
-                <textarea required name="objetivo" class="edit_filter demand_description" id="objective" placeholder="Explique o objetivo da demanda..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
-
-                <div class="structured-demand-field">
-                    <p class="edit_label">Premissas da Demanda: </p>
-                    <br>
-                    <textarea required name="premissas" class="edit_filter demand_description" id="assumptions" placeholder="Explique as premissas da demanda..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+    <section id="ri-new-view" class="ri-view" aria-labelledby="ri-form-title">
+        <form
+            id="ri-request-form"
+            method="post"
+            action="{{ url_for('request_improvements.improvements_small_new_post', area=area) }}"
+            enctype="multipart/form-data"
+        >
+            <section class="ri-panel">
+                <div class="ri-panel__heading">
+                    <div>
+                        <p class="ri-section-label">Dados principais</p>
+                        <h2 id="ri-form-title">Conte o que você precisa</h2>
+                    </div>
+                    <span>Campos com * são obrigatórios</span>
                 </div>
 
-                <div class="structured-demand-field">
-                    <p class="edit_label">Problemas Atuais: </p>
-                    <br>
-                    <textarea required name="problemas" class="edit_filter demand_description" id="actual_problems" placeholder="Descreva os problemas atuais..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                <div class="ri-form-grid">
+                    <label class="ri-field ri-field--half">
+                        <span>Tipo de demanda *</span>
+                        <select required autocomplete="off" name="demandType" id="ri-demand-type">
+                            <option value="" disabled selected>Selecione o tipo</option>
+                            <option value="melhoria">Melhoria</option>
+                            <option value="projeto">Projeto</option>
+                            <option value="erro">Erro/Defeito em aplicação</option>
+                        </select>
+                    </label>
+
+                    <label class="ri-field ri-field--half">
+                        <span>Nível de urgência *</span>
+                        <select required autocomplete="off" name="options">
+                            <option value="" disabled selected>Selecione a urgência</option>
+                            {% for option in options %}
+                            <option value="{{ option }}">{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="ri-field ri-field--full">
+                        <span>Título da demanda *</span>
+                        <input required type="text" name="titulo" placeholder="Ex.: Automatizar indicador semanal" autocomplete="off">
+                    </label>
+
+                    <label class="ri-field ri-field--full">
+                        <span id="ri-objective-label">Objetivo da demanda *</span>
+                        <textarea required name="objetivo" id="ri-objective" rows="4" placeholder="Explique de forma clara o objetivo da demanda"></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="ri-panel" id="ri-structured-fields">
+                <div class="ri-panel__heading">
+                    <div>
+                        <p class="ri-section-label">Detalhamento</p>
+                        <h2>Ajude a equipe a entender o cenário</h2>
+                    </div>
                 </div>
 
-                <div class="structured-demand-field">
-                    <p class="edit_label">Ganhos com a Demanda Proposta: </p>
-                    <br>
-                    <textarea required name="beneficios" class="edit_filter demand_description" id="benefits" placeholder="Descreva os ganhos esperados com a demanda..." onkeyup="this.value=this.value.replace(/'/g, '')"></textarea><br>
+                <div class="ri-detail-grid">
+                    <label class="ri-field">
+                        <span>Premissas da demanda *</span>
+                        <textarea required name="premissas" rows="5" placeholder="Quais condições precisam ser consideradas?"></textarea>
+                    </label>
+                    <label class="ri-field">
+                        <span>Problemas atuais *</span>
+                        <textarea required name="problemas" rows="5" placeholder="Descreva o problema ou processo atual"></textarea>
+                    </label>
+                    <label class="ri-field">
+                        <span>Ganhos esperados *</span>
+                        <textarea required name="beneficios" rows="5" placeholder="Quais resultados são esperados?"></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="ri-panel">
+                <div class="ri-panel__heading">
+                    <div>
+                        <p class="ri-section-label">Documentos</p>
+                        <h2>Anexe o fluxo da demanda</h2>
+                    </div>
                 </div>
 
-                <p class="edit_label">Nível de urgência da solicitação: </p>
-                <select required autocomplete="off" class="edit_filter" name="options">
-                      <option value="" disabled selected>Urgência...</option>
-                      {% for o in options %}
-                      <option value="{{o}}">{{o}}</option>
-                      {% endfor %}
-                </select><br>
+                <div class="ri-documents">
+                    <div class="ri-documents__copy">
+                        <p>
+                            Adicione documentos que facilitem a análise, o desenvolvimento e a definição do prazo.
+                            Use o exemplo ao lado como referência para representar o fluxo.
+                        </p>
+                        <p class="ri-note">
+                            Um fluxo incompleto pode aumentar o tempo de análise ou impedir a aprovação da solicitação.
+                        </p>
 
-                <p style="width: 40vw;" class="edit_label">Documentos:</p><br>
-                <a class="sol_desc">Adicione também um fluxo da demanda para facilitar o processo de <br> análise, desenvolvimento e definição de prazo.</a><br>
-                <a class="sol_desc">Siga o exemplo a seguir, como base:</a><br>
-                <img src="/static/images/FLUXO.PNG" alt="Fluxo" style="width: 100vh; height: auto;"> <br> <br>
-                <a class="sol_desc"><b>OBS:</b> caso o fluxo da demanda esteja incompleto, a solicitação pode <br> ter seu prazo aumentado ou até ser recusada. </a><br>
+                        <label class="ri-file-picker" for="ri-documents-input">
+                            <strong id="ri-file-picker-label">Selecionar documentos *</strong>
+                            <span>Word, Excel, PowerPoint, PDF, texto ou imagens</span>
+                        </label>
+                        <input
+                            id="ri-documents-input"
+                            class="ri-file-input"
+                            multiple
+                            required
+                            type="file"
+                            name="docs"
+                            accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*"
+                        >
+                        <ul class="ri-file-list" id="ri-file-list" aria-live="polite"></ul>
+                    </div>
 
-                <label id="placehold_1" class="add_img" for="input_1">Adicione documentos...</label>
-                <input multiple class="img_input" required id="input_1" type="file" name="docs" accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*">
-                <br>
-                <a class="add_img_lbl" id="label_1">Arquivos selecionados:</a>
-                <div class="lista" id="lista_1"></div>
-                <br>
+                    <figure class="ri-flow-example">
+                        <img src="{{ url_for('static', filename='images/FLUXO.PNG') }}" alt="Exemplo de fluxo para detalhar uma demanda">
+                        <figcaption>Exemplo de fluxo da demanda</figcaption>
+                    </figure>
+                </div>
+            </section>
 
-                <input type="submit" value="Solicitar Demanda" class="edit_label" id="edit_ask">
+            <div class="ri-form-actions">
+                <button class="ri-button ri-button--quiet" type="reset">Limpar formulário</button>
+                <button class="ri-button" id="ri-submit" type="submit">Solicitar demanda</button>
+            </div>
+        </form>
+    </section>
 
-            </form>
-        </div>
-        
-    </body>
-    <script>
-    function updateDemandFields() {
-        var demandType = document.getElementById('demand_type').value;
-        var isError = demandType === 'erro';
-        var structuredFields = document.querySelectorAll('.structured-demand-field');
-        var structuredInputs = document.querySelectorAll('.structured-demand-field textarea');
-        var objectiveLabel = document.getElementById('objective_label');
-        var objective = document.getElementById('objective');
+    <section id="ri-requests-view" class="ri-view" aria-labelledby="ri-requests-title" hidden>
+        <h2 id="ri-requests-title" class="ri-visually-hidden">Minhas solicitações</h2>
 
-        objectiveLabel.textContent = isError ? 'Descrição completa do problema: ' : 'Objetivo da Demanda: ';
-        objective.placeholder = isError
-            ? 'Descreva detalhadamente o erro ou defeito encontrado...'
-            : 'Explique o objetivo da demanda...';
+        <section class="ri-toolbar" aria-label="Filtros das solicitações">
+            <label class="ri-search">
+                <span>Buscar por título</span>
+                <input id="ri-search" type="search" placeholder="Ex.: painel de produção" autocomplete="off">
+            </label>
+            <label>
+                <span>Tipo</span>
+                <select id="ri-filter-type">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <label>
+                <span>Status</span>
+                <select id="ri-filter-status">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <button class="ri-button ri-button--quiet" id="ri-clear-filters" type="button">Limpar filtros</button>
+        </section>
 
-        structuredFields.forEach(function(field) {
-            field.style.display = isError ? 'none' : 'block';
-        });
+        <section class="ri-request-grid" id="ri-request-grid" aria-live="polite"></section>
+    </section>
+</main>
 
-        structuredInputs.forEach(function(input) {
-            input.required = !isError;
-        });
-    }
+<div class="ri-toast" id="ri-toast" role="status" aria-live="polite"></div>
 
-    function createInputs() {
-        var inputs = document.querySelectorAll(".img_input");
-        inputs.forEach(function(item) {
-            var id = item.id.split('_')[1];
-            item.addEventListener('input', function (e) {
-                if (item.files.length > 0) {
-                    document.querySelector("#placehold_" + id).textContent = "Alterar arquivos selecionados...";
-                    document.querySelector("#label_" + id).style.display = "block";
-                    document.querySelector("#lista_" + id).style.display = "block";
-                } else {
-                    document.querySelector("#placehold_" + id).textContent = "Adicione documentos...";
-                    document.querySelector("#label_" + id).style.display = "none";
-                    document.querySelector("#lista_" + id).style.display = "none";
-                };
-
-                var input = document.querySelector('#input_' + id)
-                var output = document.querySelector("#lista_" + id)
-                var children = "";
-
-                for (var i = 0; i < item.files.length; ++i) {
-                    children += '<li>' + input.files.item(i).name + '</li>';
-                }
-
-                output.innerHTML = '<ul>'+children+'</ul>';
-            });
-        });
-    }
-
-    document.getElementById('demand_type').addEventListener('change', updateDemandFields);
-    updateDemandFields();
-    createInputs();
-
-    </script>
+<script>
+    window.requestImprovementsConfig = {
+        area: {{ area|tojson }},
+        initialTab: {{ initial_tab|tojson }},
+        requestSent: {{ request_sent|tojson }},
+        requests: {{ requests|tojson }},
+        detailUrl: {{ url_for('request_improvements.improvements_detail_get')|tojson }}
+    };
+</script>
+<script defer src="{{ url_for('static', filename='js/request-improvements/portal.js') }}"></script>
+</body>
 </html>
-
-<!-- V1 -->

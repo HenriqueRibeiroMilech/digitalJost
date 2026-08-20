@@ -50,6 +50,32 @@ _URGENCY_OPTIONS = ['Alta', 'Média', 'Baixa']
 request_improvements_bp = Blueprint('request_improvements', __name__)
 
 
+def _list_user_small_requests(area_id, user_id):
+    """Busca as solicitações exibidas na aba do próprio usuário."""
+    query = text("""SELECT
+                        requestId,
+                        title,
+                        info,
+                        COALESCE(NULLIF(demandType, ''), 'melhoria') AS demandType,
+                        CASE WHEN urgency = 'Imediata' THEN 'Alta' ELSE urgency END AS urgency,
+                        FORMAT(openDate, 'dd/MM/yyyy HH:mm') AS requestDate,
+                        status,
+                        FORMAT(deliveryDate, 'dd/MM/yyyy') AS deliveryDate,
+                        FORMAT(finalDate, 'dd/MM/yyyy HH:mm') AS finalDate
+                    FROM JDT_REQUEST_IMPROVEMENTS_SMALL
+                    WHERE requesterId = :user_id
+                      AND areaId = :area_id
+                    ORDER BY openDate DESC, requestId DESC""")
+
+    with get_engine('jdt').connect() as connection:
+        rows = connection.execute(query, {
+            'user_id': user_id,
+            'area_id': area_id
+        }).mappings().all()
+
+    return [dict(row) for row in rows]
+
+
 @request_improvements_bp.before_request
 def route_auth():
     # Verifica se o usuário está autenticado
@@ -75,10 +101,15 @@ def improvements_get():
 
 @request_improvements_bp.route('/solicitar/melhorias', methods=['GET'])
 def improvements_small_new_get():
+    area = request.args['area']
+
     return render_template(
         'request.improvements/improvements_small_new.html',
         options=_URGENCY_OPTIONS,
-        area=request.args['area']
+        area=area,
+        requests=_list_user_small_requests(_AREAS[area][0], current_user.id),
+        initial_tab='minhas' if request.args.get('tab') == 'minhas' else 'nova',
+        request_sent=request.args.get('sent') == '1'
     )
 
 
@@ -182,7 +213,12 @@ def improvements_small_new_post():
     # Se você quiser enviar para outro e-mail, basta colocar aqui o destinatário.
     # mail.send(msg)  # removido
 
-    return render_template('request.improvements/improvements_sent.html', area=request.args['area'])
+    return redirect(url_for(
+        'request_improvements.improvements_small_new_get',
+        area=request.args['area'],
+        tab='minhas',
+        sent='1'
+    ))
 
 
 @request_improvements_bp.route('/solicitar/projetos', methods=['GET'])
@@ -253,29 +289,23 @@ def improvements_view_get():
         return abort(400)
 
     if request.args['tipo'] == 'melhorias':
-        database = 'JDT_REQUEST_IMPROVEMENTS_SMALL'
-        requestTypeDesc = 'Minhas demandas'
-        bossCondition = ''
+        # Mantém a URL antiga funcionando e abre diretamente a nova aba.
+        return redirect(url_for(
+            'request_improvements.improvements_small_new_get',
+            area=request.args['area'],
+            tab='minhas'
+        ))
 
-    else:
-        # return render_template('general_maintenance.html')
-        database = 'JDT_REQUEST_IMPROVEMENTS_BIG'
-        requestTypeDesc = 'Meus projetos'
-        bossCondition = f" OR requesterBossId = '{current_user.id}'"
-
-    demand_type_column = "" if database == 'JDT_REQUEST_IMPROVEMENTS_BIG' else """
-                    CASE COALESCE(NULLIF(demandType, ''), 'melhoria')
-                        WHEN 'projeto' THEN 'Projeto'
-                        WHEN 'erro' THEN 'Erro/Defeito em aplicação'
-                        ELSE 'Melhoria'
-                    END AS TIPO,"""
+    # A visualização dos projetos históricos continua na tela antiga.
+    database = 'JDT_REQUEST_IMPROVEMENTS_BIG'
+    requestTypeDesc = 'Meus projetos'
+    bossCondition = f" OR requesterBossId = '{current_user.id}'"
 
     query = f"""SELECT 
                     title AS TÍTULO, 
                     info AS 'OBJETIVO / DESCRIÇÃO DO PROBLEMA',
                     FORMAT(openDate, 'dd/MM/yyyy HH:mm:ss') AS 'DATA SOLICITAÇÃO', 
                     status AS STATUS,
-                    {demand_type_column}
                     requestId  
             FROM {database} 
             WHERE 
