@@ -2,6 +2,35 @@ from sqlalchemy import text
 
 
 class DemandRequestsRepository:
+    _DETAIL_SELECT = """
+        SELECT
+            R.requestId,
+            R.areaId,
+            R.requesterId,
+            Requester.name AS requesterName,
+            R.title,
+            R.info AS initialDescription,
+            COALESCE(R.assumptions, '') AS assumptions,
+            COALESCE(R.actualProblems, '') AS actualProblems,
+            COALESCE(R.benefits, '') AS benefits,
+            COALESCE(NULLIF(R.demandType, ''), 'melhoria') AS demandType,
+            CASE WHEN R.urgency = 'Imediata' THEN 'Alta' ELSE R.urgency END AS urgency,
+            R.openDate AS requestDate,
+            R.images,
+            R.status,
+            Responsible.name AS responsibleName,
+            R.startDate,
+            R.deliveryDate AS deadline,
+            R.finalDate,
+            R.reprogs,
+            R.deniedText
+        FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
+        JOIN JDT_USER_DETAILS AS Requester
+            ON Requester.id = R.requesterId
+        LEFT JOIN JDT_USER_DETAILS AS Responsible
+            ON Responsible.id = R.respId
+    """
+
     def list_user_requests(self, connection, area_id, user_id):
         query = text("""
             SELECT
@@ -23,3 +52,63 @@ class DemandRequestsRepository:
             'area_id': area_id,
             'user_id': user_id
         }).mappings().all()
+
+    def next_request_id(self, connection):
+        query = text("""
+            SELECT ISNULL(MAX(requestId), 0) + 1
+            FROM JDT_REQUEST_IMPROVEMENTS_SMALL WITH (UPDLOCK, HOLDLOCK)
+        """)
+        row = connection.execute(query).first()
+        return int(row[0])
+
+    def create_request(self, connection, request_id, area_id, user_id, demand, images):
+        query = text("""
+            INSERT INTO JDT_REQUEST_IMPROVEMENTS_SMALL (
+                requestId, requesterId, areaId, title, info, urgency,
+                openDate, images, status, respId, startDate, deliveryDate,
+                finalDate, reprogs, deniedText, assumptions, actualProblems,
+                benefits, demandType
+            ) VALUES (
+                :request_id, :requester_id, :area_id, :title,
+                :initial_description, :urgency, GETDATE(), :images,
+                0, NULL, NULL, NULL, NULL, 0, NULL, :assumptions,
+                :actual_problems, :benefits, :demand_type
+            )
+        """)
+        result = connection.execute(query, {
+            'request_id': request_id,
+            'requester_id': user_id,
+            'area_id': area_id,
+            'title': demand['title'],
+            'initial_description': demand['initialDescription'],
+            'urgency': demand['urgency'],
+            'images': images,
+            'assumptions': demand['assumptions'],
+            'actual_problems': demand['actualProblems'],
+            'benefits': demand['benefits'],
+            'demand_type': demand['demandType']
+        })
+        return result.rowcount == 1
+
+    def get_request(self, connection, request_id, area_id):
+        query = text(self._DETAIL_SELECT + """
+            WHERE R.requestId = :request_id
+                AND R.areaId = :area_id
+        """)
+        return connection.execute(query, {
+            'request_id': request_id,
+            'area_id': area_id
+        }).mappings().first()
+
+    def list_pauses(self, connection, request_id):
+        query = text("""
+            SELECT
+                initDate,
+                expectDate,
+                finalDate,
+                text AS reason
+            FROM JDT_REQUEST_PAUSES
+            WHERE requestId = :request_id
+            ORDER BY initDate
+        """)
+        return connection.execute(query, {'request_id': request_id}).mappings().all()

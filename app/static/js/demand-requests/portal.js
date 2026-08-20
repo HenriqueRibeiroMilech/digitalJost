@@ -38,6 +38,8 @@
         filePickerLabel: document.getElementById('dr-file-picker-label'),
         fileList: document.getElementById('dr-file-list'),
         submit: document.getElementById('dr-submit'),
+        modal: document.getElementById('dr-modal'),
+        modalContent: document.getElementById('dr-modal-content'),
         toast: document.getElementById('dr-toast')
     };
 
@@ -88,6 +90,26 @@
             : requestItem.status;
         const status = String(rawStatus);
         return statusLabels[status] ? status : '0';
+    }
+
+    function apiUrl(path) {
+        const url = new URL(config.apiRoot + (path || ''), window.location.origin);
+        url.searchParams.set('area', config.area);
+        return url;
+    }
+
+    function setRequestInAddress(requestId) {
+        if (!window.history || !window.history.replaceState) {
+            return;
+        }
+        const url = new URL(window.location.href);
+        if (requestId) {
+            url.searchParams.set('tab', 'minhas');
+            url.searchParams.set('request', requestId);
+        } else {
+            url.searchParams.delete('request');
+        }
+        window.history.replaceState({}, '', url);
     }
 
     function setTab(tabName, updateAddress) {
@@ -240,12 +262,122 @@
         elements.grid.innerHTML = filtered.map(requestCard).join('');
     }
 
-    function openRequestDetail(requestId) {
-        const url = new URL(config.detailUrl, window.location.origin);
-        url.searchParams.set('area', config.area);
-        url.searchParams.set('tipo', 'melhorias');
-        url.searchParams.set('id', requestId);
-        window.location.assign(url.toString());
+    function readonlyItem(label, value, fullWidth) {
+        return '<div class="' + (fullWidth ? 'dr-readonly--full' : '') + '">' +
+            '<dt>' + escapeHtml(label) + '</dt>' +
+            '<dd>' + escapeHtml(value || 'Não informado') + '</dd>' +
+        '</div>';
+    }
+
+    function renderAttachments(item) {
+        if (!item.attachments || !item.attachments.length) {
+            return '<p class="dr-modal__meta">Nenhum documento anexado.</p>';
+        }
+        return '<ul class="dr-attachment-list">' + item.attachments.map(function (attachment) {
+            const url = apiUrl('/' + item.requestId + '/attachments/' + attachment.index);
+            return '<li><a href="' + escapeHtml(url.toString()) + '">' +
+                '<span>' + escapeHtml(attachment.name) + '</span><span>Baixar &darr;</span>' +
+            '</a></li>';
+        }).join('') + '</ul>';
+    }
+
+    function renderPauses(item) {
+        if (!item.pauses || !item.pauses.length) {
+            return '<p class="dr-modal__meta">A demanda não sofreu pausas.</p>';
+        }
+        return '<ul class="dr-pause-list">' + item.pauses.map(function (pause) {
+            return '<li><strong>' + escapeHtml(formatDate(pause.initDate, true)) + '</strong>' +
+                ' até ' + escapeHtml(formatDate(
+                    pause.finalDate || pause.expectDate,
+                    Boolean(pause.finalDate)
+                )) +
+                '<br>' + escapeHtml(pause.reason || 'Sem justificativa informada.') + '</li>';
+        }).join('') + '</ul>';
+    }
+
+    function renderRequestDetail(item) {
+        const type = requestType(item);
+        const status = requestStatus(item);
+        const structured = type !== 'erro';
+
+        elements.modalContent.innerHTML =
+            '<header class="dr-modal__header">' +
+                '<div class="dr-request-card__badges">' +
+                    '<span class="dr-badge dr-badge--type-' + type + '">' + escapeHtml(typeLabels[type]) + '</span>' +
+                    '<span class="dr-badge dr-badge--status-' + status + '">' + escapeHtml(statusLabels[status]) + '</span>' +
+                    '<span class="dr-badge' + urgencyClass(item.urgency) + '">' + escapeHtml(item.urgency || 'Não informada') + '</span>' +
+                '</div>' +
+                '<h2 id="dr-modal-title">' + escapeHtml(item.title) + '</h2>' +
+                '<p class="dr-modal__meta">Solicitação #' + escapeHtml(item.requestId) +
+                    ' · ' + escapeHtml(item.requesterName) +
+                    ' · ' + escapeHtml(formatDate(item.requestDate, true)) + '</p>' +
+            '</header>' +
+            '<div class="dr-modal__grid">' +
+                '<section class="dr-detail-panel">' +
+                    '<h3>Dados da solicitação</h3>' +
+                    '<dl class="dr-readonly-grid">' +
+                        readonlyItem('Título', item.title, true) +
+                        readonlyItem('Descrição inicial / objetivo', item.initialDescription, true) +
+                        (structured ? readonlyItem('Premissas', item.assumptions, true) : '') +
+                        (structured ? readonlyItem('Problemas atuais', item.actualProblems, true) : '') +
+                        (structured ? readonlyItem('Ganhos esperados', item.benefits, true) : '') +
+                        readonlyItem('Tipo', typeLabels[type]) +
+                        readonlyItem('Urgência', item.urgency) +
+                    '</dl>' +
+                '</section>' +
+                '<section class="dr-detail-panel">' +
+                    '<h3>Andamento</h3>' +
+                    '<dl class="dr-readonly-grid">' +
+                        readonlyItem('Status', statusLabels[status]) +
+                        readonlyItem('Responsável', item.responsibleName) +
+                        readonlyItem('Data de início', formatDate(item.startDate, false)) +
+                        readonlyItem('Prazo', formatDate(item.deadline, false)) +
+                        readonlyItem('Data de conclusão/recusa', formatDate(item.finalDate, true)) +
+                        readonlyItem('Reprogramações', String(item.reprogs || 0)) +
+                        (status === '3' ? readonlyItem('Motivo da recusa', item.deniedText, true) : '') +
+                    '</dl>' +
+                '</section>' +
+                '<section class="dr-detail-panel dr-detail-panel--full">' +
+                    '<h3>Documentos</h3>' + renderAttachments(item) +
+                '</section>' +
+                '<section class="dr-detail-panel dr-detail-panel--full">' +
+                    '<h3>Histórico de pausas</h3>' + renderPauses(item) +
+                '</section>' +
+            '</div>';
+    }
+
+    function closeModal(updateAddress) {
+        elements.modal.classList.remove('is-open');
+        elements.modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('dr-modal-open');
+        if (updateAddress !== false) {
+            setRequestInAddress(null);
+        }
+    }
+
+    async function openRequestDetail(requestId, updateAddress) {
+        elements.modal.classList.add('is-open');
+        elements.modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('dr-modal-open');
+        elements.modalContent.innerHTML = '<div class="dr-modal-loading">Carregando solicitação...</div>';
+        if (updateAddress !== false) {
+            setRequestInAddress(requestId);
+        }
+
+        try {
+            const response = await fetch(apiUrl('/' + requestId), {
+                credentials: 'same-origin'
+            });
+            const payload = await response.json().catch(function () { return {}; });
+            if (!response.ok) {
+                throw new Error(payload.error || 'Não foi possível carregar a solicitação.');
+            }
+            renderRequestDetail(payload);
+        } catch (error) {
+            elements.modalContent.innerHTML = '<div class="dr-modal-loading">' +
+                escapeHtml(error.message || 'Não foi possível carregar a solicitação.') +
+            '</div>';
+        }
     }
 
     function updateDemandFields() {
@@ -307,7 +439,10 @@
             const response = await fetch(elements.form.action, {
                 method: 'POST',
                 body: new FormData(elements.form),
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRF-Token': config.csrfToken
+                }
             });
 
             if (response.redirected && new URL(response.url).pathname.includes('/login')) {
@@ -315,10 +450,13 @@
                 return;
             }
 
+            const payload = await response.json().catch(function () { return {}; });
             if (!response.ok) {
-                errorMessage = response.status === 400
-                    ? 'Revise os campos obrigatórios e tente novamente.'
-                    : 'Não foi possível enviar a solicitação. Tente novamente.';
+                errorMessage = payload.error || (
+                    response.status === 400
+                        ? 'Revise os campos obrigatórios e tente novamente.'
+                        : 'Não foi possível enviar a solicitação. Tente novamente.'
+                );
                 throw new Error('request_failed');
             }
 
@@ -364,6 +502,18 @@
         }
     });
 
+    document.querySelectorAll('[data-close-modal]').forEach(function (control) {
+        control.addEventListener('click', function () {
+            closeModal(true);
+        });
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && elements.modal.classList.contains('is-open')) {
+            closeModal(true);
+        }
+    });
+
     elements.demandType.addEventListener('change', updateDemandFields);
     elements.fileInput.addEventListener('change', updateFileList);
     elements.form.addEventListener('submit', submitRequest);
@@ -389,5 +539,10 @@
             url.searchParams.delete('sent');
             window.history.replaceState({}, '', url);
         }
+    }
+
+    if (config.initialRequestId) {
+        setTab('minhas', false);
+        openRequestDetail(config.initialRequestId, false);
     }
 }());

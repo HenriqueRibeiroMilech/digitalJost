@@ -1,9 +1,25 @@
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+import hmac
+import secrets
+
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for
+)
 from flask_login import current_user
 
 from app.utils.db_utils import get_engine
-from app.utils.permissions import get_permission
+from app.utils.permissions import get_permission, user_has_role
 
+from .domain import DemandRequestsError
+from .integration import DemandRequestStorage
 from .repository import DemandRequestsRepository
 from .services import DemandRequestsService
 
@@ -11,23 +27,50 @@ from .services import DemandRequestsService
 demand_requests_bp = Blueprint('demand_requests', __name__)
 
 _AREA_CONFIG = {
-    'Transformação Digital': 1
+    'Transformação Digital': {
+        'id': 1,
+        'role': 'Transformação Digital'
+    }
 }
 
 
 def _current_area():
     area_name = request.args.get('area')
-    area_id = _AREA_CONFIG.get(area_name)
-    if not area_id:
+    area = _AREA_CONFIG.get(area_name)
+    if not area:
         abort(400, description='Área inválida ou não informada.')
-    return area_name, area_id
+    return area_name, area
 
 
 def _build_service():
     return DemandRequestsService(
         engine=get_engine('jdt'),
-        repository=DemandRequestsRepository()
+        repository=DemandRequestsRepository(),
+        storage=DemandRequestStorage(current_app.root_path)
     )
+
+
+def _is_admin():
+    return str(getattr(current_user, 'admin', '')).strip().lower() in ('1', 'true', 'sim')
+
+
+def _can_review(area):
+    return _is_admin() or user_has_role(current_user.role, area['role'])
+
+
+def _csrf_token():
+    token = session.get('demand_requests_csrf')
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session['demand_requests_csrf'] = token
+    return token
+
+
+def _validate_csrf():
+    received = request.headers.get('X-CSRF-Token', '') or request.form.get('csrf_token', '')
+    expected = session.get('demand_requests_csrf', '')
+    if not expected or not received or not hmac.compare_digest(received, expected):
+        abort(400, description='Token de segurança inválido. Atualize a página.')
 
 
 @demand_requests_bp.before_request
@@ -37,12 +80,19 @@ def authorize_request():
     if not get_permission('GENERAL').can():
         return abort(403)
     _current_area()
+    if request.method == 'POST':
+        _validate_csrf()
+
+
+@demand_requests_bp.errorhandler(DemandRequestsError)
+def handle_demand_requests_error(error):
+    return jsonify({'error': str(error)}), error.status_code
 
 
 @demand_requests_bp.route('/demandas/solicitacoes', methods=['GET'])
 def requests_page():
-    area_name, area_id = _current_area()
-    requests_list = _build_service().list_user_requests(area_id, current_user.id)
+    area_name, area = _current_area()
+    requests_list = _build_service().list_user_requests(area['id'], current_user.id)
     initial_tab = 'minhas' if request.args.get('tab') == 'minhas' else 'nova'
 
     return render_template(
@@ -51,18 +101,49 @@ def requests_page():
         requests=requests_list,
         initial_tab=initial_tab,
         request_sent=request.args.get('sent') == '1',
-        legacy_submit_url=url_for(
-            'request_improvements.improvements_small_new_post',
-            area=area_name
-        ),
-        legacy_form_url=url_for(
-            'request_improvements.improvements_small_new_get',
-            area=area_name
-        ),
-        legacy_view_url=url_for(
-            'request_improvements.improvements_view_get',
-            area=area_name,
-            tipo='melhorias'
-        ),
-        detail_url=url_for('request_improvements.improvements_detail_get')
+        initial_request_id=request.args.get('request', type=int),
+        csrf_token=_csrf_token()
     )
+
+
+@demand_requests_bp.route('/demandas/solicitacoes/api', methods=['POST'])
+def requests_create():
+    _, area = _current_area()
+    detail = _build_service().create_request(
+        area['id'],
+        current_user.id,
+        request.form,
+        request.files.getlist('docs')
+    )
+    return jsonify(detail), 201
+
+
+@demand_requests_bp.route(
+    '/demandas/solicitacoes/api/<int:request_id>',
+    methods=['GET']
+)
+def request_detail(request_id):
+    _, area = _current_area()
+    detail = _build_service().get_request(
+        request_id,
+        area['id'],
+        current_user.id,
+        _can_review(area)
+    )
+    return jsonify(detail)
+
+
+@demand_requests_bp.route(
+    '/demandas/solicitacoes/api/<int:request_id>/attachments/<int:attachment_index>',
+    methods=['GET']
+)
+def request_attachment(request_id, attachment_index):
+    _, area = _current_area()
+    directory, file_name = _build_service().get_attachment(
+        request_id,
+        attachment_index,
+        area['id'],
+        current_user.id,
+        _can_review(area)
+    )
+    return send_from_directory(directory, file_name, as_attachment=True)

@@ -97,6 +97,12 @@
         return Number(status) === 3 ? 'Recusada' : 'Em análise';
     }
 
+    function requestPortalUrl(requestId) {
+        const url = new URL(config.requestPortalUrl, window.location.origin);
+        url.searchParams.set('request', requestId);
+        return url.toString();
+    }
+
     function daysUntilDeadline(demand) {
         if (!demand.deadline || ['Concluído', 'Cancelado'].includes(demand.status)) return null;
         const today = new Date();
@@ -717,7 +723,7 @@
     }
 
     function renderOriginalRequestPanel(demand) {
-        const originalUrl = `/solicitar/detail?area=${encodeURIComponent(config.area)}&tipo=melhorias&id=${demand.sourceRequestId}`;
+        const originalUrl = requestPortalUrl(demand.sourceRequestId);
         return `
             <section class="dm-panel">
                 <h3>Solicitação original · somente leitura</h3>
@@ -783,7 +789,7 @@
 
     function renderRequestModal(item) {
         const refused = Number(item.status) === 3;
-        const originalUrl = `/solicitar/detail?area=${encodeURIComponent(config.area)}&tipo=melhorias&id=${item.requestId}`;
+        const originalUrl = requestPortalUrl(item.requestId);
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
                 <div class="dm-badges">

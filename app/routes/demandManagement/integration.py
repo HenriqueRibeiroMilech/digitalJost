@@ -1,6 +1,6 @@
 from datetime import date
 
-from flask import render_template
+from flask import render_template, url_for
 from flask_mail import Message
 from sqlalchemy import text
 
@@ -9,7 +9,7 @@ from app.utils.data_utils import format_date
 
 
 class RequestReviewNotifier:
-    """Mantém as notificações usadas pelo fluxo antigo de análise."""
+    """Envia as notificações do fluxo de análise das solicitações."""
 
     @staticmethod
     def _message(subject, review, reviewer):
@@ -27,14 +27,18 @@ class RequestReviewNotifier:
             reviewer
         )
         message.html = render_template(
-            'request.improvements/improvements_email_new_small_start.html',
+            'demandRequests/emails/approved.html',
             respName=reviewer['name'],
             title=review['title'],
             desc=review['initialDescription'],
             date=format_date(date.today()),
-            area=area_name,
-            requestType='melhorias',
-            deliveryDate=format_date(deadline)
+            deliveryDate=format_date(deadline),
+            requestsUrl=url_for(
+                'demand_requests.requests_page',
+                area=area_name,
+                tab='minhas',
+                _external=True
+            )
         )
         mail.send(message)
 
@@ -45,13 +49,17 @@ class RequestReviewNotifier:
             reviewer
         )
         message.html = render_template(
-            'request.improvements/improvements_email_new_small_decline.html',
+            'demandRequests/emails/declined.html',
             respName=reviewer['name'],
             just=reason,
             title=review['title'],
             desc=review['initialDescription'],
-            area=area_name,
-            requestType='melhorias'
+            requestsUrl=url_for(
+                'demand_requests.requests_page',
+                area=area_name,
+                tab='minhas',
+                _external=True
+            )
         )
         mail.send(message)
 

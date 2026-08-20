@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<body>
+    <div style="padding:15px;font-size:22px;color:white;background-color:#163A8A;text-align:center;font-family:sans-serif;">
+        <p style="font-weight:bold;">DEMANDA "{{ title }}" RECUSADA</p>
+    </div>
+    <div style="margin-left:80px;margin-top:60px;font-family:sans-serif;">
+        <p style="font-size:20px;font-weight:bold;">O DESENVOLVIMENTO DA SUA SOLICITAÇÃO FOI RECUSADO.</p>
+        <p style="font-size:16px;">O usuário "{{ respName }}" não aprovou a demanda intitulada "{{ title }}".</p>
+        <p style="font-size:16px;font-weight:bold;">Descrição informada na solicitação:</p>
+        <p style="font-size:16px;">"{{ desc }}"</p>
+        <p style="font-size:16px;font-weight:bold;">Justificativa da recusa:</p>
+        <p style="font-size:16px;">"{{ just }}"</p>
+        <p style="font-size:16px;">Caso a justificativa não seja suficiente, converse diretamente com o responsável pela análise, que está copiado neste e-mail.</p>
+        <p style="font-size:20px;font-weight:bold;color:#EF7B04;">Você pode acompanhar suas solicitações no link abaixo.</p>
+        <a href="{{ requestsUrl }}" style="color:white;background-color:#163A8A;text-decoration:none;padding:20px;font-size:26px;font-weight:bold;">Visualizar</a><br><br>
+        <p style="color:red;font-size:16px;font-weight:bold;">SE HOUVER ALGUMA DÚVIDA, NÃO RESPONDA ESTE E-MAIL. ENCAMINHE A MENSAGEM PARA UM MEMBRO DA ÁREA DESENVOLVEDORA.</p>
+    </div>
+</body>
+</html>

@@ -13,12 +13,7 @@
 <body>
 <main class="dr-page" aria-labelledby="dr-title">
     <div class="dr-topbar">
-        <a class="dr-back" href="{{ url_for('request_improvements.improvements_get') }}">&larr; Voltar para demandas</a>
-        <div class="dr-legacy-links" aria-label="Versão anterior">
-            <span>Versão anterior:</span>
-            <a href="{{ legacy_form_url }}">solicitar</a>
-            <a href="{{ legacy_view_url }}">visualizar</a>
-        </div>
+        <a class="dr-back" href="/">&larr; Voltar para o início</a>
     </div>
 
     <header class="dr-hero">
@@ -44,9 +39,10 @@
         <form
             id="dr-request-form"
             method="post"
-            action="{{ legacy_submit_url }}"
+            action="{{ url_for('demand_requests.requests_create', area=area) }}"
             enctype="multipart/form-data"
         >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <section class="dr-panel">
                 <div class="dr-panel__heading">
                     <div>
@@ -142,7 +138,7 @@
                             required
                             type="file"
                             name="docs"
-                            accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*"
+                            accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp"
                         >
                         <ul class="dr-file-list" id="dr-file-list" aria-live="polite"></ul>
                     </div>
@@ -189,6 +185,14 @@
     </section>
 </main>
 
+<div class="dr-modal" id="dr-modal" aria-hidden="true">
+    <div class="dr-modal__backdrop" data-close-modal></div>
+    <section class="dr-modal__panel" role="dialog" aria-modal="true" aria-labelledby="dr-modal-title">
+        <button class="dr-modal__close" type="button" data-close-modal aria-label="Fechar detalhes">&times;</button>
+        <div id="dr-modal-content"></div>
+    </section>
+</div>
+
 <div class="dr-toast" id="dr-toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -197,8 +201,10 @@
         initialTab: {{ initial_tab|tojson }},
         requestSent: {{ request_sent|tojson }},
         requests: {{ requests|tojson }},
+        csrfToken: {{ csrf_token|tojson }},
+        initialRequestId: {{ initial_request_id|tojson }},
         portalUrl: {{ url_for('demand_requests.requests_page', area=area)|tojson }},
-        detailUrl: {{ detail_url|tojson }}
+        apiRoot: {{ url_for('demand_requests.requests_create')|tojson }}
     };
 </script>
 <script defer src="{{ url_for('static', filename='js/demand-requests/portal.js') }}"></script>
