@@ -14,7 +14,7 @@ function getStatusStyle(status) {
     }
 }
 
-function displayDeadlines(id, data) {
+function displayDeadlines(id, data, status) {
     const container = document.getElementById(id);
     container.innerHTML = '';
 
@@ -24,7 +24,7 @@ function displayDeadlines(id, data) {
 
         // Configurando o texto da data
         if (index === 0) {
-            if(new Date (deadline.split ("/").reverse().join ("-")) < new Date()) {
+            if(Number(status) !== 100 && new Date (deadline.split ("/").reverse().join ("-")) < new Date()) {
                 div.style.color = "red";
             }
             div.innerHTML = `<strong>${deadline}</strong>`;
@@ -37,7 +37,7 @@ function displayDeadlines(id, data) {
         container.appendChild(div);
     });
 }
-
+    
 function phrase(data, column) {
 
     let dataset;
@@ -175,14 +175,14 @@ function loadActionPlan(presentationArea) {
             tableBody.appendChild(tr);
         });
 
-        displayDeadlines(`deadline${planId}-0`, mainDeadline.split(","))
+        displayDeadlines(`deadline${planId}-0`, mainDeadline.split(","), planStatus)
 
         rows.forEach((row, index) => {
-            displayDeadlines(`deadline${planId}-${index + 1}`, row.deadline.split(","))
+            displayDeadlines(`deadline${planId}-${index + 1}`, row.deadline.split(","), row.status)
         });
     });
     
 
 }
 
-// V1
+// V2
