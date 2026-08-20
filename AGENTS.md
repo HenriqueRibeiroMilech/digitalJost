@@ -74,7 +74,7 @@ O responsável autorizou commits locais diretamente na `main` para esse fluxo. I
 4. Confirme com `git branch --show-current` que a branch é `main`. Se não for, pare; não troque de branch sozinho.
 5. Confirme com `git remote` que o remoto `origin` existe. Não imprima URLs que possam conter credenciais ou tokens.
 6. Execute somente `git pull --ff-only origin main`. Acesso de rede continua sujeito às permissões do ambiente.
-7. Se o pull falhar, exigir merge, divergir ou apresentar conflito, pare e informe. Não use rebase, merge ou resolução automática.
+7. Se o pull falhar, exigir merge, divergir ou apresentar conflito, pare e informe. Não use rebase, merge ou resolução automática por iniciativa própria. Quando a divergência envolver somente commits locais ainda não publicados, o responsável pode autorizar explicitamente o rebase na tarefa atual. Antes de executá-lo, confirme que a árvore está limpa, apresente os commits divergentes e verifique se os arquivos alterados se sobrepõem. Se o rebase apresentar conflito, pare e informe; não resolva o conflito sem uma nova autorização explícita.
 8. Leia este arquivo, `README.md`, `main.py` e os arquivos diretamente ligados à funcionalidade.
 
 Não solicite nem habilite Full Access ou acesso amplo à rede. Uma elevação de rede, quando necessária, deve ficar limitada ao comando Git exato desta seção ou a um push explicitamente autorizado.
