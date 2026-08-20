@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solicitações de Demandas</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_requests.css') }}">
+</head>
+<body>
+<main class="dr-page" aria-labelledby="dr-title">
+    <div class="dr-topbar">
+        <a class="dr-back" href="{{ url_for('request_improvements.improvements_get') }}">&larr; Voltar para demandas</a>
+        <div class="dr-legacy-links" aria-label="Versão anterior">
+            <span>Versão anterior:</span>
+            <a href="{{ legacy_form_url }}">solicitar</a>
+            <a href="{{ legacy_view_url }}">visualizar</a>
+        </div>
+    </div>
+
+    <header class="dr-hero">
+        <div>
+            <p class="dr-eyebrow">Transformação Digital</p>
+            <h1 id="dr-title">Solicitações de Demandas</h1>
+            <p>Envie uma nova necessidade e acompanhe suas solicitações em um só lugar.</p>
+        </div>
+        <div class="dr-summary" id="dr-summary" aria-label="Resumo das solicitações"></div>
+    </header>
+
+    <nav class="dr-tabs" role="tablist" aria-label="Áreas das solicitações">
+        <button class="dr-tab" type="button" role="tab" data-tab="nova" aria-controls="dr-new-view">
+            Nova solicitação
+        </button>
+        <button class="dr-tab" type="button" role="tab" data-tab="minhas" aria-controls="dr-requests-view">
+            Minhas solicitações
+            <span class="dr-tab__count">{{ requests|length }}</span>
+        </button>
+    </nav>
+
+    <section id="dr-new-view" class="dr-view" role="tabpanel" aria-labelledby="dr-form-title">
+        <form
+            id="dr-request-form"
+            method="post"
+            action="{{ legacy_submit_url }}"
+            enctype="multipart/form-data"
+        >
+            <section class="dr-panel">
+                <div class="dr-panel__heading">
+                    <div>
+                        <p class="dr-section-label">Dados principais</p>
+                        <h2 id="dr-form-title">Conte o que você precisa</h2>
+                    </div>
+                    <span>Campos com * são obrigatórios</span>
+                </div>
+
+                <div class="dr-form-grid">
+                    <label class="dr-field dr-field--half">
+                        <span>Tipo de demanda *</span>
+                        <select required autocomplete="off" name="demandType" id="dr-demand-type">
+                            <option value="" disabled selected>Selecione o tipo</option>
+                            <option value="melhoria">Melhoria</option>
+                            <option value="projeto">Projeto</option>
+                            <option value="erro">Erro/Defeito em aplicação</option>
+                        </select>
+                    </label>
+
+                    <label class="dr-field dr-field--half">
+                        <span>Nível de urgência *</span>
+                        <select required autocomplete="off" name="options">
+                            <option value="" disabled selected>Selecione a urgência</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Média">Média</option>
+                            <option value="Baixa">Baixa</option>
+                        </select>
+                    </label>
+
+                    <label class="dr-field dr-field--full">
+                        <span>Título da demanda *</span>
+                        <input required type="text" name="titulo" placeholder="Ex.: Automatizar indicador semanal" autocomplete="off">
+                    </label>
+
+                    <label class="dr-field dr-field--full">
+                        <span id="dr-objective-label">Objetivo da demanda *</span>
+                        <textarea required name="objetivo" id="dr-objective" rows="4" placeholder="Explique de forma clara o objetivo da demanda"></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="dr-panel" id="dr-structured-fields">
+                <div class="dr-panel__heading">
+                    <div>
+                        <p class="dr-section-label">Detalhamento</p>
+                        <h2>Ajude a equipe a entender o cenário</h2>
+                    </div>
+                </div>
+
+                <div class="dr-detail-grid">
+                    <label class="dr-field">
+                        <span>Premissas da demanda *</span>
+                        <textarea required name="premissas" rows="5" placeholder="Quais condições precisam ser consideradas?"></textarea>
+                    </label>
+                    <label class="dr-field">
+                        <span>Problemas atuais *</span>
+                        <textarea required name="problemas" rows="5" placeholder="Descreva o problema ou processo atual"></textarea>
+                    </label>
+                    <label class="dr-field">
+                        <span>Ganhos esperados *</span>
+                        <textarea required name="beneficios" rows="5" placeholder="Quais resultados são esperados?"></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="dr-panel">
+                <div class="dr-panel__heading">
+                    <div>
+                        <p class="dr-section-label">Documentos</p>
+                        <h2>Anexe o fluxo da demanda</h2>
+                    </div>
+                </div>
+
+                <div class="dr-documents">
+                    <div class="dr-documents__copy">
+                        <p>
+                            Adicione documentos que facilitem a análise, o desenvolvimento e a definição do prazo.
+                            Use o exemplo ao lado como referência para representar o fluxo.
+                        </p>
+                        <p class="dr-note">
+                            Um fluxo incompleto pode aumentar o tempo de análise ou impedir a aprovação da solicitação.
+                        </p>
+
+                        <label class="dr-file-picker" for="dr-documents-input">
+                            <strong id="dr-file-picker-label">Selecionar documentos *</strong>
+                            <span>Word, Excel, PowerPoint, PDF, texto ou imagens</span>
+                        </label>
+                        <input
+                            id="dr-documents-input"
+                            class="dr-file-input"
+                            multiple
+                            required
+                            type="file"
+                            name="docs"
+                            accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain, application/pdf, image/*"
+                        >
+                        <ul class="dr-file-list" id="dr-file-list" aria-live="polite"></ul>
+                    </div>
+
+                    <figure class="dr-flow-example">
+                        <img src="{{ url_for('static', filename='images/FLUXO.PNG') }}" alt="Exemplo de fluxo para detalhar uma demanda">
+                        <figcaption>Exemplo de fluxo da demanda</figcaption>
+                    </figure>
+                </div>
+            </section>
+
+            <div class="dr-form-feedback" id="dr-form-feedback" role="alert" hidden></div>
+            <div class="dr-form-actions">
+                <button class="dr-button dr-button--quiet" type="reset">Limpar formulário</button>
+                <button class="dr-button" id="dr-submit" type="submit">Solicitar demanda</button>
+            </div>
+        </form>
+    </section>
+
+    <section id="dr-requests-view" class="dr-view" role="tabpanel" aria-labelledby="dr-requests-title" hidden>
+        <h2 id="dr-requests-title" class="dr-visually-hidden">Minhas solicitações</h2>
+
+        <section class="dr-toolbar" aria-label="Filtros das solicitações">
+            <label class="dr-search">
+                <span>Buscar por título</span>
+                <input id="dr-search" type="search" placeholder="Ex.: painel de produção" autocomplete="off">
+            </label>
+            <label>
+                <span>Tipo</span>
+                <select id="dr-filter-type">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <label>
+                <span>Status</span>
+                <select id="dr-filter-status">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <button class="dr-button dr-button--quiet" id="dr-clear-filters" type="button">Limpar filtros</button>
+        </section>
+
+        <section class="dr-request-grid" id="dr-request-grid" aria-live="polite"></section>
+    </section>
+</main>
+
+<div class="dr-toast" id="dr-toast" role="status" aria-live="polite"></div>
+
+<script>
+    window.demandRequestsConfig = {
+        area: {{ area|tojson }},
+        initialTab: {{ initial_tab|tojson }},
+        requestSent: {{ request_sent|tojson }},
+        requests: {{ requests|tojson }},
+        portalUrl: {{ url_for('demand_requests.requests_page', area=area)|tojson }},
+        detailUrl: {{ detail_url|tojson }}
+    };
+</script>
+<script defer src="{{ url_for('static', filename='js/demand-requests/portal.js') }}"></script>
+</body>
+</html>
