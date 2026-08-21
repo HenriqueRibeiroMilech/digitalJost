@@ -35,9 +35,10 @@ def _serialize_row(row):
 
 
 class DemandManagementService:
-    def __init__(self, engine, repository, review_notifier=None):
+    def __init__(self, engine, repository, attachment_storage, review_notifier=None):
         self.engine = engine
         self.repository = repository
+        self.attachment_storage = attachment_storage
         self.review_notifier = review_notifier
 
     def list_board(self, area_id, user_id):
@@ -67,7 +68,22 @@ class DemandManagementService:
             row = self.repository.get_review_request(connection, request_id, area_id)
         if not row:
             raise NotFoundError('Solicitação não encontrada.')
-        return self._serialize_review(row)
+        return self._serialize_review(row, include_attachments=True)
+
+    def get_request_attachment(self, request_id, attachment_index, area_id):
+        with self.engine.connect() as connection:
+            row = self.repository.get_review_request(connection, request_id, area_id)
+        if not row:
+            raise NotFoundError('Solicitação não encontrada.')
+
+        detail = self._serialize_review(row, include_attachments=True)
+        attachment = next((
+            item for item in detail['attachments']
+            if item['index'] == attachment_index
+        ), None)
+        if not attachment:
+            raise NotFoundError('Anexo não encontrado.')
+        return self.attachment_storage.request_directory(request_id), attachment['name']
 
     def approve_review_request(self, request_id, area_id, payload, reviewer, area_name):
         deadline = validate_review_approval(payload)
@@ -106,8 +122,12 @@ class DemandManagementService:
             if not demand:
                 raise NotFoundError('Demanda não encontrada.')
             tasks = self.repository.list_tasks(connection, management_id, area_id)
-        result = self._serialize_demand(demand, user_id)
+            pauses = self.repository.list_request_pauses(
+                connection, demand['sourceRequestId']
+            )
+        result = self._serialize_demand(demand, user_id, include_attachments=True)
         result['tasks'] = [_serialize_row(row) for row in tasks]
+        result['requestPauses'] = [_serialize_row(row) for row in pauses]
         return result
 
     def create_personal_demand(self, area_id, payload, user_id):
@@ -205,9 +225,11 @@ class DemandManagementService:
             raise ConflictError('Esta solicitação está atribuída a outro responsável.')
         return dict(review)
 
-    @staticmethod
-    def _serialize_demand(row, user_id):
+    def _serialize_demand(self, row, user_id, include_attachments=False):
         result = _serialize_row(row)
+        images = result.pop('images', '') or ''
+        if include_attachments:
+            result['attachments'] = self._serialize_attachments(images)
         creator_id = result.pop('directCreatorId', None)
         is_direct = result.get('sourceRequestId') is None
         result['isDirectDemand'] = is_direct
@@ -216,9 +238,19 @@ class DemandManagementService:
         )
         return result
 
-    @staticmethod
-    def _serialize_review(row):
+    def _serialize_review(self, row, include_attachments=False):
         result = _serialize_row(row)
+        images = result.pop('images', '') or ''
+        if include_attachments:
+            result['attachments'] = self._serialize_attachments(images)
         # O e-mail é necessário somente no servidor para enviar a notificação.
         result.pop('requesterEmail', None)
         return result
+
+    def _serialize_attachments(self, images):
+        stored_names = [name for name in images.split('||') if name]
+        return [
+            {'index': index, 'name': name}
+            for index, name in enumerate(stored_names)
+            if self.attachment_storage.is_safe_stored_name(name)
+        ]

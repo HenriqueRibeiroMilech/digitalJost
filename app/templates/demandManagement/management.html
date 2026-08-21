@@ -130,8 +130,7 @@
         area: {{ area | tojson }},
         csrfToken: {{ csrf_token | tojson }},
         initialView: {{ initial_view | tojson }},
-        currentUserName: {{ current_user_name | tojson }},
-        requestPortalUrl: {{ url_for('demand_requests.requests_page', area=area, tab='minhas') | tojson }}
+        currentUserName: {{ current_user_name | tojson }}
     };
 </script>
 <script defer src="{{ url_for('static', filename='js/demand-management/management.js') }}"></script>

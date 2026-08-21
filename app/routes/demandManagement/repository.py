@@ -22,6 +22,7 @@ class DemandManagementRepository:
             R.status,
             R.deniedText,
             R.reprogs,
+            R.images,
             CASE WHEN NULLIF(R.images, '') IS NULL THEN 0 ELSE 1 END AS hasAttachments,
             Requester.id AS requesterId,
             Requester.name AS requesterName,
@@ -66,6 +67,7 @@ class DemandManagementRepository:
             R.deliveryDate AS requestDeadline,
             R.finalDate AS requestFinalDate,
             R.reprogs AS requestReprograms,
+            R.images,
             CASE WHEN NULLIF(R.images, '') IS NULL THEN 0 ELSE 1 END AS hasAttachments,
             COALESCE(Requester.id, Creator.id) AS requesterId,
             COALESCE(Requester.name, Creator.name) AS requesterName,
@@ -174,6 +176,23 @@ class DemandManagementRepository:
             'management_id': management_id,
             'area_id': area_id
         }).mappings().first()
+
+    def list_request_pauses(self, connection, request_id):
+        if request_id is None:
+            return []
+        query = text("""
+            SELECT
+                initDate,
+                expectDate,
+                finalDate,
+                text AS reason
+            FROM JDT_REQUEST_PAUSES
+            WHERE requestId = :request_id
+            ORDER BY initDate
+        """)
+        return connection.execute(query, {
+            'request_id': request_id
+        }).mappings().all()
 
     def create_personal_demand(self, connection, area_id, demand, user_id):
         query = text("""

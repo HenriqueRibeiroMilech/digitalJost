@@ -1,3 +1,4 @@
+import os
 from datetime import date
 
 from flask import render_template, url_for
@@ -6,6 +7,31 @@ from sqlalchemy import text
 
 from app.config import mail
 from app.utils.data_utils import format_date
+
+
+class RequestAttachmentStorage:
+    """Resolve anexos existentes sem alterar os arquivos operacionais."""
+
+    def __init__(self, app_root):
+        self.base_directory = os.path.abspath(os.path.join(
+            app_root, 'static', 'uploads', 'improvements'
+        ))
+
+    def request_directory(self, request_id):
+        directory = os.path.abspath(os.path.join(
+            self.base_directory, str(int(request_id))
+        ))
+        if os.path.commonpath([self.base_directory, directory]) != self.base_directory:
+            raise ValueError('Diretório de anexos inválido.')
+        return directory
+
+    @staticmethod
+    def is_safe_stored_name(file_name):
+        return (
+            bool(file_name)
+            and file_name not in ('.', '..')
+            and os.path.basename(file_name) == file_name
+        )
 
 
 class RequestReviewNotifier:

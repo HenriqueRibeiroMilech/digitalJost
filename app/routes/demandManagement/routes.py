@@ -1,14 +1,25 @@
 import hmac
 import secrets
 
-from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for
+)
 from flask_login import current_user
 
 from app.utils.db_utils import get_engine
 from app.utils.permissions import get_permission, user_has_role
 
 from .domain import AREA_CONFIG, DEFAULT_AREA, DemandManagementError
-from .integration import RequestReviewNotifier
+from .integration import RequestAttachmentStorage, RequestReviewNotifier
 from .repository import DemandManagementRepository
 from .services import DemandManagementService
 
@@ -21,6 +32,7 @@ def _build_service():
     return DemandManagementService(
         engine=get_engine('jdt'),
         repository=DemandManagementRepository(),
+        attachment_storage=RequestAttachmentStorage(current_app.root_path),
         review_notifier=RequestReviewNotifier()
     )
 
@@ -112,6 +124,18 @@ def review_request_list():
 def review_request_detail(request_id):
     _, area = _current_area()
     return jsonify(_build_service().get_review_request(request_id, area['id']))
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/requests/<int:request_id>/attachments/<int:attachment_index>',
+    methods=['GET']
+)
+def review_request_attachment(request_id, attachment_index):
+    _, area = _current_area()
+    directory, file_name = _build_service().get_request_attachment(
+        request_id, attachment_index, area['id']
+    )
+    return send_from_directory(directory, file_name, as_attachment=True)
 
 
 @demand_management_bp.route(
