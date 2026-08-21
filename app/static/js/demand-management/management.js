@@ -106,35 +106,19 @@
         return url.toString();
     }
 
-    function panelHeading(title, description, extra) {
-        return `
-            <div class="dm-panel__heading">
-                <div>
-                    <h3>${escapeHtml(title)}</h3>
-                    ${description ? `<p>${escapeHtml(description)}</p>` : ''}
-                </div>
-                ${extra || ''}
-            </div>`;
-    }
-
     function renderAttachments(requestId, attachments) {
         if (!attachments || !attachments.length) {
-            return '<div class="dm-inline-empty">Nenhum documento anexado.</div>';
+            return '<p class="dm-source-empty">Nenhum documento anexado.</p>';
         }
         return `
             <ul class="dm-attachment-list">
                 ${attachments.map(function (attachment) {
-                    const extension = String(attachment.name || '').split('.').pop().substring(0, 4);
                     const url = requestAttachmentUrl(requestId, attachment.index);
                     return `
                         <li>
                             <a href="${escapeHtml(url)}">
-                                <span class="dm-attachment__type">${escapeHtml(extension || 'ARQ')}</span>
-                                <span class="dm-attachment__copy">
-                                    <strong>${escapeHtml(attachment.name)}</strong>
-                                    <small>Documento da solicitação</small>
-                                </span>
-                                <span class="dm-attachment__action">Baixar</span>
+                                <span>${escapeHtml(attachment.name)}</span>
+                                <strong>Baixar</strong>
                             </a>
                         </li>`;
                 }).join('')}
@@ -144,15 +128,15 @@
     function renderRequestPauses(pauses) {
         if (!pauses || !pauses.length) return '';
         return `
-            <div class="dm-source-subsection">
+            <div class="dm-source-section">
                 <h4>Histórico de pausas</h4>
                 <ul class="dm-pause-list">
                     ${pauses.map(function (pause) {
                         return `
                             <li>
                                 <strong>${escapeHtml(formatDate(pause.initDate, true))}</strong>
-                                <span>até ${escapeHtml(formatDate(pause.finalDate || pause.expectDate, Boolean(pause.finalDate)))}</span>
-                                <p>${escapeHtml(display(pause.reason, 'Sem justificativa informada'))}</p>
+                                até ${escapeHtml(formatDate(pause.finalDate || pause.expectDate, Boolean(pause.finalDate)))}
+                                <span>${escapeHtml(display(pause.reason, 'Sem justificativa informada'))}</span>
                             </li>`;
                     }).join('')}
                 </ul>
@@ -611,12 +595,12 @@
                     <span class="dm-badge dm-badge--type dm-badge--type-atividade">Nova atividade pessoal</span>
                 </div>
                 <h2 id="dm-modal-title">Criar atividade</h2>
-                <p class="dm-modal__meta">Organize uma atividade do dia a dia. A responsabilidade será atribuída automaticamente a <strong>${escapeHtml(config.currentUserName)}</strong>.</p>
+                <p class="dm-modal__meta">Ela será atribuída automaticamente a ${escapeHtml(config.currentUserName)}.</p>
             </header>
 
             <form class="dm-create-form" id="dm-create-demand-form">
                 <section class="dm-panel">
-                    ${panelHeading('Dados principais', 'Defina um título curto e descreva claramente o resultado esperado.')}
+                    <h3>Dados principais</h3>
                     <div class="dm-create-grid">
                         <label class="dm-field dm-create-grid__title">
                             <span>Título</span>
@@ -630,7 +614,7 @@
                 </section>
 
                 <section class="dm-panel">
-                    ${panelHeading('Planejamento inicial', 'Esses dados poderão ser ajustados depois no card ou no detalhe da demanda.')}
+                    <h3>Planejamento inicial</h3>
                     <div class="dm-form-grid dm-create-planning-grid">
                         ${createSelectField('Status', 'status', statuses, 'A Fazer')}
                         ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
@@ -729,9 +713,7 @@
     }
 
     function readonlyItem(label, value, wide) {
-        const content = display(value);
-        const narrative = wide && String(content).length > 70;
-        return `<div class="dm-readonly${wide ? ' dm-readonly--wide' : ''}${narrative ? ' dm-readonly--narrative' : ''}"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(content)}</dd></div>`;
+        return `<div class="dm-readonly${wide ? ' dm-readonly--wide' : ''}"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(display(value))}</dd></div>`;
     }
 
     function directDemandField(label, fieldName, value, type, wide) {
@@ -749,7 +731,7 @@
         if (!demand.createdByCurrentUser) {
             return `
                 <section class="dm-panel">
-                    ${panelHeading('Dados da demanda interna', 'Informações registradas por quem criou a atividade.')}
+                    <h3>Dados da demanda interna</h3>
                     <dl class="dm-readonly-grid">
                         ${readonlyItem('Título', demand.title, true)}
                         ${readonlyItem('Descrição', demand.initialDescription, true)}
@@ -765,7 +747,8 @@
 
         return `
             <section class="dm-panel">
-                ${panelHeading('Dados da atividade interna', 'Você criou esta atividade e pode editar seu conteúdo.')}
+                <h3>Dados da atividade interna</h3>
+                <p class="dm-personal-note">Esta atividade pode ser editada.</p>
                 <div class="dm-direct-grid">
                     ${directDemandField('Título', 'title', demand.title, 'text', true)}
                     ${directDemandField(
@@ -781,8 +764,8 @@
 
     function renderOriginalRequestPanel(demand) {
         return `
-            <section class="dm-panel dm-source-panel">
-                ${panelHeading('Solicitação original', 'Dados enviados pelo solicitante. Estas informações são somente leitura.', '<span class="dm-panel__tag">#' + escapeHtml(demand.sourceRequestId) + '</span>')}
+            <section class="dm-panel">
+                <h3>Solicitação original · somente leitura</h3>
                 <dl class="dm-readonly-grid">
                     ${readonlyItem('Título', demand.title, true)}
                     ${readonlyItem('Descrição inicial / objetivo', demand.initialDescription, true)}
@@ -799,7 +782,7 @@
                     ${readonlyItem('Conclusão original', formatDate(demand.requestFinalDate, true))}
                     ${readonlyItem('Reprogramações', String(demand.requestReprograms || 0))}
                 </dl>
-                <div class="dm-source-subsection">
+                <div class="dm-source-section">
                     <h4>Documentos anexados</h4>
                     ${renderAttachments(demand.sourceRequestId, demand.attachments)}
                 </div>
@@ -817,12 +800,11 @@
                     ${isLate(demand) ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''}
                 </div>
                 <h2 id="dm-modal-title">${escapeHtml(demand.title)}</h2>
-                <p class="dm-modal__meta">Demanda gerenciada #${escapeHtml(demand.managementId)} · ${escapeHtml(display(demand.responsibleName, 'Sem responsável'))}</p>
             </header>
 
             <div class="dm-modal__columns">
                 <section class="dm-panel">
-                    ${panelHeading('Gerenciamento', 'Alterações nestes campos são salvas automaticamente.')}
+                    <h3>Gerenciamento</h3>
                     <div class="dm-form-grid">
                         ${field('Status', 'status', demand.status, 'select', state.options.status || [])}
                         ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles)}
@@ -840,11 +822,7 @@
             </div>
 
             <section class="dm-panel dm-tasks">
-                ${panelHeading(
-                    'Tarefas',
-                    'Divida a demanda em entregas menores e acompanhe o que já foi concluído.',
-                    `<span class="dm-progress-pill">${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</span>`
-                )}
+                <h3>Tarefas · ${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</h3>
                 <div class="dm-task-warning" data-task-warning role="status" aria-live="polite" hidden>
                     <span class="dm-task-warning__dot" aria-hidden="true"></span>
                     <strong>Alterações pendentes</strong>
@@ -865,12 +843,12 @@
                     <span class="dm-badge dm-badge--urgency-${slug(item.urgency)}">Urgência ${escapeHtml(display(item.urgency))}</span>
                 </div>
                 <h2 id="dm-modal-title">${escapeHtml(item.title)}</h2>
-                <p class="dm-modal__meta">Solicitação #${item.requestId} · Enviada por <strong>${escapeHtml(item.requesterName)}</strong> em ${escapeHtml(formatDate(item.requestDate, true))}</p>
+                <p class="dm-modal__meta">Solicitação #${item.requestId} · ${escapeHtml(item.requesterName)} · ${escapeHtml(formatDate(item.requestDate, true))}</p>
             </header>
 
             <div class="dm-modal__columns dm-review-modal__columns">
-                <section class="dm-panel dm-source-panel">
-                    ${panelHeading('Dados da solicitação', 'Leia o contexto completo antes de registrar a decisão.', '<span class="dm-panel__tag">Somente leitura</span>')}
+                <section class="dm-panel">
+                    <h3>Dados da solicitação</h3>
                     <dl class="dm-readonly-grid">
                         ${readonlyItem('Título', item.title, true)}
                         ${readonlyItem('Descrição inicial / objetivo', item.initialDescription, true)}
@@ -885,7 +863,7 @@
                         ${refused ? readonlyItem('Data da recusa', formatDate(item.finalDate, true)) : ''}
                         ${refused ? readonlyItem('Motivo da recusa', item.deniedText, true) : ''}
                     </dl>
-                    <div class="dm-source-subsection">
+                    <div class="dm-source-section">
                         <h4>Documentos anexados</h4>
                         ${renderAttachments(item.requestId, item.attachments)}
                     </div>
@@ -898,23 +876,17 @@
     function renderDeclinedRequestPanel() {
         return `
             <aside class="dm-panel dm-review-decision">
-                ${panelHeading('Análise finalizada', 'Esta solicitação foi recusada e permanece disponível apenas para consulta.')}
-                <div class="dm-decision-state dm-decision-state--declined">
-                    <strong>Solicitação recusada</strong>
-                    <span>A justificativa registrada está disponível nos dados ao lado.</span>
-                </div>
+                <h3>Análise finalizada</h3>
+                <p>Esta solicitação foi recusada e permanece disponível apenas para consulta.</p>
             </aside>`;
     }
 
     function renderReviewDecisionPanel() {
         return `
             <aside class="dm-panel dm-review-decision">
-                ${panelHeading('Analisar demanda', 'Escolha uma das decisões abaixo para finalizar a análise.')}
+                <h3>Analisar demanda</h3>
                 <form id="dm-approve-request" class="dm-decision-form">
-                    <div class="dm-decision-intro dm-decision-intro--approve">
-                        <strong>Aprovar e iniciar</strong>
-                        <span>Você será definido como responsável e o card aparecerá na aba Demandas.</span>
-                    </div>
+                    <p>Ao aprovar, a demanda será iniciada, você será definido como responsável e o card aparecerá automaticamente na aba Demandas.</p>
                     <label class="dm-field">
                         <span>Prazo de entrega</span>
                         <input class="dm-input" name="deadline" type="date" required>
@@ -923,10 +895,6 @@
                 </form>
                 <div class="dm-decision-divider"><span>ou</span></div>
                 <form id="dm-decline-request" class="dm-decision-form">
-                    <div class="dm-decision-intro dm-decision-intro--decline">
-                        <strong>Recusar solicitação</strong>
-                        <span>Informe um motivo claro para que o solicitante entenda a decisão.</span>
-                    </div>
                     <label class="dm-field">
                         <span>Motivo da recusa</span>
                         <textarea class="dm-textarea" name="reason" required maxlength="4000" placeholder="Explique ao solicitante por que a demanda não será aprovada"></textarea>

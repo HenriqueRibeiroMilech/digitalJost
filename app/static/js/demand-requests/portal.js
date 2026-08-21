@@ -263,20 +263,10 @@
     }
 
     function readonlyItem(label, value, fullWidth) {
-        const content = value || 'Não informado';
-        const narrative = fullWidth && String(content).length > 70;
-        return '<div class="' + (fullWidth ? 'dr-readonly--full' : '') +
-            (narrative ? ' dr-readonly--narrative' : '') + '">' +
+        return '<div class="' + (fullWidth ? 'dr-readonly--full' : '') + '">' +
             '<dt>' + escapeHtml(label) + '</dt>' +
-            '<dd>' + escapeHtml(content) + '</dd>' +
+            '<dd>' + escapeHtml(value || 'Não informado') + '</dd>' +
         '</div>';
-    }
-
-    function detailHeading(title, description, extra) {
-        return '<div class="dr-detail-panel__heading"><div>' +
-            '<h3>' + escapeHtml(title) + '</h3>' +
-            (description ? '<p>' + escapeHtml(description) + '</p>' : '') +
-            '</div>' + (extra || '') + '</div>';
     }
 
     function renderAttachments(item) {
@@ -285,12 +275,8 @@
         }
         return '<ul class="dr-attachment-list">' + item.attachments.map(function (attachment) {
             const url = apiUrl('/' + item.requestId + '/attachments/' + attachment.index);
-            const extension = String(attachment.name || '').split('.').pop().substring(0, 4);
             return '<li><a href="' + escapeHtml(url.toString()) + '">' +
-                '<span class="dr-attachment__type">' + escapeHtml(extension || 'ARQ') + '</span>' +
-                '<span class="dr-attachment__copy"><strong>' + escapeHtml(attachment.name) +
-                    '</strong><small>Documento enviado com a solicitação</small></span>' +
-                '<span class="dr-attachment__action">Baixar</span>' +
+                '<span>' + escapeHtml(attachment.name) + '</span><span>Baixar &darr;</span>' +
             '</a></li>';
         }).join('') + '</ul>';
     }
@@ -300,12 +286,12 @@
             return '<p class="dr-modal__meta">A demanda não sofreu pausas.</p>';
         }
         return '<ul class="dr-pause-list">' + item.pauses.map(function (pause) {
-            return '<li><div><strong>' + escapeHtml(formatDate(pause.initDate, true)) + '</strong>' +
-                '<span>até ' + escapeHtml(formatDate(
+            return '<li><strong>' + escapeHtml(formatDate(pause.initDate, true)) + '</strong>' +
+                ' até ' + escapeHtml(formatDate(
                     pause.finalDate || pause.expectDate,
                     Boolean(pause.finalDate)
-                )) + '</span></div>' +
-                '<p>' + escapeHtml(pause.reason || 'Sem justificativa informada.') + '</p></li>';
+                )) +
+                '<br>' + escapeHtml(pause.reason || 'Sem justificativa informada.') + '</li>';
         }).join('') + '</ul>';
     }
 
@@ -323,12 +309,12 @@
                 '</div>' +
                 '<h2 id="dr-modal-title">' + escapeHtml(item.title) + '</h2>' +
                 '<p class="dr-modal__meta">Solicitação #' + escapeHtml(item.requestId) +
-                    ' · Enviada por <strong>' + escapeHtml(item.requesterName) +
-                    '</strong> em ' + escapeHtml(formatDate(item.requestDate, true)) + '</p>' +
+                    ' · ' + escapeHtml(item.requesterName) +
+                    ' · ' + escapeHtml(formatDate(item.requestDate, true)) + '</p>' +
             '</header>' +
             '<div class="dr-modal__grid">' +
-                '<section class="dr-detail-panel dr-detail-panel--main">' +
-                    detailHeading('Dados da solicitação', 'Conteúdo original enviado para análise.', '<span class="dr-detail-panel__tag">Somente leitura</span>') +
+                '<section class="dr-detail-panel">' +
+                    '<h3>Dados da solicitação</h3>' +
                     '<dl class="dr-readonly-grid">' +
                         readonlyItem('Título', item.title, true) +
                         readonlyItem('Descrição inicial / objetivo', item.initialDescription, true) +
@@ -339,8 +325,8 @@
                         readonlyItem('Urgência', item.urgency) +
                     '</dl>' +
                 '</section>' +
-                '<section class="dr-detail-panel dr-detail-panel--side">' +
-                    detailHeading('Andamento', 'Situação atual e datas principais.') +
+                '<section class="dr-detail-panel">' +
+                    '<h3>Andamento</h3>' +
                     '<dl class="dr-readonly-grid">' +
                         readonlyItem('Status', statusLabels[status]) +
                         readonlyItem('Responsável', item.responsibleName) +
@@ -352,10 +338,10 @@
                     '</dl>' +
                 '</section>' +
                 '<section class="dr-detail-panel dr-detail-panel--full">' +
-                    detailHeading('Documentos', 'Arquivos enviados para apoiar a análise e o desenvolvimento.') + renderAttachments(item) +
+                    '<h3>Documentos</h3>' + renderAttachments(item) +
                 '</section>' +
                 '<section class="dr-detail-panel dr-detail-panel--full">' +
-                    detailHeading('Histórico de pausas', 'Interrupções registradas durante o andamento da demanda.') + renderPauses(item) +
+                    '<h3>Histórico de pausas</h3>' + renderPauses(item) +
                 '</section>' +
             '</div>';
     }
