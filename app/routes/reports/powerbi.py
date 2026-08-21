@@ -28,3 +28,10 @@ def cnq():
 @reports_powerbi_bp.route('/dashboards/trilhos')
 def eficiencia():
     return render_template('reports.powerbi/powerbi_rails.html')
+
+# DASHBOARD - TRANSFORMAÇÃO DIGITAL - SISTEMAS INDISPONÍVEIS
+@reports_powerbi_bp.route('/dashboards/sistemas-indisponiveis')
+def sistemas_indisponiveis():
+    return render_template('reports.powerbi/powerbi_sistemas_indisponiveis.html')
+
+# V1
