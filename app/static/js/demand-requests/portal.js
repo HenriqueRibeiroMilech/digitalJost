@@ -191,13 +191,7 @@
     }
 
     function cardClass(status) {
-        if (status === '3') {
-            return ' dr-request-card--denied';
-        }
-        if (status === '2') {
-            return ' dr-request-card--complete';
-        }
-        return '';
+        return ' dr-request-card--status-' + status;
     }
 
     function urgencyClass(urgency) {

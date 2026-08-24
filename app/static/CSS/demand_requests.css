@@ -436,7 +436,7 @@ select {
     min-height: 250px;
     padding: 1rem;
     border: 1px solid var(--dr-line);
-    border-top: 5px solid var(--dr-orange);
+    border-top: 5px solid #8a96a3;
     border-radius: 8px;
     background: var(--dr-card);
     cursor: pointer;
@@ -450,12 +450,24 @@ select {
     outline: none;
 }
 
-.dr-request-card--denied {
+.dr-request-card--status-0 {
+    border-top-color: #8a96a3;
+}
+
+.dr-request-card--status-1 {
+    border-top-color: var(--dr-navy);
+}
+
+.dr-request-card--status-2 {
+    border-top-color: var(--dr-green);
+}
+
+.dr-request-card--status-3 {
     border-top-color: var(--dr-red);
 }
 
-.dr-request-card--complete {
-    border-top-color: var(--dr-green);
+.dr-request-card--status-4 {
+    border-top-color: #ffa300;
 }
 
 .dr-request-card__badges {
@@ -492,12 +504,11 @@ select {
 }
 
 .dr-badge--status-0 {
-    color: #73510b;
-    background: #fff0c2;
+    color: #56616d;
+    background: #eceff2;
 }
 
-.dr-badge--status-1,
-.dr-badge--status-4 {
+.dr-badge--status-1 {
     color: #164e82;
     background: #dcecff;
 }
@@ -505,6 +516,11 @@ select {
 .dr-badge--status-2 {
     color: #17603d;
     background: #dff3e8;
+}
+
+.dr-badge--status-4 {
+    color: #9a6700;
+    background: #fff1c2;
 }
 
 .dr-request-card h3 {

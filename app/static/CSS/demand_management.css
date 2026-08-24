@@ -505,7 +505,7 @@ textarea {
 .dm-badge--difficulty-baixa { color: var(--dm-green); background: #e1f4eb; }
 .dm-badge--type { color: #8a3f00; background: #ffead3; }
 .dm-badge--type-atividade { color: #24685f; background: #def2ee; }
-.dm-badge--review-pending { color: var(--dm-navy-dark); background: #e7edf9; }
+.dm-badge--review-pending { color: #56616d; background: #eceff2; }
 .dm-badge--review-declined { color: var(--dm-red); background: #fee7e5; }
 .dm-badge--urgency-alta { color: var(--dm-red); background: #fee7e5; }
 .dm-badge--urgency-media { color: var(--dm-yellow); background: #fff1c2; }
@@ -560,7 +560,7 @@ textarea {
     min-height: 270px;
     padding: 1rem;
     border: 1px solid var(--dm-line);
-    border-top: 6px solid var(--dm-orange);
+    border-top: 6px solid #8a96a3;
     border-radius: 8px;
     background: #fff;
     cursor: pointer;
