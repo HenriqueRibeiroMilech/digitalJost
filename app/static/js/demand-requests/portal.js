@@ -15,7 +15,9 @@
         1: 'Em andamento',
         2: 'Concluída',
         3: 'Recusada',
-        4: 'Pausada'
+        4: 'Pausada',
+        5: 'Aprovada',
+        6: 'Cancelada'
     };
 
     const elements = {
@@ -148,7 +150,7 @@
         const items = [
             [requests.length, 'Total'],
             [countStatus(0), 'Em análise'],
-            [countStatus(1) + countStatus(4), 'Em andamento'],
+            [countStatus(1) + countStatus(4) + countStatus(5), 'Ativas'],
             [countStatus(2), 'Concluídas']
         ];
 
@@ -185,6 +187,18 @@
 
         if (status === '3') {
             return ['Resultado', 'Solicitação recusada'];
+        }
+
+        if (status === '5') {
+            return ['Situação', 'Aguardando definição do prazo'];
+        }
+
+        if (status === '4') {
+            return ['Situação', 'Desenvolvimento pausado'];
+        }
+
+        if (status === '6') {
+            return ['Resultado', 'Demanda cancelada'];
         }
 
         return ['Prazo', formatDate(requestItem.deadline, false)];
@@ -326,9 +340,10 @@
                         readonlyItem('Responsável', item.responsibleName) +
                         readonlyItem('Data de início', formatDate(item.startDate, false)) +
                         readonlyItem('Prazo', formatDate(item.deadline, false)) +
-                        readonlyItem('Data de conclusão/recusa', formatDate(item.finalDate, true)) +
+                        readonlyItem('Data de encerramento', formatDate(item.finalDate, true)) +
                         readonlyItem('Reprogramações', String(item.reprogs || 0)) +
                         (status === '3' ? readonlyItem('Motivo da recusa', item.deniedText, true) : '') +
+                        (status === '6' ? readonlyItem('Motivo do cancelamento', item.deniedText, true) : '') +
                     '</dl>' +
                 '</section>' +
                 '<section class="dr-detail-panel dr-detail-panel--full">' +

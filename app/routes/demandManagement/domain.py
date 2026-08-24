@@ -25,7 +25,6 @@ DEMAND_TYPE_OPTIONS = ('atividade', 'projeto', 'melhoria', 'erro')
 
 # Whitelist que relaciona o campo da API à coluna no banco.
 MANAGEMENT_FIELDS = {
-    'status': 'status',
     'deadline': 'deadline',
     'startDate': 'startDate',
     'estimatedHours': 'estimatedHours',
@@ -34,6 +33,15 @@ MANAGEMENT_FIELDS = {
     'difficulty': 'difficulty',
     'observations': 'observations',
     'responsibleId': 'responsibleId'
+}
+
+STATUS_TRANSITIONS = {
+    'start': {'from': ('A Fazer',), 'to': 'Em Andamento'},
+    'pause': {'from': ('Em Andamento',), 'to': 'Pausado'},
+    'resume': {'from': ('Pausado',), 'to': 'Em Andamento'},
+    'complete': {'from': ('Em Andamento',), 'to': 'Concluído'},
+    'cancel': {'from': ('A Fazer', 'Em Andamento', 'Pausado'), 'to': 'Cancelado'},
+    'reopen': {'from': ('Concluído',), 'to': 'Em Andamento'}
 }
 
 # Estes campos existem somente em demandas criadas no gerenciador.
@@ -116,10 +124,6 @@ def validate_management_change(field, value):
     if field not in MANAGEMENT_FIELDS:
         raise ValidationError('Campo de gerenciamento inválido.')
 
-    if field == 'status':
-        if value not in STATUS_OPTIONS:
-            raise ValidationError('Status inválido.')
-        return value
     if field == 'difficulty':
         if value in (None, ''):
             return None
@@ -163,7 +167,7 @@ def validate_personal_demand(payload):
         'assumptions': None,
         'actualProblems': None,
         'benefits': None,
-        'status': validate_management_change('status', payload.get('status') or 'A Fazer'),
+        'status': 'A Fazer',
         'deadline': validate_management_change('deadline', payload.get('deadline')),
         'startDate': validate_management_change('startDate', payload.get('startDate')),
         'estimatedHours': validate_management_change('estimatedHours', payload.get('estimatedHours')),
@@ -207,10 +211,10 @@ def parse_row_version(value):
 def validate_review_approval(payload):
     if not isinstance(payload, dict):
         raise ValidationError('Dados da aprovação inválidos.')
-    deadline = _optional_date(payload.get('deadline'))
-    if deadline is None:
-        raise ValidationError('Informe o prazo da demanda.')
-    return deadline
+    responsible_id = _optional_text(payload.get('responsibleId'), 100)
+    if not responsible_id:
+        raise ValidationError('Selecione o responsável pela demanda.')
+    return responsible_id
 
 
 def validate_review_decline(payload):
@@ -220,3 +224,40 @@ def validate_review_decline(payload):
     if not reason:
         raise ValidationError('Informe o motivo da recusa.')
     return reason
+
+
+def validate_status_transition(current_status, payload):
+    if not isinstance(payload, dict):
+        raise ValidationError('Dados da alteração de status inválidos.')
+
+    action = _optional_text(payload.get('action'), 20)
+    transition = STATUS_TRANSITIONS.get(action)
+    if not transition or current_status not in transition['from']:
+        raise ConflictError('Esta ação não está disponível para o status atual da demanda.')
+
+    deadline = None
+    if action in ('start', 'resume', 'reopen'):
+        deadline = _optional_date(payload.get('deadline'))
+        if deadline is None:
+            raise ValidationError('Informe o prazo da demanda.')
+
+    reason = None
+    expected_return = None
+    if action in ('pause', 'cancel'):
+        reason = _optional_text(payload.get('reason'), 4000)
+        if not reason:
+            raise ValidationError('Informe a justificativa desta alteração.')
+
+    if action == 'pause':
+        expected_return = _optional_date(payload.get('expectedReturn'))
+        if expected_return is None:
+            raise ValidationError('Informe a previsão para retomar a demanda.')
+
+    return {
+        'action': action,
+        'targetStatus': transition['to'],
+        'deadline': deadline,
+        'reason': reason,
+        'expectedReturn': expected_return,
+        'rowVersion': parse_row_version(payload.get('rowVersion'))
+    }

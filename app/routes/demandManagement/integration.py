@@ -38,33 +38,41 @@ class RequestReviewNotifier:
     """Envia as notificações do fluxo de análise das solicitações."""
 
     @staticmethod
-    def _message(subject, review, reviewer):
+    def _message(subject, review, copied_users):
+        copied_emails = []
+        for user in copied_users:
+            email = user.get('email')
+            if email and email != review['requesterEmail'] and email not in copied_emails:
+                copied_emails.append(email)
         return Message(
             subject,
             sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
             recipients=[review['requesterEmail']],
-            cc=[reviewer['email']] if reviewer.get('email') else []
+            cc=copied_emails
         )
 
-    def approved(self, review, reviewer, area_name, deadline):
+    @staticmethod
+    def _requests_url(area_name):
+        return url_for(
+            'demand_requests.requests_page',
+            area=area_name,
+            tab='minhas',
+            _external=True
+        )
+
+    def approved(self, review, responsible, reviewer, area_name):
         message = self._message(
-            f'Sua demanda - "{review["title"]}" - foi iniciada!',
+            f'Sua demanda - "{review["title"]}" - foi aceita!',
             review,
-            reviewer
+            [responsible, reviewer]
         )
         message.html = render_template(
             'demandRequests/emails/approved.html',
-            respName=reviewer['name'],
+            respName=responsible['name'],
+            reviewerName=reviewer['name'],
             title=review['title'],
             desc=review['initialDescription'],
-            date=format_date(date.today()),
-            deliveryDate=format_date(deadline),
-            requestsUrl=url_for(
-                'demand_requests.requests_page',
-                area=area_name,
-                tab='minhas',
-                _external=True
-            )
+            requestsUrl=self._requests_url(area_name)
         )
         mail.send(message)
 
@@ -72,7 +80,7 @@ class RequestReviewNotifier:
         message = self._message(
             f'A sua solicitação - "{review["title"]}" - foi recusada!',
             review,
-            reviewer
+            [reviewer]
         )
         message.html = render_template(
             'demandRequests/emails/declined.html',
@@ -80,12 +88,62 @@ class RequestReviewNotifier:
             just=reason,
             title=review['title'],
             desc=review['initialDescription'],
-            requestsUrl=url_for(
-                'demand_requests.requests_page',
-                area=area_name,
-                tab='minhas',
-                _external=True
+            requestsUrl=self._requests_url(area_name)
+        )
+        mail.send(message)
+
+    def status_changed(self, demand, actor, area_name, transition):
+        action = transition['action']
+        content = {
+            'start': (
+                'foi iniciada',
+                'O desenvolvimento da sua demanda foi iniciado.',
+                [('Prazo de entrega', format_date(transition['deadline']))]
+            ),
+            'pause': (
+                'foi pausada',
+                'O desenvolvimento da sua demanda foi pausado.',
+                [
+                    ('Justificativa', transition['reason']),
+                    ('Previsão de retorno', format_date(transition['expectedReturn']))
+                ]
+            ),
+            'resume': (
+                'foi retomada',
+                'O desenvolvimento da sua demanda foi retomado.',
+                [('Novo prazo de entrega', format_date(transition['deadline']))]
+            ),
+            'complete': (
+                'foi concluída',
+                'O desenvolvimento da sua demanda foi concluído.',
+                [('Conclusão', format_date(date.today()))]
+            ),
+            'cancel': (
+                'foi cancelada',
+                'O desenvolvimento da sua demanda foi cancelado.',
+                [('Justificativa', transition['reason'])]
+            ),
+            'reopen': (
+                'foi reaberta',
+                'A sua demanda foi reaberta e voltou para desenvolvimento.',
+                [('Novo prazo de entrega', format_date(transition['deadline']))]
             )
+        }[action]
+
+        message = self._message(
+            f'A sua demanda - "{demand["title"]}" - {content[0]}!',
+            demand,
+            [actor]
+        )
+        message.html = render_template(
+            'demandRequests/emails/status_update.html',
+            heading=content[0].upper(),
+            messageText=content[1],
+            details=content[2],
+            respName=actor['name'],
+            title=demand['title'],
+            desc=demand['initialDescription'],
+            requestsUrl=self._requests_url(area_name)
         )
         mail.send(message)
 
@@ -109,7 +167,7 @@ def sync_approved_request(connection, request_id):
                 CASE R.status
                     WHEN 2 THEN 'Concluído'
                     WHEN 4 THEN 'Pausado'
-                    ELSE 'Em Andamento'
+                    ELSE CASE WHEN R.startDate IS NULL THEN 'A Fazer' ELSE 'Em Andamento' END
                 END,
                 R.deliveryDate,
                 R.startDate,
@@ -126,10 +184,11 @@ def sync_approved_request(connection, request_id):
                 status = CASE R.status
                     WHEN 2 THEN 'Concluído'
                     WHEN 4 THEN 'Pausado'
-                    ELSE 'Em Andamento'
+                    ELSE CASE WHEN R.startDate IS NULL THEN 'A Fazer' ELSE 'Em Andamento' END
                 END,
                 deadline = R.deliveryDate,
                 startDate = COALESCE(M.startDate, R.startDate),
+                responsibleId = R.respId,
                 updatedAt = GETDATE()
             FROM JDT_DEMAND_MANAGEMENT AS M
             JOIN JDT_REQUEST_IMPROVEMENTS_SMALL AS R

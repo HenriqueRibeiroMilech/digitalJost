@@ -71,6 +71,7 @@ class DemandManagementRepository:
             CASE WHEN NULLIF(R.images, '') IS NULL THEN 0 ELSE 1 END AS hasAttachments,
             COALESCE(Requester.id, Creator.id) AS requesterId,
             COALESCE(Requester.name, Creator.name) AS requesterName,
+            Requester.companyEmail AS requesterEmail,
             Creator.name AS createdByName,
             CASE
                 WHEN Responsible.active = 1 THEN Responsible.name
@@ -110,7 +111,18 @@ class DemandManagementRepository:
 
     def list_review_requests(self, connection, area_id):
         query = text(self._REVIEW_SELECT + """
-            WHERE R.areaId = :area_id AND R.status IN (0, 3)
+            WHERE R.areaId = :area_id
+                AND (
+                    R.status = 0
+                    OR (
+                        R.status = 3
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM JDT_DEMAND_MANAGEMENT AS M
+                            WHERE M.sourceRequestId = R.requestId
+                        )
+                    )
+                )
             ORDER BY R.status, R.openDate DESC, R.requestId DESC
         """)
         return connection.execute(query, {'area_id': area_id}).mappings().all()
@@ -128,12 +140,13 @@ class DemandManagementRepository:
             'area_id': area_id
         }).mappings().first()
 
-    def approve_review_request(self, connection, request_id, area_id, deadline, responsible_id):
+    def approve_review_request(self, connection, request_id, area_id, responsible_id):
         query = text("""
             UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
             SET
-                startDate = GETDATE(),
-                deliveryDate = :deadline,
+                startDate = NULL,
+                deliveryDate = NULL,
+                finalDate = NULL,
                 status = 1,
                 respId = :responsible_id
             WHERE requestId = :request_id
@@ -143,7 +156,6 @@ class DemandManagementRepository:
         result = connection.execute(query, {
             'request_id': request_id,
             'area_id': area_id,
-            'deadline': deadline,
             'responsible_id': responsible_id
         })
         return result.rowcount == 1
@@ -168,8 +180,14 @@ class DemandManagementRepository:
         })
         return result.rowcount == 1
 
-    def get_demand(self, connection, management_id, area_id):
-        query = text(self._BASE_SELECT + """
+    def get_demand(self, connection, management_id, area_id, lock=False):
+        lock_hint = ' WITH (UPDLOCK, HOLDLOCK)' if lock else ''
+        base_select = self._BASE_SELECT.replace(
+            'FROM JDT_DEMAND_MANAGEMENT AS M',
+            f'FROM JDT_DEMAND_MANAGEMENT AS M{lock_hint}',
+            1
+        )
+        query = text(base_select + """
             WHERE M.managementId = :management_id AND M.areaId = :area_id
         """)
         return connection.execute(query, {
@@ -247,11 +265,17 @@ class DemandManagementRepository:
                 U.id,
                 U.name
             FROM JDT_USER_DETAILS AS U
-            JOIN JDT_DEMAND_MANAGEMENT AS M
-                ON M.responsibleId = U.id
-            WHERE M.areaId = :area_id
-                AND U.active = 1
+            WHERE U.active = 1
                 AND U.generic = 0
+                AND (
+                    U.areaId = :area_id
+                    OR EXISTS (
+                        SELECT 1
+                        FROM JDT_DEMAND_MANAGEMENT AS M
+                        WHERE M.responsibleId = U.id
+                            AND M.areaId = :area_id
+                    )
+                )
             ORDER BY U.name
         """)
         return connection.execute(query, {
@@ -279,17 +303,155 @@ class DemandManagementRepository:
             WHERE U.id = :responsible_id
                 AND U.active = 1
                 AND U.generic = 0
-                AND EXISTS (
-                    SELECT 1
-                    FROM JDT_DEMAND_MANAGEMENT AS M
-                    WHERE M.responsibleId = U.id
-                        AND M.areaId = :area_id
+                AND (
+                    U.areaId = :area_id
+                    OR EXISTS (
+                        SELECT 1
+                        FROM JDT_DEMAND_MANAGEMENT AS M
+                        WHERE M.responsibleId = U.id
+                            AND M.areaId = :area_id
+                    )
                 )
         """)
         return connection.execute(query, {
             'responsible_id': responsible_id,
             'area_id': area_id
         }).first() is not None
+
+    def get_responsible(self, connection, responsible_id, area_id):
+        query = text("""
+            SELECT U.id, U.name, U.companyEmail AS email
+            FROM JDT_USER_DETAILS AS U
+            WHERE U.id = :responsible_id
+                AND U.active = 1
+                AND U.generic = 0
+                AND (
+                    U.areaId = :area_id
+                    OR EXISTS (
+                        SELECT 1
+                        FROM JDT_DEMAND_MANAGEMENT AS M
+                        WHERE M.responsibleId = U.id
+                            AND M.areaId = :area_id
+                    )
+                )
+        """)
+        return connection.execute(query, {
+            'responsible_id': responsible_id,
+            'area_id': area_id
+        }).mappings().first()
+
+    def transition_demand(
+        self, connection, management_id, area_id, current_status,
+        transition, history_text
+    ):
+        action = transition['action']
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT
+            SET
+                status = :target_status,
+                deadline = CASE
+                    WHEN :clear_deadline = 1 THEN NULL
+                    WHEN :deadline IS NOT NULL THEN :deadline
+                    ELSE deadline
+                END,
+                startDate = CASE
+                    WHEN :set_start_date = 1 THEN GETDATE()
+                    ELSE startDate
+                END,
+                observations = CASE
+                    WHEN :history_text IS NULL THEN observations
+                    ELSE CONCAT(
+                        CASE
+                            WHEN NULLIF(observations, '') IS NULL THEN ''
+                            ELSE observations + CHAR(13) + CHAR(10)
+                        END,
+                        :history_text
+                    )
+                END,
+                updatedAt = GETDATE()
+            WHERE managementId = :management_id
+                AND areaId = :area_id
+                AND status = :current_status
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'management_id': management_id,
+            'area_id': area_id,
+            'current_status': current_status,
+            'target_status': transition['targetStatus'],
+            'deadline': transition['deadline'],
+            'clear_deadline': 1 if action == 'pause' else 0,
+            'set_start_date': 1 if action == 'start' else 0,
+            'history_text': history_text,
+            'row_version': transition['rowVersion']
+        })
+        return result.rowcount == 1
+
+    def transition_source_request(self, connection, request_id, transition):
+        action = transition['action']
+        if action == 'start':
+            query = text("""
+                UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+                SET status = 1, startDate = GETDATE(), deliveryDate = :deadline,
+                    finalDate = NULL
+                WHERE requestId = :request_id
+            """)
+        elif action == 'pause':
+            query = text("""
+                UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+                SET status = 4, deliveryDate = NULL
+                WHERE requestId = :request_id
+            """)
+        elif action in ('resume', 'reopen'):
+            query = text("""
+                UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+                SET status = 1, deliveryDate = :deadline, finalDate = NULL,
+                    reprogs = ISNULL(reprogs, 0) + 1
+                WHERE requestId = :request_id
+            """)
+        elif action == 'complete':
+            query = text("""
+                UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+                SET status = 2, finalDate = GETDATE()
+                WHERE requestId = :request_id
+            """)
+        elif action == 'cancel':
+            query = text("""
+                UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+                SET status = 3, finalDate = GETDATE(), deniedText = :reason
+                WHERE requestId = :request_id
+            """)
+        else:
+            return False
+
+        parameters = {'request_id': request_id}
+        if action in ('start', 'resume', 'reopen'):
+            parameters['deadline'] = transition['deadline']
+        elif action == 'cancel':
+            parameters['reason'] = transition['reason']
+
+        result = connection.execute(query, parameters)
+
+        if action == 'pause':
+            connection.execute(text("""
+                INSERT INTO JDT_REQUEST_PAUSES (
+                    initDate, expectDate, finalDate, requestId, [text]
+                ) VALUES (
+                    GETDATE(), :expected_return, NULL, :request_id, :reason
+                )
+            """), {
+                'request_id': request_id,
+                'expected_return': transition['expectedReturn'],
+                'reason': transition['reason']
+            })
+        elif action in ('resume', 'cancel'):
+            connection.execute(text("""
+                UPDATE JDT_REQUEST_PAUSES
+                SET finalDate = GETDATE()
+                WHERE requestId = :request_id AND finalDate IS NULL
+            """), {'request_id': request_id})
+
+        return result.rowcount == 1
 
     def update_field(self, connection, management_id, area_id, field, value, row_version):
         column = MANAGEMENT_FIELDS[field]

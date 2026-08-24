@@ -470,6 +470,14 @@ select {
     border-top-color: #ffa300;
 }
 
+.dr-request-card--status-5 {
+    border-top-color: #8a96a3;
+}
+
+.dr-request-card--status-6 {
+    border-top-color: var(--dr-red);
+}
+
 .dr-request-card__badges {
     display: flex;
     flex-wrap: wrap;
@@ -521,6 +529,16 @@ select {
 .dr-badge--status-4 {
     color: #9a6700;
     background: #fff1c2;
+}
+
+.dr-badge--status-5 {
+    color: #56616d;
+    background: #eceff2;
+}
+
+.dr-badge--status-6 {
+    color: #8f1d16;
+    background: #fde5e2;
 }
 
 .dr-request-card h3 {

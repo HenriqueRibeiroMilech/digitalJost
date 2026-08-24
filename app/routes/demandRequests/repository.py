@@ -17,7 +17,14 @@ class DemandRequestsRepository:
             CASE WHEN R.urgency = 'Imediata' THEN 'Alta' ELSE R.urgency END AS urgency,
             R.openDate AS requestDate,
             R.images,
-            R.status,
+            CASE M.status
+                WHEN 'A Fazer' THEN 5
+                WHEN 'Em Andamento' THEN 1
+                WHEN 'Pausado' THEN 4
+                WHEN 'Concluído' THEN 2
+                WHEN 'Cancelado' THEN 6
+                ELSE R.status
+            END AS status,
             Responsible.name AS responsibleName,
             R.startDate,
             R.deliveryDate AS deadline,
@@ -25,6 +32,8 @@ class DemandRequestsRepository:
             R.reprogs,
             R.deniedText
         FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
+        LEFT JOIN JDT_DEMAND_MANAGEMENT AS M
+            ON M.sourceRequestId = R.requestId
         JOIN JDT_USER_DETAILS AS Requester
             ON Requester.id = R.requesterId
         LEFT JOIN JDT_USER_DETAILS AS Responsible
@@ -42,8 +51,17 @@ class DemandRequestsRepository:
                 R.openDate AS requestDate,
                 R.deliveryDate AS deadline,
                 R.finalDate,
-                R.status
+                CASE M.status
+                    WHEN 'A Fazer' THEN 5
+                    WHEN 'Em Andamento' THEN 1
+                    WHEN 'Pausado' THEN 4
+                    WHEN 'Concluído' THEN 2
+                    WHEN 'Cancelado' THEN 6
+                    ELSE R.status
+                END AS status
             FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
+            LEFT JOIN JDT_DEMAND_MANAGEMENT AS M
+                ON M.sourceRequestId = R.requestId
             WHERE R.requesterId = :user_id
                 AND R.areaId = :area_id
             ORDER BY R.openDate DESC, R.requestId DESC

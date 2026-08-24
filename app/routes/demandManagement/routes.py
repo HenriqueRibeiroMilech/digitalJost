@@ -192,6 +192,27 @@ def management_detail(management_id):
 
 
 @demand_management_bp.route(
+    '/demandas/gerenciador/api/<int:management_id>/status',
+    methods=['POST']
+)
+def management_status(management_id):
+    area_name, area = _current_area()
+    actor = {
+        'id': current_user.id,
+        'name': current_user.name,
+        'email': current_user.companyEmail
+    }
+    detail = _build_service().transition_status(
+        management_id,
+        area['id'],
+        request.get_json(silent=True),
+        actor,
+        area_name
+    )
+    return jsonify(detail)
+
+
+@demand_management_bp.route(
     '/demandas/gerenciador/api/<int:management_id>/tasks',
     methods=['POST']
 )

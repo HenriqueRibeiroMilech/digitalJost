@@ -15,6 +15,7 @@ from .domain import (
     validate_personal_demand,
     validate_review_approval,
     validate_review_decline,
+    validate_status_transition,
     validate_task
 )
 from .integration import sync_approved_request
@@ -86,11 +87,16 @@ class DemandManagementService:
         return self.attachment_storage.request_directory(request_id), attachment['name']
 
     def approve_review_request(self, request_id, area_id, payload, reviewer, area_name):
-        deadline = validate_review_approval(payload)
+        responsible_id = validate_review_approval(payload)
         with self.engine.begin() as connection:
             review = self._pending_review(connection, request_id, area_id, reviewer['id'])
+            responsible = self.repository.get_responsible(
+                connection, responsible_id, area_id
+            )
+            if not responsible:
+                raise ValidationError('O responsável deve ser um usuário ativo da área.')
             updated = self.repository.approve_review_request(
-                connection, request_id, area_id, deadline, reviewer['id']
+                connection, request_id, area_id, responsible_id
             )
             if not updated:
                 raise ConflictError('A solicitação já foi analisada por outra pessoa.')
@@ -98,7 +104,9 @@ class DemandManagementService:
             # Cria o card na mesma transação e impede vínculos duplicados.
             sync_approved_request(connection, request_id)
             if self.review_notifier:
-                self.review_notifier.approved(review, reviewer, area_name, deadline)
+                self.review_notifier.approved(
+                    review, dict(responsible), reviewer, area_name
+                )
 
         return self.get_review_request(request_id, area_id)
 
@@ -173,6 +181,54 @@ class DemandManagementService:
                 raise ConflictError('A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.')
         return self.get_detail(management_id, area_id, user_id)
 
+    def transition_status(self, management_id, area_id, payload, actor, area_name):
+        with self.engine.begin() as connection:
+            demand = self.repository.get_demand(
+                connection, management_id, area_id, lock=True
+            )
+            if not demand:
+                raise NotFoundError('Demanda não encontrada.')
+
+            transition = validate_status_transition(demand['status'], payload)
+            history_text = None
+            if transition['reason']:
+                action_label = 'Pausa' if transition['action'] == 'pause' else 'Cancelamento'
+                history_text = (
+                    f'[{datetime.now().strftime("%d/%m/%Y %H:%M")}] '
+                    f'{action_label} por {actor["name"]}: {transition["reason"]}'
+                )
+                if transition['expectedReturn']:
+                    history_text += (
+                        ' | Previsão de retorno: '
+                        f'{transition["expectedReturn"].strftime("%d/%m/%Y")}'
+                    )
+
+            updated = self.repository.transition_demand(
+                connection,
+                management_id,
+                area_id,
+                demand['status'],
+                transition,
+                history_text
+            )
+            if not updated:
+                raise ConflictError(
+                    'A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.'
+                )
+
+            if demand['sourceRequestId'] is not None:
+                source_updated = self.repository.transition_source_request(
+                    connection, demand['sourceRequestId'], transition
+                )
+                if not source_updated:
+                    raise ConflictError('A solicitação original não pôde ser atualizada.')
+                if self.review_notifier and demand['requesterEmail']:
+                    self.review_notifier.status_changed(
+                        dict(demand), actor, area_name, transition
+                    )
+
+        return self.get_detail(management_id, area_id, actor['id'])
+
     def create_task(self, management_id, area_id, payload, created_by):
         task = validate_task(payload)
         with self.engine.begin() as connection:
@@ -228,6 +284,7 @@ class DemandManagementService:
     def _serialize_demand(self, row, user_id, include_attachments=False):
         result = _serialize_row(row)
         images = result.pop('images', '') or ''
+        result.pop('requesterEmail', None)
         if include_attachments:
             result['attachments'] = self._serialize_attachments(images)
         creator_id = result.pop('directCreatorId', None)

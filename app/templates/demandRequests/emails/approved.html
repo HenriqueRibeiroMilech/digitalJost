@@ -2,15 +2,15 @@
 <html lang="pt-BR">
 <body>
     <div style="padding:15px;font-size:22px;color:white;background-color:#163A8A;text-align:center;font-family:sans-serif;">
-        <p style="font-weight:bold;">DEMANDA "{{ title }}" EM DESENVOLVIMENTO - PRAZO DE ENTREGA: {{ deliveryDate }}</p>
+        <p style="font-weight:bold;">DEMANDA "{{ title }}" ACEITA</p>
     </div>
     <div style="margin-left:80px;margin-top:60px;font-family:sans-serif;">
-        <p style="font-size:20px;font-weight:bold;">SUA SOLICITAÇÃO FOI APROVADA E INICIADA!</p>
-        <p style="font-size:16px;">O usuário "{{ respName }}" aprovou sua solicitação intitulada "{{ title }}".</p>
+        <p style="font-size:20px;font-weight:bold;">SUA SOLICITAÇÃO FOI ACEITA!</p>
+        <p style="font-size:16px;">O usuário "{{ reviewerName }}" aprovou sua solicitação intitulada "{{ title }}".</p>
         <p style="font-size:16px;font-weight:bold;">Descrição informada na solicitação:</p>
         <p style="font-size:16px;">"{{ desc }}"</p>
-        <p style="font-size:16px;">O desenvolvimento foi iniciado em {{ date }}, com prazo de entrega em {{ deliveryDate }}.</p>
-        <p style="font-size:16px;">Caso o prazo não atenda às expectativas, converse diretamente com o responsável pela aprovação, que está copiado neste e-mail.</p>
+        <p style="font-size:16px;">A demanda foi atribuída a <strong>{{ respName }}</strong> e agora aguarda o planejamento do desenvolvimento.</p>
+        <p style="font-size:16px;">Você receberá uma nova notificação assim que o desenvolvimento for iniciado e o prazo de entrega for definido.</p>
         <p style="font-size:20px;font-weight:bold;color:#EF7B04;">Você pode acompanhar suas solicitações no link abaixo.</p>
         <a href="{{ requestsUrl }}" style="color:white;background-color:#163A8A;text-decoration:none;padding:20px;font-size:26px;font-weight:bold;">Visualizar</a><br><br>
         <p style="color:red;font-size:16px;font-weight:bold;">SE HOUVER ALGUMA DÚVIDA, NÃO RESPONDA ESTE E-MAIL. ENCAMINHE A MENSAGEM PARA UM MEMBRO DA ÁREA DESENVOLVEDORA.</p>

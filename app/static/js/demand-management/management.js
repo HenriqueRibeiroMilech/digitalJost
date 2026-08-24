@@ -12,7 +12,8 @@
         view: config.initialView === 'requests' ? 'requests' : 'demands',
         collapsedOwners: new Set(),
         updateQueues: new Map(),
-        filtersInitialized: false
+        filtersInitialized: false,
+        statusAction: null
     };
 
     const elements = {
@@ -96,6 +97,26 @@
     function requestStatusLabel(status) {
         return Number(status) === 3 ? 'Recusada' : 'Em análise';
     }
+
+    const statusActions = {
+        'A Fazer': [
+            { action: 'start', label: 'Iniciar' },
+            { action: 'cancel', label: 'Cancelar', danger: true }
+        ],
+        'Em Andamento': [
+            { action: 'pause', label: 'Pausar' },
+            { action: 'complete', label: 'Concluir' },
+            { action: 'cancel', label: 'Cancelar', danger: true }
+        ],
+        'Pausado': [
+            { action: 'resume', label: 'Despausar' },
+            { action: 'cancel', label: 'Cancelar', danger: true }
+        ],
+        'Concluído': [
+            { action: 'reopen', label: 'Retomar' }
+        ],
+        'Cancelado': []
+    };
 
     function requestAttachmentUrl(requestId, attachmentIndex) {
         const url = new URL(
@@ -471,6 +492,72 @@
         return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
     }
 
+    function renderStatusActions(demand, compact) {
+        const actions = statusActions[demand.status] || [];
+        if (!actions.length) {
+            return compact ? '' : '<p class="dm-status-actions__empty">Esta demanda está encerrada.</p>';
+        }
+        return `
+            <div class="dm-status-actions${compact ? ' dm-status-actions--compact' : ''}">
+                ${actions.map(function (item) {
+                    return `<button class="dm-button${item.danger ? ' dm-button--danger' : ''}" type="button" data-status-action="${item.action}">${item.label}</button>`;
+                }).join('')}
+            </div>`;
+    }
+
+    function renderStatusActionForm(demand) {
+        const action = state.statusAction;
+        if (!action) return '';
+
+        const content = {
+            start: ['Iniciar demanda', 'Defina o prazo que será informado ao solicitante.'],
+            pause: ['Pausar demanda', 'Explique a interrupção e informe a previsão de retorno.'],
+            resume: ['Despausar demanda', 'Defina o novo prazo de entrega.'],
+            complete: ['Concluir demanda', 'Confirme que o desenvolvimento foi finalizado.'],
+            cancel: ['Cancelar demanda', 'Informe ao solicitante por que a demanda será cancelada.'],
+            reopen: ['Retomar demanda', 'Defina o novo prazo para continuar o desenvolvimento.']
+        }[action];
+        if (!content) return '';
+
+        const asksDeadline = ['start', 'resume', 'reopen'].includes(action);
+        const asksReason = ['pause', 'cancel'].includes(action);
+        const submitLabel = {
+            start: 'Confirmar início',
+            pause: 'Confirmar pausa',
+            resume: 'Confirmar retomada',
+            complete: 'Confirmar conclusão',
+            cancel: 'Confirmar cancelamento',
+            reopen: 'Confirmar retomada'
+        }[action];
+
+        return `
+            <form class="dm-status-form" id="dm-status-transition" data-action="${action}">
+                <div class="dm-status-form__heading">
+                    <strong>${content[0]}</strong>
+                    <span>${content[1]}</span>
+                </div>
+                ${asksDeadline ? `
+                    <label class="dm-field">
+                        <span>Prazo de entrega</span>
+                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(demand.deadline ? demand.deadline.substring(0, 10) : '')}" required>
+                    </label>` : ''}
+                ${asksReason ? `
+                    <label class="dm-field dm-field--wide">
+                        <span>Justificativa</span>
+                        <textarea class="dm-textarea" name="reason" maxlength="4000" required placeholder="Descreva o motivo desta alteração"></textarea>
+                    </label>` : ''}
+                ${action === 'pause' ? `
+                    <label class="dm-field">
+                        <span>Previsão de retorno</span>
+                        <input class="dm-input" name="expectedReturn" type="date" required>
+                    </label>` : ''}
+                <div class="dm-status-form__actions">
+                    <button class="dm-button dm-button--quiet" type="button" data-cancel-status-action>Voltar</button>
+                    <button class="dm-button${action === 'cancel' ? ' dm-button--danger' : ''}" type="submit">${submitLabel}</button>
+                </div>
+            </form>`;
+    }
+
     function renderCard(demand) {
         const late = isLate(demand);
         const statusClass = `dm-card--status-${slug(demand.status)}`;
@@ -499,7 +586,6 @@
                     </div>
                 </div>
                 <div class="dm-card__fields">
-                    ${field('Status', 'status', demand.status, 'select', state.options.status || [])}
                     ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
                     ${field('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
                     ${field('Tempo estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
@@ -507,6 +593,7 @@
                     ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number')}
                     ${field('Observações', 'observations', demand.observations, 'textarea')}
                 </div>
+                ${renderStatusActions(demand, true)}
             </article>`;
     }
 
@@ -549,7 +636,8 @@
         if (index >= 0) state.demands[index] = updated;
     }
 
-    async function openModal(managementId) {
+    async function openModal(managementId, action) {
+        state.statusAction = action || null;
         elements.modal.classList.add('is-open');
         elements.modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('dm-modal-open');
@@ -578,6 +666,7 @@
     function openCreateDemandModal() {
         state.detail = null;
         state.requestDetail = null;
+        state.statusAction = null;
         elements.modal.classList.add('is-open');
         elements.modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('dm-modal-open');
@@ -585,9 +674,6 @@
     }
 
     function renderCreateDemandModal() {
-        const statuses = state.options.status && state.options.status.length
-            ? state.options.status
-            : ['A Fazer', 'Em Andamento', 'Pausado', 'Concluído', 'Cancelado'];
         const difficulties = state.options.difficulty || [];
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
@@ -616,7 +702,6 @@
                 <section class="dm-panel">
                     <h3>Planejamento inicial</h3>
                     <div class="dm-form-grid dm-create-planning-grid">
-                        ${createSelectField('Status', 'status', statuses, 'A Fazer')}
                         ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
                         ${createInputField('Prazo', 'deadline', 'date')}
                         ${createInputField('Data de início', 'startDate', 'date')}
@@ -662,7 +747,6 @@
             demandType: 'atividade',
             title: value('title'),
             initialDescription: value('initialDescription'),
-            status: value('status'),
             difficulty: value('difficulty'),
             deadline: value('deadline'),
             startDate: value('startDate'),
@@ -710,6 +794,7 @@
         document.body.classList.remove('dm-modal-open');
         state.detail = null;
         state.requestDetail = null;
+        state.statusAction = null;
     }
 
     function readonlyItem(label, value, wide) {
@@ -805,8 +890,9 @@
             <div class="dm-modal__columns">
                 <section class="dm-panel">
                     <h3>Gerenciamento</h3>
+                    ${renderStatusActions(demand, false)}
+                    ${renderStatusActionForm(demand)}
                     <div class="dm-form-grid">
-                        ${field('Status', 'status', demand.status, 'select', state.options.status || [])}
                         ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles)}
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [])}
                         ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
@@ -886,12 +972,12 @@
             <aside class="dm-panel dm-review-decision">
                 <h3>Analisar demanda</h3>
                 <form id="dm-approve-request" class="dm-decision-form">
-                    <p>Ao aprovar, a demanda será iniciada, você será definido como responsável e o card aparecerá automaticamente na aba Demandas.</p>
+                    <p>Ao aprovar, o card será criado como A Fazer para o responsável selecionado. O prazo será definido quando o desenvolvimento for iniciado.</p>
                     <label class="dm-field">
-                        <span>Prazo de entrega</span>
-                        <input class="dm-input" name="deadline" type="date" required>
+                        <span>Responsável pela demanda</span>
+                        <select class="dm-input" name="responsibleId" required>${optionList(state.responsibles, '', 'Selecione um responsável')}</select>
                     </label>
-                    <button class="dm-button" type="submit">Aprovar e iniciar</button>
+                    <button class="dm-button" type="submit">Aprovar demanda</button>
                 </form>
                 <div class="dm-decision-divider"><span>ou</span></div>
                 <form id="dm-decline-request" class="dm-decision-form">
@@ -908,7 +994,7 @@
         if (!state.requestDetail) return;
         const button = form.querySelector('button[type="submit"]');
         const payload = action === 'approve'
-            ? { deadline: form.elements.deadline.value }
+            ? { responsibleId: form.elements.responsibleId.value }
             : { reason: form.elements.reason.value };
         button.disabled = true;
         try {
@@ -919,11 +1005,41 @@
             closeModal();
             await Promise.all([loadBoard(false), loadRequests(false)]);
             toast(action === 'approve'
-                ? 'Demanda aprovada e adicionada ao gerenciador.'
+                ? 'Demanda aprovada como A Fazer e atribuída ao responsável.'
                 : 'Solicitação recusada.');
         } catch (error) {
             toast(error.message, true);
             button.disabled = false;
+        }
+    }
+
+    async function transitionStatus(form) {
+        if (!state.detail) return;
+        const button = form.querySelector('button[type="submit"]');
+        const action = form.dataset.action;
+        const payload = {
+            action: action,
+            rowVersion: state.detail.rowVersion
+        };
+        if (form.elements.deadline) payload.deadline = form.elements.deadline.value;
+        if (form.elements.reason) payload.reason = form.elements.reason.value;
+        if (form.elements.expectedReturn) {
+            payload.expectedReturn = form.elements.expectedReturn.value;
+        }
+
+        button.disabled = true;
+        try {
+            const detail = await api(`${config.apiRoot}/${state.detail.managementId}/status`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            state.statusAction = null;
+            applyDetail(detail);
+            toast('Status da demanda atualizado.');
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+            if (error.status === 409) await loadBoard(false);
         }
     }
 
@@ -1082,6 +1198,12 @@
             renderBoard();
             return;
         }
+        const statusButton = event.target.closest('[data-status-action]');
+        if (statusButton) {
+            const card = statusButton.closest('[data-management-id]');
+            openModal(Number(card.dataset.managementId), statusButton.dataset.statusAction);
+            return;
+        }
         if (event.target.closest('input, select, textarea, button, a')) return;
         const card = event.target.closest('[data-management-id]');
         if (card) openModal(Number(card.dataset.managementId));
@@ -1114,6 +1236,17 @@
     elements.modal.addEventListener('click', function (event) {
         if (event.target.closest('[data-close-modal]')) {
             closeModal();
+            return;
+        }
+        const statusButton = event.target.closest('[data-status-action]');
+        if (statusButton && state.detail) {
+            state.statusAction = statusButton.dataset.statusAction;
+            renderModal(state.detail);
+            return;
+        }
+        if (event.target.closest('[data-cancel-status-action]') && state.detail) {
+            state.statusAction = null;
+            renderModal(state.detail);
             return;
         }
         const saveButton = event.target.closest('[data-save-task]');
@@ -1151,6 +1284,9 @@
         } else if (event.target.id === 'dm-decline-request') {
             event.preventDefault();
             decideRequest(event.target, 'decline');
+        } else if (event.target.id === 'dm-status-transition') {
+            event.preventDefault();
+            transitionStatus(event.target);
         }
     });
 
