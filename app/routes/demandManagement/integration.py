@@ -6,7 +6,6 @@ from flask_mail import Message
 from sqlalchemy import text
 
 from app.config import mail
-from app.utils.data_utils import format_date
 
 
 class RequestAttachmentStorage:
@@ -36,6 +35,10 @@ class RequestAttachmentStorage:
 
 class RequestReviewNotifier:
     """Envia as notificações do fluxo de análise das solicitações."""
+
+    @staticmethod
+    def _format_date(value):
+        return value.strftime('%d/%m/%Y')
 
     @staticmethod
     def _message(subject, review, copied_users):
@@ -94,41 +97,48 @@ class RequestReviewNotifier:
 
     def status_changed(self, demand, actor, area_name, transition):
         action = transition['action']
-        content = {
-            'start': (
+        # Monta somente o conteúdo da ação atual, pois os demais campos são opcionais.
+        if action == 'start':
+            content = (
                 'foi iniciada',
                 'O desenvolvimento da sua demanda foi iniciado.',
-                [('Prazo de entrega', format_date(transition['deadline']))]
-            ),
-            'pause': (
+                [('Prazo de entrega', self._format_date(transition['deadline']))]
+            )
+        elif action == 'pause':
+            content = (
                 'foi pausada',
                 'O desenvolvimento da sua demanda foi pausado.',
                 [
                     ('Justificativa', transition['reason']),
-                    ('Previsão de retorno', format_date(transition['expectedReturn']))
+                    ('Previsão de retorno', self._format_date(transition['expectedReturn']))
                 ]
-            ),
-            'resume': (
+            )
+        elif action == 'resume':
+            content = (
                 'foi retomada',
                 'O desenvolvimento da sua demanda foi retomado.',
-                [('Novo prazo de entrega', format_date(transition['deadline']))]
-            ),
-            'complete': (
+                [('Novo prazo de entrega', self._format_date(transition['deadline']))]
+            )
+        elif action == 'complete':
+            content = (
                 'foi concluída',
                 'O desenvolvimento da sua demanda foi concluído.',
-                [('Conclusão', format_date(date.today()))]
-            ),
-            'cancel': (
+                [('Conclusão', self._format_date(date.today()))]
+            )
+        elif action == 'cancel':
+            content = (
                 'foi cancelada',
                 'O desenvolvimento da sua demanda foi cancelado.',
                 [('Justificativa', transition['reason'])]
-            ),
-            'reopen': (
+            )
+        elif action == 'reopen':
+            content = (
                 'foi reaberta',
                 'A sua demanda foi reaberta e voltou para desenvolvimento.',
-                [('Novo prazo de entrega', format_date(transition['deadline']))]
+                [('Novo prazo de entrega', self._format_date(transition['deadline']))]
             )
-        }[action]
+        else:
+            raise ValueError('Ação de status sem notificação configurada.')
 
         message = self._message(
             f'A sua demanda - "{demand["title"]}" - {content[0]}!',
