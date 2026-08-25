@@ -101,16 +101,16 @@
     const statusActions = {
         'A Fazer': [
             { action: 'start', label: 'Iniciar' },
-            { action: 'cancel', label: 'Cancelar', danger: true }
+            { action: 'cancel', label: 'Cancelar' }
         ],
         'Em Andamento': [
             { action: 'pause', label: 'Pausar' },
             { action: 'complete', label: 'Concluir' },
-            { action: 'cancel', label: 'Cancelar', danger: true }
+            { action: 'cancel', label: 'Cancelar' }
         ],
         'Pausado': [
             { action: 'resume', label: 'Despausar' },
-            { action: 'cancel', label: 'Cancelar', danger: true }
+            { action: 'cancel', label: 'Cancelar' }
         ],
         'Concluído': [
             { action: 'reopen', label: 'Retomar' }
@@ -492,15 +492,15 @@
         return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
     }
 
-    function renderStatusActions(demand, compact) {
+    function renderStatusActions(demand) {
         const actions = statusActions[demand.status] || [];
         if (!actions.length) {
-            return compact ? '' : '<p class="dm-status-actions__empty">Esta demanda está encerrada.</p>';
+            return '<p class="dm-status-actions__empty">Esta demanda está encerrada.</p>';
         }
         return `
-            <div class="dm-status-actions${compact ? ' dm-status-actions--compact' : ''}">
+            <div class="dm-status-actions">
                 ${actions.map(function (item) {
-                    return `<button class="dm-button${item.danger ? ' dm-button--danger' : ''}" type="button" data-status-action="${item.action}">${item.label}</button>`;
+                    return `<button class="dm-button dm-status-action dm-status-action--${item.action}" type="button" data-status-action="${item.action}">${item.label}</button>`;
                 }).join('')}
             </div>`;
     }
@@ -553,7 +553,7 @@
                     </label>` : ''}
                 <div class="dm-status-form__actions">
                     <button class="dm-button dm-button--quiet" type="button" data-cancel-status-action>Voltar</button>
-                    <button class="dm-button${action === 'cancel' ? ' dm-button--danger' : ''}" type="submit">${submitLabel}</button>
+                    <button class="dm-button dm-status-action dm-status-action--${action}" type="submit">${submitLabel}</button>
                 </div>
             </form>`;
     }
@@ -593,7 +593,6 @@
                     ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number')}
                     ${field('Observações', 'observations', demand.observations, 'textarea')}
                 </div>
-                ${renderStatusActions(demand, true)}
             </article>`;
     }
 
@@ -636,8 +635,8 @@
         if (index >= 0) state.demands[index] = updated;
     }
 
-    async function openModal(managementId, action) {
-        state.statusAction = action || null;
+    async function openModal(managementId) {
+        state.statusAction = null;
         elements.modal.classList.add('is-open');
         elements.modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('dm-modal-open');
@@ -890,8 +889,6 @@
             <div class="dm-modal__columns">
                 <section class="dm-panel">
                     <h3>Gerenciamento</h3>
-                    ${renderStatusActions(demand, false)}
-                    ${renderStatusActionForm(demand)}
                     <div class="dm-form-grid">
                         ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles)}
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [])}
@@ -902,6 +899,8 @@
                         ${field('Tempo total realizado (h)', 'completedHours', demand.completedHours, 'number')}
                         ${field('Observações', 'observations', demand.observations, 'textarea')}
                     </div>
+                    ${renderStatusActions(demand)}
+                    ${renderStatusActionForm(demand)}
                 </section>
 
                 ${demand.isDirectDemand ? renderDirectDemandPanel(demand) : renderOriginalRequestPanel(demand)}
@@ -1196,12 +1195,6 @@
             const key = toggle.dataset.ownerToggle;
             state.collapsedOwners.has(key) ? state.collapsedOwners.delete(key) : state.collapsedOwners.add(key);
             renderBoard();
-            return;
-        }
-        const statusButton = event.target.closest('[data-status-action]');
-        if (statusButton) {
-            const card = statusButton.closest('[data-management-id]');
-            openModal(Number(card.dataset.managementId), statusButton.dataset.statusAction);
             return;
         }
         if (event.target.closest('input, select, textarea, button, a')) return;

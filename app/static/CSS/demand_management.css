@@ -524,33 +524,75 @@ textarea {
 .dm-status-actions {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: .5rem;
-    margin-bottom: 1rem;
-}
-
-.dm-status-actions--compact {
-    margin: 0;
+    margin-top: 1rem;
     padding-top: .8rem;
     border-top: 1px solid #e7e7e7;
 }
 
-.dm-status-actions--compact .dm-button {
-    min-height: 32px;
-    padding: .42rem .7rem;
-    font-size: .7rem;
+.dm-status-action {
+    min-width: 112px;
+}
+
+.dm-status-action--start,
+.dm-status-action--pause {
+    border-color: var(--dm-orange);
+    background: var(--dm-orange);
+}
+
+.dm-status-action--start:hover,
+.dm-status-action--pause:hover {
+    border-color: #c96500;
+    background: #c96500;
+}
+
+.dm-status-action--complete {
+    border-color: var(--dm-green);
+    background: var(--dm-green);
+}
+
+.dm-status-action--complete:hover {
+    border-color: #105f3c;
+    background: #105f3c;
+}
+
+.dm-status-action--resume,
+.dm-status-action--reopen {
+    border-color: var(--dm-navy);
+    background: var(--dm-navy);
+}
+
+.dm-status-action--resume:hover,
+.dm-status-action--reopen:hover {
+    border-color: var(--dm-navy-dark);
+    background: var(--dm-navy-dark);
+}
+
+.dm-status-action--cancel {
+    border-color: var(--dm-red);
+    background: var(--dm-red);
+}
+
+.dm-status-action--cancel:hover {
+    border-color: #8f1c14;
+    background: #8f1c14;
 }
 
 .dm-status-actions__empty {
-    margin: 0 0 1rem;
+    margin: 1rem 0 0;
+    padding-top: .8rem;
+    border-top: 1px solid #e7e7e7;
     color: var(--dm-muted);
     font-size: .76rem;
+    text-align: center;
 }
 
 .dm-status-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: .75rem;
-    margin-bottom: 1rem;
+    margin-top: 1rem;
     padding: .85rem;
     border: 1px solid #cfd8e4;
     border-left: 4px solid var(--dm-navy);
@@ -582,7 +624,7 @@ textarea {
 
 .dm-status-form__actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: .5rem;
 }
 
@@ -756,9 +798,11 @@ textarea {
     gap: .8rem;
 }
 
-.dm-form-grid .dm-field--status,
 .dm-form-grid .dm-field--responsibleid,
-.dm-form-grid .dm-field--difficulty,
+.dm-form-grid .dm-field--difficulty {
+    grid-column: span 3;
+}
+
 .dm-form-grid .dm-field--estimatedhours,
 .dm-form-grid .dm-field--dailyhours,
 .dm-form-grid .dm-field--completedhours {
