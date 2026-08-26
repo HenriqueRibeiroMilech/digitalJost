@@ -244,14 +244,14 @@ def validate_status_transition(current_status, payload):
         raise ConflictError('Esta ação não está disponível para o status atual da demanda.')
 
     deadline = None
-    if action in ('start', 'resume', 'reopen'):
+    if action in ('start', 'reopen'):
         deadline = _optional_date(payload.get('deadline'))
         if deadline is None:
             raise ValidationError('Informe o prazo da demanda.')
 
     reason = None
     expected_return = None
-    if action in ('pause', 'cancel', 'resume', 'reopen'):
+    if action in ('pause', 'cancel', 'reopen'):
         reason = _optional_text(payload.get('reason'), 4000)
         if not reason:
             raise ValidationError('Informe a justificativa desta alteração.')

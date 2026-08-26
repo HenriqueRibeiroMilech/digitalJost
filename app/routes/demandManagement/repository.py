@@ -341,8 +341,7 @@ class DemandManagementRepository:
         }).mappings().first()
 
     def transition_demand(
-        self, connection, management_id, area_id, current_status,
-        transition, history_text
+        self, connection, management_id, area_id, current_status, transition
     ):
         action = transition['action']
         query = text("""
@@ -350,23 +349,12 @@ class DemandManagementRepository:
             SET
                 status = :target_status,
                 deadline = CASE
-                    WHEN :clear_deadline = 1 THEN NULL
                     WHEN :deadline IS NOT NULL THEN :deadline
                     ELSE deadline
                 END,
                 startDate = CASE
                     WHEN :set_start_date = 1 THEN GETDATE()
                     ELSE startDate
-                END,
-                observations = CASE
-                    WHEN :history_text IS NULL THEN observations
-                    ELSE CONCAT(
-                        CASE
-                            WHEN NULLIF(observations, '') IS NULL THEN ''
-                            ELSE observations + CHAR(13) + CHAR(10)
-                        END,
-                        :history_text
-                    )
                 END,
                 updatedAt = GETDATE()
             WHERE managementId = :management_id
@@ -380,9 +368,7 @@ class DemandManagementRepository:
             'current_status': current_status,
             'target_status': transition['targetStatus'],
             'deadline': transition['deadline'],
-            'clear_deadline': 1 if action == 'pause' else 0,
             'set_start_date': 1 if action == 'start' else 0,
-            'history_text': history_text,
             'row_version': transition['rowVersion']
         })
         return result.rowcount == 1
@@ -399,10 +385,16 @@ class DemandManagementRepository:
         elif action == 'pause':
             query = text("""
                 UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
-                SET status = 4, deliveryDate = NULL
+                SET status = 4
                 WHERE requestId = :request_id
             """)
-        elif action in ('resume', 'reopen'):
+        elif action == 'resume':
+            query = text("""
+                UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+                SET status = 1, finalDate = NULL
+                WHERE requestId = :request_id
+            """)
+        elif action == 'reopen':
             query = text("""
                 UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
                 SET status = 1, deliveryDate = :deadline, finalDate = NULL,
@@ -425,7 +417,7 @@ class DemandManagementRepository:
             return False
 
         parameters = {'request_id': request_id}
-        if action in ('start', 'resume', 'reopen'):
+        if action in ('start', 'reopen'):
             parameters['deadline'] = transition['deadline']
         elif action == 'cancel':
             parameters['reason'] = transition['reason']
@@ -453,20 +445,11 @@ class DemandManagementRepository:
 
         return result.rowcount == 1
 
-    def update_deadline(
-        self, connection, management_id, area_id, deadline, history_text, row_version
-    ):
+    def update_deadline(self, connection, management_id, area_id, deadline, row_version):
         query = text("""
             UPDATE JDT_DEMAND_MANAGEMENT
             SET
                 deadline = :deadline,
-                observations = CONCAT(
-                    CASE
-                        WHEN NULLIF(observations, '') IS NULL THEN ''
-                        ELSE observations + CHAR(13) + CHAR(10)
-                    END,
-                    :history_text
-                ),
                 updatedAt = GETDATE()
             WHERE managementId = :management_id
                 AND areaId = :area_id
@@ -474,7 +457,6 @@ class DemandManagementRepository:
         """)
         result = connection.execute(query, {
             'deadline': deadline,
-            'history_text': history_text,
             'management_id': management_id,
             'area_id': area_id,
             'row_version': row_version

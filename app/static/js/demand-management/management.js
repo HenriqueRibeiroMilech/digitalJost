@@ -12,6 +12,7 @@
         view: config.initialView === 'requests' ? 'requests' : 'demands',
         collapsedOwners: new Set(),
         updateQueues: new Map(),
+        deadlineChanges: new Map(),
         filtersInitialized: false,
         statusAction: null
     };
@@ -500,6 +501,30 @@
             </label>`;
     }
 
+    function renderDeadlineChangeForm(demand) {
+        const change = state.deadlineChanges.get(demand.managementId);
+        if (!change) return '';
+        return `
+            <form class="dm-status-form dm-deadline-form" data-deadline-change-form="${demand.managementId}">
+                <div class="dm-status-form__heading">
+                    <strong>Alterar prazo</strong>
+                    <span>Informe a justificativa que será enviada ao solicitante.</span>
+                </div>
+                <label class="dm-field">
+                    <span>Novo prazo de entrega</span>
+                    <input class="dm-input" type="date" value="${escapeHtml(change.value || '')}" readonly aria-readonly="true">
+                </label>
+                <label class="dm-field dm-field--wide">
+                    <span>Justificativa</span>
+                    <textarea class="dm-textarea" name="reason" maxlength="4000" required placeholder="Descreva o motivo da alteração do prazo"></textarea>
+                </label>
+                <div class="dm-status-form__actions">
+                    <button class="dm-button dm-button--quiet" type="button" data-cancel-deadline-change="${demand.managementId}">Cancelar</button>
+                    <button class="dm-button" type="submit">Confirmar alteração</button>
+                </div>
+            </form>`;
+    }
+
     function renderStatusActions(demand) {
         const actions = statusActions[demand.status] || [];
         if (!actions.length) {
@@ -520,15 +545,15 @@
         const content = {
             start: ['Iniciar demanda', 'Defina o prazo que será informado ao solicitante.'],
             pause: ['Pausar demanda', 'Explique a interrupção e informe a previsão de retorno.'],
-            resume: ['Despausar demanda', 'Defina o novo prazo e justifique a alteração.'],
+            resume: ['Despausar demanda', 'A demanda será retomada mantendo o prazo atual.'],
             complete: ['Concluir demanda', 'Confirme que o desenvolvimento foi finalizado.'],
             cancel: ['Cancelar demanda', 'Informe ao solicitante por que a demanda será cancelada.'],
             reopen: ['Retomar demanda', 'Defina o novo prazo e justifique a alteração.']
         }[action];
         if (!content) return '';
 
-        const asksDeadline = ['start', 'resume', 'reopen'].includes(action);
-        const asksReason = ['pause', 'cancel', 'resume', 'reopen'].includes(action);
+        const asksDeadline = ['start', 'reopen'].includes(action);
+        const asksReason = ['pause', 'cancel', 'reopen'].includes(action);
         const submitLabel = {
             start: 'Confirmar início',
             pause: 'Confirmar pausa',
@@ -596,6 +621,7 @@
                 <div class="dm-card__fields">
                     ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
                     ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
+                    ${renderDeadlineChangeForm(demand)}
                     ${field('Tempo estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
                     ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number')}
                     ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
@@ -622,6 +648,9 @@
                 body: JSON.stringify(payload)
             });
             replaceDemand(updated);
+            if (fieldName === 'deadline') {
+                state.deadlineChanges.delete(managementId);
+            }
             if (state.detail && state.detail.managementId === managementId) {
                 state.detail = updated;
                 renderModal(updated);
@@ -632,9 +661,6 @@
 
         state.updateQueues.set(managementId, operation);
         operation.catch(async function (error) {
-            if (Object.prototype.hasOwnProperty.call(settings, 'previousValue')) {
-                input.value = settings.previousValue;
-            }
             toast(error.message, true);
             if (error.status === 409) await loadBoard(false);
         }).finally(function () {
@@ -660,21 +686,27 @@
         if (!demand) return;
         const previousValue = demand.deadline ? demand.deadline.substring(0, 10) : '';
         if (previousValue === (value || '')) return;
-
-        const response = window.prompt('Justifique a alteração do prazo:');
-        const reason = response === null ? '' : response.trim();
-        if (!reason || reason.length > 4000) {
-            input.value = previousValue;
-            if (response !== null) {
-                toast(reason
-                    ? 'A justificativa deve ter no máximo 4000 caracteres.'
-                    : 'A justificativa da alteração do prazo é obrigatória.', true);
-            }
-            return;
+        state.deadlineChanges.set(managementId, { value: value });
+        renderAll();
+        if (state.detail && state.detail.managementId === managementId) {
+            renderModal(state.detail);
         }
-        updateDemand(managementId, fieldName, value, input, {
-            reason: reason,
-            previousValue: previousValue
+    }
+
+    function cancelDeadlineChange(managementId) {
+        state.deadlineChanges.delete(managementId);
+        renderAll();
+        if (state.detail && state.detail.managementId === managementId) {
+            renderModal(state.detail);
+        }
+    }
+
+    function submitDeadlineChange(form) {
+        const managementId = Number(form.dataset.deadlineChangeForm);
+        const change = state.deadlineChanges.get(managementId);
+        if (!change) return;
+        updateDemand(managementId, 'deadline', change.value, form.elements.reason, {
+            reason: form.elements.reason.value.trim()
         });
     }
 
@@ -942,6 +974,7 @@
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [])}
                         ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
                         ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
+                        ${renderDeadlineChangeForm(demand)}
                         ${field('Tempo total estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
                         ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
                         ${field('Tempo total realizado (h)', 'completedHours', demand.completedHours, 'number')}
@@ -1238,6 +1271,11 @@
     }
 
     elements.board.addEventListener('click', function (event) {
+        const cancelDeadline = event.target.closest('[data-cancel-deadline-change]');
+        if (cancelDeadline) {
+            cancelDeadlineChange(Number(cancelDeadline.dataset.cancelDeadlineChange));
+            return;
+        }
         const toggle = event.target.closest('[data-owner-toggle]');
         if (toggle) {
             const key = toggle.dataset.ownerToggle;
@@ -1274,9 +1312,21 @@
         changeDemandField(Number(card.dataset.managementId), input);
     });
 
+    elements.board.addEventListener('submit', function (event) {
+        const form = event.target.closest('[data-deadline-change-form]');
+        if (!form) return;
+        event.preventDefault();
+        submitDeadlineChange(form);
+    });
+
     elements.modal.addEventListener('click', function (event) {
         if (event.target.closest('[data-close-modal]')) {
             closeModal();
+            return;
+        }
+        const cancelDeadline = event.target.closest('[data-cancel-deadline-change]');
+        if (cancelDeadline) {
+            cancelDeadlineChange(Number(cancelDeadline.dataset.cancelDeadlineChange));
             return;
         }
         const statusButton = event.target.closest('[data-status-action]');
@@ -1313,7 +1363,10 @@
     });
 
     elements.modal.addEventListener('submit', function (event) {
-        if (event.target.id === 'dm-create-demand-form') {
+        if (event.target.matches('[data-deadline-change-form]')) {
+            event.preventDefault();
+            submitDeadlineChange(event.target);
+        } else if (event.target.id === 'dm-create-demand-form') {
             event.preventDefault();
             createPersonalDemand(event.target);
         } else if (event.target.id === 'dm-new-task') {

@@ -173,22 +173,11 @@ class DemandManagementService:
                     raise ValidationError('O prazo informado é igual ao prazo atual.')
 
                 reason = validate_deadline_reason(payload)
-                old_label = (
-                    current_deadline.strftime('%d/%m/%Y')
-                    if current_deadline else 'não definido'
-                )
-                new_label = value.strftime('%d/%m/%Y') if value else 'não definido'
-                history_text = (
-                    f'[{datetime.now().strftime("%d/%m/%Y %H:%M")}] '
-                    f'Alteração de prazo por {actor["name"]}: '
-                    f'de {old_label} para {new_label} | Justificativa: {reason}'
-                )
                 updated = self.repository.update_deadline(
                     connection,
                     management_id,
                     area_id,
                     value,
-                    history_text,
                     row_version
                 )
                 if updated and current['sourceRequestId'] is not None:
@@ -243,31 +232,12 @@ class DemandManagementService:
                 raise NotFoundError('Demanda não encontrada.')
 
             transition = validate_status_transition(demand['status'], payload)
-            history_text = None
-            if transition['reason']:
-                action_label = {
-                    'pause': 'Pausa',
-                    'cancel': 'Cancelamento',
-                    'resume': 'Retomada',
-                    'reopen': 'Reabertura'
-                }[transition['action']]
-                history_text = (
-                    f'[{datetime.now().strftime("%d/%m/%Y %H:%M")}] '
-                    f'{action_label} por {actor["name"]}: {transition["reason"]}'
-                )
-                if transition['expectedReturn']:
-                    history_text += (
-                        ' | Previsão de retorno: '
-                        f'{transition["expectedReturn"].strftime("%d/%m/%Y")}'
-                    )
-
             updated = self.repository.transition_demand(
                 connection,
                 management_id,
                 area_id,
                 demand['status'],
-                transition,
-                history_text
+                transition
             )
             if not updated:
                 raise ConflictError(

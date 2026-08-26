@@ -615,6 +615,11 @@ textarea {
     background: #f7f9fc;
 }
 
+.dm-deadline-form {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
 .dm-status-form__heading,
 .dm-status-form .dm-field--wide,
 .dm-status-form__actions {

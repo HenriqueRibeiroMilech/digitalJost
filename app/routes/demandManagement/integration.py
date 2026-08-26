@@ -116,11 +116,8 @@ class RequestReviewNotifier:
         elif action == 'resume':
             content = (
                 'foi retomada',
-                'O desenvolvimento da sua demanda foi retomado.',
-                [
-                    ('Novo prazo de entrega', self._format_date(transition['deadline'])),
-                    ('Justificativa', transition['reason'])
-                ]
+                'O desenvolvimento da sua demanda foi retomado sem alteração do prazo.',
+                []
             )
         elif action == 'complete':
             content = (
