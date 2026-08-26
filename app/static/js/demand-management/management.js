@@ -589,8 +589,8 @@
                     ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
                     ${field('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
                     ${field('Tempo estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
-                    ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
                     ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number')}
+                    ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
                     ${field('Observações', 'observations', demand.observations, 'textarea')}
                 </div>
             </article>`;

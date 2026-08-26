@@ -513,8 +513,17 @@ textarea {
 
 .dm-card__fields {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: .65rem;
+}
+
+.dm-card__fields .dm-field {
+    grid-column: span 2;
+}
+
+.dm-card__fields .dm-field--deadline,
+.dm-card__fields .dm-field--startdate {
+    grid-column: span 3;
 }
 
 .dm-card__fields .dm-field--wide {
@@ -1198,7 +1207,6 @@ body.dm-modal-open { overflow: hidden; }
     .dm-direct-grid { grid-template-columns: 1fr; }
     .dm-create-grid__description,
     .dm-direct-grid .dm-field--wide { grid-column: 1; }
-    .dm-card__fields,
     .dm-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dm-form-grid .dm-field { grid-column: span 1; }
     .dm-form-grid .dm-field--wide { grid-column: 1 / -1; }
@@ -1230,6 +1238,10 @@ body.dm-modal-open { overflow: hidden; }
     .dm-toolbar,
     .dm-card__fields,
     .dm-form-grid { grid-template-columns: 1fr; }
+    .dm-card__fields .dm-field,
+    .dm-card__fields .dm-field--deadline,
+    .dm-card__fields .dm-field--startdate,
+    .dm-card__fields .dm-field--wide { grid-column: 1; }
     .dm-review-toolbar { grid-template-columns: 1fr; }
     .dm-review-card__footer { align-items: stretch; flex-direction: column; }
     .dm-form-grid .dm-field,
