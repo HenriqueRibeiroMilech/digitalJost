@@ -147,24 +147,6 @@
             </ul>`;
     }
 
-    function renderRequestPauses(pauses) {
-        if (!pauses || !pauses.length) return '';
-        return `
-            <div class="dm-source-section">
-                <h4>Histórico de pausas</h4>
-                <ul class="dm-pause-list">
-                    ${pauses.map(function (pause) {
-                        return `
-                            <li>
-                                <strong>${escapeHtml(formatDate(pause.initDate, true))}</strong>
-                                até ${escapeHtml(formatDate(pause.finalDate || pause.expectDate, Boolean(pause.finalDate)))}
-                                <span>${escapeHtml(display(pause.reason, 'Sem justificativa informada'))}</span>
-                            </li>`;
-                    }).join('')}
-                </ul>
-            </div>`;
-    }
-
     function renderDemandHistory(history) {
         const items = history || [];
         const eventLabels = {
@@ -1005,7 +987,6 @@
                     <h4>Documentos anexados</h4>
                     ${renderAttachments(demand.sourceRequestId, demand.attachments)}
                 </div>
-                ${renderRequestPauses(demand.requestPauses)}
             </section>`;
     }
 

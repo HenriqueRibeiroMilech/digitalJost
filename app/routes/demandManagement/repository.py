@@ -195,23 +195,6 @@ class DemandManagementRepository:
             'area_id': area_id
         }).mappings().first()
 
-    def list_request_pauses(self, connection, request_id):
-        if request_id is None:
-            return []
-        query = text("""
-            SELECT
-                initDate,
-                expectDate,
-                finalDate,
-                text AS reason
-            FROM JDT_REQUEST_PAUSES
-            WHERE requestId = :request_id
-            ORDER BY initDate
-        """)
-        return connection.execute(query, {
-            'request_id': request_id
-        }).mappings().all()
-
     def list_history(self, connection, management_id, area_id):
         query = text("""
             SELECT

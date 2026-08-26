@@ -131,15 +131,11 @@ class DemandManagementService:
             if not demand:
                 raise NotFoundError('Demanda não encontrada.')
             tasks = self.repository.list_tasks(connection, management_id, area_id)
-            pauses = self.repository.list_request_pauses(
-                connection, demand['sourceRequestId']
-            )
             history = self.repository.list_history(
                 connection, management_id, area_id
             )
         result = self._serialize_demand(demand, user_id, include_attachments=True)
         result['tasks'] = [_serialize_row(row) for row in tasks]
-        result['requestPauses'] = [_serialize_row(row) for row in pauses]
         result['history'] = [_serialize_row(row) for row in history]
         return result
 
