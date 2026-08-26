@@ -167,7 +167,8 @@ def validate_personal_demand(payload):
         'actualProblems': None,
         'benefits': None,
         'status': 'A Fazer',
-        'deadline': validate_management_change('deadline', payload.get('deadline')),
+        # O primeiro prazo pertence ao ato de iniciar a demanda.
+        'deadline': None,
         'startDate': None,
         'estimatedHours': validate_management_change('estimatedHours', payload.get('estimatedHours')),
         'dailyHours': validate_management_change('dailyHours', payload.get('dailyHours')),

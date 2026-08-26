@@ -839,6 +839,12 @@ textarea {
     grid-column: span 3;
 }
 
+.dm-create-planning-grid .dm-field--estimatedhours,
+.dm-create-planning-grid .dm-field--dailyhours,
+.dm-create-planning-grid .dm-field--completedhours {
+    grid-column: span 3;
+}
+
 .dm-form-grid .dm-field--wide {
     grid-column: 1 / -1;
 }
@@ -879,6 +885,70 @@ textarea {
     margin: .25rem 0 0;
     overflow-wrap: anywhere;
     font-size: .85rem;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.dm-history {
+    margin-top: 1rem;
+}
+
+.dm-history__list {
+    display: grid;
+    gap: .75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dm-history__item {
+    padding: .85rem 1rem;
+    border-left: 4px solid var(--dm-navy);
+    border-radius: 4px;
+    background: #f7f9fc;
+}
+
+.dm-history__heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dm-history__heading strong {
+    color: var(--dm-navy-dark);
+    font-size: .82rem;
+}
+
+.dm-history__heading time,
+.dm-history__actor,
+.dm-history__empty {
+    color: var(--dm-muted);
+    font-size: .72rem;
+}
+
+.dm-history__item > p {
+    margin: .35rem 0 0;
+    font-size: .78rem;
+}
+
+.dm-history__reason {
+    margin-top: .6rem;
+    padding-top: .55rem;
+    border-top: 1px solid #dde3eb;
+}
+
+.dm-history__reason span {
+    color: var(--dm-muted);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.dm-history__reason p {
+    margin: .25rem 0 0;
+    font-size: .78rem;
     line-height: 1.5;
     white-space: pre-line;
 }

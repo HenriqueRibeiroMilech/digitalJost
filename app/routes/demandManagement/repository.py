@@ -212,6 +212,60 @@ class DemandManagementRepository:
             'request_id': request_id
         }).mappings().all()
 
+    def list_history(self, connection, management_id, area_id):
+        query = text("""
+            SELECT
+                H.historyId,
+                H.eventType,
+                H.previousStatus,
+                H.newStatus,
+                H.previousDeadline,
+                H.newDeadline,
+                H.reason,
+                H.expectedReturn,
+                H.actorName,
+                H.createdAt
+            FROM JDT_DEMAND_MANAGEMENT_HISTORY AS H
+            JOIN JDT_DEMAND_MANAGEMENT AS M
+                ON M.managementId = H.managementId
+            WHERE H.managementId = :management_id
+                AND M.areaId = :area_id
+            ORDER BY H.createdAt DESC, H.historyId DESC
+        """)
+        return connection.execute(query, {
+            'management_id': management_id,
+            'area_id': area_id
+        }).mappings().all()
+
+    def insert_history(
+        self, connection, management_id, event_type, actor,
+        previous_status=None, new_status=None, previous_deadline=None,
+        new_deadline=None, reason=None, expected_return=None
+    ):
+        query = text("""
+            INSERT INTO JDT_DEMAND_MANAGEMENT_HISTORY (
+                managementId, eventType, previousStatus, newStatus,
+                previousDeadline, newDeadline, reason, expectedReturn,
+                actorId, actorName, createdAt
+            ) VALUES (
+                :management_id, :event_type, :previous_status, :new_status,
+                :previous_deadline, :new_deadline, :reason, :expected_return,
+                :actor_id, :actor_name, GETDATE()
+            )
+        """)
+        connection.execute(query, {
+            'management_id': management_id,
+            'event_type': event_type,
+            'previous_status': previous_status,
+            'new_status': new_status,
+            'previous_deadline': previous_deadline,
+            'new_deadline': new_deadline,
+            'reason': reason,
+            'expected_return': expected_return,
+            'actor_id': actor['id'],
+            'actor_name': actor['name']
+        })
+
     def create_personal_demand(self, connection, area_id, demand, user_id):
         query = text("""
             INSERT INTO JDT_DEMAND_MANAGEMENT (

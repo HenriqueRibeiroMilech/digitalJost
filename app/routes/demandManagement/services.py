@@ -134,9 +134,13 @@ class DemandManagementService:
             pauses = self.repository.list_request_pauses(
                 connection, demand['sourceRequestId']
             )
+            history = self.repository.list_history(
+                connection, management_id, area_id
+            )
         result = self._serialize_demand(demand, user_id, include_attachments=True)
         result['tasks'] = [_serialize_row(row) for row in tasks]
         result['requestPauses'] = [_serialize_row(row) for row in pauses]
+        result['history'] = [_serialize_row(row) for row in history]
         return result
 
     def create_personal_demand(self, area_id, payload, user_id):
@@ -166,6 +170,17 @@ class DemandManagementService:
                 if not current:
                     raise NotFoundError('Demanda não encontrada.')
 
+                if current['status'] == 'A Fazer':
+                    raise ConflictError(
+                        'O prazo inicial deve ser informado ao iniciar a demanda.'
+                    )
+                if current['status'] not in ('Em Andamento', 'Pausado'):
+                    raise ConflictError(
+                        'O prazo não pode ser alterado no status atual da demanda.'
+                    )
+                if value is None:
+                    raise ValidationError('Informe o novo prazo da demanda.')
+
                 current_deadline = current['deadline']
                 if isinstance(current_deadline, datetime):
                     current_deadline = current_deadline.date()
@@ -186,6 +201,18 @@ class DemandManagementService:
                     )
                     if not source_updated:
                         raise ConflictError('A solicitação original não pôde ser atualizada.')
+                if updated:
+                    self.repository.insert_history(
+                        connection,
+                        management_id,
+                        'deadline_changed',
+                        actor,
+                        previous_status=current['status'],
+                        new_status=current['status'],
+                        previous_deadline=current_deadline,
+                        new_deadline=value,
+                        reason=reason
+                    )
                 if (
                     updated
                     and self.review_notifier
@@ -250,10 +277,30 @@ class DemandManagementService:
                 )
                 if not source_updated:
                     raise ConflictError('A solicitação original não pôde ser atualizada.')
-                if self.review_notifier and demand['requesterEmail']:
-                    self.review_notifier.status_changed(
-                        dict(demand), actor, area_name, transition
-                    )
+
+            previous_deadline = demand['deadline']
+            if isinstance(previous_deadline, datetime):
+                previous_deadline = previous_deadline.date()
+            self.repository.insert_history(
+                connection,
+                management_id,
+                f"status_{transition['action']}",
+                actor,
+                previous_status=demand['status'],
+                new_status=transition['targetStatus'],
+                previous_deadline=previous_deadline,
+                new_deadline=transition['deadline'] or previous_deadline,
+                reason=transition['reason'],
+                expected_return=transition['expectedReturn']
+            )
+            if (
+                demand['sourceRequestId'] is not None
+                and self.review_notifier
+                and demand['requesterEmail']
+            ):
+                self.review_notifier.status_changed(
+                    dict(demand), actor, area_name, transition
+                )
 
         return self.get_detail(management_id, area_id, actor['id'])
 

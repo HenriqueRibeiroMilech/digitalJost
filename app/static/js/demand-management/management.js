@@ -165,6 +165,44 @@
             </div>`;
     }
 
+    function renderDemandHistory(history) {
+        const items = history || [];
+        const eventLabels = {
+            status_start: 'Demanda iniciada',
+            status_pause: 'Demanda pausada',
+            status_resume: 'Demanda despausada',
+            status_complete: 'Demanda concluída',
+            status_cancel: 'Demanda cancelada',
+            status_reopen: 'Demanda retomada',
+            deadline_changed: 'Prazo alterado'
+        };
+        return `
+            <section class="dm-panel dm-history">
+                <h3>Histórico da demanda</h3>
+                ${items.length ? `
+                    <ol class="dm-history__list">
+                        ${items.map(function (item) {
+                            const statusChanged = item.previousStatus && item.newStatus &&
+                                item.previousStatus !== item.newStatus;
+                            const deadlineChanged = item.previousDeadline !== item.newDeadline &&
+                                (item.previousDeadline || item.newDeadline);
+                            return `
+                                <li class="dm-history__item">
+                                    <div class="dm-history__heading">
+                                        <strong>${escapeHtml(eventLabels[item.eventType] || 'Atualização da demanda')}</strong>
+                                        <time>${escapeHtml(formatDate(item.createdAt, true))}</time>
+                                    </div>
+                                    <p class="dm-history__actor">Por ${escapeHtml(display(item.actorName, 'Usuário não identificado'))}</p>
+                                    ${statusChanged ? `<p>Status: <strong>${escapeHtml(item.previousStatus)}</strong> → <strong>${escapeHtml(item.newStatus)}</strong></p>` : ''}
+                                    ${deadlineChanged ? `<p>Prazo: <strong>${escapeHtml(formatDate(item.previousDeadline, false))}</strong> → <strong>${escapeHtml(formatDate(item.newDeadline, false))}</strong></p>` : ''}
+                                    ${item.expectedReturn ? `<p>Previsão de retorno: <strong>${escapeHtml(formatDate(item.expectedReturn, false))}</strong></p>` : ''}
+                                    ${item.reason ? `<div class="dm-history__reason"><span>Justificativa</span><p>${escapeHtml(item.reason)}</p></div>` : ''}
+                                </li>`;
+                        }).join('')}
+                    </ol>` : '<p class="dm-history__empty">Nenhum evento foi registrado neste histórico.</p>'}
+            </section>`;
+    }
+
     function daysUntilDeadline(demand) {
         if (!demand.deadline || ['Concluído', 'Cancelado'].includes(demand.status)) return null;
         const today = new Date();
@@ -493,12 +531,25 @@
         return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
     }
 
-    function readonlyField(label, fieldName, value, type) {
+    function readonlyField(label, fieldName, value, type, title) {
         return `
             <label class="dm-field dm-field--${slug(fieldName)}">
                 <span>${label}</span>
-                <input class="dm-input" type="${type}" value="${escapeHtml(valueOrEmpty(value))}" readonly aria-readonly="true" title="Definida automaticamente ao iniciar a demanda">
+                <input class="dm-input" type="${type}" value="${escapeHtml(valueOrEmpty(value))}" readonly aria-readonly="true" title="${escapeHtml(title || 'Campo somente leitura')}">
             </label>`;
+    }
+
+    function renderModalDeadlineField(demand) {
+        if (['Em Andamento', 'Pausado'].includes(demand.status)) {
+            return field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date');
+        }
+        const title = demand.status === 'A Fazer'
+            ? 'O prazo inicial será definido ao iniciar a demanda'
+            : 'O prazo não pode ser alterado em uma demanda encerrada';
+        const value = demand.status === 'A Fazer'
+            ? null
+            : demand.deadline && demand.deadline.substring(0, 10);
+        return readonlyField('Prazo', 'deadline', value, 'date', title);
     }
 
     function renderDeadlineChangeForm(demand) {
@@ -554,6 +605,9 @@
 
         const asksDeadline = ['start', 'reopen'].includes(action);
         const asksReason = ['pause', 'cancel', 'reopen'].includes(action);
+        const deadlineValue = action === 'start'
+            ? ''
+            : demand.deadline ? demand.deadline.substring(0, 10) : '';
         const submitLabel = {
             start: 'Confirmar início',
             pause: 'Confirmar pausa',
@@ -572,7 +626,7 @@
                 ${asksDeadline ? `
                     <label class="dm-field">
                         <span>Prazo de entrega</span>
-                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(demand.deadline ? demand.deadline.substring(0, 10) : '')}" required>
+                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(deadlineValue)}" required>
                     </label>` : ''}
                 ${asksReason ? `
                     <label class="dm-field dm-field--wide">
@@ -619,9 +673,8 @@
                     </div>
                 </div>
                 <div class="dm-card__fields">
-                    ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
-                    ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
-                    ${renderDeadlineChangeForm(demand)}
+                    ${readonlyField('Prazo', 'deadline', demand.status === 'A Fazer' ? null : demand.deadline && demand.deadline.substring(0, 10), 'date', 'Abra a demanda para consultar ou alterar o prazo')}
+                    ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date', 'Definida automaticamente ao iniciar a demanda')}
                     ${field('Tempo estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
                     ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number')}
                     ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
@@ -684,18 +737,19 @@
             return item.managementId === managementId;
         });
         if (!demand) return;
+        if (!state.detail || state.detail.managementId !== managementId ||
+            !['Em Andamento', 'Pausado'].includes(demand.status)) {
+            toast('O prazo só pode ser alterado no modal de uma demanda em andamento ou pausada.', true);
+            return;
+        }
         const previousValue = demand.deadline ? demand.deadline.substring(0, 10) : '';
         if (previousValue === (value || '')) return;
         state.deadlineChanges.set(managementId, { value: value });
-        renderAll();
-        if (state.detail && state.detail.managementId === managementId) {
-            renderModal(state.detail);
-        }
+        renderModal(state.detail);
     }
 
     function cancelDeadlineChange(managementId) {
         state.deadlineChanges.delete(managementId);
-        renderAll();
         if (state.detail && state.detail.managementId === managementId) {
             renderModal(state.detail);
         }
@@ -784,7 +838,6 @@
                     <h3>Planejamento inicial</h3>
                     <div class="dm-form-grid dm-create-planning-grid">
                         ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
-                        ${createInputField('Prazo', 'deadline', 'date')}
                         ${createInputField('Tempo total estimado (h)', 'estimatedHours', 'number')}
                         ${createInputField('Tempo diário (h)', 'dailyHours', 'number')}
                         ${createInputField('Tempo realizado (h)', 'completedHours', 'number')}
@@ -828,7 +881,6 @@
             title: value('title'),
             initialDescription: value('initialDescription'),
             difficulty: value('difficulty'),
-            deadline: value('deadline'),
             estimatedHours: value('estimatedHours'),
             dailyHours: value('dailyHours'),
             completedHours: value('completedHours'),
@@ -868,6 +920,9 @@
     }
 
     function closeModal() {
+        if (state.detail) {
+            state.deadlineChanges.delete(state.detail.managementId);
+        }
         elements.modal.classList.remove('is-open');
         elements.modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('dm-modal-open');
@@ -972,8 +1027,8 @@
                     <div class="dm-form-grid">
                         ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles)}
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [])}
-                        ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
-                        ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
+                        ${renderModalDeadlineField(demand)}
+                        ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date', 'Definida automaticamente ao iniciar a demanda')}
                         ${renderDeadlineChangeForm(demand)}
                         ${field('Tempo total estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
                         ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
@@ -996,7 +1051,9 @@
                 </div>
                 <div class="dm-task-list">${renderTasks(demand.tasks || [])}</div>
                 ${renderNewTaskForm()}
-            </section>`;
+            </section>
+
+            ${renderDemandHistory(demand.history)}`;
     }
 
     function renderRequestModal(item) {
@@ -1113,6 +1170,7 @@
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
+            state.deadlineChanges.delete(state.detail.managementId);
             state.statusAction = null;
             applyDetail(detail);
             toast('Status da demanda atualizado.');
@@ -1331,6 +1389,7 @@
         }
         const statusButton = event.target.closest('[data-status-action]');
         if (statusButton && state.detail) {
+            state.deadlineChanges.delete(state.detail.managementId);
             state.statusAction = statusButton.dataset.statusAction;
             renderModal(state.detail);
             return;
