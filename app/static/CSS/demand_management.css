@@ -222,9 +222,15 @@ textarea {
     box-shadow: none;
 }
 
-.dm-input[readonly] {
+.dm-input[readonly],
+.dm-input:disabled,
+.dm-textarea[readonly] {
     color: var(--dm-muted);
     background: #f1f3f5;
+    cursor: not-allowed;
+}
+
+.dm-task__check:disabled {
     cursor: not-allowed;
 }
 

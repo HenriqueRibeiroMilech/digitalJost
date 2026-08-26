@@ -544,7 +544,7 @@ class DemandManagementRepository:
             WHERE managementId = :management_id
                 AND areaId = :area_id
                 AND sourceRequestId IS NULL
-                AND createdBy = :user_id
+                AND responsibleId = :user_id
                 AND rowVersion = :row_version
         """)
         result = connection.execute(query, {

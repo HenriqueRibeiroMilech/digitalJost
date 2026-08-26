@@ -158,14 +158,10 @@ class DemandManagementService:
         user_id = actor['id']
 
         with self.engine.begin() as connection:
-            current = None
+            current = self._require_owned_demand(
+                connection, management_id, area_id, user_id, lock=True
+            )
             if field == 'deadline':
-                current = self.repository.get_demand(
-                    connection, management_id, area_id, lock=True
-                )
-                if not current:
-                    raise NotFoundError('Demanda não encontrada.')
-
                 if current['status'] == 'A Fazer':
                     raise ConflictError(
                         'O prazo inicial deve ser informado ao iniciar a demanda.'
@@ -224,7 +220,9 @@ class DemandManagementService:
                     row_version, user_id
                 )
             else:
-                if field == 'responsibleId' and value:
+                if field == 'responsibleId':
+                    if not value:
+                        raise ValidationError('Selecione o novo responsável da demanda.')
                     if not self.repository.responsible_belongs_to_area(connection, value, area_id):
                         raise ValidationError('O responsável deve ser um usuário ativo da área.')
                 updated = self.repository.update_field(
@@ -232,27 +230,17 @@ class DemandManagementService:
                 )
 
             if not updated:
-                if current is None:
-                    current = self.repository.get_demand(
-                        connection, management_id, area_id
-                    )
-                if not current:
-                    raise NotFoundError('Demanda não encontrada.')
                 if field in DIRECT_DEMAND_FIELDS:
                     if current['sourceRequestId'] is not None:
                         raise ForbiddenError('Os dados da solicitação original são somente leitura.')
-                    if str(current['directCreatorId']) != str(user_id):
-                        raise ForbiddenError('Somente quem criou a demanda pode alterar estes dados.')
                 raise ConflictError('A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.')
         return self.get_detail(management_id, area_id, user_id)
 
     def transition_status(self, management_id, area_id, payload, actor, area_name):
         with self.engine.begin() as connection:
-            demand = self.repository.get_demand(
-                connection, management_id, area_id, lock=True
+            demand = self._require_owned_demand(
+                connection, management_id, area_id, actor['id'], lock=True
             )
-            if not demand:
-                raise NotFoundError('Demanda não encontrada.')
 
             transition = validate_status_transition(demand['status'], payload)
             updated = self.repository.transition_demand(
@@ -303,6 +291,9 @@ class DemandManagementService:
     def create_task(self, management_id, area_id, payload, created_by):
         task = validate_task(payload)
         with self.engine.begin() as connection:
+            self._require_owned_demand(
+                connection, management_id, area_id, created_by, lock=True
+            )
             self._validate_task_responsible(connection, task, area_id)
             task_id = self.repository.create_task(
                 connection, management_id, area_id, task, created_by
@@ -315,6 +306,9 @@ class DemandManagementService:
         task = validate_task(payload)
         row_version = parse_row_version(payload.get('rowVersion'))
         with self.engine.begin() as connection:
+            self._require_owned_demand(
+                connection, management_id, area_id, user_id, lock=True
+            )
             self._validate_task_responsible(connection, task, area_id)
             updated = self.repository.update_task(
                 connection, management_id, task_id, area_id, task, row_version
@@ -326,6 +320,9 @@ class DemandManagementService:
     def delete_task(self, management_id, task_id, area_id, row_version_value, user_id):
         row_version = parse_row_version(row_version_value)
         with self.engine.begin() as connection:
+            self._require_owned_demand(
+                connection, management_id, area_id, user_id, lock=True
+            )
             deleted = self.repository.delete_task(
                 connection, management_id, task_id, area_id, row_version
             )
@@ -339,6 +336,20 @@ class DemandManagementService:
             connection, responsible_id, area_id
         ):
             raise ValidationError('O responsável da tarefa deve ser um usuário ativo da área.')
+
+    def _require_owned_demand(
+        self, connection, management_id, area_id, user_id, lock=False
+    ):
+        demand = self.repository.get_demand(
+            connection, management_id, area_id, lock=lock
+        )
+        if not demand:
+            raise NotFoundError('Demanda não encontrada.')
+        if str(demand['responsibleId']) != str(user_id):
+            raise ForbiddenError(
+                'Somente o responsável atual pode editar esta demanda.'
+            )
+        return demand
 
     def _pending_review(self, connection, request_id, area_id, reviewer_id):
         review = self.repository.get_review_request(
@@ -358,11 +369,11 @@ class DemandManagementService:
         result.pop('requesterEmail', None)
         if include_attachments:
             result['attachments'] = self._serialize_attachments(images)
-        creator_id = result.pop('directCreatorId', None)
+        result.pop('directCreatorId', None)
         is_direct = result.get('sourceRequestId') is None
         result['isDirectDemand'] = is_direct
-        result['createdByCurrentUser'] = (
-            is_direct and str(creator_id) == str(user_id)
+        result['isOwnedByCurrentUser'] = (
+            str(result.get('responsibleId')) == str(user_id)
         )
         return result
 

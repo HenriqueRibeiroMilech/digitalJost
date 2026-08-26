@@ -498,19 +498,28 @@
             </section>`;
     }
 
-    function field(label, fieldName, value, type, options) {
+    function field(label, fieldName, value, type, options, editable) {
         const safeValue = escapeHtml(valueOrEmpty(value));
         const fieldClass = `dm-field--${slug(fieldName)}`;
+        const locked = editable === false;
+        const lockedTitle = 'Somente o responsável atual pode editar este campo';
+        const readonlyAttributes = locked
+            ? ` readonly aria-readonly="true" title="${lockedTitle}"`
+            : '';
+        const disabledAttributes = locked
+            ? ` disabled aria-disabled="true" title="${lockedTitle}"`
+            : '';
         let control;
         if (type === 'select') {
-            control = `<select class="dm-input" data-field="${fieldName}">${optionList(options, value, 'Não informado')}</select>`;
+            const emptyLabel = fieldName === 'responsibleId' ? null : 'Não informado';
+            control = `<select class="dm-input" data-field="${fieldName}"${disabledAttributes}>${optionList(options, value, emptyLabel)}</select>`;
         } else if (type === 'textarea') {
-            control = `<textarea class="dm-textarea" data-field="${fieldName}" placeholder="Adicione uma observação">${safeValue}</textarea>`;
+            control = `<textarea class="dm-textarea" data-field="${fieldName}" placeholder="Adicione uma observação"${readonlyAttributes}>${safeValue}</textarea>`;
         } else {
             const step = type === 'number' ? ' step="1" min="0"' : '';
-            control = `<input class="dm-input" data-field="${fieldName}" type="${type}"${step} value="${safeValue}">`;
+            control = `<input class="dm-input" data-field="${fieldName}" type="${type}"${step} value="${safeValue}"${readonlyAttributes}>`;
         }
-        return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
+        return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}${locked ? ' dm-field--locked' : ''}"><span>${label}</span>${control}</label>`;
     }
 
     function readonlyField(label, fieldName, value, type, title) {
@@ -522,6 +531,13 @@
     }
 
     function renderModalDeadlineField(demand) {
+        if (!demand.isOwnedByCurrentUser) {
+            return readonlyField(
+                'Prazo', 'deadline',
+                demand.status === 'A Fazer' ? null : demand.deadline && demand.deadline.substring(0, 10),
+                'date', 'Somente o responsável atual pode alterar o prazo'
+            );
+        }
         if (['Em Andamento', 'Pausado'].includes(demand.status)) {
             return field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date');
         }
@@ -535,6 +551,7 @@
     }
 
     function renderDeadlineChangeForm(demand) {
+        if (!demand.isOwnedByCurrentUser) return '';
         const change = state.deadlineChanges.get(demand.managementId);
         if (!change) return '';
         return `
@@ -559,6 +576,9 @@
     }
 
     function renderStatusActions(demand) {
+        if (!demand.isOwnedByCurrentUser) {
+            return '<p class="dm-status-actions__empty">Somente o responsável atual pode alterar esta demanda.</p>';
+        }
         const actions = statusActions[demand.status] || [];
         if (!actions.length) {
             return '<p class="dm-status-actions__empty">Esta demanda está encerrada.</p>';
@@ -572,6 +592,7 @@
     }
 
     function renderStatusActionForm(demand) {
+        if (!demand.isOwnedByCurrentUser) return '';
         const action = state.statusAction;
         if (!action) return '';
 
@@ -657,10 +678,10 @@
                 <div class="dm-card__fields">
                     ${readonlyField('Prazo', 'deadline', demand.status === 'A Fazer' ? null : demand.deadline && demand.deadline.substring(0, 10), 'date', 'Abra a demanda para consultar ou alterar o prazo')}
                     ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date', 'Definida automaticamente ao iniciar a demanda')}
-                    ${field('Tempo estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
-                    ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number')}
-                    ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
-                    ${field('Observações', 'observations', demand.observations, 'textarea')}
+                    ${field('Tempo estimado (h)', 'estimatedHours', demand.estimatedHours, 'number', null, demand.isOwnedByCurrentUser)}
+                    ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number', null, demand.isOwnedByCurrentUser)}
+                    ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number', null, demand.isOwnedByCurrentUser)}
+                    ${field('Observações', 'observations', demand.observations, 'textarea', null, demand.isOwnedByCurrentUser)}
                 </div>
             </article>`;
     }
@@ -708,6 +729,14 @@
     }
 
     function changeDemandField(managementId, input) {
+        const demand = state.demands.find(function (item) {
+            return item.managementId === managementId;
+        });
+        if (!demand) return;
+        if (!demand.isOwnedByCurrentUser) {
+            toast('Somente o responsável atual pode editar esta demanda.', true);
+            return;
+        }
         const fieldName = input.dataset.field;
         const value = input.value || null;
         if (fieldName !== 'deadline') {
@@ -715,10 +744,6 @@
             return;
         }
 
-        const demand = state.demands.find(function (item) {
-            return item.managementId === managementId;
-        });
-        if (!demand) return;
         if (!state.detail || state.detail.managementId !== managementId ||
             !['Em Andamento', 'Pausado'].includes(demand.status)) {
             toast('O prazo só pode ser alterado no modal de uma demanda em andamento ou pausada.', true);
@@ -929,7 +954,7 @@
 
     function renderDirectDemandPanel(demand) {
         const structured = ['projeto', 'melhoria'].includes(demand.demandType);
-        if (!demand.createdByCurrentUser) {
+        if (!demand.isOwnedByCurrentUser) {
             return `
                 <section class="dm-panel">
                     <h3>Dados da demanda interna</h3>
@@ -1005,16 +1030,17 @@
             <div class="dm-modal__columns">
                 <section class="dm-panel">
                     <h3>Gerenciamento</h3>
+                    ${demand.isOwnedByCurrentUser ? '' : '<p class="dm-personal-note">Este card está disponível somente para consulta. Apenas o responsável atual pode editá-lo.</p>'}
                     <div class="dm-form-grid">
-                        ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles)}
-                        ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [])}
+                        ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles, demand.isOwnedByCurrentUser)}
+                        ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [], demand.isOwnedByCurrentUser)}
                         ${renderModalDeadlineField(demand)}
                         ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date', 'Definida automaticamente ao iniciar a demanda')}
                         ${renderDeadlineChangeForm(demand)}
-                        ${field('Tempo total estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
-                        ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
-                        ${field('Tempo total realizado (h)', 'completedHours', demand.completedHours, 'number')}
-                        ${field('Observações', 'observations', demand.observations, 'textarea')}
+                        ${field('Tempo total estimado (h)', 'estimatedHours', demand.estimatedHours, 'number', null, demand.isOwnedByCurrentUser)}
+                        ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number', null, demand.isOwnedByCurrentUser)}
+                        ${field('Tempo total realizado (h)', 'completedHours', demand.completedHours, 'number', null, demand.isOwnedByCurrentUser)}
+                        ${field('Observações', 'observations', demand.observations, 'textarea', null, demand.isOwnedByCurrentUser)}
                     </div>
                     ${renderStatusActions(demand)}
                     ${renderStatusActionForm(demand)}
@@ -1025,13 +1051,13 @@
 
             <section class="dm-panel dm-tasks">
                 <h3>Tarefas · ${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</h3>
-                <div class="dm-task-warning" data-task-warning role="status" aria-live="polite" hidden>
+                ${demand.isOwnedByCurrentUser ? `<div class="dm-task-warning" data-task-warning role="status" aria-live="polite" hidden>
                     <span class="dm-task-warning__dot" aria-hidden="true"></span>
                     <strong>Alterações pendentes</strong>
                     <span data-task-warning-text>Uma tarefa foi modificada e ainda não foi salva.</span>
-                </div>
-                <div class="dm-task-list">${renderTasks(demand.tasks || [])}</div>
-                ${renderNewTaskForm()}
+                </div>` : '<p class="dm-personal-note">As tarefas deste card estão disponíveis somente para consulta.</p>'}
+                <div class="dm-task-list">${renderTasks(demand.tasks || [], demand.isOwnedByCurrentUser)}</div>
+                ${renderNewTaskForm(demand.isOwnedByCurrentUser)}
             </section>
 
             ${renderDemandHistory(demand.history)}`;
@@ -1162,29 +1188,32 @@
         }
     }
 
-    function renderTasks(tasks) {
+    function renderTasks(tasks, editable) {
         if (!tasks.length) return '<div class="dm-empty">Nenhuma tarefa cadastrada.</div>';
         return tasks.map(function (task) {
             const completed = Boolean(task.completedAt);
             const taskLate = !completed && task.deadline && new Date(`${task.deadline.substring(0, 10)}T00:00:00`) < new Date(new Date().setHours(0, 0, 0, 0));
             const taskStatus = completed ? 'Concluída' : (taskLate ? 'Atrasada' : 'Em andamento');
+            const disabled = editable ? '' : ' disabled aria-disabled="true"';
+            const readonly = editable ? '' : ' readonly aria-readonly="true" title="Somente o responsável atual pode editar esta tarefa"';
             return `
                 <div class="dm-task${completed ? ' dm-task--completed' : ''}" data-task-id="${task.taskId}" data-row-version="${escapeHtml(task.rowVersion)}">
-                    <input class="dm-task__check" name="completed" type="checkbox" ${completed ? 'checked' : ''} title="Marcar como concluída">
-                    <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description">${escapeHtml(task.description)}</textarea></label>
-                    <label class="dm-field dm-task__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
-                    <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"></label>
-                    <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations">${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
-                    <div class="dm-task__actions">
+                    <input class="dm-task__check" name="completed" type="checkbox" ${completed ? 'checked' : ''}${disabled} title="Marcar como concluída">
+                    <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description"${readonly}>${escapeHtml(task.description)}</textarea></label>
+                    <label class="dm-field dm-task__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId"${disabled}>${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
+                    <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"${readonly}></label>
+                    <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations"${readonly}>${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
+                    ${editable ? `<div class="dm-task__actions">
                         <span class="dm-task__pending" data-task-pending hidden>Não salvo</span>
                         <button class="dm-button" type="button" data-save-task>Salvar</button>
                         <button class="dm-button dm-button--danger" type="button" data-delete-task>Excluir</button>
-                    </div>
+                    </div>` : ''}
                 </div>`;
         }).join('');
     }
 
-    function renderNewTaskForm() {
+    function renderNewTaskForm(editable) {
+        if (!editable) return '';
         return `
             <form class="dm-task-form" id="dm-new-task">
                 <label class="dm-field dm-task-form__description"><span>Nova tarefa</span><input class="dm-input" name="description" type="text" required maxlength="1000" placeholder="Descreva uma entrega objetiva"></label>
