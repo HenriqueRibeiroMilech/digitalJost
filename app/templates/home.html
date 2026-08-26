@@ -18,6 +18,10 @@
     </head>
 
     <body class="page_body">
+        {% set can_manage_digital_demands = current_user.is_authenticated and (
+            'Transformação Digital' in (current_user.role or [])
+            or (current_user.admin|string|trim|lower) in ['1', 'true', 'sim']
+        ) %}
         <div id="main_sidebar" class="sidebar">
             <a href="/"><i class="fas fa-home"></i> Home</a>
             <a id="op" onclick="openNav('op')"><i class="far fa-folder-open"></i> OP Meeting</a>
@@ -47,7 +51,7 @@
             <t><i class="fas fa-paper-plane"></i> Solicitações</t>
             <a href="/oee/paradas/alterar">Alteração de Paradas</a>
             <a href="/desvios">Desvios de Processo</a>
-            <a href="/solicitar">Melhorias e Projetos</a>
+            <a href="{{ url_for('demand_requests.requests_page', area='Transformação Digital') }}">Solicitar Demanda para Transformação Digital</a>
             <a href="/lab">Solicitações de Serviço<br> de Laboratório</a>
 
         </div>
@@ -69,7 +73,9 @@
             <a href="/demandas?area=Engenharia de Processo">Engenharia de Processo</a>
             <a href="/demandas?area=Manutenção">Manutenção</a>
             <a href="/demandas?area=SSMA">SSMA</a>
-            <a href="/demandas?area=Transformação Digital">Transformação Digital</a>
+            {% if can_manage_digital_demands %}
+                <a href="{{ url_for('demand_management.management_page', area='Transformação Digital', view='demands') }}">Gerenciador de Demandas</a>
+            {% endif %}
         </div>
 
         <div id="tdg_sidebar" class="sidebar">
