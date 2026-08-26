@@ -3,6 +3,8 @@
 
     const config = window.demandRequestsConfig || {};
     const requests = Array.isArray(config.requests) ? config.requests : [];
+    const selectedFiles = [];
+    const maxFiles = 10;
 
     const typeLabels = {
         melhoria: 'Melhoria',
@@ -407,17 +409,54 @@
     }
 
     function updateFileList() {
-        const files = Array.from(elements.fileInput.files || []);
         elements.fileList.innerHTML = '';
-        elements.filePickerLabel.textContent = files.length
-            ? 'Alterar documentos selecionados'
+        elements.filePickerLabel.textContent = selectedFiles.length
+            ? 'Adicionar mais documentos'
             : 'Selecionar documentos *';
 
-        files.forEach(function (file) {
+        selectedFiles.forEach(function (file, index) {
             const item = document.createElement('li');
-            item.textContent = file.name;
+            const name = document.createElement('span');
+            const remove = document.createElement('button');
+            name.textContent = file.name;
+            remove.type = 'button';
+            remove.className = 'dr-file-list__remove';
+            remove.dataset.fileIndex = String(index);
+            remove.textContent = 'Remover';
+            remove.setAttribute('aria-label', 'Remover ' + file.name);
+            item.appendChild(name);
+            item.appendChild(remove);
             elements.fileList.appendChild(item);
         });
+    }
+
+    function addSelectedFiles() {
+        const newFiles = Array.from(elements.fileInput.files || []);
+        elements.fileInput.value = '';
+        if (!newFiles.length) return;
+        const uniqueFiles = newFiles.filter(function (file, index) {
+            const alreadySelected = selectedFiles.some(function (selected) {
+                return selected.name === file.name
+                    && selected.size === file.size
+                    && selected.lastModified === file.lastModified;
+            });
+            const repeatedInSelection = newFiles.slice(0, index).some(function (selected) {
+                return selected.name === file.name
+                    && selected.size === file.size
+                    && selected.lastModified === file.lastModified;
+            });
+            return !alreadySelected && !repeatedInSelection;
+        });
+        if (selectedFiles.length + uniqueFiles.length > maxFiles) {
+            setFormError('Envie no máximo ' + maxFiles + ' documentos por solicitação.');
+            return;
+        }
+
+        uniqueFiles.forEach(function (file) {
+            selectedFiles.push(file);
+        });
+        setFormError('');
+        updateFileList();
     }
 
     function setFormError(message) {
@@ -441,13 +480,22 @@
     async function submitRequest(event) {
         event.preventDefault();
         setFormError('');
+        if (!selectedFiles.length) {
+            setFormError('Adicione pelo menos um documento à solicitação.');
+            return;
+        }
         setSubmitting(true);
         let errorMessage = 'Não foi possível enviar a solicitação. Tente novamente.';
 
         try {
+            const formData = new FormData(elements.form);
+            formData.delete('docs');
+            selectedFiles.forEach(function (file) {
+                formData.append('docs', file, file.name);
+            });
             const response = await fetch(elements.form.action, {
                 method: 'POST',
-                body: new FormData(elements.form),
+                body: formData,
                 credentials: 'same-origin',
                 headers: {
                     'X-CSRF-Token': config.csrfToken
@@ -524,10 +572,18 @@
     });
 
     elements.demandType.addEventListener('change', updateDemandFields);
-    elements.fileInput.addEventListener('change', updateFileList);
+    elements.fileInput.addEventListener('change', addSelectedFiles);
+    elements.fileList.addEventListener('click', function (event) {
+        const remove = event.target.closest('[data-file-index]');
+        if (!remove) return;
+        selectedFiles.splice(Number(remove.dataset.fileIndex), 1);
+        setFormError('');
+        updateFileList();
+    });
     elements.form.addEventListener('submit', submitRequest);
     elements.form.addEventListener('reset', function () {
         window.setTimeout(function () {
+            selectedFiles.splice(0, selectedFiles.length);
             setFormError('');
             updateDemandFields();
             updateFileList();

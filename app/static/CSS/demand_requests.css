@@ -334,6 +334,27 @@ select {
     line-height: 1.6;
 }
 
+.dr-file-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.dr-file-list__remove {
+    padding: 0;
+    border: 0;
+    color: var(--dr-red);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+}
+
+.dr-file-list__remove:hover {
+    text-decoration: underline;
+}
+
 .dr-flow-example {
     margin: 0;
     padding: .65rem;

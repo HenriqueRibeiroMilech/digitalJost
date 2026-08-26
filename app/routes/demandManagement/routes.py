@@ -182,11 +182,20 @@ def review_request_decline(request_id):
 
 @demand_management_bp.route('/demandas/gerenciador/api/<int:management_id>', methods=['GET', 'PATCH'])
 def management_detail(management_id):
-    _, area = _current_area()
+    area_name, area = _current_area()
     service = _build_service()
     if request.method == 'PATCH':
+        actor = {
+            'id': current_user.id,
+            'name': current_user.name,
+            'email': current_user.companyEmail
+        }
         return jsonify(service.update_demand(
-            management_id, area['id'], request.get_json(silent=True), current_user.id
+            management_id,
+            area['id'],
+            request.get_json(silent=True),
+            actor,
+            area_name
         ))
     return jsonify(service.get_detail(management_id, area['id'], current_user.id))
 

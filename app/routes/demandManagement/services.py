@@ -11,6 +11,7 @@ from .domain import (
     NotFoundError,
     ValidationError,
     parse_row_version,
+    validate_deadline_reason,
     validate_management_change,
     validate_personal_demand,
     validate_review_approval,
@@ -148,15 +149,64 @@ class DemandManagementService:
                 raise ConflictError('Não foi possível criar a demanda.')
         return self.get_detail(management_id, area_id, user_id)
 
-    def update_demand(self, management_id, area_id, payload, user_id):
+    def update_demand(self, management_id, area_id, payload, actor, area_name):
         if not isinstance(payload, dict):
             raise ValidationError('Dados da alteração inválidos.')
         field = payload.get('field')
         value = validate_management_change(field, payload.get('value'))
         row_version = parse_row_version(payload.get('rowVersion'))
+        user_id = actor['id']
 
         with self.engine.begin() as connection:
-            if field in DIRECT_DEMAND_FIELDS:
+            current = None
+            if field == 'deadline':
+                current = self.repository.get_demand(
+                    connection, management_id, area_id, lock=True
+                )
+                if not current:
+                    raise NotFoundError('Demanda não encontrada.')
+
+                current_deadline = current['deadline']
+                if isinstance(current_deadline, datetime):
+                    current_deadline = current_deadline.date()
+                if current_deadline == value:
+                    raise ValidationError('O prazo informado é igual ao prazo atual.')
+
+                reason = validate_deadline_reason(payload)
+                old_label = (
+                    current_deadline.strftime('%d/%m/%Y')
+                    if current_deadline else 'não definido'
+                )
+                new_label = value.strftime('%d/%m/%Y') if value else 'não definido'
+                history_text = (
+                    f'[{datetime.now().strftime("%d/%m/%Y %H:%M")}] '
+                    f'Alteração de prazo por {actor["name"]}: '
+                    f'de {old_label} para {new_label} | Justificativa: {reason}'
+                )
+                updated = self.repository.update_deadline(
+                    connection,
+                    management_id,
+                    area_id,
+                    value,
+                    history_text,
+                    row_version
+                )
+                if updated and current['sourceRequestId'] is not None:
+                    source_updated = self.repository.update_source_deadline(
+                        connection, current['sourceRequestId'], value
+                    )
+                    if not source_updated:
+                        raise ConflictError('A solicitação original não pôde ser atualizada.')
+                if (
+                    updated
+                    and self.review_notifier
+                    and current['requesterEmail']
+                ):
+                    self.review_notifier.deadline_changed(
+                        dict(current), actor, area_name,
+                        current_deadline, value, reason
+                    )
+            elif field in DIRECT_DEMAND_FIELDS:
                 updated = self.repository.update_direct_field(
                     connection, management_id, area_id, field, value,
                     row_version, user_id
@@ -170,7 +220,10 @@ class DemandManagementService:
                 )
 
             if not updated:
-                current = self.repository.get_demand(connection, management_id, area_id)
+                if current is None:
+                    current = self.repository.get_demand(
+                        connection, management_id, area_id
+                    )
                 if not current:
                     raise NotFoundError('Demanda não encontrada.')
                 if field in DIRECT_DEMAND_FIELDS:
@@ -192,7 +245,12 @@ class DemandManagementService:
             transition = validate_status_transition(demand['status'], payload)
             history_text = None
             if transition['reason']:
-                action_label = 'Pausa' if transition['action'] == 'pause' else 'Cancelamento'
+                action_label = {
+                    'pause': 'Pausa',
+                    'cancel': 'Cancelamento',
+                    'resume': 'Retomada',
+                    'reopen': 'Reabertura'
+                }[transition['action']]
                 history_text = (
                     f'[{datetime.now().strftime("%d/%m/%Y %H:%M")}] '
                     f'{action_label} por {actor["name"]}: {transition["reason"]}'

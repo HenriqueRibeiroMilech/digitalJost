@@ -492,6 +492,14 @@
         return `<label class="dm-field ${fieldClass}${type === 'textarea' ? ' dm-field--wide' : ''}"><span>${label}</span>${control}</label>`;
     }
 
+    function readonlyField(label, fieldName, value, type) {
+        return `
+            <label class="dm-field dm-field--${slug(fieldName)}">
+                <span>${label}</span>
+                <input class="dm-input" type="${type}" value="${escapeHtml(valueOrEmpty(value))}" readonly aria-readonly="true" title="Definida automaticamente ao iniciar a demanda">
+            </label>`;
+    }
+
     function renderStatusActions(demand) {
         const actions = statusActions[demand.status] || [];
         if (!actions.length) {
@@ -512,15 +520,15 @@
         const content = {
             start: ['Iniciar demanda', 'Defina o prazo que será informado ao solicitante.'],
             pause: ['Pausar demanda', 'Explique a interrupção e informe a previsão de retorno.'],
-            resume: ['Despausar demanda', 'Defina o novo prazo de entrega.'],
+            resume: ['Despausar demanda', 'Defina o novo prazo e justifique a alteração.'],
             complete: ['Concluir demanda', 'Confirme que o desenvolvimento foi finalizado.'],
             cancel: ['Cancelar demanda', 'Informe ao solicitante por que a demanda será cancelada.'],
-            reopen: ['Retomar demanda', 'Defina o novo prazo para continuar o desenvolvimento.']
+            reopen: ['Retomar demanda', 'Defina o novo prazo e justifique a alteração.']
         }[action];
         if (!content) return '';
 
         const asksDeadline = ['start', 'resume', 'reopen'].includes(action);
-        const asksReason = ['pause', 'cancel'].includes(action);
+        const asksReason = ['pause', 'cancel', 'resume', 'reopen'].includes(action);
         const submitLabel = {
             start: 'Confirmar início',
             pause: 'Confirmar pausa',
@@ -587,7 +595,7 @@
                 </div>
                 <div class="dm-card__fields">
                     ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
-                    ${field('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
+                    ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
                     ${field('Tempo estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
                     ${field('Tempo realizado (h)', 'completedHours', demand.completedHours, 'number')}
                     ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
@@ -596,15 +604,22 @@
             </article>`;
     }
 
-    function updateDemand(managementId, fieldName, value, input) {
+    function updateDemand(managementId, fieldName, value, input, options) {
+        const settings = options || {};
         input.disabled = true;
         const previous = state.updateQueues.get(managementId) || Promise.resolve();
         const operation = previous.catch(function () {}).then(async function () {
             const demand = state.demands.find(function (item) { return item.managementId === managementId; });
             if (!demand) return;
+            const payload = {
+                field: fieldName,
+                value: value,
+                rowVersion: demand.rowVersion
+            };
+            if (settings.reason) payload.reason = settings.reason;
             const updated = await api(`${config.apiRoot}/${managementId}`, {
                 method: 'PATCH',
-                body: JSON.stringify({ field: fieldName, value: value, rowVersion: demand.rowVersion })
+                body: JSON.stringify(payload)
             });
             replaceDemand(updated);
             if (state.detail && state.detail.managementId === managementId) {
@@ -617,6 +632,9 @@
 
         state.updateQueues.set(managementId, operation);
         operation.catch(async function (error) {
+            if (Object.prototype.hasOwnProperty.call(settings, 'previousValue')) {
+                input.value = settings.previousValue;
+            }
             toast(error.message, true);
             if (error.status === 409) await loadBoard(false);
         }).finally(function () {
@@ -626,6 +644,38 @@
             }
         });
         return operation;
+    }
+
+    function changeDemandField(managementId, input) {
+        const fieldName = input.dataset.field;
+        const value = input.value || null;
+        if (fieldName !== 'deadline') {
+            updateDemand(managementId, fieldName, value, input);
+            return;
+        }
+
+        const demand = state.demands.find(function (item) {
+            return item.managementId === managementId;
+        });
+        if (!demand) return;
+        const previousValue = demand.deadline ? demand.deadline.substring(0, 10) : '';
+        if (previousValue === (value || '')) return;
+
+        const response = window.prompt('Justifique a alteração do prazo:');
+        const reason = response === null ? '' : response.trim();
+        if (!reason || reason.length > 4000) {
+            input.value = previousValue;
+            if (response !== null) {
+                toast(reason
+                    ? 'A justificativa deve ter no máximo 4000 caracteres.'
+                    : 'A justificativa da alteração do prazo é obrigatória.', true);
+            }
+            return;
+        }
+        updateDemand(managementId, fieldName, value, input, {
+            reason: reason,
+            previousValue: previousValue
+        });
     }
 
     function replaceDemand(updated) {
@@ -703,7 +753,6 @@
                     <div class="dm-form-grid dm-create-planning-grid">
                         ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
                         ${createInputField('Prazo', 'deadline', 'date')}
-                        ${createInputField('Data de início', 'startDate', 'date')}
                         ${createInputField('Tempo total estimado (h)', 'estimatedHours', 'number')}
                         ${createInputField('Tempo diário (h)', 'dailyHours', 'number')}
                         ${createInputField('Tempo realizado (h)', 'completedHours', 'number')}
@@ -748,7 +797,6 @@
             initialDescription: value('initialDescription'),
             difficulty: value('difficulty'),
             deadline: value('deadline'),
-            startDate: value('startDate'),
             estimatedHours: value('estimatedHours'),
             dailyHours: value('dailyHours'),
             completedHours: value('completedHours'),
@@ -893,7 +941,7 @@
                         ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles)}
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [])}
                         ${field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date')}
-                        ${field('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
+                        ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date')}
                         ${field('Tempo total estimado (h)', 'estimatedHours', demand.estimatedHours, 'number')}
                         ${field('Tempo diário (h)', 'dailyHours', demand.dailyHours, 'number')}
                         ${field('Tempo total realizado (h)', 'completedHours', demand.completedHours, 'number')}
@@ -1223,7 +1271,7 @@
         const input = event.target.closest('[data-field]');
         if (!input) return;
         const card = input.closest('[data-management-id]');
-        updateDemand(Number(card.dataset.managementId), input.dataset.field, input.value || null, input);
+        changeDemandField(Number(card.dataset.managementId), input);
     });
 
     elements.modal.addEventListener('click', function (event) {
@@ -1256,7 +1304,7 @@
         }
         const input = event.target.closest('[data-field]');
         if (!input || !state.detail) return;
-        updateDemand(state.detail.managementId, input.dataset.field, input.value || null, input);
+        changeDemandField(state.detail.managementId, input);
     });
 
     elements.modal.addEventListener('input', function (event) {

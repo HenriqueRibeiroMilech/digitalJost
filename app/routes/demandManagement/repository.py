@@ -71,7 +71,7 @@ class DemandManagementRepository:
             CASE WHEN NULLIF(R.images, '') IS NULL THEN 0 ELSE 1 END AS hasAttachments,
             COALESCE(Requester.id, Creator.id) AS requesterId,
             COALESCE(Requester.name, Creator.name) AS requesterName,
-            Requester.companyEmail AS requesterEmail,
+            COALESCE(Requester.companyEmail, Creator.companyEmail) AS requesterEmail,
             Creator.name AS createdByName,
             CASE
                 WHEN Responsible.active = 1 THEN Responsible.name
@@ -451,6 +451,51 @@ class DemandManagementRepository:
                 WHERE requestId = :request_id AND finalDate IS NULL
             """), {'request_id': request_id})
 
+        return result.rowcount == 1
+
+    def update_deadline(
+        self, connection, management_id, area_id, deadline, history_text, row_version
+    ):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT
+            SET
+                deadline = :deadline,
+                observations = CONCAT(
+                    CASE
+                        WHEN NULLIF(observations, '') IS NULL THEN ''
+                        ELSE observations + CHAR(13) + CHAR(10)
+                    END,
+                    :history_text
+                ),
+                updatedAt = GETDATE()
+            WHERE managementId = :management_id
+                AND areaId = :area_id
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'deadline': deadline,
+            'history_text': history_text,
+            'management_id': management_id,
+            'area_id': area_id,
+            'row_version': row_version
+        })
+        return result.rowcount == 1
+
+    def update_source_deadline(self, connection, request_id, deadline):
+        query = text("""
+            UPDATE JDT_REQUEST_IMPROVEMENTS_SMALL
+            SET
+                reprogs = ISNULL(reprogs, 0) + CASE
+                    WHEN deliveryDate IS NULL OR deliveryDate = :deadline THEN 0
+                    ELSE 1
+                END,
+                deliveryDate = :deadline
+            WHERE requestId = :request_id
+        """)
+        result = connection.execute(query, {
+            'request_id': request_id,
+            'deadline': deadline
+        })
         return result.rowcount == 1
 
     def update_field(self, connection, management_id, area_id, field, value, row_version):

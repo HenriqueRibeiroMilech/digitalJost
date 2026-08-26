@@ -117,7 +117,10 @@ class RequestReviewNotifier:
             content = (
                 'foi retomada',
                 'O desenvolvimento da sua demanda foi retomado.',
-                [('Novo prazo de entrega', self._format_date(transition['deadline']))]
+                [
+                    ('Novo prazo de entrega', self._format_date(transition['deadline'])),
+                    ('Justificativa', transition['reason'])
+                ]
             )
         elif action == 'complete':
             content = (
@@ -135,7 +138,10 @@ class RequestReviewNotifier:
             content = (
                 'foi reaberta',
                 'A sua demanda foi reaberta e voltou para desenvolvimento.',
-                [('Novo prazo de entrega', self._format_date(transition['deadline']))]
+                [
+                    ('Novo prazo de entrega', self._format_date(transition['deadline'])),
+                    ('Justificativa', transition['reason'])
+                ]
             )
         else:
             raise ValueError('Ação de status sem notificação configurada.')
@@ -152,6 +158,36 @@ class RequestReviewNotifier:
             details=content[2],
             respName=actor['name'],
             title=demand['title'],
+            desc=demand['initialDescription'],
+            requestsUrl=self._requests_url(area_name)
+        )
+        mail.send(message)
+
+    def deadline_changed(
+        self, demand, actor, area_name, previous_deadline, deadline, reason
+    ):
+        previous_label = (
+            self._format_date(previous_deadline)
+            if previous_deadline else 'Não definido'
+        )
+        deadline_label = self._format_date(deadline) if deadline else 'Não definido'
+        demand_title = demand['title']
+        message = self._message(
+            f'O prazo da sua demanda - "{demand_title}" - foi alterado!',
+            demand,
+            [actor]
+        )
+        message.html = render_template(
+            'demandRequests/emails/status_update.html',
+            heading='TEVE O PRAZO ALTERADO',
+            messageText='O prazo de entrega da sua demanda foi alterado.',
+            details=[
+                ('Prazo anterior', previous_label),
+                ('Novo prazo de entrega', deadline_label),
+                ('Justificativa', reason)
+            ],
+            respName=actor['name'],
+            title=demand_title,
             desc=demand['initialDescription'],
             requestsUrl=self._requests_url(area_name)
         )

@@ -26,7 +26,6 @@ DEMAND_TYPE_OPTIONS = ('atividade', 'projeto', 'melhoria', 'erro')
 # Whitelist que relaciona o campo da API à coluna no banco.
 MANAGEMENT_FIELDS = {
     'deadline': 'deadline',
-    'startDate': 'startDate',
     'estimatedHours': 'estimatedHours',
     'dailyHours': 'dailyHours',
     'completedHours': 'completedHours',
@@ -130,7 +129,7 @@ def validate_management_change(field, value):
         if value not in DIFFICULTY_OPTIONS:
             raise ValidationError('Dificuldade inválida.')
         return value
-    if field in ('deadline', 'startDate'):
+    if field == 'deadline':
         return _optional_date(value)
     if field in ('estimatedHours', 'dailyHours', 'completedHours'):
         return _optional_hours(value)
@@ -169,7 +168,7 @@ def validate_personal_demand(payload):
         'benefits': None,
         'status': 'A Fazer',
         'deadline': validate_management_change('deadline', payload.get('deadline')),
-        'startDate': validate_management_change('startDate', payload.get('startDate')),
+        'startDate': None,
         'estimatedHours': validate_management_change('estimatedHours', payload.get('estimatedHours')),
         'dailyHours': validate_management_change('dailyHours', payload.get('dailyHours')),
         'completedHours': validate_management_change('completedHours', payload.get('completedHours')),
@@ -208,6 +207,15 @@ def parse_row_version(value):
         raise ValidationError('Versão do registro inválida.') from error
 
 
+def validate_deadline_reason(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError('Dados da alteração inválidos.')
+    reason = _optional_text(payload.get('reason'), 4000)
+    if not reason:
+        raise ValidationError('Informe a justificativa da alteração do prazo.')
+    return reason
+
+
 def validate_review_approval(payload):
     if not isinstance(payload, dict):
         raise ValidationError('Dados da aprovação inválidos.')
@@ -243,7 +251,7 @@ def validate_status_transition(current_status, payload):
 
     reason = None
     expected_return = None
-    if action in ('pause', 'cancel'):
+    if action in ('pause', 'cancel', 'resume', 'reopen'):
         reason = _optional_text(payload.get('reason'), 4000)
         if not reason:
             raise ValidationError('Informe a justificativa desta alteração.')
