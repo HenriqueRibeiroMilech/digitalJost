@@ -117,16 +117,19 @@ class DemandManagementRepository:
                 SUM(CASE
                     WHEN Series.status = N'Concluído'
                         AND Series.deadline IS NOT NULL
-                        AND EXISTS (
-                            SELECT 1
-                            FROM JDT_DEMAND_MANAGEMENT_HISTORY AS Completion
-                            WHERE Completion.managementId = Series.managementId
-                                AND Completion.eventType = N'status_complete'
-                                AND CAST(Completion.createdAt AS DATE) <= Series.deadline
-                        )
+                        AND CAST(Completion.completedAt AS DATE) <= Series.deadline
                     THEN 1 ELSE 0
                 END) AS onTimeOccurrences
             FROM JDT_DEMAND_MANAGEMENT AS Series
+            LEFT JOIN (
+                SELECT
+                    History.managementId,
+                    MAX(History.createdAt) AS completedAt
+                FROM JDT_DEMAND_MANAGEMENT_HISTORY AS History
+                WHERE History.eventType = N'status_complete'
+                GROUP BY History.managementId
+            ) AS Completion
+                ON Completion.managementId = Series.managementId
             WHERE M.recurrenceGroupId IS NOT NULL
                 AND Series.recurrenceGroupId = M.recurrenceGroupId
         ) AS RecurrenceCount
