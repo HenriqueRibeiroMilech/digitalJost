@@ -578,6 +578,9 @@
     }
 
     function renderStatusActions(demand) {
+        if (demand.isRecurringActivity && !demand.isRecurrenceCurrent) {
+            return '<p class="dm-status-actions__empty">Esta ocorrência faz parte do histórico e não pode ter o status alterado.</p>';
+        }
         if (!demand.isOwnedByCurrentUser) {
             return '<p class="dm-status-actions__empty">Somente o responsável atual pode alterar esta demanda.</p>';
         }
@@ -927,7 +930,7 @@
                 <section class="dm-panel dm-activity-recurrence">
                     <label class="dm-activity-recurrence__toggle">
                         <input type="checkbox" data-activity-recurrence-toggle>
-                        <span><strong>Atividade recorrente</strong><small>Cria um novo card no próximo ciclo quando esta atividade for concluída.</small></span>
+                        <span><strong>Atividade recorrente</strong><small>Cria um novo card no próximo ciclo quando esta atividade for concluída ou cancelada.</small></span>
                     </label>
                     <div class="dm-activity-recurrence__fields" data-activity-recurrence-fields hidden>
                         <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType" required disabled>
@@ -1114,12 +1117,15 @@
                 <span>${escapeHtml(demand.recurrenceOnTimeOccurrences || 0)} no prazo</span>
             </div>` : '';
 
-        if (!hasSeries && !demand.isOwnedByCurrentUser) return '';
+        if (
+            !hasSeries
+            && (!demand.isOwnedByCurrentUser || demand.status === 'Cancelado')
+        ) return '';
         if (!hasSeries) {
             return `
                 <section class="dm-panel dm-activity-recurrence">
                     <h3>Recorrência da atividade</h3>
-                    <p class="dm-personal-note">Ao concluir este card, a próxima ocorrência será criada como um novo card em A Fazer.</p>
+                    <p class="dm-personal-note">Ao concluir ou cancelar este card, a próxima ocorrência será criada como um novo card em A Fazer.</p>
                     <form id="dm-activity-recurrence-form">
                         <label class="dm-activity-recurrence__toggle">
                             <input type="checkbox" data-activity-recurrence-toggle required>

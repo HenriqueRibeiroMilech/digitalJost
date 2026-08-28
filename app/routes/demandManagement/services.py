@@ -254,6 +254,24 @@ class DemandManagementService:
             )
 
             transition = validate_status_transition(demand['status'], payload)
+            if (
+                demand['recurrenceGroupId'] is not None
+                and self.repository.recurrence_has_later_demand(
+                    connection,
+                    demand['recurrenceGroupId'],
+                    demand['recurrenceSequence']
+                )
+            ):
+                raise ConflictError(
+                    'Uma ocorrência histórica não pode ter o status alterado.'
+                )
+            transition['clearSchedule'] = bool(
+                transition['action'] == 'start'
+                and not (
+                    demand['recurrenceGroupId'] is not None
+                    and demand['recurrenceStatus'] == 'active'
+                )
+            )
             updated = self.repository.transition_demand(
                 connection,
                 management_id,
@@ -297,7 +315,7 @@ class DemandManagementService:
                     dict(demand), actor, area_name, transition
                 )
 
-            if transition['action'] == 'complete':
+            if transition['action'] in ('complete', 'cancel'):
                 self._create_next_activity_occurrence(
                     connection, demand, actor['id']
                 )
@@ -400,6 +418,13 @@ class DemandManagementService:
                 raise ForbiddenError(
                     'Somente atividades criadas diretamente podem ser recorrentes.'
                 )
+            if (
+                current['status'] == 'Cancelado'
+                and current['recurrenceGroupId'] is None
+            ):
+                raise ConflictError(
+                    'Uma atividade cancelada não pode iniciar uma recorrência.'
+                )
 
             has_later = self.repository.recurrence_has_later_demand(
                 connection,
@@ -416,7 +441,7 @@ class DemandManagementService:
                 )
 
             if (
-                current['status'] == 'Concluído'
+                current['status'] in ('Concluído', 'Cancelado')
                 and recurrence['recurrenceStatus'] == 'active'
                 and not has_later
             ):

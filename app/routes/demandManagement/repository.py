@@ -468,7 +468,7 @@ class DemandManagementRepository:
             'target_status': transition['targetStatus'],
             'deadline': transition['deadline'],
             'set_start_date': 1 if action == 'start' else 0,
-            'clear_schedule': 1 if action == 'start' else 0,
+            'clear_schedule': 1 if transition['clearSchedule'] else 0,
             'row_version': transition['rowVersion']
         })
         return result.rowcount == 1
