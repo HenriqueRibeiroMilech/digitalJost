@@ -1114,11 +1114,11 @@
                     <form id="dm-activity-recurrence-form">
                         <label class="dm-activity-recurrence__toggle">
                             <input type="checkbox" data-activity-recurrence-toggle required>
-                            <span><strong>Atividade recorrente</strong><small>Ative para configurar a repetição deste card.</small></span>
+                            <span><strong>Repetir esta atividade</strong><small>Marque para escolher a frequência e o limite de ocorrências.</small></span>
                         </label>
                         ${recurrenceFields({ recurrenceType: 'daily' }, true, true)}
                         <div class="dm-activity-recurrence__actions">
-                            <button class="dm-button" type="submit">Ativar recorrência</button>
+                            <button class="dm-button" type="submit">Salvar configuração</button>
                         </div>
                     </form>
                 </section>`;
