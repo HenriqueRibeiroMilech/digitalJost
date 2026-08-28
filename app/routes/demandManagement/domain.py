@@ -23,6 +23,10 @@ DIFFICULTY_OPTIONS = ('Baixa', 'Média', 'Alta')
 
 DEMAND_TYPE_OPTIONS = ('atividade', 'projeto', 'melhoria', 'erro')
 
+TASK_RECURRENCE_OPTIONS = ('weekly', 'biweekly', 'monthly')
+
+TASK_RECURRENCE_ACTIONS = ('pause', 'resume', 'end', 'skip')
+
 # Whitelist que relaciona o campo da API à coluna no banco.
 MANAGEMENT_FIELDS = {
     'deadline': 'deadline',
@@ -104,6 +108,22 @@ def _optional_hours(value):
     if hours < 0 or hours > Decimal('99999.99'):
         raise ValidationError('As horas devem estar entre 0 e 99999,99.')
     return hours.quantize(Decimal('0.01'))
+
+
+def _optional_positive_integer(value, field_label, maximum=1000):
+    if value in (None, ''):
+        return None
+    if isinstance(value, bool):
+        raise ValidationError(f'{field_label} deve ser um número inteiro.')
+    try:
+        number = int(value)
+    except (TypeError, ValueError) as error:
+        raise ValidationError(f'{field_label} deve ser um número inteiro.') from error
+    if str(value).strip() != str(number) or number < 1 or number > maximum:
+        raise ValidationError(
+            f'{field_label} deve estar entre 1 e {maximum}.'
+        )
+    return number
 
 
 def validate_management_change(field, value):
@@ -190,12 +210,37 @@ def validate_task(payload):
     if not isinstance(completed, bool):
         raise ValidationError('O estado da tarefa é inválido.')
 
+    recurrence_type = _optional_text(payload.get('recurrenceType'), 20)
+    if recurrence_type and recurrence_type not in TASK_RECURRENCE_OPTIONS:
+        raise ValidationError('Frequência da recorrência inválida.')
+
+    recurrence_end_date = _optional_date(payload.get('recurrenceEndDate'))
+    recurrence_max_occurrences = _optional_positive_integer(
+        payload.get('recurrenceMaxOccurrences'),
+        'A quantidade de ocorrências'
+    )
+    recurrence_action = _optional_text(payload.get('recurrenceAction'), 20)
+    if recurrence_action and recurrence_action not in TASK_RECURRENCE_ACTIONS:
+        raise ValidationError('Ação da recorrência inválida.')
+
+    deadline = _optional_date(payload.get('deadline'))
+    if recurrence_type and deadline is None:
+        raise ValidationError('Informe o prazo inicial da atividade recorrente.')
+    if recurrence_end_date and deadline and recurrence_end_date < deadline:
+        raise ValidationError(
+            'O término da recorrência não pode ser anterior ao prazo da atividade.'
+        )
+
     return {
         'description': description,
         'responsibleId': _optional_text(payload.get('responsibleId'), 100),
-        'deadline': _optional_date(payload.get('deadline')),
+        'deadline': deadline,
         'observations': _optional_text(payload.get('observations'), 2000),
-        'completed': completed
+        'completed': completed,
+        'recurrenceType': recurrence_type,
+        'recurrenceEndDate': recurrence_end_date,
+        'recurrenceMaxOccurrences': recurrence_max_occurrences,
+        'recurrenceAction': recurrence_action
     }
 
 

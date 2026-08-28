@@ -566,6 +566,13 @@ class DemandManagementRepository:
                 T.deadline,
                 T.observations,
                 T.completedAt,
+                T.recurrenceGroupId,
+                T.recurrenceType,
+                T.recurrenceEndDate,
+                T.recurrenceMaxOccurrences,
+                T.recurrenceSequence,
+                T.recurrenceStatus,
+                T.skipNextOccurrence,
                 T.createdAt,
                 T.updatedAt,
                 T.rowVersion
@@ -583,17 +590,58 @@ class DemandManagementRepository:
             'area_id': area_id
         }).mappings().all()
 
+    def get_task(self, connection, management_id, task_id, area_id, lock=False):
+        lock_hint = ' WITH (UPDLOCK, HOLDLOCK)' if lock else ''
+        query = text(f"""
+            SELECT
+                T.taskId,
+                T.managementId,
+                T.description,
+                T.responsibleId,
+                T.deadline,
+                T.observations,
+                T.completedAt,
+                T.createdBy,
+                T.recurrenceGroupId,
+                T.recurrenceType,
+                T.recurrenceEndDate,
+                T.recurrenceMaxOccurrences,
+                T.recurrenceSequence,
+                T.recurrenceStatus,
+                T.skipNextOccurrence,
+                T.rowVersion
+            FROM JDT_DEMAND_MANAGEMENT_TASKS AS T{lock_hint}
+            JOIN JDT_DEMAND_MANAGEMENT AS M ON M.managementId = T.managementId
+            WHERE T.taskId = :task_id
+                AND T.managementId = :management_id
+                AND M.areaId = :area_id
+        """)
+        return connection.execute(query, {
+            'task_id': task_id,
+            'management_id': management_id,
+            'area_id': area_id
+        }).mappings().first()
+
     def create_task(self, connection, management_id, area_id, task, created_by):
         query = text("""
             INSERT INTO JDT_DEMAND_MANAGEMENT_TASKS (
                 managementId, description, responsibleId, deadline,
-                observations, completedAt, createdBy, createdAt, updatedAt
+                observations, completedAt, createdBy, recurrenceGroupId,
+                recurrenceType, recurrenceEndDate, recurrenceMaxOccurrences,
+                recurrenceSequence, recurrenceStatus, skipNextOccurrence,
+                createdAt, updatedAt
             )
             OUTPUT INSERTED.taskId
             SELECT
                 M.managementId, :description, :responsible_id, :deadline,
                 :observations, CASE WHEN :completed = 1 THEN GETDATE() ELSE NULL END,
-                :created_by, GETDATE(), GETDATE()
+                :created_by,
+                CASE WHEN :recurrence_type IS NULL THEN NULL ELSE NEWID() END,
+                :recurrence_type, :recurrence_end_date,
+                :recurrence_max_occurrences,
+                CASE WHEN :recurrence_type IS NULL THEN NULL ELSE 1 END,
+                CASE WHEN :recurrence_type IS NULL THEN NULL ELSE N'active' END,
+                0, GETDATE(), GETDATE()
             FROM JDT_DEMAND_MANAGEMENT AS M
             WHERE M.managementId = :management_id AND M.areaId = :area_id
         """)
@@ -605,6 +653,9 @@ class DemandManagementRepository:
             'deadline': task['deadline'],
             'observations': task['observations'],
             'completed': 1 if task['completed'] else 0,
+            'recurrence_type': task['recurrenceType'],
+            'recurrence_end_date': task['recurrenceEndDate'],
+            'recurrence_max_occurrences': task['recurrenceMaxOccurrences'],
             'created_by': created_by
         }).first()
         return row[0] if row else None
@@ -621,6 +672,19 @@ class DemandManagementRepository:
                     WHEN :completed = 1 THEN COALESCE(T.completedAt, GETDATE())
                     ELSE NULL
                 END,
+                recurrenceGroupId = CASE
+                    WHEN :recurrence_type IS NULL THEN T.recurrenceGroupId
+                    ELSE COALESCE(T.recurrenceGroupId, NEWID())
+                END,
+                recurrenceType = :recurrence_type,
+                recurrenceEndDate = :recurrence_end_date,
+                recurrenceMaxOccurrences = :recurrence_max_occurrences,
+                recurrenceSequence = CASE
+                    WHEN :recurrence_type IS NULL THEN T.recurrenceSequence
+                    ELSE COALESCE(T.recurrenceSequence, 1)
+                END,
+                recurrenceStatus = :recurrence_status,
+                skipNextOccurrence = :skip_next_occurrence,
                 updatedAt = GETDATE()
             FROM JDT_DEMAND_MANAGEMENT_TASKS AS T
             JOIN JDT_DEMAND_MANAGEMENT AS M ON M.managementId = T.managementId
@@ -638,9 +702,98 @@ class DemandManagementRepository:
             'deadline': task['deadline'],
             'observations': task['observations'],
             'completed': 1 if task['completed'] else 0,
+            'recurrence_type': task['recurrenceType'],
+            'recurrence_end_date': task['recurrenceEndDate'],
+            'recurrence_max_occurrences': task['recurrenceMaxOccurrences'],
+            'recurrence_status': task['recurrenceStatus'],
+            'skip_next_occurrence': 1 if task['skipNextOccurrence'] else 0,
             'row_version': row_version
         })
         return result.rowcount == 1
+
+    def recurrence_has_later_task(
+        self, connection, recurrence_group_id, recurrence_sequence
+    ):
+        if recurrence_group_id is None:
+            return False
+        query = text("""
+            SELECT 1
+            FROM JDT_DEMAND_MANAGEMENT_TASKS
+            WHERE recurrenceGroupId = :recurrence_group_id
+                AND recurrenceSequence > :recurrence_sequence
+        """)
+        return connection.execute(query, {
+            'recurrence_group_id': recurrence_group_id,
+            'recurrence_sequence': recurrence_sequence or 0
+        }).first() is not None
+
+    def get_recurrence_anchor_day(self, connection, recurrence_group_id):
+        query = text("""
+            SELECT TOP 1 DAY(deadline) AS anchorDay
+            FROM JDT_DEMAND_MANAGEMENT_TASKS
+            WHERE recurrenceGroupId = :recurrence_group_id
+                AND deadline IS NOT NULL
+            ORDER BY recurrenceSequence, taskId
+        """)
+        row = connection.execute(query, {
+            'recurrence_group_id': recurrence_group_id
+        }).first()
+        return row[0] if row else None
+
+    def create_next_recurring_task(
+        self, connection, current_task, deadline, recurrence_sequence, created_by
+    ):
+        query = text("""
+            INSERT INTO JDT_DEMAND_MANAGEMENT_TASKS (
+                managementId, description, responsibleId, deadline,
+                observations, completedAt, createdBy, recurrenceGroupId,
+                recurrenceType, recurrenceEndDate, recurrenceMaxOccurrences,
+                recurrenceSequence, recurrenceStatus, skipNextOccurrence,
+                createdAt, updatedAt
+            )
+            SELECT
+                T.managementId, T.description, T.responsibleId, :deadline,
+                NULL, NULL, :created_by, T.recurrenceGroupId,
+                T.recurrenceType, T.recurrenceEndDate,
+                T.recurrenceMaxOccurrences, :recurrence_sequence,
+                N'active', 0, GETDATE(), GETDATE()
+            FROM JDT_DEMAND_MANAGEMENT_TASKS AS T
+            WHERE T.taskId = :task_id
+                AND T.recurrenceGroupId IS NOT NULL
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM JDT_DEMAND_MANAGEMENT_TASKS AS NextTask
+                    WHERE NextTask.recurrenceGroupId = T.recurrenceGroupId
+                        AND NextTask.recurrenceSequence >= :recurrence_sequence
+                )
+        """)
+        result = connection.execute(query, {
+            'task_id': current_task['taskId'],
+            'deadline': deadline,
+            'recurrence_sequence': recurrence_sequence,
+            'created_by': created_by
+        })
+        return result.rowcount == 1
+
+    def end_task_recurrence(self, connection, task_id):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT_TASKS
+            SET recurrenceStatus = N'ended', updatedAt = GETDATE()
+            WHERE taskId = :task_id
+                AND recurrenceStatus <> N'ended'
+        """)
+        connection.execute(query, {'task_id': task_id})
+
+    def end_recurrence_group(self, connection, recurrence_group_id):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT_TASKS
+            SET recurrenceStatus = N'ended', updatedAt = GETDATE()
+            WHERE recurrenceGroupId = :recurrence_group_id
+                AND recurrenceStatus <> N'ended'
+        """)
+        connection.execute(query, {
+            'recurrence_group_id': recurrence_group_id
+        })
 
     def delete_task(self, connection, management_id, task_id, area_id, row_version):
         query = text("""
