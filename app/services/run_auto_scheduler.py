@@ -87,3 +87,5 @@ class SchedulerService(win32serviceutil.ServiceFramework):
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(SchedulerService)
+
+# V1
