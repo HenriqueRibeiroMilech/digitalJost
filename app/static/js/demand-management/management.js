@@ -615,7 +615,7 @@
         return `
             <div class="dm-schedule-summary">
                 <strong>Início agendado</strong>
-                <span>${escapeHtml(formatDate(demand.scheduledStartAt, true))}</span>
+                <span>${escapeHtml(formatDate(demand.scheduledStartAt, false))}</span>
                 <span>Prazo ao iniciar: ${escapeHtml(formatDate(scheduledDeadlineValue(demand), false))}</span>
             </div>`;
     }
@@ -630,11 +630,11 @@
                 <form class="dm-status-form" id="dm-start-schedule">
                     <div class="dm-status-form__heading">
                         <strong>Agendar início</strong>
-                        <span>No horário informado, a demanda entrará automaticamente em andamento.</span>
+                        <span>Na data informada, a demanda entrará automaticamente em andamento.</span>
                     </div>
                     <label class="dm-field">
-                        <span>Data e horário de início</span>
-                        <input class="dm-input" name="scheduledStartAt" type="datetime-local" value="${escapeHtml(demand.scheduledStartAt ? demand.scheduledStartAt.substring(0, 16) : '')}" required>
+                        <span>Data de início</span>
+                        <input class="dm-input" name="scheduledStartAt" type="date" value="${escapeHtml(demand.scheduledStartAt ? demand.scheduledStartAt.substring(0, 10) : '')}" required>
                     </label>
                     <label class="dm-field">
                         <span>Prazo que será aplicado ao iniciar</span>

@@ -541,10 +541,10 @@ class DemandManagementService:
         current_start, recurrence_type, monthly_anchor_day=None
     ):
         if recurrence_type == 'daily':
-            return current_start + timedelta(days=1)
-        if recurrence_type == 'weekly':
-            return current_start + timedelta(days=7)
-        if recurrence_type == 'monthly':
+            next_start = current_start + timedelta(days=1)
+        elif recurrence_type == 'weekly':
+            next_start = current_start + timedelta(days=7)
+        elif recurrence_type == 'monthly':
             month_index = current_start.month
             year = current_start.year + month_index // 12
             month = month_index % 12 + 1
@@ -552,8 +552,10 @@ class DemandManagementService:
                 monthly_anchor_day or current_start.day,
                 calendar.monthrange(year, month)[1]
             )
-            return current_start.replace(year=year, month=month, day=day)
-        raise ValidationError('Frequência da recorrência inválida.')
+            next_start = current_start.replace(year=year, month=month, day=day)
+        else:
+            raise ValidationError('Frequência da recorrência inválida.')
+        return next_start.replace(hour=0, minute=1, second=0, microsecond=0)
 
     def _require_owned_demand(
         self, connection, management_id, area_id, user_id, lock=False,

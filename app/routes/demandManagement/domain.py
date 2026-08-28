@@ -267,25 +267,23 @@ def validate_start_schedule(payload):
 
     start_value = _optional_text(payload.get('scheduledStartAt'), 30)
     if not start_value:
-        raise ValidationError('Informe a data e o horário de início.')
-    try:
-        scheduled_start = datetime.fromisoformat(start_value)
-    except ValueError as error:
-        raise ValidationError('A data e o horário de início são inválidos.') from error
-    if 'T' not in start_value or scheduled_start.tzinfo is not None:
-        raise ValidationError('A data e o horário de início são inválidos.')
-    if scheduled_start <= datetime.now():
-        raise ValidationError('O início agendado deve estar no futuro.')
+        raise ValidationError('Informe a data de início.')
+    scheduled_date = _optional_date(start_value)
+    if scheduled_date <= datetime.now().date():
+        raise ValidationError('A data de início deve estar no futuro.')
+    scheduled_start = datetime.combine(
+        scheduled_date, datetime.min.time()
+    ).replace(minute=1)
 
     deadline = _optional_date(payload.get('deadline'))
     if deadline is None:
         raise ValidationError('Informe o prazo que a demanda terá ao iniciar.')
-    if deadline < scheduled_start.date():
+    if deadline < scheduled_date:
         raise ValidationError('O prazo não pode ser anterior ao início agendado.')
 
     return {
-        'scheduledStartAt': scheduled_start.replace(second=0, microsecond=0),
-        'scheduledDeadlineDays': (deadline - scheduled_start.date()).days,
+        'scheduledStartAt': scheduled_start,
+        'scheduledDeadlineDays': (deadline - scheduled_date).days,
         'deadline': deadline,
         'rowVersion': parse_row_version(payload.get('rowVersion'))
     }

@@ -41,10 +41,6 @@ class RequestReviewNotifier:
         return value.strftime('%d/%m/%Y')
 
     @staticmethod
-    def _format_datetime(value):
-        return value.strftime('%d/%m/%Y às %H:%M')
-
-    @staticmethod
     def _message(subject, review, copied_users):
         copied_emails = []
         for user in copied_users:
@@ -177,7 +173,7 @@ class RequestReviewNotifier:
             details=[
                 (
                     'Início agendado',
-                    self._format_datetime(schedule['scheduledStartAt'])
+                    self._format_date(schedule['scheduledStartAt'])
                 ),
                 ('Prazo de entrega', self._format_date(schedule['deadline']))
             ],

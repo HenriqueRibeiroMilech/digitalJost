@@ -22,7 +22,7 @@ def default(logger):
         UPDATE M WITH (UPDLOCK, READPAST, ROWLOCK)
         SET
             status = N'Em Andamento',
-            startDate = M.scheduledStartAt,
+            startDate = CAST(M.scheduledStartAt AS DATE),
             deadline = DATEADD(
                 DAY,
                 M.scheduledDeadlineDays,
@@ -44,7 +44,11 @@ def default(logger):
         WHERE M.status = N'A Fazer'
             AND M.scheduledStartAt IS NOT NULL
             AND M.scheduledDeadlineDays IS NOT NULL
-            AND M.scheduledStartAt <= GETDATE()
+            AND DATEADD(
+                MINUTE,
+                1,
+                CAST(CAST(M.scheduledStartAt AS DATE) AS DATETIME2)
+            ) <= GETDATE()
             AND (
                 M.recurrenceAvailableDate IS NULL
                 OR M.recurrenceAvailableDate <= GETDATE()
