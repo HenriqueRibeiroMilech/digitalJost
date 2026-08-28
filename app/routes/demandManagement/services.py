@@ -304,8 +304,11 @@ class DemandManagementService:
 
         return self.get_detail(management_id, area_id, actor['id'])
 
-    def update_start_schedule(self, management_id, area_id, payload, user_id):
+    def update_start_schedule(
+        self, management_id, area_id, payload, actor, area_name
+    ):
         schedule = validate_start_schedule(payload)
+        user_id = actor['id']
         with self.engine.begin() as connection:
             current = self._require_owned_demand(
                 connection, management_id, area_id, user_id, lock=True
@@ -320,6 +323,15 @@ class DemandManagementService:
             if not updated:
                 raise ConflictError(
                     'A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.'
+                )
+            if (
+                schedule['scheduledStartAt'] is not None
+                and current['demandType'] != 'atividade'
+                and self.review_notifier
+                and current['requesterEmail']
+            ):
+                self.review_notifier.start_scheduled(
+                    dict(current), actor, area_name, schedule
                 )
         return self.get_detail(management_id, area_id, user_id)
 

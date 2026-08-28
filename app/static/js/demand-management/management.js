@@ -591,9 +591,11 @@
         return `
             <div class="dm-status-actions">
                 ${actions.map(function (item) {
-                    return `<button class="dm-button dm-status-action dm-status-action--${item.action}" type="button" data-status-action="${item.action}">${item.label}</button>`;
+                    const actionButton = `<button class="dm-button dm-status-action dm-status-action--${item.action}" type="button" data-status-action="${item.action}">${item.label}</button>`;
+                    return item.action === 'start'
+                        ? `${actionButton}${scheduleActions}`
+                        : actionButton;
                 }).join('')}
-                ${scheduleActions}
             </div>`;
     }
 
@@ -983,8 +985,10 @@
     function toggleActivityRecurrenceFields(toggle) {
         const panel = toggle.closest('.dm-activity-recurrence');
         const fields = panel && panel.querySelector('[data-activity-recurrence-fields]');
+        const actions = panel && panel.querySelector('[data-activity-recurrence-actions]');
         if (!fields) return;
         fields.hidden = !toggle.checked;
+        if (actions) actions.hidden = !toggle.checked;
         fields.querySelectorAll('input, select').forEach(function (input) {
             input.disabled = !toggle.checked;
         });
@@ -1117,7 +1121,7 @@
                             <span><strong>Repetir esta atividade</strong><small>Marque para escolher a frequência e o limite de ocorrências.</small></span>
                         </label>
                         ${recurrenceFields({ recurrenceType: 'daily' }, true, true)}
-                        <div class="dm-activity-recurrence__actions">
+                        <div class="dm-activity-recurrence__actions" data-activity-recurrence-actions hidden>
                             <button class="dm-button" type="submit">Salvar configuração</button>
                         </div>
                     </form>

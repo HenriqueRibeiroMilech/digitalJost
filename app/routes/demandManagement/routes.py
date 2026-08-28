@@ -241,12 +241,18 @@ def management_recurrence(management_id):
     methods=['POST']
 )
 def management_schedule(management_id):
-    _, area = _current_area()
+    area_name, area = _current_area()
+    actor = {
+        'id': current_user.id,
+        'name': current_user.name,
+        'email': current_user.companyEmail
+    }
     detail = _build_service().update_start_schedule(
         management_id,
         area['id'],
         request.get_json(silent=True),
-        current_user.id
+        actor,
+        area_name
     )
     return jsonify(detail)
 

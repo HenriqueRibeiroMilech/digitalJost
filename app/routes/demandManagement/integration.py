@@ -41,6 +41,10 @@ class RequestReviewNotifier:
         return value.strftime('%d/%m/%Y')
 
     @staticmethod
+    def _format_datetime(value):
+        return value.strftime('%d/%m/%Y às %H:%M')
+
+    @staticmethod
     def _message(subject, review, copied_users):
         copied_emails = []
         for user in copied_users:
@@ -153,6 +157,30 @@ class RequestReviewNotifier:
             heading=content[0].upper(),
             messageText=content[1],
             details=content[2],
+            respName=actor['name'],
+            title=demand['title'],
+            desc=demand['initialDescription'],
+            requestsUrl=self._requests_url(area_name)
+        )
+        mail.send(message)
+
+    def start_scheduled(self, demand, actor, area_name, schedule):
+        message = self._message(
+            f'A sua demanda - "{demand["title"]}" - teve o início agendado!',
+            demand,
+            [actor]
+        )
+        message.html = render_template(
+            'demandRequests/emails/status_update.html',
+            heading='TEVE O INÍCIO AGENDADO',
+            messageText='O desenvolvimento da sua demanda teve o início agendado.',
+            details=[
+                (
+                    'Início agendado',
+                    self._format_datetime(schedule['scheduledStartAt'])
+                ),
+                ('Prazo de entrega', self._format_date(schedule['deadline']))
+            ],
             respName=actor['name'],
             title=demand['title'],
             desc=demand['initialDescription'],

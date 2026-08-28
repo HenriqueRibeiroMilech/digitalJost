@@ -286,6 +286,7 @@ def validate_start_schedule(payload):
     return {
         'scheduledStartAt': scheduled_start.replace(second=0, microsecond=0),
         'scheduledDeadlineDays': (deadline - scheduled_start.date()).days,
+        'deadline': deadline,
         'rowVersion': parse_row_version(payload.get('rowVersion'))
     }
 
