@@ -43,18 +43,24 @@ IF COL_LENGTH('dbo.JDT_DEMAND_MANAGEMENT_TASKS', 'skipNextOccurrence') IS NULL
             CONSTRAINT DF_JDT_DEMAND_MANAGEMENT_TASKS_skipNextOccurrence
             DEFAULT 0 WITH VALUES;
 
+/*
+    Estes comandos são compilados somente depois que as colunas acima existem.
+    Isso evita o erro 207 do SQL Server ao compilar todo o lote antecipadamente.
+*/
 IF NOT EXISTS (
     SELECT 1
     FROM sys.check_constraints
     WHERE parent_object_id = OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT_TASKS')
         AND name = 'CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceType'
 )
-    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
-        ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceType
-        CHECK (
-            recurrenceType IS NULL
-            OR recurrenceType IN (N'weekly', N'biweekly', N'monthly')
-        );
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
+            ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceType
+            CHECK (
+                recurrenceType IS NULL
+                OR recurrenceType IN (N''weekly'', N''biweekly'', N''monthly'')
+            );
+    ';
 
 IF NOT EXISTS (
     SELECT 1
@@ -62,22 +68,24 @@ IF NOT EXISTS (
     WHERE parent_object_id = OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT_TASKS')
         AND name = 'CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceShape'
 )
-    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
-        ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceShape
-        CHECK (
-            (
-                recurrenceGroupId IS NULL
-                AND recurrenceType IS NULL
-                AND recurrenceSequence IS NULL
-                AND recurrenceStatus IS NULL
-            )
-            OR (
-                recurrenceGroupId IS NOT NULL
-                AND recurrenceType IS NOT NULL
-                AND recurrenceSequence IS NOT NULL
-                AND recurrenceStatus IS NOT NULL
-            )
-        );
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
+            ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceShape
+            CHECK (
+                (
+                    recurrenceGroupId IS NULL
+                    AND recurrenceType IS NULL
+                    AND recurrenceSequence IS NULL
+                    AND recurrenceStatus IS NULL
+                )
+                OR (
+                    recurrenceGroupId IS NOT NULL
+                    AND recurrenceType IS NOT NULL
+                    AND recurrenceSequence IS NOT NULL
+                    AND recurrenceStatus IS NOT NULL
+                )
+            );
+    ';
 
 IF NOT EXISTS (
     SELECT 1
@@ -85,12 +93,14 @@ IF NOT EXISTS (
     WHERE parent_object_id = OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT_TASKS')
         AND name = 'CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceStatus'
 )
-    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
-        ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceStatus
-        CHECK (
-            recurrenceStatus IS NULL
-            OR recurrenceStatus IN (N'active', N'paused', N'ended')
-        );
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
+            ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceStatus
+            CHECK (
+                recurrenceStatus IS NULL
+                OR recurrenceStatus IN (N''active'', N''paused'', N''ended'')
+            );
+    ';
 
 IF NOT EXISTS (
     SELECT 1
@@ -98,15 +108,17 @@ IF NOT EXISTS (
     WHERE parent_object_id = OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT_TASKS')
         AND name = 'CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceNumbers'
 )
-    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
-        ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceNumbers
-        CHECK (
-            (recurrenceSequence IS NULL OR recurrenceSequence > 0)
-            AND (
-                recurrenceMaxOccurrences IS NULL
-                OR recurrenceMaxOccurrences > 0
-            )
-        );
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT_TASKS WITH CHECK
+            ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_TASKS_recurrenceNumbers
+            CHECK (
+                (recurrenceSequence IS NULL OR recurrenceSequence > 0)
+                AND (
+                    recurrenceMaxOccurrences IS NULL
+                    OR recurrenceMaxOccurrences > 0
+                )
+            );
+    ';
 
 IF NOT EXISTS (
     SELECT 1
@@ -114,11 +126,13 @@ IF NOT EXISTS (
     WHERE object_id = OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT_TASKS')
         AND name = 'UX_JDT_DEMAND_MANAGEMENT_TASKS_recurrence'
 )
-    CREATE UNIQUE INDEX UX_JDT_DEMAND_MANAGEMENT_TASKS_recurrence
-        ON dbo.JDT_DEMAND_MANAGEMENT_TASKS (
-            recurrenceGroupId,
-            recurrenceSequence
-        )
-        WHERE recurrenceGroupId IS NOT NULL;
+    EXEC sys.sp_executesql N'
+        CREATE UNIQUE INDEX UX_JDT_DEMAND_MANAGEMENT_TASKS_recurrence
+            ON dbo.JDT_DEMAND_MANAGEMENT_TASKS (
+                recurrenceGroupId,
+                recurrenceSequence
+            )
+            WHERE recurrenceGroupId IS NOT NULL;
+    ';
 
 COMMIT TRANSACTION;
