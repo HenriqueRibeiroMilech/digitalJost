@@ -930,7 +930,8 @@
                         <span><strong>Atividade recorrente</strong><small>Cria um novo card no próximo ciclo quando esta atividade for concluída.</small></span>
                     </label>
                     <div class="dm-activity-recurrence__fields" data-activity-recurrence-fields hidden>
-                        <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType" disabled>
+                        <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType" required disabled>
+                            <option value="">Selecione uma frequência</option>
                             <option value="daily">Diária</option>
                             <option value="weekly">Semanal</option>
                             <option value="monthly">Mensal</option>
@@ -988,10 +989,13 @@
         const actions = panel && panel.querySelector('[data-activity-recurrence-actions]');
         if (!fields) return;
         fields.hidden = !toggle.checked;
-        if (actions) actions.hidden = !toggle.checked;
         fields.querySelectorAll('input, select').forEach(function (input) {
             input.disabled = !toggle.checked;
         });
+        if (actions) {
+            const recurrenceType = fields.querySelector('[name="recurrenceType"]');
+            actions.hidden = !toggle.checked || !recurrenceType.value;
+        }
     }
 
     function activityRecurrencePayload(form, action) {
@@ -1086,7 +1090,8 @@
         const locked = disabled ? ' disabled aria-disabled="true"' : '';
         return `
             <div class="dm-activity-recurrence__fields" data-activity-recurrence-fields${hidden ? ' hidden' : ''}>
-                <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType"${locked}>
+                <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType" required${locked}>
+                    <option value=""${demand.recurrenceType ? '' : ' selected'}>Selecione uma frequência</option>
                     <option value="daily"${demand.recurrenceType === 'daily' ? ' selected' : ''}>Diária</option>
                     <option value="weekly"${demand.recurrenceType === 'weekly' ? ' selected' : ''}>Semanal</option>
                     <option value="monthly"${demand.recurrenceType === 'monthly' ? ' selected' : ''}>Mensal</option>
@@ -1120,7 +1125,7 @@
                             <input type="checkbox" data-activity-recurrence-toggle required>
                             <span><strong>Repetir esta atividade</strong><small>Marque para escolher a frequência e o limite de ocorrências.</small></span>
                         </label>
-                        ${recurrenceFields({ recurrenceType: 'daily' }, true, true)}
+                        ${recurrenceFields({ recurrenceType: '' }, true, true)}
                         <div class="dm-activity-recurrence__actions" data-activity-recurrence-actions hidden>
                             <button class="dm-button" type="submit">Salvar configuração</button>
                         </div>
@@ -1669,6 +1674,12 @@
     elements.modal.addEventListener('change', function (event) {
         if (event.target.matches('[data-activity-recurrence-toggle]')) {
             toggleActivityRecurrenceFields(event.target);
+            return;
+        }
+        if (event.target.matches('[data-activity-recurrence-fields] select[name="recurrenceType"]')) {
+            const panel = event.target.closest('.dm-activity-recurrence');
+            const toggle = panel && panel.querySelector('[data-activity-recurrence-toggle]');
+            if (toggle) toggleActivityRecurrenceFields(toggle);
             return;
         }
         const taskRow = event.target.closest('[data-task-id]');

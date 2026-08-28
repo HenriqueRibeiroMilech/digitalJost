@@ -1132,6 +1132,10 @@ textarea {
     margin-top: .9rem;
 }
 
+.dm-activity-recurrence__actions[hidden] {
+    display: none;
+}
+
 .dm-schedule-summary {
     display: flex;
     flex-wrap: wrap;
