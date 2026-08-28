@@ -159,7 +159,12 @@ class DemandManagementService:
 
         with self.engine.begin() as connection:
             current = self._require_owned_demand(
-                connection, management_id, area_id, user_id, lock=True
+                connection,
+                management_id,
+                area_id,
+                user_id,
+                lock=True,
+                allow_unassigned=field == 'responsibleId'
             )
             if field == 'deadline':
                 if current['status'] == 'A Fazer':
@@ -338,14 +343,19 @@ class DemandManagementService:
             raise ValidationError('O responsável da tarefa deve ser um usuário ativo da área.')
 
     def _require_owned_demand(
-        self, connection, management_id, area_id, user_id, lock=False
+        self, connection, management_id, area_id, user_id, lock=False,
+        allow_unassigned=False
     ):
         demand = self.repository.get_demand(
             connection, management_id, area_id, lock=lock
         )
         if not demand:
             raise NotFoundError('Demanda não encontrada.')
-        if str(demand['responsibleId']) != str(user_id):
+        is_unassigned = demand['responsibleId'] is None
+        if (
+            str(demand['responsibleId']) != str(user_id)
+            and not (allow_unassigned and is_unassigned)
+        ):
             raise ForbiddenError(
                 'Somente o responsável atual pode editar esta demanda.'
             )

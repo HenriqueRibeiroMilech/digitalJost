@@ -511,7 +511,9 @@
             : '';
         let control;
         if (type === 'select') {
-            const emptyLabel = fieldName === 'responsibleId' ? null : 'Não informado';
+            const emptyLabel = fieldName === 'responsibleId'
+                ? (value == null ? 'Selecione o novo responsável' : null)
+                : 'Não informado';
             control = `<select class="dm-input" data-field="${fieldName}"${disabledAttributes}>${optionList(options, value, emptyLabel)}</select>`;
         } else if (type === 'textarea') {
             control = `<textarea class="dm-textarea" data-field="${fieldName}" placeholder="Adicione uma observação"${readonlyAttributes}>${safeValue}</textarea>`;
@@ -733,11 +735,12 @@
             return item.managementId === managementId;
         });
         if (!demand) return;
-        if (!demand.isOwnedByCurrentUser) {
+        const fieldName = input.dataset.field;
+        const canAssignUnassigned = fieldName === 'responsibleId' && !demand.responsibleId;
+        if (!demand.isOwnedByCurrentUser && !canAssignUnassigned) {
             toast('Somente o responsável atual pode editar esta demanda.', true);
             return;
         }
-        const fieldName = input.dataset.field;
         const value = input.value || null;
         if (fieldName !== 'deadline') {
             updateDemand(managementId, fieldName, value, input);
@@ -1030,9 +1033,11 @@
             <div class="dm-modal__columns">
                 <section class="dm-panel">
                     <h3>Gerenciamento</h3>
-                    ${demand.isOwnedByCurrentUser ? '' : '<p class="dm-personal-note">Este card está disponível somente para consulta. Apenas o responsável atual pode editá-lo.</p>'}
+                    ${demand.isOwnedByCurrentUser ? '' : demand.responsibleId
+                        ? '<p class="dm-personal-note">Este card está disponível somente para consulta. Apenas o responsável atual pode editá-lo.</p>'
+                        : '<p class="dm-personal-note">Este card está sem responsável ativo. Selecione um novo responsável para liberar a edição.</p>'}
                     <div class="dm-form-grid">
-                        ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles, demand.isOwnedByCurrentUser)}
+                        ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles, demand.isOwnedByCurrentUser || !demand.responsibleId)}
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [], demand.isOwnedByCurrentUser)}
                         ${renderModalDeadlineField(demand)}
                         ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date', 'Definida automaticamente ao iniciar a demanda')}
