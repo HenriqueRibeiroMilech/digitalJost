@@ -1103,7 +1103,7 @@ textarea {
 
 .dm-activity-recurrence__fields {
     display: grid;
-    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
     gap: .8rem;
     margin-top: 1rem;
 }
@@ -1130,6 +1130,22 @@ textarea {
     flex-wrap: wrap;
     gap: .55rem;
     margin-top: .9rem;
+}
+
+.dm-schedule-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem 1rem;
+    margin-top: 1rem;
+    padding: .7rem .8rem;
+    border-left: 3px solid #3f4f8c;
+    color: var(--dm-muted);
+    background: #f3f4fb;
+    font-size: .74rem;
+}
+
+.dm-schedule-summary strong {
+    color: var(--dm-navy-dark);
 }
 
 .dm-modal__footer {

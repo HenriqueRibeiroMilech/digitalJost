@@ -585,11 +585,36 @@
         if (!actions.length) {
             return '<p class="dm-status-actions__empty">Esta demanda está encerrada.</p>';
         }
+        const scheduleActions = demand.status === 'A Fazer' ? `
+            <button class="dm-button dm-status-action dm-status-action--schedule" type="button" data-schedule-start>${demand.scheduledStartAt ? 'Alterar agendamento' : 'Agendar início'}</button>
+            ${demand.scheduledStartAt ? '<button class="dm-button dm-button--quiet" type="button" data-cancel-start-schedule>Cancelar agendamento</button>' : ''}` : '';
         return `
             <div class="dm-status-actions">
                 ${actions.map(function (item) {
                     return `<button class="dm-button dm-status-action dm-status-action--${item.action}" type="button" data-status-action="${item.action}">${item.label}</button>`;
                 }).join('')}
+                ${scheduleActions}
+            </div>`;
+    }
+
+    function scheduledDeadlineValue(demand) {
+        if (!demand.scheduledStartAt || demand.scheduledDeadlineDays == null) return '';
+        const start = new Date(demand.scheduledStartAt);
+        if (Number.isNaN(start.getTime())) return '';
+        start.setDate(start.getDate() + Number(demand.scheduledDeadlineDays));
+        const year = start.getFullYear();
+        const month = String(start.getMonth() + 1).padStart(2, '0');
+        const day = String(start.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function renderScheduledStartSummary(demand) {
+        if (!demand.scheduledStartAt || demand.status !== 'A Fazer') return '';
+        return `
+            <div class="dm-schedule-summary">
+                <strong>Início agendado</strong>
+                <span>${escapeHtml(formatDate(demand.scheduledStartAt, true))}</span>
+                <span>Prazo ao iniciar: ${escapeHtml(formatDate(scheduledDeadlineValue(demand), false))}</span>
             </div>`;
     }
 
@@ -597,6 +622,28 @@
         if (!demand.isOwnedByCurrentUser) return '';
         const action = state.statusAction;
         if (!action) return '';
+
+        if (action === 'schedule') {
+            return `
+                <form class="dm-status-form" id="dm-start-schedule">
+                    <div class="dm-status-form__heading">
+                        <strong>Agendar início</strong>
+                        <span>No horário informado, a demanda entrará automaticamente em andamento.</span>
+                    </div>
+                    <label class="dm-field">
+                        <span>Data e horário de início</span>
+                        <input class="dm-input" name="scheduledStartAt" type="datetime-local" value="${escapeHtml(demand.scheduledStartAt ? demand.scheduledStartAt.substring(0, 16) : '')}" required>
+                    </label>
+                    <label class="dm-field">
+                        <span>Prazo que será aplicado ao iniciar</span>
+                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(scheduledDeadlineValue(demand))}" required>
+                    </label>
+                    <div class="dm-status-form__actions">
+                        <button class="dm-button dm-button--quiet" type="button" data-cancel-status-action>Voltar</button>
+                        <button class="dm-button dm-status-action dm-status-action--schedule" type="submit">Salvar agendamento</button>
+                    </div>
+                </form>`;
+        }
 
         const content = {
             start: ['Iniciar demanda', 'Defina o prazo que será informado ao solicitante.'],
@@ -652,8 +699,8 @@
 
     function recurrenceTypeLabel(type) {
         return {
+            daily: 'Diária',
             weekly: 'Semanal',
-            biweekly: 'Quinzenal',
             monthly: 'Mensal'
         }[type] || 'Recorrente';
     }
@@ -882,11 +929,10 @@
                     </label>
                     <div class="dm-activity-recurrence__fields" data-activity-recurrence-fields hidden>
                         <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType" disabled>
+                            <option value="daily">Diária</option>
                             <option value="weekly">Semanal</option>
-                            <option value="biweekly">Quinzenal</option>
                             <option value="monthly">Mensal</option>
                         </select></label>
-                        <label class="dm-field"><span>Encerrar em (opcional)</span><input class="dm-input" name="recurrenceEndDate" type="date" disabled></label>
                         <label class="dm-field"><span>Máximo de ocorrências (opcional)</span><input class="dm-input" name="recurrenceMaxOccurrences" type="number" min="1" max="1000" disabled></label>
                     </div>
                 </section>
@@ -930,7 +976,6 @@
             completedHours: value('completedHours'),
             observations: value('observations'),
             recurrenceType: recurring ? value('recurrenceType') : null,
-            recurrenceEndDate: recurring ? value('recurrenceEndDate') : null,
             recurrenceMaxOccurrences: recurring ? value('recurrenceMaxOccurrences') : null
         };
     }
@@ -948,7 +993,6 @@
     function activityRecurrencePayload(form, action) {
         return {
             recurrenceType: form.elements.recurrenceType.value,
-            recurrenceEndDate: form.elements.recurrenceEndDate.value || null,
             recurrenceMaxOccurrences: form.elements.recurrenceMaxOccurrences.value || null,
             recurrenceAction: action || null,
             rowVersion: state.detail.rowVersion
@@ -957,8 +1001,7 @@
 
     async function updateActivityRecurrence(form, action, button) {
         const confirmations = {
-            end: 'Encerrar definitivamente esta recorrência?',
-            skip: 'Pular a próxima ocorrência desta atividade?'
+            end: 'Encerrar definitivamente esta recorrência?'
         };
         if (confirmations[action] && !window.confirm(confirmations[action])) return;
         if (button) button.disabled = true;
@@ -969,10 +1012,7 @@
             });
             applyDetail(detail);
             const messages = {
-                pause: 'Recorrência pausada.',
-                resume: 'Recorrência retomada.',
-                end: 'Recorrência encerrada.',
-                skip: 'A próxima ocorrência será pulada.'
+                end: 'Recorrência encerrada.'
             };
             toast(messages[action] || 'Configuração da recorrência salva.');
         } catch (error) {
@@ -1038,16 +1078,15 @@
         return `<label class="dm-field${wide ? ' dm-field--wide' : ''}"><span>${escapeHtml(label)}</span>${control}</label>`;
     }
 
-    function recurrenceFields(demand, disabled) {
+    function recurrenceFields(demand, disabled, hidden) {
         const locked = disabled ? ' disabled aria-disabled="true"' : '';
         return `
-            <div class="dm-activity-recurrence__fields">
+            <div class="dm-activity-recurrence__fields" data-activity-recurrence-fields${hidden ? ' hidden' : ''}>
                 <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType"${locked}>
+                    <option value="daily"${demand.recurrenceType === 'daily' ? ' selected' : ''}>Diária</option>
                     <option value="weekly"${demand.recurrenceType === 'weekly' ? ' selected' : ''}>Semanal</option>
-                    <option value="biweekly"${demand.recurrenceType === 'biweekly' ? ' selected' : ''}>Quinzenal</option>
                     <option value="monthly"${demand.recurrenceType === 'monthly' ? ' selected' : ''}>Mensal</option>
                 </select></label>
-                <label class="dm-field"><span>Encerrar em (opcional)</span><input class="dm-input" name="recurrenceEndDate" type="date" value="${escapeHtml(demand.recurrenceEndDate ? demand.recurrenceEndDate.substring(0, 10) : '')}"${locked}></label>
                 <label class="dm-field"><span>Máximo de ocorrências (opcional)</span><input class="dm-input" name="recurrenceMaxOccurrences" type="number" min="1" max="1000" value="${escapeHtml(valueOrEmpty(demand.recurrenceMaxOccurrences))}"${locked}></label>
             </div>`;
     }
@@ -1073,7 +1112,11 @@
                     <h3>Recorrência da atividade</h3>
                     <p class="dm-personal-note">Ao concluir este card, a próxima ocorrência será criada como um novo card em A Fazer.</p>
                     <form id="dm-activity-recurrence-form">
-                        ${recurrenceFields({ recurrenceType: 'weekly' }, false)}
+                        <label class="dm-activity-recurrence__toggle">
+                            <input type="checkbox" data-activity-recurrence-toggle required>
+                            <span><strong>Atividade recorrente</strong><small>Ative para configurar a repetição deste card.</small></span>
+                        </label>
+                        ${recurrenceFields({ recurrenceType: 'daily' }, true, true)}
                         <div class="dm-activity-recurrence__actions">
                             <button class="dm-button" type="submit">Ativar recorrência</button>
                         </div>
@@ -1081,16 +1124,6 @@
                 </section>`;
         }
 
-        const actions = editable ? `
-            <div class="dm-activity-recurrence__actions">
-                ${demand.recurrenceStatus === 'paused'
-                    ? '<button class="dm-button dm-button--quiet" type="button" data-activity-recurrence-action="resume">Retomar recorrência</button>'
-                    : '<button class="dm-button dm-button--quiet" type="button" data-activity-recurrence-action="pause">Pausar recorrência</button>'}
-                ${demand.recurrenceStatus === 'active'
-                    ? `<button class="dm-button dm-button--quiet" type="button" data-activity-recurrence-action="skip"${demand.skipNextOccurrence ? ' disabled' : ''}>${demand.skipNextOccurrence ? 'Próxima ocorrência será pulada' : 'Pular próxima ocorrência'}</button>`
-                    : ''}
-                <button class="dm-button dm-button--danger" type="button" data-activity-recurrence-action="end">Encerrar recorrência</button>
-            </div>` : '';
         const note = !current
             ? '<p class="dm-personal-note">Este card faz parte do histórico. A recorrência só pode ser alterada no card mais recente.</p>'
             : demand.recurrenceStatus === 'ended'
@@ -1106,10 +1139,9 @@
                 ${history}
                 ${note}
                 <form id="dm-activity-recurrence-form">
-                    ${recurrenceFields(demand, !editable)}
-                    ${editable ? '<div class="dm-activity-recurrence__actions"><button class="dm-button" type="submit">Salvar configuração</button></div>' : ''}
+                    ${recurrenceFields(demand, !editable, false)}
+                    ${editable ? '<div class="dm-activity-recurrence__actions"><button class="dm-button" type="submit">Salvar configuração</button><button class="dm-button dm-button--danger" type="button" data-activity-recurrence-action="end">Encerrar recorrência</button></div>' : ''}
                 </form>
-                ${actions}
             </section>`;
     }
 
@@ -1205,6 +1237,7 @@
                         ${field('Tempo total realizado (h)', 'completedHours', demand.completedHours, 'number', null, demand.isOwnedByCurrentUser)}
                         ${field('Observações', 'observations', demand.observations, 'textarea', null, demand.isOwnedByCurrentUser)}
                     </div>
+                    ${renderScheduledStartSummary(demand)}
                     ${renderStatusActions(demand)}
                     ${renderStatusActionForm(demand)}
                 </section>
@@ -1349,6 +1382,35 @@
         } catch (error) {
             toast(error.message, true);
             button.disabled = false;
+            if (error.status === 409) await loadBoard(false);
+        }
+    }
+
+    async function updateStartSchedule(form, cancel) {
+        if (!state.detail) return;
+        const button = form
+            ? form.querySelector('button[type="submit"]')
+            : elements.modalContent.querySelector('[data-cancel-start-schedule]');
+        const payload = {
+            rowVersion: state.detail.rowVersion,
+            scheduleAction: cancel ? 'cancel' : null
+        };
+        if (!cancel) {
+            payload.scheduledStartAt = form.elements.scheduledStartAt.value;
+            payload.deadline = form.elements.deadline.value;
+        }
+        if (button) button.disabled = true;
+        try {
+            const detail = await api(`${config.apiRoot}/${state.detail.managementId}/schedule`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            state.statusAction = null;
+            applyDetail(detail);
+            toast(cancel ? 'Agendamento cancelado.' : 'Início agendado.');
+        } catch (error) {
+            toast(error.message, true);
+            if (button) button.disabled = false;
             if (error.status === 409) await loadBoard(false);
         }
     }
@@ -1569,6 +1631,17 @@
             renderModal(state.detail);
             return;
         }
+        if (event.target.closest('[data-schedule-start]') && state.detail) {
+            state.statusAction = 'schedule';
+            renderModal(state.detail);
+            return;
+        }
+        if (event.target.closest('[data-cancel-start-schedule]') && state.detail) {
+            if (window.confirm('Cancelar o início agendado desta demanda?')) {
+                updateStartSchedule(null, true);
+            }
+            return;
+        }
         if (event.target.closest('[data-cancel-status-action]') && state.detail) {
             state.statusAction = null;
             renderModal(state.detail);
@@ -1628,6 +1701,9 @@
         } else if (event.target.id === 'dm-status-transition') {
             event.preventDefault();
             transitionStatus(event.target);
+        } else if (event.target.id === 'dm-start-schedule') {
+            event.preventDefault();
+            updateStartSchedule(event.target, false);
         } else if (event.target.id === 'dm-activity-recurrence-form') {
             event.preventDefault();
             updateActivityRecurrence(

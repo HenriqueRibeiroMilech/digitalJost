@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 
@@ -23,9 +23,9 @@ DIFFICULTY_OPTIONS = ('Baixa', 'Média', 'Alta')
 
 DEMAND_TYPE_OPTIONS = ('atividade', 'projeto', 'melhoria', 'erro')
 
-ACTIVITY_RECURRENCE_OPTIONS = ('weekly', 'biweekly', 'monthly')
+ACTIVITY_RECURRENCE_OPTIONS = ('daily', 'weekly', 'monthly')
 
-ACTIVITY_RECURRENCE_ACTIONS = ('pause', 'resume', 'end', 'skip')
+ACTIVITY_RECURRENCE_ACTIONS = ('end',)
 
 # Whitelist que relaciona o campo da API à coluna no banco.
 MANAGEMENT_FIELDS = {
@@ -182,9 +182,6 @@ def validate_personal_demand(payload):
     recurrence_type = _optional_text(payload.get('recurrenceType'), 20)
     if recurrence_type and recurrence_type not in ACTIVITY_RECURRENCE_OPTIONS:
         raise ValidationError('Frequência da recorrência inválida.')
-    recurrence_end_date = _optional_date(payload.get('recurrenceEndDate'))
-    if recurrence_type and recurrence_end_date and recurrence_end_date < date.today():
-        raise ValidationError('O término da recorrência não pode estar no passado.')
     recurrence_max_occurrences = _optional_positive_integer(
         payload.get('recurrenceMaxOccurrences'),
         'A quantidade de ocorrências'
@@ -207,7 +204,6 @@ def validate_personal_demand(payload):
         'difficulty': validate_management_change('difficulty', payload.get('difficulty')),
         'observations': validate_management_change('observations', payload.get('observations')),
         'recurrenceType': recurrence_type,
-        'recurrenceEndDate': recurrence_end_date if recurrence_type else None,
         'recurrenceMaxOccurrences': recurrence_max_occurrences if recurrence_type else None
     }
 
@@ -240,7 +236,6 @@ def validate_activity_recurrence(payload):
     recurrence_type = _optional_text(payload.get('recurrenceType'), 20)
     if recurrence_type not in ACTIVITY_RECURRENCE_OPTIONS:
         raise ValidationError('Frequência da recorrência inválida.')
-    recurrence_end_date = _optional_date(payload.get('recurrenceEndDate'))
     recurrence_max_occurrences = _optional_positive_integer(
         payload.get('recurrenceMaxOccurrences'),
         'A quantidade de ocorrências'
@@ -251,9 +246,47 @@ def validate_activity_recurrence(payload):
 
     return {
         'recurrenceType': recurrence_type,
-        'recurrenceEndDate': recurrence_end_date,
         'recurrenceMaxOccurrences': recurrence_max_occurrences,
         'recurrenceAction': recurrence_action
+    }
+
+
+def validate_start_schedule(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError('Dados do agendamento inválidos.')
+
+    action = _optional_text(payload.get('scheduleAction'), 20)
+    if action not in (None, 'cancel'):
+        raise ValidationError('Ação de agendamento inválida.')
+    if action == 'cancel':
+        return {
+            'scheduledStartAt': None,
+            'scheduledDeadlineDays': None,
+            'rowVersion': parse_row_version(payload.get('rowVersion'))
+        }
+
+    start_value = _optional_text(payload.get('scheduledStartAt'), 30)
+    if not start_value:
+        raise ValidationError('Informe a data e o horário de início.')
+    try:
+        scheduled_start = datetime.fromisoformat(start_value)
+    except ValueError as error:
+        raise ValidationError('A data e o horário de início são inválidos.') from error
+    if 'T' not in start_value or scheduled_start.tzinfo is not None:
+        raise ValidationError('A data e o horário de início são inválidos.')
+    if scheduled_start <= datetime.now():
+        raise ValidationError('O início agendado deve estar no futuro.')
+
+    deadline = _optional_date(payload.get('deadline'))
+    if deadline is None:
+        raise ValidationError('Informe o prazo que a demanda terá ao iniciar.')
+    if deadline < scheduled_start.date():
+        raise ValidationError('O prazo não pode ser anterior ao início agendado.')
+
+    return {
+        'scheduledStartAt': scheduled_start.replace(second=0, microsecond=0),
+        'scheduledDeadlineDays': (deadline - scheduled_start.date()).days,
+        'rowVersion': parse_row_version(payload.get('rowVersion'))
     }
 
 

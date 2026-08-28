@@ -49,12 +49,12 @@ class DemandManagementRepository:
             M.observations,
             M.recurrenceGroupId,
             M.recurrenceType,
-            M.recurrenceEndDate,
             M.recurrenceMaxOccurrences,
             M.recurrenceSequence,
             M.recurrenceStatus,
             M.recurrenceAvailableDate,
-            M.skipNextOccurrence,
+            M.scheduledStartAt,
+            M.scheduledDeadlineDays,
             M.createdBy AS directCreatorId,
             CASE
                 WHEN Responsible.active = 1 THEN M.responsibleId
@@ -140,7 +140,7 @@ class DemandManagementRepository:
             WHERE M.areaId = :area_id
                 AND (
                     M.recurrenceAvailableDate IS NULL
-                    OR M.recurrenceAvailableDate <= CAST(GETDATE() AS DATE)
+                    OR M.recurrenceAvailableDate <= GETDATE()
                 )
             ORDER BY
                 CASE WHEN Responsible.name IS NULL THEN 1 ELSE 0 END,
@@ -336,7 +336,7 @@ class DemandManagementRepository:
             'actual_problems': demand['actualProblems'],
             'benefits': demand['benefits'],
             'recurrence_type': demand['recurrenceType'],
-            'recurrence_end_date': demand['recurrenceEndDate'],
+            'recurrence_end_date': None,
             'recurrence_max_occurrences': demand['recurrenceMaxOccurrences']
         }).first()
         return row[0] if row else None
@@ -447,6 +447,14 @@ class DemandManagementRepository:
                     WHEN :set_start_date = 1 THEN GETDATE()
                     ELSE startDate
                 END,
+                scheduledStartAt = CASE
+                    WHEN :clear_schedule = 1 THEN NULL
+                    ELSE scheduledStartAt
+                END,
+                scheduledDeadlineDays = CASE
+                    WHEN :clear_schedule = 1 THEN NULL
+                    ELSE scheduledDeadlineDays
+                END,
                 updatedAt = GETDATE()
             WHERE managementId = :management_id
                 AND areaId = :area_id
@@ -460,6 +468,7 @@ class DemandManagementRepository:
             'target_status': transition['targetStatus'],
             'deadline': transition['deadline'],
             'set_start_date': 1 if action == 'start' else 0,
+            'clear_schedule': 1 if action == 'start' else 0,
             'row_version': transition['rowVersion']
         })
         return result.rowcount == 1
@@ -618,11 +627,11 @@ class DemandManagementRepository:
             SET
                 recurrenceGroupId = COALESCE(recurrenceGroupId, NEWID()),
                 recurrenceType = :recurrence_type,
-                recurrenceEndDate = :recurrence_end_date,
+                recurrenceEndDate = NULL,
                 recurrenceMaxOccurrences = :recurrence_max_occurrences,
                 recurrenceSequence = COALESCE(recurrenceSequence, 1),
                 recurrenceStatus = :recurrence_status,
-                skipNextOccurrence = :skip_next_occurrence,
+                skipNextOccurrence = 0,
                 updatedAt = GETDATE()
             WHERE managementId = :management_id
                 AND areaId = :area_id
@@ -634,10 +643,8 @@ class DemandManagementRepository:
             'management_id': management_id,
             'area_id': area_id,
             'recurrence_type': recurrence['recurrenceType'],
-            'recurrence_end_date': recurrence['recurrenceEndDate'],
             'recurrence_max_occurrences': recurrence['recurrenceMaxOccurrences'],
             'recurrence_status': recurrence['recurrenceStatus'],
-            'skip_next_occurrence': 1 if recurrence['skipNextOccurrence'] else 0,
             'row_version': row_version
         })
         return result.rowcount == 1
@@ -658,12 +665,12 @@ class DemandManagementRepository:
             'recurrence_sequence': recurrence_sequence or 0
         }).first() is not None
 
-    def get_activity_recurrence_anchor_day(self, connection, recurrence_group_id):
+    def get_recurrence_scheduled_anchor(self, connection, recurrence_group_id):
         query = text("""
-            SELECT TOP 1 DAY(deadline) AS anchorDay
+            SELECT TOP 1 scheduledStartAt
             FROM JDT_DEMAND_MANAGEMENT
             WHERE recurrenceGroupId = :recurrence_group_id
-                AND deadline IS NOT NULL
+                AND scheduledStartAt IS NOT NULL
             ORDER BY recurrenceSequence, managementId
         """)
         row = connection.execute(query, {
@@ -672,7 +679,8 @@ class DemandManagementRepository:
         return row[0] if row else None
 
     def create_next_recurring_activity(
-        self, connection, current, available_date, recurrence_sequence, created_by
+        self, connection, current, available_at, scheduled_start_at,
+        recurrence_sequence, created_by
     ):
         query = text("""
             INSERT INTO JDT_DEMAND_MANAGEMENT (
@@ -683,16 +691,18 @@ class DemandManagementRepository:
                 recurrenceGroupId, recurrenceType, recurrenceEndDate,
                 recurrenceMaxOccurrences, recurrenceSequence,
                 recurrenceStatus, recurrenceAvailableDate,
-                skipNextOccurrence, createdAt, updatedAt
+                skipNextOccurrence, scheduledStartAt,
+                scheduledDeadlineDays, createdAt, updatedAt
             )
             SELECT
                 NULL, M.areaId, N'A Fazer', NULL, NULL,
                 M.estimatedHours, M.dailyHours, NULL, M.difficulty,
                 NULL, M.responsibleId, :created_by, N'atividade', M.title,
                 M.initialDescription, M.assumptions, M.actualProblems, M.benefits,
-                M.recurrenceGroupId, M.recurrenceType, M.recurrenceEndDate,
+                M.recurrenceGroupId, M.recurrenceType, NULL,
                 M.recurrenceMaxOccurrences, :recurrence_sequence,
-                N'active', :available_date, 0, GETDATE(), GETDATE()
+                N'active', :available_at, 0, :scheduled_start_at,
+                M.scheduledDeadlineDays, GETDATE(), GETDATE()
             FROM JDT_DEMAND_MANAGEMENT AS M
             WHERE M.managementId = :management_id
                 AND M.sourceRequestId IS NULL
@@ -707,7 +717,8 @@ class DemandManagementRepository:
         """)
         result = connection.execute(query, {
             'management_id': current['managementId'],
-            'available_date': available_date,
+            'available_at': available_at,
+            'scheduled_start_at': scheduled_start_at,
             'recurrence_sequence': recurrence_sequence,
             'created_by': created_by
         })
@@ -721,6 +732,29 @@ class DemandManagementRepository:
                 AND recurrenceGroupId IS NOT NULL
                 AND recurrenceStatus <> N'ended'
         """), {'management_id': management_id})
+
+    def update_start_schedule(
+        self, connection, management_id, area_id, schedule
+    ):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT
+            SET
+                scheduledStartAt = :scheduled_start_at,
+                scheduledDeadlineDays = :scheduled_deadline_days,
+                updatedAt = GETDATE()
+            WHERE managementId = :management_id
+                AND areaId = :area_id
+                AND status = N'A Fazer'
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'management_id': management_id,
+            'area_id': area_id,
+            'scheduled_start_at': schedule['scheduledStartAt'],
+            'scheduled_deadline_days': schedule['scheduledDeadlineDays'],
+            'row_version': schedule['rowVersion']
+        })
+        return result.rowcount == 1
 
     def list_tasks(self, connection, management_id, area_id):
         query = text("""

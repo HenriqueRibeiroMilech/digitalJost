@@ -19,6 +19,7 @@ from .domain import (
     validate_personal_demand,
     validate_review_approval,
     validate_review_decline,
+    validate_start_schedule,
     validate_status_transition,
     validate_task
 )
@@ -253,18 +254,6 @@ class DemandManagementService:
             )
 
             transition = validate_status_transition(demand['status'], payload)
-            recurrence_end = demand['recurrenceEndDate']
-            if isinstance(recurrence_end, datetime):
-                recurrence_end = recurrence_end.date()
-            if (
-                transition['action'] in ('start', 'reopen')
-                and demand['recurrenceStatus'] in ('active', 'paused')
-                and recurrence_end
-                and transition['deadline'] > recurrence_end
-            ):
-                raise ValidationError(
-                    'O prazo da demanda não pode ser posterior ao término da recorrência.'
-                )
             updated = self.repository.transition_demand(
                 connection,
                 management_id,
@@ -314,6 +303,25 @@ class DemandManagementService:
                 )
 
         return self.get_detail(management_id, area_id, actor['id'])
+
+    def update_start_schedule(self, management_id, area_id, payload, user_id):
+        schedule = validate_start_schedule(payload)
+        with self.engine.begin() as connection:
+            current = self._require_owned_demand(
+                connection, management_id, area_id, user_id, lock=True
+            )
+            if current['status'] != 'A Fazer':
+                raise ConflictError(
+                    'Somente demandas em A Fazer podem ter o início agendado.'
+                )
+            updated = self.repository.update_start_schedule(
+                connection, management_id, area_id, schedule
+            )
+            if not updated:
+                raise ConflictError(
+                    'A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.'
+                )
+        return self.get_detail(management_id, area_id, user_id)
 
     def create_task(self, management_id, area_id, payload, created_by):
         task = validate_task(payload)
@@ -422,23 +430,10 @@ class DemandManagementService:
 
         if current_group is not None and action:
             recurrence['recurrenceType'] = current_type
-            recurrence['recurrenceEndDate'] = current['recurrenceEndDate']
             recurrence['recurrenceMaxOccurrences'] = current['recurrenceMaxOccurrences']
         elif action:
             raise ConflictError('Esta atividade ainda não possui recorrência.')
 
-        end_date = recurrence['recurrenceEndDate']
-        if isinstance(end_date, datetime):
-            end_date = end_date.date()
-        if not action and end_date and end_date < date.today():
-            raise ValidationError('O término da recorrência não pode estar no passado.')
-        current_deadline = current['deadline']
-        if isinstance(current_deadline, datetime):
-            current_deadline = current_deadline.date()
-        if not action and end_date and current_deadline and end_date < current_deadline:
-            raise ValidationError(
-                'O término da recorrência não pode ser anterior ao prazo atual.'
-            )
         maximum = recurrence['recurrenceMaxOccurrences']
         if (
             not action
@@ -450,28 +445,12 @@ class DemandManagementService:
             )
 
         status = current_status or 'active'
-        skip_next = bool(current['skipNextOccurrence'])
-        if action == 'pause':
-            if status != 'active':
-                raise ConflictError('Somente uma recorrência ativa pode ser pausada.')
-            status = 'paused'
-        elif action == 'resume':
-            if status != 'paused':
-                raise ConflictError('Somente uma recorrência pausada pode ser retomada.')
-            status = 'active'
-        elif action == 'end':
+        if action == 'end':
             if status == 'ended':
                 raise ConflictError('Esta recorrência já foi encerrada.')
             status = 'ended'
-        elif action == 'skip':
-            if status != 'active':
-                raise ConflictError('Somente uma recorrência ativa pode pular a próxima ocorrência.')
-            if skip_next:
-                raise ConflictError('A próxima ocorrência já está marcada para ser pulada.')
-            skip_next = True
 
         recurrence['recurrenceStatus'] = status
-        recurrence['skipNextOccurrence'] = skip_next
 
     def _create_next_activity_occurrence(self, connection, demand, user_id):
         if (
@@ -488,72 +467,80 @@ class DemandManagementService:
         ):
             return
 
-        anchor_day = self.repository.get_activity_recurrence_anchor_day(
+        scheduled_anchor = self.repository.get_recurrence_scheduled_anchor(
             connection, demand['recurrenceGroupId']
         )
-        next_occurrence = self._next_activity_occurrence(demand, anchor_day)
+        next_occurrence = self._next_activity_occurrence(
+            demand, scheduled_anchor
+        )
         if next_occurrence is None:
             self.repository.end_activity_recurrence(
                 connection, demand['managementId']
             )
             return
 
-        available_date, next_sequence = next_occurrence
+        available_at, scheduled_start_at, next_sequence = next_occurrence
         created = self.repository.create_next_recurring_activity(
-            connection, demand, available_date, next_sequence, user_id
+            connection, demand, available_at, scheduled_start_at,
+            next_sequence, user_id
         )
         if not created:
             raise ConflictError(
                 'A próxima ocorrência já foi criada. Atualize a tela.'
             )
 
-    def _next_activity_occurrence(self, demand, anchor_day):
-        deadline = demand['deadline']
-        if isinstance(deadline, datetime):
-            deadline = deadline.date()
-        if deadline is None:
-            return None
+    def _next_activity_occurrence(self, demand, scheduled_anchor):
+        now = datetime.now()
+        recurrence_type = demand['recurrenceType']
+        if recurrence_type == 'daily':
+            next_day = now.date() + timedelta(days=1)
+        elif recurrence_type == 'weekly':
+            next_day = now.date() + timedelta(days=7 - now.weekday())
+        elif recurrence_type == 'monthly':
+            year = now.year + (1 if now.month == 12 else 0)
+            month = 1 if now.month == 12 else now.month + 1
+            next_day = date(year, month, 1)
+        else:
+            raise ValidationError('Frequência da recorrência inválida.')
 
-        periods = 2 if demand['skipNextOccurrence'] else 1
-        next_date = deadline
+        available_at = datetime.combine(next_day, datetime.min.time()).replace(
+            hour=0, minute=1
+        )
         next_sequence = demand['recurrenceSequence'] or 1
-        for _ in range(periods):
-            next_date = self._advance_recurrence_date(
-                next_date, demand['recurrenceType'], anchor_day
-            )
-            next_sequence += 1
-
-        while next_date <= date.today():
-            next_date = self._advance_recurrence_date(
-                next_date, demand['recurrenceType'], anchor_day
-            )
-            next_sequence += 1
-
-        end_date = demand['recurrenceEndDate']
-        if isinstance(end_date, datetime):
-            end_date = end_date.date()
-        if end_date and next_date > end_date:
-            return None
+        next_sequence += 1
         maximum = demand['recurrenceMaxOccurrences']
         if maximum and next_sequence > maximum:
             return None
-        return next_date, next_sequence
+        scheduled_start = demand['scheduledStartAt']
+        if scheduled_start:
+            scheduled_start = self._advance_scheduled_start(
+                scheduled_start, recurrence_type,
+                scheduled_anchor.day if scheduled_anchor else None
+            )
+            while scheduled_start < available_at:
+                scheduled_start = self._advance_scheduled_start(
+                    scheduled_start, recurrence_type,
+                    scheduled_anchor.day if scheduled_anchor else None
+                )
+        return available_at, scheduled_start, next_sequence
 
     @staticmethod
-    def _advance_recurrence_date(current_date, recurrence_type, anchor_day=None):
+    def _advance_scheduled_start(
+        current_start, recurrence_type, monthly_anchor_day=None
+    ):
+        if recurrence_type == 'daily':
+            return current_start + timedelta(days=1)
         if recurrence_type == 'weekly':
-            return current_date + timedelta(days=7)
-        if recurrence_type == 'biweekly':
-            return current_date + timedelta(days=14)
+            return current_start + timedelta(days=7)
         if recurrence_type == 'monthly':
-            month_index = current_date.month
-            year = current_date.year + month_index // 12
+            month_index = current_start.month
+            year = current_start.year + month_index // 12
             month = month_index % 12 + 1
             day = min(
-                anchor_day or current_date.day,
+                monthly_anchor_day or current_start.day,
                 calendar.monthrange(year, month)[1]
             )
-            return date(year, month, day)
+            return current_start.replace(year=year, month=month, day=day)
         raise ValidationError('Frequência da recorrência inválida.')
 
     def _require_owned_demand(

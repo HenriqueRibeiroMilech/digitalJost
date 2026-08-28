@@ -120,12 +120,16 @@ IF COL_LENGTH('dbo.JDT_DEMAND_MANAGEMENT', 'recurrenceSequence') IS NULL
 IF COL_LENGTH('dbo.JDT_DEMAND_MANAGEMENT', 'recurrenceStatus') IS NULL
     ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT ADD recurrenceStatus NVARCHAR(20) NULL;
 IF COL_LENGTH('dbo.JDT_DEMAND_MANAGEMENT', 'recurrenceAvailableDate') IS NULL
-    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT ADD recurrenceAvailableDate DATE NULL;
+    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT ADD recurrenceAvailableDate DATETIME2(0) NULL;
 IF COL_LENGTH('dbo.JDT_DEMAND_MANAGEMENT', 'skipNextOccurrence') IS NULL
     ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT
         ADD skipNextOccurrence BIT NOT NULL
             CONSTRAINT DF_JDT_DEMAND_MANAGEMENT_skipNextOccurrence
             DEFAULT 0 WITH VALUES;
+IF COL_LENGTH('dbo.JDT_DEMAND_MANAGEMENT', 'scheduledStartAt') IS NULL
+    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT ADD scheduledStartAt DATETIME2(0) NULL;
+IF COL_LENGTH('dbo.JDT_DEMAND_MANAGEMENT', 'scheduledDeadlineDays') IS NULL
+    ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT ADD scheduledDeadlineDays INT NULL;
 
 IF EXISTS (
     SELECT 1 FROM sys.columns
@@ -164,7 +168,7 @@ IF NOT EXISTS (
     EXEC sys.sp_executesql N'
         ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT WITH CHECK
             ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_recurrenceType
-            CHECK (recurrenceType IS NULL OR recurrenceType IN (N''weekly'', N''biweekly'', N''monthly''));
+            CHECK (recurrenceType IS NULL OR recurrenceType IN (N''daily'', N''weekly'', N''monthly''));
     ';
 
 IF NOT EXISTS (
@@ -175,7 +179,7 @@ IF NOT EXISTS (
     EXEC sys.sp_executesql N'
         ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT WITH CHECK
             ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_recurrenceStatus
-            CHECK (recurrenceStatus IS NULL OR recurrenceStatus IN (N''active'', N''paused'', N''ended''));
+            CHECK (recurrenceStatus IS NULL OR recurrenceStatus IN (N''active'', N''ended''));
     ';
 
 IF NOT EXISTS (
@@ -204,6 +208,24 @@ IF NOT EXISTS (
                     AND recurrenceStatus IS NOT NULL
                     AND sourceRequestId IS NULL
                     AND demandType = N''atividade''
+                )
+            );
+    ';
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE parent_object_id = OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT')
+        AND name = 'CK_JDT_DEMAND_MANAGEMENT_startSchedule'
+)
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.JDT_DEMAND_MANAGEMENT WITH CHECK
+            ADD CONSTRAINT CK_JDT_DEMAND_MANAGEMENT_startSchedule
+            CHECK (
+                (scheduledStartAt IS NULL AND scheduledDeadlineDays IS NULL)
+                OR (
+                    scheduledStartAt IS NOT NULL
+                    AND scheduledDeadlineDays IS NOT NULL
+                    AND scheduledDeadlineDays >= 0
                 )
             );
     ';
@@ -243,6 +265,18 @@ IF NOT EXISTS (
             ON dbo.JDT_DEMAND_MANAGEMENT (areaId, recurrenceAvailableDate)
             INCLUDE (status, responsibleId)
             WHERE recurrenceAvailableDate IS NOT NULL;
+    ';
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID('dbo.JDT_DEMAND_MANAGEMENT')
+        AND name = 'IX_JDT_DEMAND_MANAGEMENT_scheduledStartAt'
+)
+    EXEC sys.sp_executesql N'
+        CREATE INDEX IX_JDT_DEMAND_MANAGEMENT_scheduledStartAt
+            ON dbo.JDT_DEMAND_MANAGEMENT (scheduledStartAt)
+            INCLUDE (status, areaId, responsibleId, scheduledDeadlineDays)
+            WHERE scheduledStartAt IS NOT NULL;
     ';
 
 COMMIT TRANSACTION;
