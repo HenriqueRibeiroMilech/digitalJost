@@ -1,6 +1,7 @@
 import calendar
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+from uuid import UUID
 
 from .domain import (
     DEMAND_TYPE_OPTIONS,
@@ -13,6 +14,7 @@ from .domain import (
     ValidationError,
     parse_row_version,
     validate_deadline_reason,
+    validate_activity_recurrence,
     validate_management_change,
     validate_personal_demand,
     validate_review_approval,
@@ -30,6 +32,8 @@ def _serialize_value(value):
         return float(value)
     if isinstance(value, bytes):
         return value.hex()
+    if isinstance(value, UUID):
+        return str(value)
     return value
 
 
@@ -136,7 +140,7 @@ class DemandManagementService:
                 connection, management_id, area_id
             )
         result = self._serialize_demand(demand, user_id, include_attachments=True)
-        result['tasks'] = self._serialize_tasks(tasks)
+        result['tasks'] = [_serialize_row(row) for row in tasks]
         result['history'] = [_serialize_row(row) for row in history]
         return result
 
@@ -249,6 +253,18 @@ class DemandManagementService:
             )
 
             transition = validate_status_transition(demand['status'], payload)
+            recurrence_end = demand['recurrenceEndDate']
+            if isinstance(recurrence_end, datetime):
+                recurrence_end = recurrence_end.date()
+            if (
+                transition['action'] in ('start', 'reopen')
+                and demand['recurrenceStatus'] in ('active', 'paused')
+                and recurrence_end
+                and transition['deadline'] > recurrence_end
+            ):
+                raise ValidationError(
+                    'O prazo da demanda não pode ser posterior ao término da recorrência.'
+                )
             updated = self.repository.transition_demand(
                 connection,
                 management_id,
@@ -292,12 +308,15 @@ class DemandManagementService:
                     dict(demand), actor, area_name, transition
                 )
 
+            if transition['action'] == 'complete':
+                self._create_next_activity_occurrence(
+                    connection, demand, actor['id']
+                )
+
         return self.get_detail(management_id, area_id, actor['id'])
 
     def create_task(self, management_id, area_id, payload, created_by):
         task = validate_task(payload)
-        if task['recurrenceAction']:
-            raise ValidationError('Ação de recorrência inválida para uma nova atividade.')
         with self.engine.begin() as connection:
             self._require_owned_demand(
                 connection, management_id, area_id, created_by, lock=True
@@ -317,60 +336,12 @@ class DemandManagementService:
             self._require_owned_demand(
                 connection, management_id, area_id, user_id, lock=True
             )
-            current_task = self.repository.get_task(
-                connection, management_id, task_id, area_id, lock=True
-            )
-            if not current_task:
-                raise ConflictError(
-                    'A tarefa foi alterada ou não existe mais. Reabra a demanda.'
-                )
             self._validate_task_responsible(connection, task, area_id)
-            has_later_task = self.repository.recurrence_has_later_task(
-                connection,
-                current_task['recurrenceGroupId'],
-                current_task['recurrenceSequence']
-            )
-            self._prepare_task_recurrence(task, current_task, has_later_task)
             updated = self.repository.update_task(
                 connection, management_id, task_id, area_id, task, row_version
             )
             if not updated:
                 raise ConflictError('A tarefa foi alterada ou não existe mais. Reabra a demanda.')
-            updated_task = self.repository.get_task(
-                connection, management_id, task_id, area_id, lock=True
-            )
-            should_create_next = (
-                updated_task['completedAt'] is not None
-                and updated_task['recurrenceStatus'] == 'active'
-                and not has_later_task
-                and (
-                    current_task['completedAt'] is None
-                    or current_task['recurrenceGroupId'] is None
-                    or task['recurrenceAction'] == 'resume'
-                )
-            )
-            if should_create_next:
-                anchor_day = self.repository.get_recurrence_anchor_day(
-                    connection, updated_task['recurrenceGroupId']
-                )
-                next_occurrence = self._next_task_occurrence(
-                    updated_task, anchor_day
-                )
-                if next_occurrence is None:
-                    self.repository.end_task_recurrence(connection, task_id)
-                else:
-                    next_deadline, next_sequence = next_occurrence
-                    created = self.repository.create_next_recurring_task(
-                        connection,
-                        updated_task,
-                        next_deadline,
-                        next_sequence,
-                        user_id
-                    )
-                    if not created:
-                        raise ConflictError(
-                            'A próxima ocorrência já foi criada. Reabra a demanda.'
-                        )
         return self.get_detail(management_id, area_id, user_id)
 
     def delete_task(self, management_id, task_id, area_id, row_version_value, user_id):
@@ -379,30 +350,6 @@ class DemandManagementService:
             self._require_owned_demand(
                 connection, management_id, area_id, user_id, lock=True
             )
-            current_task = self.repository.get_task(
-                connection, management_id, task_id, area_id, lock=True
-            )
-            if not current_task:
-                raise ConflictError(
-                    'A tarefa foi alterada ou não existe mais. Reabra a demanda.'
-                )
-            has_later_task = self.repository.recurrence_has_later_task(
-                connection,
-                current_task['recurrenceGroupId'],
-                current_task['recurrenceSequence']
-            )
-            if (
-                current_task['recurrenceGroupId'] is not None
-                and not has_later_task
-                and current_task['recurrenceStatus'] != 'ended'
-            ):
-                raise ConflictError(
-                    'Encerre a recorrência antes de excluir a ocorrência atual.'
-                )
-            if current_task['recurrenceGroupId'] is not None and not has_later_task:
-                self.repository.end_recurrence_group(
-                    connection, current_task['recurrenceGroupId']
-                )
             deleted = self.repository.delete_task(
                 connection, management_id, task_id, area_id, row_version
             )
@@ -417,42 +364,93 @@ class DemandManagementService:
         ):
             raise ValidationError('O responsável da tarefa deve ser um usuário ativo da área.')
 
-    def _prepare_task_recurrence(self, task, current_task, has_later_task):
-        action = task['recurrenceAction']
-        current_type = current_task['recurrenceType']
-        current_status = current_task['recurrenceStatus']
-        current_group = current_task['recurrenceGroupId']
-
-        if has_later_task:
-            if action:
-                raise ConflictError(
-                    'A recorrência deve ser alterada na ocorrência mais recente.'
+    def update_activity_recurrence(
+        self, management_id, area_id, payload, user_id
+    ):
+        recurrence = validate_activity_recurrence(payload)
+        row_version = parse_row_version(payload.get('rowVersion'))
+        with self.engine.begin() as connection:
+            current = self._require_owned_demand(
+                connection, management_id, area_id, user_id, lock=True
+            )
+            if (
+                current['sourceRequestId'] is not None
+                or current['demandType'] != 'atividade'
+            ):
+                raise ForbiddenError(
+                    'Somente atividades criadas diretamente podem ser recorrentes.'
                 )
-            task['recurrenceType'] = current_type
-            task['recurrenceEndDate'] = current_task['recurrenceEndDate']
-            task['recurrenceMaxOccurrences'] = current_task['recurrenceMaxOccurrences']
-            task['recurrenceStatus'] = current_status
-            task['skipNextOccurrence'] = bool(current_task['skipNextOccurrence'])
-            return
 
-        if current_group is not None and task['recurrenceType'] is None:
-            task['recurrenceType'] = current_type
-            task['recurrenceEndDate'] = current_task['recurrenceEndDate']
-            task['recurrenceMaxOccurrences'] = current_task['recurrenceMaxOccurrences']
-            if not action:
-                task['recurrenceStatus'] = 'ended'
-                task['skipNextOccurrence'] = bool(current_task['skipNextOccurrence'])
-                return
+            has_later = self.repository.recurrence_has_later_demand(
+                connection,
+                current['recurrenceGroupId'],
+                current['recurrenceSequence']
+            )
+            self._prepare_activity_recurrence(recurrence, current, has_later)
+            updated = self.repository.update_activity_recurrence(
+                connection, management_id, area_id, recurrence, row_version
+            )
+            if not updated:
+                raise ConflictError(
+                    'A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.'
+                )
 
-        if task['recurrenceType'] is None:
-            if action:
-                raise ConflictError('Esta atividade não possui recorrência.')
-            task['recurrenceStatus'] = None
-            task['skipNextOccurrence'] = False
-            return
+            if (
+                current['status'] == 'Concluído'
+                and recurrence['recurrenceStatus'] == 'active'
+                and not has_later
+            ):
+                updated_current = self.repository.get_demand(
+                    connection, management_id, area_id, lock=True
+                )
+                self._create_next_activity_occurrence(
+                    connection, updated_current, user_id
+                )
+
+        return self.get_detail(management_id, area_id, user_id)
+
+    def _prepare_activity_recurrence(self, recurrence, current, has_later):
+        action = recurrence['recurrenceAction']
+        current_group = current['recurrenceGroupId']
+        current_type = current['recurrenceType']
+        current_status = current['recurrenceStatus']
+
+        if has_later:
+            raise ConflictError(
+                'A recorrência deve ser alterada na ocorrência mais recente.'
+            )
+
+        if current_group is not None and action:
+            recurrence['recurrenceType'] = current_type
+            recurrence['recurrenceEndDate'] = current['recurrenceEndDate']
+            recurrence['recurrenceMaxOccurrences'] = current['recurrenceMaxOccurrences']
+        elif action:
+            raise ConflictError('Esta atividade ainda não possui recorrência.')
+
+        end_date = recurrence['recurrenceEndDate']
+        if isinstance(end_date, datetime):
+            end_date = end_date.date()
+        if not action and end_date and end_date < date.today():
+            raise ValidationError('O término da recorrência não pode estar no passado.')
+        current_deadline = current['deadline']
+        if isinstance(current_deadline, datetime):
+            current_deadline = current_deadline.date()
+        if not action and end_date and current_deadline and end_date < current_deadline:
+            raise ValidationError(
+                'O término da recorrência não pode ser anterior ao prazo atual.'
+            )
+        maximum = recurrence['recurrenceMaxOccurrences']
+        if (
+            not action
+            and maximum
+            and maximum < (current['recurrenceSequence'] or 1)
+        ):
+            raise ValidationError(
+                'O máximo de ocorrências não pode ser menor que a ocorrência atual.'
+            )
 
         status = current_status or 'active'
-        skip_next = bool(current_task['skipNextOccurrence'])
+        skip_next = bool(current['skipNextOccurrence'])
         if action == 'pause':
             if status != 'active':
                 raise ConflictError('Somente uma recorrência ativa pode ser pausada.')
@@ -472,41 +470,74 @@ class DemandManagementService:
                 raise ConflictError('A próxima ocorrência já está marcada para ser pulada.')
             skip_next = True
 
-        task['recurrenceStatus'] = status
-        task['skipNextOccurrence'] = skip_next
+        recurrence['recurrenceStatus'] = status
+        recurrence['skipNextOccurrence'] = skip_next
 
-    def _next_task_occurrence(self, task, anchor_day):
-        deadline = task['deadline']
+    def _create_next_activity_occurrence(self, connection, demand, user_id):
+        if (
+            demand['sourceRequestId'] is not None
+            or demand['demandType'] != 'atividade'
+            or demand['recurrenceGroupId'] is None
+            or demand['recurrenceStatus'] != 'active'
+        ):
+            return
+        if self.repository.recurrence_has_later_demand(
+            connection,
+            demand['recurrenceGroupId'],
+            demand['recurrenceSequence']
+        ):
+            return
+
+        anchor_day = self.repository.get_activity_recurrence_anchor_day(
+            connection, demand['recurrenceGroupId']
+        )
+        next_occurrence = self._next_activity_occurrence(demand, anchor_day)
+        if next_occurrence is None:
+            self.repository.end_activity_recurrence(
+                connection, demand['managementId']
+            )
+            return
+
+        available_date, next_sequence = next_occurrence
+        created = self.repository.create_next_recurring_activity(
+            connection, demand, available_date, next_sequence, user_id
+        )
+        if not created:
+            raise ConflictError(
+                'A próxima ocorrência já foi criada. Atualize a tela.'
+            )
+
+    def _next_activity_occurrence(self, demand, anchor_day):
+        deadline = demand['deadline']
         if isinstance(deadline, datetime):
             deadline = deadline.date()
         if deadline is None:
             return None
 
-        periods = 2 if task['skipNextOccurrence'] else 1
-        next_deadline = deadline
-        next_sequence = (task['recurrenceSequence'] or 1)
+        periods = 2 if demand['skipNextOccurrence'] else 1
+        next_date = deadline
+        next_sequence = demand['recurrenceSequence'] or 1
         for _ in range(periods):
-            next_deadline = self._advance_recurrence_date(
-                next_deadline, task['recurrenceType'], anchor_day
+            next_date = self._advance_recurrence_date(
+                next_date, demand['recurrenceType'], anchor_day
             )
             next_sequence += 1
 
-        while next_deadline <= date.today():
-            next_deadline = self._advance_recurrence_date(
-                next_deadline, task['recurrenceType'], anchor_day
+        while next_date <= date.today():
+            next_date = self._advance_recurrence_date(
+                next_date, demand['recurrenceType'], anchor_day
             )
             next_sequence += 1
 
-        end_date = task['recurrenceEndDate']
+        end_date = demand['recurrenceEndDate']
         if isinstance(end_date, datetime):
             end_date = end_date.date()
-        if end_date and next_deadline > end_date:
+        if end_date and next_date > end_date:
             return None
-
-        max_occurrences = task['recurrenceMaxOccurrences']
-        if max_occurrences and next_sequence > max_occurrences:
+        maximum = demand['recurrenceMaxOccurrences']
+        if maximum and next_sequence > maximum:
             return None
-        return next_deadline, next_sequence
+        return next_date, next_sequence
 
     @staticmethod
     def _advance_recurrence_date(current_date, recurrence_type, anchor_day=None):
@@ -524,43 +555,6 @@ class DemandManagementService:
             )
             return date(year, month, day)
         raise ValidationError('Frequência da recorrência inválida.')
-
-    @staticmethod
-    def _serialize_tasks(rows):
-        tasks = [_serialize_row(row) for row in rows]
-        groups = {}
-        for task in tasks:
-            group_id = task.get('recurrenceGroupId')
-            if group_id is None:
-                task['isRecurrenceCurrent'] = False
-                continue
-            group_id = str(group_id)
-            task['recurrenceGroupId'] = group_id
-            groups.setdefault(group_id, []).append(task)
-
-        for group_tasks in groups.values():
-            current = max(
-                group_tasks,
-                key=lambda item: (
-                    item.get('recurrenceSequence') or 0,
-                    item.get('taskId') or 0
-                )
-            )
-            completed = [item for item in group_tasks if item.get('completedAt')]
-            on_time = [
-                item for item in completed
-                if item.get('deadline')
-                and str(item['completedAt'])[:10] <= str(item['deadline'])[:10]
-            ]
-            summary = {
-                'totalOccurrences': len(group_tasks),
-                'completedOccurrences': len(completed),
-                'onTimeOccurrences': len(on_time)
-            }
-            for task in group_tasks:
-                task['isRecurrenceCurrent'] = task is current
-                task['recurrenceHistory'] = summary
-        return tasks
 
     def _require_owned_demand(
         self, connection, management_id, area_id, user_id, lock=False,
@@ -601,6 +595,15 @@ class DemandManagementService:
         result.pop('directCreatorId', None)
         is_direct = result.get('sourceRequestId') is None
         result['isDirectDemand'] = is_direct
+        result['isRecurringActivity'] = bool(
+            is_direct
+            and result.get('demandType') == 'atividade'
+            and result.get('recurrenceGroupId')
+        )
+        result['isRecurrenceCurrent'] = bool(
+            result['isRecurringActivity']
+            and result.get('recurrenceSequence') == result.get('recurrenceLatestSequence')
+        )
         result['isOwnedByCurrentUser'] = (
             str(result.get('responsibleId')) == str(user_id)
         )

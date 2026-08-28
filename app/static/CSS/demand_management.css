@@ -517,6 +517,7 @@ textarea {
 .dm-badge--difficulty-baixa { color: var(--dm-green); background: #e1f4eb; }
 .dm-badge--type { color: #8a3f00; background: #ffead3; }
 .dm-badge--type-atividade { color: #24685f; background: #def2ee; }
+.dm-badge--recurrence { color: #3f4f8c; background: #e8ebfb; }
 .dm-badge--review-pending { color: #56616d; background: #eceff2; }
 .dm-badge--review-declined { color: var(--dm-red); background: #fee7e5; }
 .dm-badge--urgency-alta { color: var(--dm-red); background: #fee7e5; }
@@ -1055,6 +1056,82 @@ textarea {
     font-size: .76rem;
 }
 
+.dm-activity-recurrence {
+    margin-top: 1rem;
+}
+
+.dm-create-form .dm-activity-recurrence {
+    margin-top: 0;
+}
+
+.dm-activity-recurrence__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dm-activity-recurrence__heading h3 {
+    flex: 1;
+}
+
+.dm-activity-recurrence__toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    color: var(--dm-navy-dark);
+    cursor: pointer;
+}
+
+.dm-activity-recurrence__toggle input {
+    width: 18px;
+    height: 18px;
+    margin-top: .1rem;
+    accent-color: var(--dm-green);
+}
+
+.dm-activity-recurrence__toggle span {
+    display: grid;
+    gap: .2rem;
+}
+
+.dm-activity-recurrence__toggle small {
+    color: var(--dm-muted);
+    font-size: .72rem;
+    font-weight: 400;
+}
+
+.dm-activity-recurrence__fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    gap: .8rem;
+    margin-top: 1rem;
+}
+
+.dm-activity-recurrence__fields[hidden] {
+    display: none;
+}
+
+.dm-activity-recurrence__summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem 1rem;
+    margin-bottom: .9rem;
+    color: var(--dm-muted);
+    font-size: .74rem;
+}
+
+.dm-activity-recurrence__summary strong {
+    color: var(--dm-navy-dark);
+}
+
+.dm-activity-recurrence__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin-top: .9rem;
+}
+
 .dm-modal__footer {
     display: flex;
     justify-content: flex-end;
@@ -1167,7 +1244,7 @@ textarea {
     align-items: center;
     flex-wrap: wrap;
     grid-column: 5;
-    grid-row: 1 / span 3;
+    grid-row: 1 / span 2;
     align-self: center;
     gap: .35rem;
 }
@@ -1196,83 +1273,6 @@ textarea {
 .dm-task__responsible { grid-column: 3; grid-row: 1; }
 .dm-task__deadline { grid-column: 4; grid-row: 1; }
 .dm-task__observations { grid-column: 2 / 5; grid-row: 2; }
-.dm-task__recurrence { grid-column: 2 / 5; grid-row: 3; }
-
-.dm-task__recurrence {
-    padding: .65rem .75rem;
-    border: 1px solid #d8e3f0;
-    border-radius: 6px;
-    background: #f8fafc;
-}
-
-.dm-task__recurrence summary {
-    color: var(--dm-navy-dark);
-    cursor: pointer;
-    font-size: .72rem;
-    font-weight: 700;
-}
-
-.dm-task__recurrence--history {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: .45rem 1rem;
-    color: var(--dm-muted);
-    font-size: .7rem;
-}
-
-.dm-task__recurrence--history strong {
-    color: var(--dm-navy-dark);
-}
-
-.dm-recurrence__toggle {
-    display: flex;
-    align-items: center;
-    gap: .45rem;
-    margin-top: .7rem;
-    color: var(--dm-navy-dark);
-    font-size: .72rem;
-    font-weight: 600;
-}
-
-.dm-recurrence__toggle input,
-.dm-task-form__recurrence-toggle input {
-    width: 17px;
-    height: 17px;
-    accent-color: var(--dm-green);
-}
-
-.dm-recurrence__fields {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(150px, 1fr));
-    gap: .65rem;
-    margin-top: .7rem;
-}
-
-.dm-recurrence__fields[hidden] {
-    display: none;
-}
-
-.dm-recurrence__history {
-    display: block;
-    margin-top: .65rem;
-    color: var(--dm-muted);
-    font-size: .68rem;
-}
-
-.dm-recurrence__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .4rem;
-    margin-top: .65rem;
-}
-
-.dm-recurrence__actions .dm-button {
-    min-height: 34px;
-    padding: .45rem .65rem;
-    font-size: .68rem;
-}
-
 .dm-task .dm-textarea {
     min-height: 62px;
 }
@@ -1290,21 +1290,6 @@ textarea {
 .dm-task-form__responsible { grid-column: 2; grid-row: 1; }
 .dm-task-form__deadline { grid-column: 3; grid-row: 1; }
 .dm-task-form .dm-button { grid-column: 4; grid-row: 1; align-self: end; white-space: nowrap; }
-.dm-task-form__recurrence-toggle {
-    display: flex;
-    align-items: center;
-    grid-column: 1;
-    grid-row: 2;
-    gap: .45rem;
-    color: var(--dm-navy-dark);
-    font-size: .72rem;
-    font-weight: 600;
-}
-.dm-task-form__recurrence-fields {
-    grid-column: 2 / 5;
-    grid-row: 2;
-    margin-top: 0;
-}
 
 .dm-task-form .dm-input,
 .dm-task-form .dm-button {
@@ -1346,15 +1331,12 @@ body.dm-modal-open { overflow: hidden; }
     .dm-task__responsible { grid-column: 2; grid-row: 2; }
     .dm-task__deadline { grid-column: 3; grid-row: 2; }
     .dm-task__observations { grid-column: 2 / 4; grid-row: 3; }
-    .dm-task__recurrence { grid-column: 2 / 4; grid-row: 4; }
-    .dm-task__actions { grid-column: 2 / 4; grid-row: 5; align-self: end; }
+    .dm-task__actions { grid-column: 2 / 4; grid-row: 4; align-self: end; }
     .dm-task-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dm-task-form__description { grid-column: 1 / 3; grid-row: 1; }
     .dm-task-form__responsible { grid-column: 1; grid-row: 2; }
     .dm-task-form__deadline { grid-column: 2; grid-row: 2; }
-    .dm-task-form__recurrence-toggle { grid-column: 1; grid-row: 3; }
-    .dm-task-form .dm-button { grid-column: 2; grid-row: 3; justify-self: end; }
-    .dm-task-form__recurrence-fields { grid-column: 1 / 3; grid-row: 4; }
+    .dm-task-form .dm-button { grid-column: 1 / 3; grid-row: 3; justify-self: start; }
 }
 
 @media (max-width: 760px) {
@@ -1386,22 +1368,19 @@ body.dm-modal-open { overflow: hidden; }
     .dm-status-form .dm-field--wide,
     .dm-status-form__heading,
     .dm-status-form__actions { grid-column: 1; }
+    .dm-activity-recurrence__fields { grid-template-columns: 1fr; }
     .dm-task { grid-template-columns: 28px minmax(0, 1fr); }
     .dm-task__check { grid-column: 1; grid-row: 1; justify-self: start; }
     .dm-task__description { grid-column: 2; grid-row: 1; }
     .dm-task__responsible { grid-column: 2; grid-row: 2; }
     .dm-task__deadline { grid-column: 2; grid-row: 3; }
     .dm-task__observations { grid-column: 2; grid-row: 4; }
-    .dm-task__recurrence { grid-column: 2; grid-row: 5; }
-    .dm-task__actions { grid-column: 2; grid-row: 6; }
+    .dm-task__actions { grid-column: 2; grid-row: 5; }
     .dm-task-form { grid-template-columns: 1fr; }
     .dm-task-form__description { grid-column: 1; grid-row: 1; }
     .dm-task-form__responsible { grid-column: 1; grid-row: 2; }
     .dm-task-form__deadline { grid-column: 1; grid-row: 3; }
     .dm-task-form .dm-button { grid-column: 1; grid-row: 4; justify-self: start; }
-    .dm-task-form__recurrence-toggle { grid-column: 1; grid-row: 5; }
-    .dm-task-form__recurrence-fields { grid-column: 1; grid-row: 6; }
-    .dm-recurrence__fields { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {

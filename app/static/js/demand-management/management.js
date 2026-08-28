@@ -650,6 +650,22 @@
             </form>`;
     }
 
+    function recurrenceTypeLabel(type) {
+        return {
+            weekly: 'Semanal',
+            biweekly: 'Quinzenal',
+            monthly: 'Mensal'
+        }[type] || 'Recorrente';
+    }
+
+    function recurrenceStatusLabel(status) {
+        return {
+            active: 'Ativa',
+            paused: 'Pausada',
+            ended: 'Encerrada'
+        }[status] || 'Não configurada';
+    }
+
     function renderCard(demand) {
         const late = isLate(demand);
         const statusClass = `dm-card--status-${slug(demand.status)}`;
@@ -658,6 +674,7 @@
             `<span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>`,
             `<span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>`,
             demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : '',
+            demand.isRecurringActivity ? `<span class="dm-badge dm-badge--recurrence">${escapeHtml(recurrenceTypeLabel(demand.recurrenceType))}</span>` : '',
             deadlineBadge(demand),
             late ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''
         ].join('');
@@ -858,6 +875,22 @@
                     </div>
                 </section>
 
+                <section class="dm-panel dm-activity-recurrence">
+                    <label class="dm-activity-recurrence__toggle">
+                        <input type="checkbox" data-activity-recurrence-toggle>
+                        <span><strong>Atividade recorrente</strong><small>Cria um novo card no próximo ciclo quando esta atividade for concluída.</small></span>
+                    </label>
+                    <div class="dm-activity-recurrence__fields" data-activity-recurrence-fields hidden>
+                        <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType" disabled>
+                            <option value="weekly">Semanal</option>
+                            <option value="biweekly">Quinzenal</option>
+                            <option value="monthly">Mensal</option>
+                        </select></label>
+                        <label class="dm-field"><span>Encerrar em (opcional)</span><input class="dm-input" name="recurrenceEndDate" type="date" disabled></label>
+                        <label class="dm-field"><span>Máximo de ocorrências (opcional)</span><input class="dm-input" name="recurrenceMaxOccurrences" type="number" min="1" max="1000" disabled></label>
+                    </div>
+                </section>
+
                 <div class="dm-modal__footer">
                     <button class="dm-button dm-button--quiet" type="button" data-close-modal>Cancelar</button>
                     <button class="dm-button" type="submit">Criar atividade</button>
@@ -886,6 +919,7 @@
         function value(name) {
             return form.elements[name].value || null;
         }
+        const recurring = form.querySelector('[data-activity-recurrence-toggle]').checked;
         return {
             demandType: 'atividade',
             title: value('title'),
@@ -894,8 +928,57 @@
             estimatedHours: value('estimatedHours'),
             dailyHours: value('dailyHours'),
             completedHours: value('completedHours'),
-            observations: value('observations')
+            observations: value('observations'),
+            recurrenceType: recurring ? value('recurrenceType') : null,
+            recurrenceEndDate: recurring ? value('recurrenceEndDate') : null,
+            recurrenceMaxOccurrences: recurring ? value('recurrenceMaxOccurrences') : null
         };
+    }
+
+    function toggleActivityRecurrenceFields(toggle) {
+        const panel = toggle.closest('.dm-activity-recurrence');
+        const fields = panel && panel.querySelector('[data-activity-recurrence-fields]');
+        if (!fields) return;
+        fields.hidden = !toggle.checked;
+        fields.querySelectorAll('input, select').forEach(function (input) {
+            input.disabled = !toggle.checked;
+        });
+    }
+
+    function activityRecurrencePayload(form, action) {
+        return {
+            recurrenceType: form.elements.recurrenceType.value,
+            recurrenceEndDate: form.elements.recurrenceEndDate.value || null,
+            recurrenceMaxOccurrences: form.elements.recurrenceMaxOccurrences.value || null,
+            recurrenceAction: action || null,
+            rowVersion: state.detail.rowVersion
+        };
+    }
+
+    async function updateActivityRecurrence(form, action, button) {
+        const confirmations = {
+            end: 'Encerrar definitivamente esta recorrência?',
+            skip: 'Pular a próxima ocorrência desta atividade?'
+        };
+        if (confirmations[action] && !window.confirm(confirmations[action])) return;
+        if (button) button.disabled = true;
+        try {
+            const detail = await api(`${config.apiRoot}/${state.detail.managementId}/recurrence`, {
+                method: 'POST',
+                body: JSON.stringify(activityRecurrencePayload(form, action))
+            });
+            applyDetail(detail);
+            const messages = {
+                pause: 'Recorrência pausada.',
+                resume: 'Recorrência retomada.',
+                end: 'Recorrência encerrada.',
+                skip: 'A próxima ocorrência será pulada.'
+            };
+            toast(messages[action] || 'Configuração da recorrência salva.');
+        } catch (error) {
+            toast(error.message, true);
+            if (button) button.disabled = false;
+        }
     }
 
     async function createPersonalDemand(form) {
@@ -953,6 +1036,81 @@
             control = `<input class="dm-input" data-field="${fieldName}" type="text" maxlength="250" value="${escapeHtml(valueOrEmpty(value))}">`;
         }
         return `<label class="dm-field${wide ? ' dm-field--wide' : ''}"><span>${escapeHtml(label)}</span>${control}</label>`;
+    }
+
+    function recurrenceFields(demand, disabled) {
+        const locked = disabled ? ' disabled aria-disabled="true"' : '';
+        return `
+            <div class="dm-activity-recurrence__fields">
+                <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType"${locked}>
+                    <option value="weekly"${demand.recurrenceType === 'weekly' ? ' selected' : ''}>Semanal</option>
+                    <option value="biweekly"${demand.recurrenceType === 'biweekly' ? ' selected' : ''}>Quinzenal</option>
+                    <option value="monthly"${demand.recurrenceType === 'monthly' ? ' selected' : ''}>Mensal</option>
+                </select></label>
+                <label class="dm-field"><span>Encerrar em (opcional)</span><input class="dm-input" name="recurrenceEndDate" type="date" value="${escapeHtml(demand.recurrenceEndDate ? demand.recurrenceEndDate.substring(0, 10) : '')}"${locked}></label>
+                <label class="dm-field"><span>Máximo de ocorrências (opcional)</span><input class="dm-input" name="recurrenceMaxOccurrences" type="number" min="1" max="1000" value="${escapeHtml(valueOrEmpty(demand.recurrenceMaxOccurrences))}"${locked}></label>
+            </div>`;
+    }
+
+    function renderActivityRecurrencePanel(demand) {
+        if (!demand.isDirectDemand || demand.demandType !== 'atividade') return '';
+
+        const hasSeries = demand.isRecurringActivity;
+        const current = !hasSeries || demand.isRecurrenceCurrent;
+        const editable = demand.isOwnedByCurrentUser && current && demand.recurrenceStatus !== 'ended';
+        const history = hasSeries ? `
+            <div class="dm-activity-recurrence__summary">
+                <strong>Ocorrência ${escapeHtml(demand.recurrenceSequence)}</strong>
+                <span>${escapeHtml(demand.recurrenceTotalOccurrences || 0)} card(s) criado(s)</span>
+                <span>${escapeHtml(demand.recurrenceCompletedOccurrences || 0)} concluído(s)</span>
+                <span>${escapeHtml(demand.recurrenceOnTimeOccurrences || 0)} no prazo</span>
+            </div>` : '';
+
+        if (!hasSeries && !demand.isOwnedByCurrentUser) return '';
+        if (!hasSeries) {
+            return `
+                <section class="dm-panel dm-activity-recurrence">
+                    <h3>Recorrência da atividade</h3>
+                    <p class="dm-personal-note">Ao concluir este card, a próxima ocorrência será criada como um novo card em A Fazer.</p>
+                    <form id="dm-activity-recurrence-form">
+                        ${recurrenceFields({ recurrenceType: 'weekly' }, false)}
+                        <div class="dm-activity-recurrence__actions">
+                            <button class="dm-button" type="submit">Ativar recorrência</button>
+                        </div>
+                    </form>
+                </section>`;
+        }
+
+        const actions = editable ? `
+            <div class="dm-activity-recurrence__actions">
+                ${demand.recurrenceStatus === 'paused'
+                    ? '<button class="dm-button dm-button--quiet" type="button" data-activity-recurrence-action="resume">Retomar recorrência</button>'
+                    : '<button class="dm-button dm-button--quiet" type="button" data-activity-recurrence-action="pause">Pausar recorrência</button>'}
+                ${demand.recurrenceStatus === 'active'
+                    ? `<button class="dm-button dm-button--quiet" type="button" data-activity-recurrence-action="skip"${demand.skipNextOccurrence ? ' disabled' : ''}>${demand.skipNextOccurrence ? 'Próxima ocorrência será pulada' : 'Pular próxima ocorrência'}</button>`
+                    : ''}
+                <button class="dm-button dm-button--danger" type="button" data-activity-recurrence-action="end">Encerrar recorrência</button>
+            </div>` : '';
+        const note = !current
+            ? '<p class="dm-personal-note">Este card faz parte do histórico. A recorrência só pode ser alterada no card mais recente.</p>'
+            : demand.recurrenceStatus === 'ended'
+                ? '<p class="dm-personal-note">Esta recorrência foi encerrada e não criará novos cards.</p>'
+                : '';
+
+        return `
+            <section class="dm-panel dm-activity-recurrence">
+                <div class="dm-activity-recurrence__heading">
+                    <h3>Recorrência da atividade</h3>
+                    <span class="dm-badge dm-badge--recurrence">${escapeHtml(recurrenceTypeLabel(demand.recurrenceType))} · ${escapeHtml(recurrenceStatusLabel(demand.recurrenceStatus))}</span>
+                </div>
+                ${history}
+                ${note}
+                <form id="dm-activity-recurrence-form">
+                    ${recurrenceFields(demand, !editable)}
+                    ${editable ? '<div class="dm-activity-recurrence__actions"><button class="dm-button" type="submit">Salvar configuração</button></div>' : ''}
+                </form>
+                ${actions}
+            </section>`;
     }
 
     function renderDirectDemandPanel(demand) {
@@ -1053,6 +1211,8 @@
 
                 ${demand.isDirectDemand ? renderDirectDemandPanel(demand) : renderOriginalRequestPanel(demand)}
             </div>
+
+            ${renderActivityRecurrencePanel(demand)}
 
             <section class="dm-panel dm-tasks">
                 <h3>Tarefas · ${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</h3>
@@ -1193,87 +1353,6 @@
         }
     }
 
-    function recurrenceTypeLabel(type) {
-        return {
-            weekly: 'Semanal',
-            biweekly: 'Quinzenal',
-            monthly: 'Mensal'
-        }[type] || 'Sem recorrência';
-    }
-
-    function recurrenceStatusLabel(status) {
-        return {
-            active: 'Ativa',
-            paused: 'Pausada',
-            ended: 'Encerrada'
-        }[status] || 'Não configurada';
-    }
-
-    function recurrenceHistoryText(task) {
-        const history = task.recurrenceHistory || {};
-        const total = Number(history.totalOccurrences || 0);
-        const completed = Number(history.completedOccurrences || 0);
-        const onTime = Number(history.onTimeOccurrences || 0);
-        return `${total} ocorrência(s) · ${completed} concluída(s) · ${onTime} no prazo`;
-    }
-
-    function renderTaskRecurrence(task, editable) {
-        const hasSeries = Boolean(task.recurrenceGroupId);
-        const isCurrent = !hasSeries || task.isRecurrenceCurrent;
-        const isEnded = task.recurrenceStatus === 'ended';
-        const enabled = Boolean(task.recurrenceType) && !isEnded;
-        const locked = !editable || !isCurrent || isEnded;
-        const disabled = locked ? ' disabled aria-disabled="true"' : '';
-        const toggleDisabled = locked || hasSeries
-            ? ' disabled aria-disabled="true"'
-            : '';
-        const fieldsHidden = enabled ? '' : ' hidden';
-
-        if (!hasSeries && !editable) return '';
-
-        if (hasSeries && !isCurrent) {
-            return `
-                <div class="dm-task__recurrence dm-task__recurrence--history">
-                    <strong>${escapeHtml(recurrenceTypeLabel(task.recurrenceType))} · ocorrência ${escapeHtml(task.recurrenceSequence)}</strong>
-                    <span>Esta execução faz parte do histórico da recorrência.</span>
-                </div>`;
-        }
-
-        const summary = hasSeries
-            ? `<span class="dm-recurrence__history">${escapeHtml(recurrenceHistoryText(task))}</span>`
-            : '<span class="dm-recurrence__history">A recorrência começa nesta atividade.</span>';
-        const actions = editable && hasSeries && !isEnded ? `
-            <div class="dm-recurrence__actions">
-                ${task.recurrenceStatus === 'paused'
-                    ? '<button class="dm-button dm-button--quiet" type="button" data-recurrence-action="resume">Retomar recorrência</button>'
-                    : '<button class="dm-button dm-button--quiet" type="button" data-recurrence-action="pause">Pausar recorrência</button>'}
-                ${task.recurrenceStatus === 'active' ? `<button class="dm-button dm-button--quiet" type="button" data-recurrence-action="skip"${task.skipNextOccurrence ? ' disabled' : ''}>${task.skipNextOccurrence ? 'Próxima ocorrência será pulada' : 'Pular próxima'}</button>` : ''}
-                <button class="dm-button dm-button--danger" type="button" data-recurrence-action="end">Encerrar recorrência</button>
-            </div>` : '';
-
-        return `
-            <details class="dm-task__recurrence"${enabled || isEnded ? ' open' : ''}>
-                <summary>${hasSeries
-                    ? `${escapeHtml(recurrenceTypeLabel(task.recurrenceType))} · ${escapeHtml(recurrenceStatusLabel(task.recurrenceStatus))}`
-                    : 'Adicionar recorrência'}</summary>
-                <label class="dm-recurrence__toggle">
-                    <input name="recurrenceEnabled" type="checkbox"${enabled ? ' checked' : ''}${toggleDisabled}>
-                    Repetir esta atividade
-                </label>
-                <div class="dm-recurrence__fields" data-recurrence-fields${fieldsHidden}>
-                    <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType"${disabled}>
-                        <option value="weekly"${task.recurrenceType === 'weekly' ? ' selected' : ''}>Semanal</option>
-                        <option value="biweekly"${task.recurrenceType === 'biweekly' ? ' selected' : ''}>Quinzenal</option>
-                        <option value="monthly"${task.recurrenceType === 'monthly' ? ' selected' : ''}>Mensal</option>
-                    </select></label>
-                    <label class="dm-field"><span>Encerrar em (opcional)</span><input class="dm-input" name="recurrenceEndDate" type="date" value="${escapeHtml(task.recurrenceEndDate ? task.recurrenceEndDate.substring(0, 10) : '')}"${disabled}></label>
-                    <label class="dm-field"><span>Máximo de ocorrências (opcional)</span><input class="dm-input" name="recurrenceMaxOccurrences" type="number" min="1" max="1000" value="${escapeHtml(valueOrEmpty(task.recurrenceMaxOccurrences))}"${disabled}></label>
-                </div>
-                ${summary}
-                ${actions}
-            </details>`;
-    }
-
     function renderTasks(tasks, editable) {
         if (!tasks.length) return '<div class="dm-empty">Nenhuma tarefa cadastrada.</div>';
         return tasks.map(function (task) {
@@ -1283,17 +1362,16 @@
             const disabled = editable ? '' : ' disabled aria-disabled="true"';
             const readonly = editable ? '' : ' readonly aria-readonly="true" title="Somente o responsável atual pode editar esta tarefa"';
             return `
-                <div class="dm-task${completed ? ' dm-task--completed' : ''}" data-task-id="${task.taskId}" data-row-version="${escapeHtml(task.rowVersion)}" data-recurrence-type="${escapeHtml(valueOrEmpty(task.recurrenceType))}" data-recurrence-status="${escapeHtml(valueOrEmpty(task.recurrenceStatus))}" data-recurrence-end-date="${escapeHtml(valueOrEmpty(task.recurrenceEndDate))}" data-recurrence-max-occurrences="${escapeHtml(valueOrEmpty(task.recurrenceMaxOccurrences))}">
+                <div class="dm-task${completed ? ' dm-task--completed' : ''}" data-task-id="${task.taskId}" data-row-version="${escapeHtml(task.rowVersion)}">
                     <input class="dm-task__check" name="completed" type="checkbox" ${completed ? 'checked' : ''}${disabled} title="Marcar como concluída">
-                    <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}${task.recurrenceType ? ` · ${escapeHtml(recurrenceTypeLabel(task.recurrenceType))}` : ''}</span><textarea class="dm-textarea" name="description"${readonly}>${escapeHtml(task.description)}</textarea></label>
+                    <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description"${readonly}>${escapeHtml(task.description)}</textarea></label>
                     <label class="dm-field dm-task__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId"${disabled}>${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
                     <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"${readonly}></label>
                     <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations"${readonly}>${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
-                    ${renderTaskRecurrence(task, editable)}
                     ${editable ? `<div class="dm-task__actions">
                         <span class="dm-task__pending" data-task-pending hidden>Não salvo</span>
                         <button class="dm-button" type="button" data-save-task>Salvar</button>
-                        <button class="dm-button dm-button--danger" type="button" data-delete-task${task.recurrenceGroupId && task.isRecurrenceCurrent && task.recurrenceStatus !== 'ended' ? ' disabled title="Encerre a recorrência antes de excluir"' : ''}>Excluir</button>
+                        <button class="dm-button dm-button--danger" type="button" data-delete-task>Excluir</button>
                     </div>` : ''}
                 </div>`;
         }).join('');
@@ -1306,45 +1384,18 @@
                 <label class="dm-field dm-task-form__description"><span>Nova tarefa</span><input class="dm-input" name="description" type="text" required maxlength="1000" placeholder="Descreva uma entrega objetiva"></label>
                 <label class="dm-field dm-task-form__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, '', 'Não informado')}</select></label>
                 <label class="dm-field dm-task-form__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date"></label>
-                <label class="dm-task-form__recurrence-toggle"><input name="recurrenceEnabled" type="checkbox"> Atividade recorrente</label>
-                <div class="dm-recurrence__fields dm-task-form__recurrence-fields" data-recurrence-fields hidden>
-                    <label class="dm-field"><span>Frequência</span><select class="dm-input" name="recurrenceType" disabled>
-                        <option value="weekly">Semanal</option>
-                        <option value="biweekly">Quinzenal</option>
-                        <option value="monthly">Mensal</option>
-                    </select></label>
-                    <label class="dm-field"><span>Encerrar em (opcional)</span><input class="dm-input" name="recurrenceEndDate" type="date" disabled></label>
-                    <label class="dm-field"><span>Máximo de ocorrências (opcional)</span><input class="dm-input" name="recurrenceMaxOccurrences" type="number" min="1" max="1000" disabled></label>
-                </div>
                 <button class="dm-button" type="submit">Adicionar tarefa</button>
             </form>`;
     }
 
     function taskPayload(container) {
         const observationsInput = container.querySelector('[name="observations"]');
-        const recurrenceToggle = container.querySelector('[name="recurrenceEnabled"]');
-        const recurrenceEnabled = recurrenceToggle
-            ? recurrenceToggle.checked
-            : Boolean(container.dataset.recurrenceType);
-        const recurrenceTypeInput = container.querySelector('[name="recurrenceType"]');
-        const recurrenceEndDateInput = container.querySelector('[name="recurrenceEndDate"]');
-        const recurrenceMaxInput = container.querySelector('[name="recurrenceMaxOccurrences"]');
         return {
             description: container.querySelector('[name="description"]').value,
             responsibleId: container.querySelector('[name="responsibleId"]').value || null,
             deadline: container.querySelector('[name="deadline"]').value || null,
             observations: observationsInput ? observationsInput.value || null : null,
-            completed: Boolean(container.querySelector('[name="completed"]') && container.querySelector('[name="completed"]').checked),
-            recurrenceType: recurrenceEnabled
-                ? (recurrenceTypeInput ? recurrenceTypeInput.value : container.dataset.recurrenceType) || null
-                : null,
-            recurrenceEndDate: recurrenceEnabled
-                ? (recurrenceEndDateInput ? recurrenceEndDateInput.value : container.dataset.recurrenceEndDate) || null
-                : null,
-            recurrenceMaxOccurrences: recurrenceEnabled
-                ? (recurrenceMaxInput ? recurrenceMaxInput.value : container.dataset.recurrenceMaxOccurrences) || null
-                : null,
-            recurrenceStatus: container.dataset.recurrenceStatus || undefined
+            completed: Boolean(container.querySelector('[name="completed"]') && container.querySelector('[name="completed"]').checked)
         };
     }
 
@@ -1365,35 +1416,13 @@
         }
     }
 
-    function toggleTaskRecurrenceFields(container) {
-        const toggle = container.querySelector('[name="recurrenceEnabled"]');
-        const fields = container.querySelector('[data-recurrence-fields]');
-        if (!toggle || !fields) return;
-        fields.hidden = !toggle.checked;
-        fields.querySelectorAll('input, select').forEach(function (input) {
-            input.disabled = !toggle.checked;
-        });
-        const deadline = container.querySelector('[name="deadline"]');
-        if (deadline && container.id === 'dm-new-task') {
-            deadline.required = toggle.checked;
-        }
-    }
-
     function comparableTaskPayload(task) {
-        const recurrenceEnabled = task.recurrenceStatus !== 'ended' && Boolean(task.recurrenceType);
         return {
             description: String(valueOrEmpty(task.description)),
             responsibleId: String(valueOrEmpty(task.responsibleId)),
             deadline: task.deadline ? String(task.deadline).substring(0, 10) : '',
             observations: String(valueOrEmpty(task.observations)),
-            completed: Boolean(task.completed !== undefined ? task.completed : task.completedAt),
-            recurrenceType: recurrenceEnabled ? String(task.recurrenceType) : '',
-            recurrenceEndDate: recurrenceEnabled && task.recurrenceEndDate
-                ? String(task.recurrenceEndDate).substring(0, 10)
-                : '',
-            recurrenceMaxOccurrences: recurrenceEnabled
-                ? String(valueOrEmpty(task.recurrenceMaxOccurrences))
-                : ''
+            completed: Boolean(task.completed !== undefined ? task.completed : task.completedAt)
         };
     }
 
@@ -1453,42 +1482,8 @@
         }
     }
 
-    async function changeTaskRecurrence(row, action, button) {
-        const confirmations = {
-            end: 'Encerrar definitivamente esta recorrência?',
-            skip: 'Pular a próxima ocorrência desta atividade?'
-        };
-        if (confirmations[action] && !window.confirm(confirmations[action])) return;
-
-        button.disabled = true;
-        try {
-            const payload = taskPayload(row);
-            payload.rowVersion = row.dataset.rowVersion;
-            payload.recurrenceAction = action;
-            const detail = await api(`${config.apiRoot}/${state.detail.managementId}/tasks/${row.dataset.taskId}`, {
-                method: 'PATCH',
-                body: JSON.stringify(payload)
-            });
-            applyDetail(detail);
-            const messages = {
-                pause: 'Recorrência pausada.',
-                resume: 'Recorrência retomada.',
-                end: 'Recorrência encerrada.',
-                skip: 'A próxima ocorrência será pulada.'
-            };
-            toast(messages[action] || 'Recorrência atualizada.');
-        } catch (error) {
-            toast(error.message, true);
-        } finally {
-            button.disabled = false;
-        }
-    }
-
     async function deleteTask(row) {
-        const message = row.dataset.recurrenceType
-            ? 'Excluir esta tarefa? Se ela for a ocorrência atual, a recorrência deixará de gerar novas atividades.'
-            : 'Excluir esta tarefa?';
-        if (!window.confirm(message)) return;
+        if (!window.confirm('Excluir esta tarefa?')) return;
         try {
             const detail = await api(`${config.apiRoot}/${state.detail.managementId}/tasks/${row.dataset.taskId}`, {
                 method: 'DELETE',
@@ -1579,29 +1574,25 @@
             renderModal(state.detail);
             return;
         }
-        const saveButton = event.target.closest('[data-save-task]');
-        if (saveButton) {
-            saveTask(saveButton.closest('[data-task-id]'));
-            return;
-        }
-        const recurrenceButton = event.target.closest('[data-recurrence-action]');
-        if (recurrenceButton) {
-            changeTaskRecurrence(
-                recurrenceButton.closest('[data-task-id]'),
-                recurrenceButton.dataset.recurrenceAction,
+        const recurrenceButton = event.target.closest('[data-activity-recurrence-action]');
+        if (recurrenceButton && state.detail) {
+            updateActivityRecurrence(
+                elements.modalContent.querySelector('#dm-activity-recurrence-form'),
+                recurrenceButton.dataset.activityRecurrenceAction,
                 recurrenceButton
             );
             return;
         }
+        const saveButton = event.target.closest('[data-save-task]');
+        if (saveButton) saveTask(saveButton.closest('[data-task-id]'));
         const deleteButton = event.target.closest('[data-delete-task]');
         if (deleteButton) deleteTask(deleteButton.closest('[data-task-id]'));
     });
 
     elements.modal.addEventListener('change', function (event) {
-        if (event.target.matches('[name="recurrenceEnabled"]')) {
-            toggleTaskRecurrenceFields(
-                event.target.closest('[data-task-id], #dm-new-task')
-            );
+        if (event.target.matches('[data-activity-recurrence-toggle]')) {
+            toggleActivityRecurrenceFields(event.target);
+            return;
         }
         const taskRow = event.target.closest('[data-task-id]');
         if (taskRow) {
@@ -1637,6 +1628,13 @@
         } else if (event.target.id === 'dm-status-transition') {
             event.preventDefault();
             transitionStatus(event.target);
+        } else if (event.target.id === 'dm-activity-recurrence-form') {
+            event.preventDefault();
+            updateActivityRecurrence(
+                event.target,
+                null,
+                event.target.querySelector('button[type="submit"]')
+            );
         }
     });
 

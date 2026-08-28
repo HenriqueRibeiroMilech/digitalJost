@@ -222,6 +222,21 @@ def management_status(management_id):
 
 
 @demand_management_bp.route(
+    '/demandas/gerenciador/api/<int:management_id>/recurrence',
+    methods=['POST']
+)
+def management_recurrence(management_id):
+    _, area = _current_area()
+    detail = _build_service().update_activity_recurrence(
+        management_id,
+        area['id'],
+        request.get_json(silent=True),
+        current_user.id
+    )
+    return jsonify(detail)
+
+
+@demand_management_bp.route(
     '/demandas/gerenciador/api/<int:management_id>/tasks',
     methods=['POST']
 )
