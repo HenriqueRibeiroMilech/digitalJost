@@ -736,8 +736,8 @@
         });
         if (!demand) return;
         const fieldName = input.dataset.field;
-        const canAssignUnassigned = fieldName === 'responsibleId' && !demand.responsibleId;
-        if (!demand.isOwnedByCurrentUser && !canAssignUnassigned) {
+        const canReassign = fieldName === 'responsibleId';
+        if (!demand.isOwnedByCurrentUser && !canReassign) {
             toast('Somente o responsável atual pode editar esta demanda.', true);
             return;
         }
@@ -1034,10 +1034,10 @@
                 <section class="dm-panel">
                     <h3>Gerenciamento</h3>
                     ${demand.isOwnedByCurrentUser ? '' : demand.responsibleId
-                        ? '<p class="dm-personal-note">Este card está disponível somente para consulta. Apenas o responsável atual pode editá-lo.</p>'
+                        ? '<p class="dm-personal-note">Você pode alterar o responsável deste card. Os demais campos e ações são exclusivos do responsável atual.</p>'
                         : '<p class="dm-personal-note">Este card está sem responsável ativo. Selecione um novo responsável para liberar a edição.</p>'}
                     <div class="dm-form-grid">
-                        ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles, demand.isOwnedByCurrentUser || !demand.responsibleId)}
+                        ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles, true)}
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [], demand.isOwnedByCurrentUser)}
                         ${renderModalDeadlineField(demand)}
                         ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date', 'Definida automaticamente ao iniciar a demanda')}

@@ -164,7 +164,7 @@ class DemandManagementService:
                 area_id,
                 user_id,
                 lock=True,
-                allow_unassigned=field == 'responsibleId'
+                allow_reassignment=field == 'responsibleId'
             )
             if field == 'deadline':
                 if current['status'] == 'A Fazer':
@@ -344,17 +344,16 @@ class DemandManagementService:
 
     def _require_owned_demand(
         self, connection, management_id, area_id, user_id, lock=False,
-        allow_unassigned=False
+        allow_reassignment=False
     ):
         demand = self.repository.get_demand(
             connection, management_id, area_id, lock=lock
         )
         if not demand:
             raise NotFoundError('Demanda não encontrada.')
-        is_unassigned = demand['responsibleId'] is None
         if (
             str(demand['responsibleId']) != str(user_id)
-            and not (allow_unassigned and is_unassigned)
+            and not allow_reassignment
         ):
             raise ForbiddenError(
                 'Somente o responsável atual pode editar esta demanda.'
