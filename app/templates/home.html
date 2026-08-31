@@ -19,7 +19,7 @@
 
     <body class="page_body">
         {% set can_manage_digital_demands = current_user.is_authenticated and (
-            'Transformação Digital' in (current_user.role or [])
+            user_has_role(current_user.role or [], 'Transformação Digital')
             or (current_user.admin|string|trim|lower) in ['1', 'true', 'sim']
         ) %}
         <div id="main_sidebar" class="sidebar">

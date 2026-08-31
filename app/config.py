@@ -20,6 +20,7 @@ from flask_mail import Mail
 
 from app.utils.security_utils import access_register
 from app.utils.constants import CNNX_JDT
+from app.utils.permissions import user_has_role
 from app.errors import register_error_handlers
 
 # DESLIGA OS AVISOS DE SCRIPT
@@ -71,6 +72,7 @@ def create_app():
     """
 
     app = Flask(__name__)
+    app.jinja_env.globals['user_has_role'] = user_has_role
 
     # DEFINIÇÃO DO DIRETÓRIO DE FUNCIONAMENTO DO CÓDIGO
     path = os.getcwd()
