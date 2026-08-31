@@ -65,10 +65,26 @@ var dell2 = []
 
 var registerData = {{values}}
 
+document.getElementById('unidade').addEventListener('change', atualizarListaLocalEspecifico)
+
 fillData()
+
+function atualizarListaLocalEspecifico() {
+    const unidadeSelecionada = document.getElementById('unidade').value
+    const localEspecificoInput = document.getElementById('op_local_info')
+
+    if (unidadeSelecionada === '0') {
+        localEspecificoInput.setAttribute('list', 'ct')
+        localEspecificoInput.placeholder = 'Selecione ou digite aqui...'
+    } else {
+        localEspecificoInput.removeAttribute('list')
+        localEspecificoInput.placeholder = 'Digite aqui...'
+    }
+}
 
 function fillData() {
     document.getElementById('unidade').value = registerData['unit'][0]
+    atualizarListaLocalEspecifico()
     document.getElementById('op_local_ocorr').value = registerData['type'][0]
     document.getElementById('op_local_info').value = registerData['typeDesc'][0]
     document.getElementById('center').value = registerData['workCenter'][0]

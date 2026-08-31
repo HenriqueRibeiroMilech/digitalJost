@@ -107,6 +107,7 @@ function searchProduct(name) {
 
 document.addEventListener("DOMContentLoaded", function () {
     const unidadeSelect = document.getElementById("unidade");
+    const localEspecificoInput = document.getElementById("op_local_info");
     const centroTrabalhoInput = document.getElementById("centro_trabalho");
     const centroTrabalhoDatalist = document.getElementById("ct");
 
@@ -142,8 +143,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (unidadeSelecionada === "1") {
             centrosSelecionados = centrosCampinas;
+            localEspecificoInput.removeAttribute("list");
+            localEspecificoInput.placeholder = "Digite aqui...";
         } else {
             centrosSelecionados = centrosCaxias;
+            localEspecificoInput.setAttribute("list", "ct");
+            localEspecificoInput.placeholder = "Selecione ou digite aqui...";
         }
 
         centrosSelecionados.forEach(function (centro) {
