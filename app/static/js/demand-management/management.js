@@ -165,6 +165,8 @@
 
     function renderInternalAttachments(demand) {
         const attachments = demand.internalAttachments || [];
+        if (!demand.isOwnedByCurrentUser && !attachments.length) return '';
+
         const list = attachments.length ? `
             <ul class="dm-internal-attachment-list">
                 ${attachments.map(function (attachment) {
@@ -181,13 +183,14 @@
             </ul>` : '<p class="dm-source-empty">Nenhum anexo interno adicionado.</p>';
         const form = demand.isOwnedByCurrentUser ? `
             <form id="dm-internal-attachments" class="dm-internal-attachment-form">
-                <label class="dm-field dm-field--wide">
-                    <span>Adicionar arquivos</span>
-                    <input class="dm-input" name="files" type="file" multiple required>
-                    <small>Até 10 arquivos por envio e 30 por card.</small>
+                <label class="dm-internal-file-picker" for="dm-internal-attachment-input">
+                    <strong data-internal-file-picker-label>Selecionar arquivos</strong>
+                    <span>Adicione até 10 arquivos por envio e 30 por card.</span>
                 </label>
-                <button class="dm-button" type="submit">Anexar arquivos</button>
-            </form>` : '<p class="dm-personal-note">Somente o responsável atual pode adicionar ou excluir anexos.</p>';
+                <input id="dm-internal-attachment-input" class="dm-internal-file-input" data-internal-attachment-input name="files" type="file" multiple required accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.zip,.7z,.rar,.msg,.eml">
+                <ul class="dm-internal-file-selection" data-internal-file-selection aria-live="polite"></ul>
+                <button class="dm-button" type="submit" disabled>Anexar arquivos</button>
+            </form>` : '';
         return `
             <section class="dm-panel dm-internal-attachments">
                 <h3>Anexos internos</h3>
@@ -195,6 +198,24 @@
                 ${list}
                 ${form}
             </section>`;
+    }
+
+    function updateInternalAttachmentSelection(input) {
+        const form = input.closest('#dm-internal-attachments');
+        if (!form) return;
+
+        const files = Array.from(input.files || []);
+        const label = form.querySelector('[data-internal-file-picker-label]');
+        const list = form.querySelector('[data-internal-file-selection]');
+        const submit = form.querySelector('button[type="submit"]');
+
+        if (label) label.textContent = files.length ? 'Alterar seleção' : 'Selecionar arquivos';
+        if (list) {
+            list.innerHTML = files.map(function (file) {
+                return `<li><span>${escapeHtml(file.name)}</span><small>${escapeHtml(formatFileSize(file.size))}</small></li>`;
+            }).join('');
+        }
+        if (submit) submit.disabled = !files.length;
     }
 
     function renderDemandHistory(history) {
@@ -788,17 +809,6 @@
         }[status] || 'Não configurada';
     }
 
-    function recurrenceMissedNotice(demand) {
-        if (
-            !demand.recurrenceMissedAt
-            || ['Concluído', 'Cancelado'].includes(demand.status)
-        ) return '';
-        return `
-            <p class="dm-card__recurrence-missed">
-                Esta ocorrência não foi concluída até ${escapeHtml(formatDate(demand.recurrenceMissedAt, false))}; a próxima já foi aberta.
-            </p>`;
-    }
-
     function renderCard(demand) {
         const late = isLate(demand);
         const statusClass = `dm-card--status-${slug(demand.status)}`;
@@ -822,7 +832,6 @@
                             ? `Criada por: <strong>${escapeHtml(demand.createdByName || demand.requesterName)}</strong>`
                             : `Solicitante: <strong>${escapeHtml(demand.requesterName)}</strong> · #${demand.sourceRequestId}`}</div>
                         <p class="dm-card__description">${escapeHtml(demand.initialDescription)}</p>
-                        ${recurrenceMissedNotice(demand)}
                     </div>
                     <div class="dm-card__progress" title="Progresso das tarefas">
                         <strong>${taskProgress}</strong><span>tarefas</span>
@@ -1196,12 +1205,9 @@
         const hasSeries = demand.isRecurringActivity;
         const current = !hasSeries || demand.isRecurrenceCurrent;
         const editable = demand.isOwnedByCurrentUser && current && demand.recurrenceStatus !== 'ended';
-        const history = hasSeries ? `
+        const sequence = hasSeries ? `
             <div class="dm-activity-recurrence__summary">
                 <strong>Ocorrência ${escapeHtml(demand.recurrenceSequence)}</strong>
-                <span>${escapeHtml(demand.recurrenceTotalOccurrences || 0)} card(s) criado(s)</span>
-                <span>${escapeHtml(demand.recurrenceCompletedOccurrences || 0)} concluído(s)</span>
-                <span>${escapeHtml(demand.recurrenceOnTimeOccurrences || 0)} no prazo</span>
             </div>` : '';
 
         if (
@@ -1238,8 +1244,7 @@
                     <h3>Recorrência da atividade</h3>
                     <span class="dm-badge dm-badge--recurrence">${escapeHtml(recurrenceTypeLabel(demand.recurrenceType))} · ${escapeHtml(recurrenceStatusLabel(demand.recurrenceStatus))}</span>
                 </div>
-                ${history}
-                ${recurrenceMissedNotice(demand)}
+                ${sequence}
                 ${note}
                 <form id="dm-activity-recurrence-form">
                     ${recurrenceFields(demand, !editable, false)}
@@ -1818,6 +1823,10 @@
     });
 
     elements.modal.addEventListener('change', function (event) {
+        if (event.target.matches('[data-internal-attachment-input]')) {
+            updateInternalAttachmentSelection(event.target);
+            return;
+        }
         if (event.target.matches('[data-activity-recurrence-toggle]')) {
             toggleActivityRecurrenceFields(event.target);
             return;

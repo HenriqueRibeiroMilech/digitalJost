@@ -87,11 +87,7 @@ class DemandManagementRepository:
             END AS responsibleName,
             COALESCE(TaskCount.totalTasks, 0) AS totalTasks,
             COALESCE(TaskCount.completedTasks, 0) AS completedTasks,
-            COALESCE(RecurrenceCount.totalOccurrences, 0) AS recurrenceTotalOccurrences,
-            COALESCE(RecurrenceCount.completedOccurrences, 0) AS recurrenceCompletedOccurrences,
-            COALESCE(RecurrenceCount.onTimeOccurrences, 0) AS recurrenceOnTimeOccurrences,
-            RecurrenceCount.latestSequence AS recurrenceLatestSequence,
-            MissedOccurrence.recurrenceMissedAt
+            RecurrenceCount.latestSequence AS recurrenceLatestSequence
         FROM JDT_DEMAND_MANAGEMENT AS M
         LEFT JOIN JDT_REQUEST_IMPROVEMENTS_SMALL AS R
             ON R.requestId = M.sourceRequestId
@@ -111,40 +107,11 @@ class DemandManagementRepository:
         ) AS TaskCount
         OUTER APPLY (
             SELECT
-                COUNT(*) AS totalOccurrences,
-                MAX(Series.recurrenceSequence) AS latestSequence,
-                SUM(CASE WHEN Series.status = N'Concluído' THEN 1 ELSE 0 END)
-                    AS completedOccurrences,
-                SUM(CASE
-                    WHEN Series.status = N'Concluído'
-                        AND Series.deadline IS NOT NULL
-                        AND CAST(Completion.completedAt AS DATE) <= Series.deadline
-                    THEN 1 ELSE 0
-                END) AS onTimeOccurrences
+                MAX(Series.recurrenceSequence) AS latestSequence
             FROM JDT_DEMAND_MANAGEMENT AS Series
-            LEFT JOIN (
-                SELECT
-                    History.managementId,
-                    MAX(History.createdAt) AS completedAt
-                FROM JDT_DEMAND_MANAGEMENT_HISTORY AS History
-                WHERE History.eventType = N'status_complete'
-                GROUP BY History.managementId
-            ) AS Completion
-                ON Completion.managementId = Series.managementId
             WHERE M.recurrenceGroupId IS NOT NULL
                 AND Series.recurrenceGroupId = M.recurrenceGroupId
         ) AS RecurrenceCount
-        OUTER APPLY (
-            SELECT TOP 1
-                Later.recurrenceAvailableDate AS recurrenceMissedAt
-            FROM JDT_DEMAND_MANAGEMENT AS Later
-            WHERE M.recurrenceGroupId IS NOT NULL
-                AND Later.recurrenceGroupId = M.recurrenceGroupId
-                AND Later.recurrenceSequence > M.recurrenceSequence
-                AND Later.recurrenceAvailableDate IS NOT NULL
-                AND Later.recurrenceAvailableDate <= GETDATE()
-            ORDER BY Later.recurrenceSequence, Later.managementId
-        ) AS MissedOccurrence
     """
 
     def list_demands(self, connection, area_id):
