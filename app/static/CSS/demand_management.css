@@ -456,6 +456,20 @@ textarea {
     white-space: pre-line;
 }
 
+.dm-card__recurrence-missed {
+    margin: .55rem 0 0;
+    padding: .42rem .55rem;
+    border-left: 2px solid #d48a00;
+    color: #76520b;
+    background: #fff8df;
+    font-size: .7rem;
+    line-height: 1.35;
+}
+
+.dm-activity-recurrence .dm-card__recurrence-missed {
+    margin: 0 0 .9rem;
+}
+
 .dm-card__progress {
     position: absolute;
     top: 1rem;

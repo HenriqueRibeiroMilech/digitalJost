@@ -251,7 +251,9 @@ def validate_activity_recurrence(payload):
     }
 
 
-def validate_start_schedule(payload, deadline_required=True):
+def validate_start_schedule(
+    payload, deadline_required=True, business_days_only=False
+):
     if not isinstance(payload, dict):
         raise ValidationError('Dados do agendamento inválidos.')
 
@@ -271,6 +273,10 @@ def validate_start_schedule(payload, deadline_required=True):
     scheduled_date = _optional_date(start_value)
     if scheduled_date <= datetime.now().date():
         raise ValidationError('A data de início deve estar no futuro.')
+    if business_days_only and scheduled_date.weekday() >= 5:
+        raise ValidationError(
+            'Atividades devem ser agendadas de segunda a sexta-feira.'
+        )
     scheduled_start = datetime.combine(
         scheduled_date, datetime.min.time()
     ).replace(minute=1)

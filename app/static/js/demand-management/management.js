@@ -636,8 +636,12 @@
     }
 
     function renderStatusActions(demand) {
-        if (demand.isRecurringActivity && !demand.isRecurrenceCurrent) {
-            return '<p class="dm-status-actions__empty">Esta ocorrência faz parte do histórico e não pode ter o status alterado.</p>';
+        if (
+            demand.isRecurringActivity
+            && !demand.isRecurrenceCurrent
+            && ['Concluído', 'Cancelado'].includes(demand.status)
+        ) {
+            return '<p class="dm-status-actions__empty">Esta ocorrência encerrada faz parte do histórico.</p>';
         }
         if (!demand.isOwnedByCurrentUser) {
             return '<p class="dm-status-actions__empty">Somente o responsável atual pode alterar esta demanda.</p>';
@@ -784,6 +788,17 @@
         }[status] || 'Não configurada';
     }
 
+    function recurrenceMissedNotice(demand) {
+        if (
+            !demand.recurrenceMissedAt
+            || ['Concluído', 'Cancelado'].includes(demand.status)
+        ) return '';
+        return `
+            <p class="dm-card__recurrence-missed">
+                Esta ocorrência não foi concluída até ${escapeHtml(formatDate(demand.recurrenceMissedAt, false))}; a próxima já foi aberta.
+            </p>`;
+    }
+
     function renderCard(demand) {
         const late = isLate(demand);
         const statusClass = `dm-card--status-${slug(demand.status)}`;
@@ -807,6 +822,7 @@
                             ? `Criada por: <strong>${escapeHtml(demand.createdByName || demand.requesterName)}</strong>`
                             : `Solicitante: <strong>${escapeHtml(demand.requesterName)}</strong> · #${demand.sourceRequestId}`}</div>
                         <p class="dm-card__description">${escapeHtml(demand.initialDescription)}</p>
+                        ${recurrenceMissedNotice(demand)}
                     </div>
                     <div class="dm-card__progress" title="Progresso das tarefas">
                         <strong>${taskProgress}</strong><span>tarefas</span>
@@ -1196,7 +1212,7 @@
             return `
                 <section class="dm-panel dm-activity-recurrence">
                     <h3>Recorrência da atividade</h3>
-                    <p class="dm-personal-note">Ao concluir ou cancelar este card, a próxima ocorrência será criada como um novo card em A Fazer.</p>
+                    <p class="dm-personal-note">A próxima ocorrência será criada automaticamente no período escolhido, mesmo que este card continue aberto. Sábados e domingos não são considerados.</p>
                     <form id="dm-activity-recurrence-form">
                         <label class="dm-activity-recurrence__toggle">
                             <input type="checkbox" data-activity-recurrence-toggle required>
@@ -1211,7 +1227,7 @@
         }
 
         const note = !current
-            ? '<p class="dm-personal-note">Este card faz parte do histórico. A recorrência só pode ser alterada no card mais recente.</p>'
+            ? '<p class="dm-personal-note">A recorrência só pode ser configurada no card mais recente. Se esta ocorrência ainda estiver aberta, ela poderá ser concluída normalmente.</p>'
             : demand.recurrenceStatus === 'ended'
                 ? '<p class="dm-personal-note">Esta recorrência foi encerrada e não criará novos cards.</p>'
                 : '';
@@ -1223,6 +1239,7 @@
                     <span class="dm-badge dm-badge--recurrence">${escapeHtml(recurrenceTypeLabel(demand.recurrenceType))} · ${escapeHtml(recurrenceStatusLabel(demand.recurrenceStatus))}</span>
                 </div>
                 ${history}
+                ${recurrenceMissedNotice(demand)}
                 ${note}
                 <form id="dm-activity-recurrence-form">
                     ${recurrenceFields(demand, !editable, false)}

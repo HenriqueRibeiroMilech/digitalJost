@@ -1,5 +1,4 @@
-import calendar
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -295,7 +294,8 @@ class DemandManagementService:
                 deadline_required=demand['demandType'] != 'atividade'
             )
             if (
-                demand['recurrenceGroupId'] is not None
+                transition['action'] == 'reopen'
+                and demand['recurrenceGroupId'] is not None
                 and self.repository.recurrence_has_later_demand(
                     connection,
                     demand['recurrenceGroupId'],
@@ -303,7 +303,7 @@ class DemandManagementService:
                 )
             ):
                 raise ConflictError(
-                    'Uma ocorrência histórica não pode ter o status alterado.'
+                    'Uma ocorrência concluída do histórico não pode ser retomada.'
                 )
             transition['clearSchedule'] = bool(
                 transition['action'] == 'start'
@@ -355,11 +355,6 @@ class DemandManagementService:
                     dict(demand), actor, area_name, transition
                 )
 
-            if transition['action'] in ('complete', 'cancel'):
-                self._create_next_activity_occurrence(
-                    connection, demand, actor['id']
-                )
-
         return self.get_detail(management_id, area_id, actor['id'])
 
     def update_start_schedule(
@@ -376,7 +371,8 @@ class DemandManagementService:
                 )
             schedule = validate_start_schedule(
                 payload,
-                deadline_required=current['demandType'] != 'atividade'
+                deadline_required=current['demandType'] != 'atividade',
+                business_days_only=current['demandType'] == 'atividade'
             )
             updated = self.repository.update_start_schedule(
                 connection, management_id, area_id, schedule
@@ -483,18 +479,6 @@ class DemandManagementService:
                     'A demanda foi alterada por outra pessoa. Atualize a tela e tente novamente.'
                 )
 
-            if (
-                current['status'] in ('Concluído', 'Cancelado')
-                and recurrence['recurrenceStatus'] == 'active'
-                and not has_later
-            ):
-                updated_current = self.repository.get_demand(
-                    connection, management_id, area_id, lock=True
-                )
-                self._create_next_activity_occurrence(
-                    connection, updated_current, user_id
-                )
-
         return self.get_detail(management_id, area_id, user_id)
 
     def _prepare_activity_recurrence(self, recurrence, current, has_later):
@@ -531,99 +515,6 @@ class DemandManagementService:
             status = 'ended'
 
         recurrence['recurrenceStatus'] = status
-
-    def _create_next_activity_occurrence(self, connection, demand, user_id):
-        if (
-            demand['sourceRequestId'] is not None
-            or demand['demandType'] != 'atividade'
-            or demand['recurrenceGroupId'] is None
-            or demand['recurrenceStatus'] != 'active'
-        ):
-            return
-        if self.repository.recurrence_has_later_demand(
-            connection,
-            demand['recurrenceGroupId'],
-            demand['recurrenceSequence']
-        ):
-            return
-
-        scheduled_anchor = self.repository.get_recurrence_scheduled_anchor(
-            connection, demand['recurrenceGroupId']
-        )
-        next_occurrence = self._next_activity_occurrence(
-            demand, scheduled_anchor
-        )
-        if next_occurrence is None:
-            self.repository.end_activity_recurrence(
-                connection, demand['managementId']
-            )
-            return
-
-        available_at, scheduled_start_at, next_sequence = next_occurrence
-        created = self.repository.create_next_recurring_activity(
-            connection, demand, available_at, scheduled_start_at,
-            next_sequence, user_id
-        )
-        if not created:
-            raise ConflictError(
-                'A próxima ocorrência já foi criada. Atualize a tela.'
-            )
-
-    def _next_activity_occurrence(self, demand, scheduled_anchor):
-        now = datetime.now()
-        recurrence_type = demand['recurrenceType']
-        if recurrence_type == 'daily':
-            next_day = now.date() + timedelta(days=1)
-        elif recurrence_type == 'weekly':
-            next_day = now.date() + timedelta(days=7 - now.weekday())
-        elif recurrence_type == 'monthly':
-            year = now.year + (1 if now.month == 12 else 0)
-            month = 1 if now.month == 12 else now.month + 1
-            next_day = date(year, month, 1)
-        else:
-            raise ValidationError('Frequência da recorrência inválida.')
-
-        available_at = datetime.combine(next_day, datetime.min.time()).replace(
-            hour=0, minute=1
-        )
-        next_sequence = demand['recurrenceSequence'] or 1
-        next_sequence += 1
-        maximum = demand['recurrenceMaxOccurrences']
-        if maximum and next_sequence > maximum:
-            return None
-        scheduled_start = demand['scheduledStartAt']
-        if scheduled_start:
-            scheduled_start = self._advance_scheduled_start(
-                scheduled_start, recurrence_type,
-                scheduled_anchor.day if scheduled_anchor else None
-            )
-            while scheduled_start < available_at:
-                scheduled_start = self._advance_scheduled_start(
-                    scheduled_start, recurrence_type,
-                    scheduled_anchor.day if scheduled_anchor else None
-                )
-        return available_at, scheduled_start, next_sequence
-
-    @staticmethod
-    def _advance_scheduled_start(
-        current_start, recurrence_type, monthly_anchor_day=None
-    ):
-        if recurrence_type == 'daily':
-            next_start = current_start + timedelta(days=1)
-        elif recurrence_type == 'weekly':
-            next_start = current_start + timedelta(days=7)
-        elif recurrence_type == 'monthly':
-            month_index = current_start.month
-            year = current_start.year + month_index // 12
-            month = month_index % 12 + 1
-            day = min(
-                monthly_anchor_day or current_start.day,
-                calendar.monthrange(year, month)[1]
-            )
-            next_start = current_start.replace(year=year, month=month, day=day)
-        else:
-            raise ValidationError('Frequência da recorrência inválida.')
-        return next_start.replace(hour=0, minute=1, second=0, microsecond=0)
 
     def _require_owned_demand(
         self, connection, management_id, area_id, user_id, lock=False,

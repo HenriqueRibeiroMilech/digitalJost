@@ -174,7 +174,7 @@ Há quatro schedulers separados da aplicação web:
 - a cada 30 segundos: consolidação do monitoramento;
 - a cada 5 minutos: alertas de paradas e sincronização de ponto;
 - diariamente: usuários, demandas, laboratório, desvios e alterações de parada;
-- a cada minuto: agendamentos automáticos do laboratório e início agendado de demandas.
+- a cada minuto: agendamentos automáticos do laboratório, início agendado de demandas e geração de atividades recorrentes.
 
 Eles são serviços Windows e modificam as mesmas fontes utilizadas pelas telas.
 

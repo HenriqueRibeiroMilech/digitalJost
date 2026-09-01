@@ -90,7 +90,8 @@ class DemandManagementRepository:
             COALESCE(RecurrenceCount.totalOccurrences, 0) AS recurrenceTotalOccurrences,
             COALESCE(RecurrenceCount.completedOccurrences, 0) AS recurrenceCompletedOccurrences,
             COALESCE(RecurrenceCount.onTimeOccurrences, 0) AS recurrenceOnTimeOccurrences,
-            RecurrenceCount.latestSequence AS recurrenceLatestSequence
+            RecurrenceCount.latestSequence AS recurrenceLatestSequence,
+            MissedOccurrence.recurrenceMissedAt
         FROM JDT_DEMAND_MANAGEMENT AS M
         LEFT JOIN JDT_REQUEST_IMPROVEMENTS_SMALL AS R
             ON R.requestId = M.sourceRequestId
@@ -133,6 +134,17 @@ class DemandManagementRepository:
             WHERE M.recurrenceGroupId IS NOT NULL
                 AND Series.recurrenceGroupId = M.recurrenceGroupId
         ) AS RecurrenceCount
+        OUTER APPLY (
+            SELECT TOP 1
+                Later.recurrenceAvailableDate AS recurrenceMissedAt
+            FROM JDT_DEMAND_MANAGEMENT AS Later
+            WHERE M.recurrenceGroupId IS NOT NULL
+                AND Later.recurrenceGroupId = M.recurrenceGroupId
+                AND Later.recurrenceSequence > M.recurrenceSequence
+                AND Later.recurrenceAvailableDate IS NOT NULL
+                AND Later.recurrenceAvailableDate <= GETDATE()
+            ORDER BY Later.recurrenceSequence, Later.managementId
+        ) AS MissedOccurrence
     """
 
     def list_demands(self, connection, area_id):
@@ -314,7 +326,8 @@ class DemandManagementRepository:
                 :recurrence_max_occurrences,
                 CASE WHEN :recurrence_type IS NULL THEN NULL ELSE 1 END,
                 CASE WHEN :recurrence_type IS NULL THEN NULL ELSE N'active' END,
-                NULL, 0,
+                CASE WHEN :recurrence_type IS NULL THEN NULL ELSE GETDATE() END,
+                0,
                 GETDATE(), GETDATE()
             )
         """)
@@ -631,6 +644,10 @@ class DemandManagementRepository:
                 recurrenceMaxOccurrences = :recurrence_max_occurrences,
                 recurrenceSequence = COALESCE(recurrenceSequence, 1),
                 recurrenceStatus = :recurrence_status,
+                recurrenceAvailableDate = CASE
+                    WHEN recurrenceGroupId IS NULL THEN GETDATE()
+                    ELSE recurrenceAvailableDate
+                END,
                 skipNextOccurrence = 0,
                 updatedAt = GETDATE()
             WHERE managementId = :management_id
@@ -664,74 +681,6 @@ class DemandManagementRepository:
             'recurrence_group_id': recurrence_group_id,
             'recurrence_sequence': recurrence_sequence or 0
         }).first() is not None
-
-    def get_recurrence_scheduled_anchor(self, connection, recurrence_group_id):
-        query = text("""
-            SELECT TOP 1 scheduledStartAt
-            FROM JDT_DEMAND_MANAGEMENT
-            WHERE recurrenceGroupId = :recurrence_group_id
-                AND scheduledStartAt IS NOT NULL
-            ORDER BY recurrenceSequence, managementId
-        """)
-        row = connection.execute(query, {
-            'recurrence_group_id': recurrence_group_id
-        }).first()
-        return row[0] if row else None
-
-    def create_next_recurring_activity(
-        self, connection, current, available_at, scheduled_start_at,
-        recurrence_sequence, created_by
-    ):
-        query = text("""
-            INSERT INTO JDT_DEMAND_MANAGEMENT (
-                sourceRequestId, areaId, status, deadline, startDate,
-                estimatedHours, dailyHours, completedHours, difficulty,
-                observations, responsibleId, createdBy, demandType, title,
-                initialDescription, assumptions, actualProblems, benefits,
-                recurrenceGroupId, recurrenceType, recurrenceEndDate,
-                recurrenceMaxOccurrences, recurrenceSequence,
-                recurrenceStatus, recurrenceAvailableDate,
-                skipNextOccurrence, scheduledStartAt,
-                scheduledDeadlineDays, createdAt, updatedAt
-            )
-            SELECT
-                NULL, M.areaId, N'A Fazer', NULL, NULL,
-                M.estimatedHours, M.dailyHours, NULL, M.difficulty,
-                NULL, M.responsibleId, :created_by, N'atividade', M.title,
-                M.initialDescription, M.assumptions, M.actualProblems, M.benefits,
-                M.recurrenceGroupId, M.recurrenceType, NULL,
-                M.recurrenceMaxOccurrences, :recurrence_sequence,
-                N'active', :available_at, 0, :scheduled_start_at,
-                M.scheduledDeadlineDays, GETDATE(), GETDATE()
-            FROM JDT_DEMAND_MANAGEMENT AS M
-            WHERE M.managementId = :management_id
-                AND M.sourceRequestId IS NULL
-                AND M.demandType = N'atividade'
-                AND M.recurrenceGroupId IS NOT NULL
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM JDT_DEMAND_MANAGEMENT AS NextDemand
-                    WHERE NextDemand.recurrenceGroupId = M.recurrenceGroupId
-                        AND NextDemand.recurrenceSequence >= :recurrence_sequence
-                )
-        """)
-        result = connection.execute(query, {
-            'management_id': current['managementId'],
-            'available_at': available_at,
-            'scheduled_start_at': scheduled_start_at,
-            'recurrence_sequence': recurrence_sequence,
-            'created_by': created_by
-        })
-        return result.rowcount == 1
-
-    def end_activity_recurrence(self, connection, management_id):
-        connection.execute(text("""
-            UPDATE JDT_DEMAND_MANAGEMENT
-            SET recurrenceStatus = N'ended', updatedAt = GETDATE()
-            WHERE managementId = :management_id
-                AND recurrenceGroupId IS NOT NULL
-                AND recurrenceStatus <> N'ended'
-        """), {'management_id': management_id})
 
     def update_start_schedule(
         self, connection, management_id, area_id, schedule
