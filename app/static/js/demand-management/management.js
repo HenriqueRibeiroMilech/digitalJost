@@ -147,6 +147,56 @@
             </ul>`;
     }
 
+    function internalAttachmentUrl(managementId, attachmentId) {
+        const url = new URL(
+            `${config.apiRoot}/${managementId}/attachments/${attachmentId}`,
+            window.location.origin
+        );
+        url.searchParams.set('area', config.area);
+        return url.toString();
+    }
+
+    function formatFileSize(size) {
+        const bytes = Number(size || 0);
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1048576).toFixed(1)} MB`;
+    }
+
+    function renderInternalAttachments(demand) {
+        const attachments = demand.internalAttachments || [];
+        const list = attachments.length ? `
+            <ul class="dm-internal-attachment-list">
+                ${attachments.map(function (attachment) {
+                    const url = internalAttachmentUrl(demand.managementId, attachment.id);
+                    return `
+                        <li>
+                            <a href="${escapeHtml(url)}">
+                                <span>${escapeHtml(attachment.name)}</span>
+                                <small>${escapeHtml(formatFileSize(attachment.size))}</small>
+                            </a>
+                            ${demand.isOwnedByCurrentUser ? `<button class="dm-button dm-button--danger dm-internal-attachment__delete" type="button" data-delete-internal-attachment="${escapeHtml(attachment.id)}">Excluir</button>` : ''}
+                        </li>`;
+                }).join('')}
+            </ul>` : '<p class="dm-source-empty">Nenhum anexo interno adicionado.</p>';
+        const form = demand.isOwnedByCurrentUser ? `
+            <form id="dm-internal-attachments" class="dm-internal-attachment-form">
+                <label class="dm-field dm-field--wide">
+                    <span>Adicionar arquivos</span>
+                    <input class="dm-input" name="files" type="file" multiple required>
+                    <small>Até 10 arquivos por envio e 30 por card.</small>
+                </label>
+                <button class="dm-button" type="submit">Anexar arquivos</button>
+            </form>` : '<p class="dm-personal-note">Somente o responsável atual pode adicionar ou excluir anexos.</p>';
+        return `
+            <section class="dm-panel dm-internal-attachments">
+                <h3>Anexos internos</h3>
+                <p class="dm-personal-note">Estes arquivos ficam disponíveis somente no Gerenciador de Demandas e não são exibidos ao solicitante.</p>
+                ${list}
+                ${form}
+            </section>`;
+    }
+
     function renderDemandHistory(history) {
         const items = history || [];
         const eventLabels = {
@@ -223,7 +273,7 @@
         url.searchParams.set('area', config.area);
         const settings = Object.assign({ method: 'GET', headers: {} }, options || {});
         settings.headers.Accept = 'application/json';
-        if (settings.body) {
+        if (settings.body && !(settings.body instanceof FormData)) {
             settings.headers['Content-Type'] = 'application/json';
         }
         if (settings.method !== 'GET') {
@@ -544,7 +594,9 @@
             return field('Prazo', 'deadline', demand.deadline && demand.deadline.substring(0, 10), 'date');
         }
         const title = demand.status === 'A Fazer'
-            ? 'O prazo inicial será definido ao iniciar a demanda'
+            ? demand.demandType === 'atividade'
+                ? 'O prazo é opcional e pode ser informado ao iniciar a atividade'
+                : 'O prazo inicial será definido ao iniciar a demanda'
             : 'O prazo não pode ser alterado em uma demanda encerrada';
         const value = demand.status === 'A Fazer'
             ? null
@@ -556,16 +608,22 @@
         if (!demand.isOwnedByCurrentUser) return '';
         const change = state.deadlineChanges.get(demand.managementId);
         if (!change) return '';
+        const removingDeadline = !change.value;
+        const helperText = demand.sourceRequestId
+            ? 'Informe a justificativa que será enviada ao solicitante.'
+            : 'Informe a justificativa que ficará registrada no histórico da atividade.';
         return `
             <form class="dm-status-form dm-deadline-form" data-deadline-change-form="${demand.managementId}">
                 <div class="dm-status-form__heading">
-                    <strong>Alterar prazo</strong>
-                    <span>Informe a justificativa que será enviada ao solicitante.</span>
+                    <strong>${removingDeadline ? 'Remover prazo' : 'Alterar prazo'}</strong>
+                    <span>${helperText}</span>
                 </div>
-                <label class="dm-field">
-                    <span>Novo prazo de entrega</span>
-                    <input class="dm-input" type="date" value="${escapeHtml(change.value || '')}" readonly aria-readonly="true">
-                </label>
+                ${removingDeadline
+                    ? '<p class="dm-personal-note">A atividade ficará sem prazo definido.</p>'
+                    : `<label class="dm-field">
+                        <span>Novo prazo de entrega</span>
+                        <input class="dm-input" type="date" value="${escapeHtml(change.value)}" readonly aria-readonly="true">
+                    </label>`}
                 <label class="dm-field dm-field--wide">
                     <span>Justificativa</span>
                     <textarea class="dm-textarea" name="reason" maxlength="4000" required placeholder="Descreva o motivo da alteração do prazo"></textarea>
@@ -615,11 +673,12 @@
 
     function renderScheduledStartSummary(demand) {
         if (!demand.scheduledStartAt || demand.status !== 'A Fazer') return '';
+        const deadline = scheduledDeadlineValue(demand);
         return `
             <div class="dm-schedule-summary">
                 <strong>Início agendado</strong>
                 <span>${escapeHtml(formatDate(demand.scheduledStartAt, false))}</span>
-                <span>Prazo ao iniciar: ${escapeHtml(formatDate(scheduledDeadlineValue(demand), false))}</span>
+                <span>Prazo ao iniciar: ${deadline ? escapeHtml(formatDate(deadline, false)) : 'Sem prazo definido'}</span>
             </div>`;
     }
 
@@ -629,6 +688,7 @@
         if (!action) return '';
 
         if (action === 'schedule') {
+            const deadlineRequired = demand.demandType !== 'atividade';
             return `
                 <form class="dm-status-form" id="dm-start-schedule">
                     <div class="dm-status-form__heading">
@@ -640,8 +700,8 @@
                         <input class="dm-input" name="scheduledStartAt" type="date" value="${escapeHtml(demand.scheduledStartAt ? demand.scheduledStartAt.substring(0, 10) : '')}" required>
                     </label>
                     <label class="dm-field">
-                        <span>Prazo que será aplicado ao iniciar</span>
-                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(scheduledDeadlineValue(demand))}" required>
+                        <span>Prazo que será aplicado ao iniciar${deadlineRequired ? '' : ' (opcional)'}</span>
+                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(scheduledDeadlineValue(demand))}"${deadlineRequired ? ' required' : ''}>
                     </label>
                     <div class="dm-status-form__actions">
                         <button class="dm-button dm-button--quiet" type="button" data-cancel-status-action>Voltar</button>
@@ -650,17 +710,23 @@
                 </form>`;
         }
 
+        const activity = demand.demandType === 'atividade';
         const content = {
-            start: ['Iniciar demanda', 'Defina o prazo que será informado ao solicitante.'],
+            start: activity
+                ? ['Iniciar atividade', 'Você pode informar um prazo ou iniciar sem prazo definido.']
+                : ['Iniciar demanda', 'Defina o prazo que será informado ao solicitante.'],
             pause: ['Pausar demanda', 'Explique a interrupção e informe a previsão de retorno.'],
             resume: ['Despausar demanda', 'A demanda será retomada mantendo o prazo atual.'],
             complete: ['Concluir demanda', 'Confirme que o desenvolvimento foi finalizado.'],
             cancel: ['Cancelar demanda', 'Informe ao solicitante por que a demanda será cancelada.'],
-            reopen: ['Retomar demanda', 'Defina o novo prazo e justifique a alteração.']
+            reopen: activity
+                ? ['Retomar atividade', 'O prazo é opcional; registre também a justificativa da retomada.']
+                : ['Retomar demanda', 'Defina o novo prazo e justifique a alteração.']
         }[action];
         if (!content) return '';
 
         const asksDeadline = ['start', 'reopen'].includes(action);
+        const deadlineRequired = asksDeadline && !activity;
         const asksReason = ['pause', 'cancel', 'reopen'].includes(action);
         const deadlineValue = action === 'start'
             ? ''
@@ -682,8 +748,8 @@
                 </div>
                 ${asksDeadline ? `
                     <label class="dm-field">
-                        <span>Prazo de entrega</span>
-                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(deadlineValue)}" required>
+                        <span>Prazo de entrega${deadlineRequired ? '' : ' (opcional)'}</span>
+                        <input class="dm-input" name="deadline" type="date" value="${escapeHtml(deadlineValue)}"${deadlineRequired ? ' required' : ''}>
                     </label>` : ''}
                 ${asksReason ? `
                     <label class="dm-field dm-field--wide">
@@ -822,6 +888,11 @@
             return;
         }
         const previousValue = demand.deadline ? demand.deadline.substring(0, 10) : '';
+        if (!value && demand.demandType !== 'atividade') {
+            input.value = previousValue;
+            toast('Melhorias, projetos e erros precisam manter um prazo definido.', true);
+            return;
+        }
         if (previousValue === (value || '')) return;
         state.deadlineChanges.set(managementId, { value: value });
         renderModal(state.detail);
@@ -1260,6 +1331,8 @@
                 ${demand.isDirectDemand ? renderDirectDemandPanel(demand) : renderOriginalRequestPanel(demand)}
             </div>
 
+            ${renderInternalAttachments(demand)}
+
             ${renderActivityRecurrencePanel(demand)}
 
             <section class="dm-panel dm-tasks">
@@ -1427,6 +1500,51 @@
             toast(error.message, true);
             if (button) button.disabled = false;
             if (error.status === 409) await loadBoard(false);
+        }
+    }
+
+    async function uploadInternalAttachments(form) {
+        if (!state.detail) return;
+        const files = Array.from(form.elements.files.files || []);
+        if (!files.length) {
+            toast('Selecione pelo menos um arquivo.', true);
+            return;
+        }
+        const button = form.querySelector('button[type="submit"]');
+        const formData = new FormData();
+        files.forEach(function (file) {
+            formData.append('files', file);
+        });
+        button.disabled = true;
+        try {
+            const detail = await api(
+                `${config.apiRoot}/${state.detail.managementId}/attachments`,
+                { method: 'POST', body: formData }
+            );
+            applyDetail(detail);
+            toast(files.length === 1 ? 'Arquivo anexado.' : 'Arquivos anexados.');
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+        }
+    }
+
+    async function deleteInternalAttachment(attachmentId) {
+        if (!state.detail) return;
+        const attachment = (state.detail.internalAttachments || []).find(function (item) {
+            return item.id === attachmentId;
+        });
+        const label = attachment ? ` "${attachment.name}"` : '';
+        if (!window.confirm(`Excluir o anexo interno${label}?`)) return;
+        try {
+            const detail = await api(
+                `${config.apiRoot}/${state.detail.managementId}/attachments/${attachmentId}`,
+                { method: 'DELETE' }
+            );
+            applyDetail(detail);
+            toast('Anexo interno excluído.');
+        } catch (error) {
+            toast(error.message, true);
         }
     }
 
@@ -1662,6 +1780,11 @@
             renderModal(state.detail);
             return;
         }
+        const deleteAttachment = event.target.closest('[data-delete-internal-attachment]');
+        if (deleteAttachment && state.detail) {
+            deleteInternalAttachment(deleteAttachment.dataset.deleteInternalAttachment);
+            return;
+        }
         const recurrenceButton = event.target.closest('[data-activity-recurrence-action]');
         if (recurrenceButton && state.detail) {
             updateActivityRecurrence(
@@ -1713,6 +1836,9 @@
         } else if (event.target.id === 'dm-new-task') {
             event.preventDefault();
             createTask(event.target);
+        } else if (event.target.id === 'dm-internal-attachments') {
+            event.preventDefault();
+            uploadInternalAttachments(event.target);
         } else if (event.target.id === 'dm-approve-request') {
             event.preventDefault();
             decideRequest(event.target, 'approve');

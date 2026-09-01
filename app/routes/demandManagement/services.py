@@ -43,10 +43,14 @@ def _serialize_row(row):
 
 
 class DemandManagementService:
-    def __init__(self, engine, repository, attachment_storage, review_notifier=None):
+    def __init__(
+        self, engine, repository, attachment_storage,
+        internal_attachment_storage, review_notifier=None
+    ):
         self.engine = engine
         self.repository = repository
         self.attachment_storage = attachment_storage
+        self.internal_attachment_storage = internal_attachment_storage
         self.review_notifier = review_notifier
 
     def list_board(self, area_id, user_id):
@@ -92,6 +96,37 @@ class DemandManagementService:
         if not attachment:
             raise NotFoundError('Anexo não encontrado.')
         return self.attachment_storage.request_directory(request_id), attachment['name']
+
+    def get_internal_attachment(self, management_id, attachment_id, area_id):
+        with self.engine.connect() as connection:
+            demand = self.repository.get_demand(connection, management_id, area_id)
+        if not demand:
+            raise NotFoundError('Demanda não encontrada.')
+        return self.internal_attachment_storage.resolve(
+            management_id, attachment_id
+        )
+
+    def add_internal_attachments(
+        self, management_id, area_id, files, user_id
+    ):
+        with self.engine.begin() as connection:
+            self._require_owned_demand(
+                connection, management_id, area_id, user_id, lock=True
+            )
+            self.internal_attachment_storage.save(management_id, files)
+        return self.get_detail(management_id, area_id, user_id)
+
+    def delete_internal_attachment(
+        self, management_id, attachment_id, area_id, user_id
+    ):
+        with self.engine.begin() as connection:
+            self._require_owned_demand(
+                connection, management_id, area_id, user_id, lock=True
+            )
+            self.internal_attachment_storage.delete(
+                management_id, attachment_id
+            )
+        return self.get_detail(management_id, area_id, user_id)
 
     def approve_review_request(self, request_id, area_id, payload, reviewer, area_name):
         responsible_id = validate_review_approval(payload)
@@ -181,7 +216,7 @@ class DemandManagementService:
                     raise ConflictError(
                         'O prazo não pode ser alterado no status atual da demanda.'
                     )
-                if value is None:
+                if value is None and current['demandType'] != 'atividade':
                     raise ValidationError('Informe o novo prazo da demanda.')
 
                 current_deadline = current['deadline']
@@ -218,6 +253,7 @@ class DemandManagementService:
                     )
                 if (
                     updated
+                    and current['sourceRequestId'] is not None
                     and self.review_notifier
                     and current['requesterEmail']
                 ):
@@ -253,7 +289,11 @@ class DemandManagementService:
                 connection, management_id, area_id, actor['id'], lock=True
             )
 
-            transition = validate_status_transition(demand['status'], payload)
+            transition = validate_status_transition(
+                demand['status'],
+                payload,
+                deadline_required=demand['demandType'] != 'atividade'
+            )
             if (
                 demand['recurrenceGroupId'] is not None
                 and self.repository.recurrence_has_later_demand(
@@ -325,7 +365,6 @@ class DemandManagementService:
     def update_start_schedule(
         self, management_id, area_id, payload, actor, area_name
     ):
-        schedule = validate_start_schedule(payload)
         user_id = actor['id']
         with self.engine.begin() as connection:
             current = self._require_owned_demand(
@@ -335,6 +374,10 @@ class DemandManagementService:
                 raise ConflictError(
                     'Somente demandas em A Fazer podem ter o início agendado.'
                 )
+            schedule = validate_start_schedule(
+                payload,
+                deadline_required=current['demandType'] != 'atividade'
+            )
             updated = self.repository.update_start_schedule(
                 connection, management_id, area_id, schedule
             )
@@ -618,6 +661,9 @@ class DemandManagementService:
         result.pop('requesterEmail', None)
         if include_attachments:
             result['attachments'] = self._serialize_attachments(images)
+            result['internalAttachments'] = self.internal_attachment_storage.list(
+                result['managementId']
+            )
         result.pop('directCreatorId', None)
         is_direct = result.get('sourceRequestId') is None
         result['isDirectDemand'] = is_direct

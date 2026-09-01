@@ -1016,6 +1016,73 @@ textarea {
     font-size: .7rem;
 }
 
+.dm-internal-attachments {
+    margin-top: 1rem;
+}
+
+.dm-internal-attachment-list {
+    display: grid;
+    gap: .55rem;
+    margin: .85rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dm-internal-attachment-list li {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .55rem .65rem;
+    border: 1px solid var(--dm-line);
+    border-radius: 5px;
+    background: #f8fafc;
+}
+
+.dm-internal-attachment-list a {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    color: var(--dm-navy);
+    font-size: .76rem;
+    text-decoration: none;
+}
+
+.dm-internal-attachment-list a:hover span {
+    text-decoration: underline;
+}
+
+.dm-internal-attachment-list span {
+    overflow-wrap: anywhere;
+}
+
+.dm-internal-attachment-list small,
+.dm-internal-attachment-form small {
+    color: var(--dm-muted);
+    font-size: .68rem;
+}
+
+.dm-internal-attachment__delete {
+    flex: 0 0 auto;
+    padding: .45rem .65rem;
+}
+
+.dm-internal-attachment-form {
+    display: flex;
+    align-items: end;
+    gap: .75rem;
+    margin-top: .9rem;
+    padding-top: .9rem;
+    border-top: 1px solid var(--dm-line);
+}
+
+.dm-internal-attachment-form .dm-field {
+    flex: 1;
+}
+
+.dm-internal-attachment-form .dm-button {
+    flex: 0 0 auto;
+}
+
 .dm-review-modal__columns {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
 }
@@ -1389,6 +1456,10 @@ body.dm-modal-open { overflow: hidden; }
     .dm-status-form__heading,
     .dm-status-form__actions { grid-column: 1; }
     .dm-activity-recurrence__fields { grid-template-columns: 1fr; }
+    .dm-internal-attachment-form { align-items: stretch; flex-direction: column; }
+    .dm-internal-attachment-form .dm-button { align-self: start; }
+    .dm-internal-attachment-list li { align-items: stretch; flex-direction: column; }
+    .dm-internal-attachment__delete { align-self: start; }
     .dm-task { grid-template-columns: 28px minmax(0, 1fr); }
     .dm-task__check { grid-column: 1; grid-row: 1; justify-self: start; }
     .dm-task__description { grid-column: 2; grid-row: 1; }

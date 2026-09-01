@@ -251,7 +251,7 @@ def validate_activity_recurrence(payload):
     }
 
 
-def validate_start_schedule(payload):
+def validate_start_schedule(payload, deadline_required=True):
     if not isinstance(payload, dict):
         raise ValidationError('Dados do agendamento inválidos.')
 
@@ -276,14 +276,16 @@ def validate_start_schedule(payload):
     ).replace(minute=1)
 
     deadline = _optional_date(payload.get('deadline'))
-    if deadline is None:
+    if deadline_required and deadline is None:
         raise ValidationError('Informe o prazo que a demanda terá ao iniciar.')
-    if deadline < scheduled_date:
+    if deadline is not None and deadline < scheduled_date:
         raise ValidationError('O prazo não pode ser anterior ao início agendado.')
 
     return {
         'scheduledStartAt': scheduled_start,
-        'scheduledDeadlineDays': (deadline - scheduled_date).days,
+        'scheduledDeadlineDays': (
+            (deadline - scheduled_date).days if deadline is not None else None
+        ),
         'deadline': deadline,
         'rowVersion': parse_row_version(payload.get('rowVersion'))
     }
@@ -325,7 +327,7 @@ def validate_review_decline(payload):
     return reason
 
 
-def validate_status_transition(current_status, payload):
+def validate_status_transition(current_status, payload, deadline_required=True):
     if not isinstance(payload, dict):
         raise ValidationError('Dados da alteração de status inválidos.')
 
@@ -337,7 +339,7 @@ def validate_status_transition(current_status, payload):
     deadline = None
     if action in ('start', 'reopen'):
         deadline = _optional_date(payload.get('deadline'))
-        if deadline is None:
+        if deadline_required and deadline is None:
             raise ValidationError('Informe o prazo da demanda.')
 
     reason = None

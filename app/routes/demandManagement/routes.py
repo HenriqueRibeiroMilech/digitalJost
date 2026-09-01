@@ -19,7 +19,11 @@ from app.utils.db_utils import get_engine
 from app.utils.permissions import get_permission, user_has_role
 
 from .domain import AREA_CONFIG, DEFAULT_AREA, DemandManagementError
-from .integration import RequestAttachmentStorage, RequestReviewNotifier
+from .integration import (
+    InternalDemandAttachmentStorage,
+    RequestAttachmentStorage,
+    RequestReviewNotifier
+)
 from .repository import DemandManagementRepository
 from .services import DemandManagementService
 
@@ -33,6 +37,9 @@ def _build_service():
         engine=get_engine('jdt'),
         repository=DemandManagementRepository(),
         attachment_storage=RequestAttachmentStorage(current_app.root_path),
+        internal_attachment_storage=InternalDemandAttachmentStorage(
+            current_app.instance_path
+        ),
         review_notifier=RequestReviewNotifier()
     )
 
@@ -198,6 +205,45 @@ def management_detail(management_id):
             area_name
         ))
     return jsonify(service.get_detail(management_id, area['id'], current_user.id))
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/<int:management_id>/attachments',
+    methods=['POST']
+)
+def management_attachment_create(management_id):
+    _, area = _current_area()
+    detail = _build_service().add_internal_attachments(
+        management_id,
+        area['id'],
+        request.files.getlist('files'),
+        current_user.id
+    )
+    return jsonify(detail), 201
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/<int:management_id>/attachments/<string:attachment_id>',
+    methods=['GET', 'DELETE']
+)
+def management_attachment_detail(management_id, attachment_id):
+    _, area = _current_area()
+    service = _build_service()
+    if request.method == 'DELETE':
+        detail = service.delete_internal_attachment(
+            management_id, attachment_id, area['id'], current_user.id
+        )
+        return jsonify(detail)
+
+    directory, stored_name, download_name = service.get_internal_attachment(
+        management_id, attachment_id, area['id']
+    )
+    return send_from_directory(
+        directory,
+        stored_name,
+        as_attachment=True,
+        download_name=download_name
+    )
 
 
 @demand_management_bp.route(

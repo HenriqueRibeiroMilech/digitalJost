@@ -1,11 +1,15 @@
 import os
 from datetime import date
+from uuid import uuid4
 
 from flask import render_template, url_for
 from flask_mail import Message
 from sqlalchemy import text
+from werkzeug.utils import secure_filename
 
 from app.config import mail
+
+from .domain import NotFoundError, ValidationError
 
 
 class RequestAttachmentStorage:
@@ -31,6 +35,150 @@ class RequestAttachmentStorage:
             and file_name not in ('.', '..')
             and os.path.basename(file_name) == file_name
         )
+
+
+class InternalDemandAttachmentStorage:
+    """Mantém anexos do gerenciador fora da pasta pública da aplicação."""
+
+    ALLOWED_EXTENSIONS = {
+        'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'txt', 'csv', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp',
+        'zip', '7z', 'rar', 'msg', 'eml'
+    }
+    MAX_FILES_PER_UPLOAD = 10
+    MAX_FILES_PER_DEMAND = 30
+
+    def __init__(self, instance_path):
+        self.base_directory = os.path.abspath(os.path.join(
+            instance_path, 'demand_management_attachments'
+        ))
+
+    def list(self, management_id):
+        directory = self.demand_directory(management_id)
+        try:
+            entries = list(os.scandir(directory))
+        except FileNotFoundError:
+            return []
+
+        attachments = []
+        for entry in entries:
+            if not entry.is_file(follow_symlinks=False):
+                continue
+            parsed = self._parse_stored_name(entry.name)
+            if parsed:
+                attachment_id, original_name = parsed
+                attachments.append({
+                    'id': attachment_id,
+                    'name': original_name,
+                    'size': entry.stat(follow_symlinks=False).st_size
+                })
+        return sorted(attachments, key=lambda item: item['name'].lower())
+
+    def save(self, management_id, files):
+        prepared_files = self._prepare_files(files)
+        existing = self.list(management_id)
+        if len(existing) + len(prepared_files) > self.MAX_FILES_PER_DEMAND:
+            raise ValidationError(
+                f'Cada demanda pode ter no máximo {self.MAX_FILES_PER_DEMAND} anexos internos.'
+            )
+
+        directory = self.demand_directory(management_id)
+        os.makedirs(directory, exist_ok=True)
+        saved_names = []
+        try:
+            for uploaded_file, original_name in prepared_files:
+                stored_name = f'{uuid4().hex}--{original_name}'
+                uploaded_file.save(os.path.join(directory, stored_name))
+                saved_names.append(stored_name)
+        except Exception:
+            for stored_name in saved_names:
+                try:
+                    os.remove(os.path.join(directory, stored_name))
+                except OSError:
+                    pass
+            raise
+        return self.list(management_id)
+
+    def resolve(self, management_id, attachment_id):
+        if not self._is_attachment_id(attachment_id):
+            raise NotFoundError('Anexo interno não encontrado.')
+        directory = self.demand_directory(management_id)
+        try:
+            entries = os.scandir(directory)
+        except FileNotFoundError as error:
+            raise NotFoundError('Anexo interno não encontrado.') from error
+
+        with entries:
+            for entry in entries:
+                parsed = self._parse_stored_name(entry.name)
+                if (
+                    entry.is_file(follow_symlinks=False)
+                    and parsed
+                    and parsed[0] == attachment_id
+                ):
+                    return directory, entry.name, parsed[1]
+        raise NotFoundError('Anexo interno não encontrado.')
+
+    def delete(self, management_id, attachment_id):
+        directory, stored_name, _ = self.resolve(management_id, attachment_id)
+        try:
+            os.remove(os.path.join(directory, stored_name))
+        except FileNotFoundError as error:
+            raise NotFoundError('Anexo interno não encontrado.') from error
+        try:
+            os.rmdir(directory)
+        except OSError:
+            pass
+
+    def demand_directory(self, management_id):
+        directory = os.path.abspath(os.path.join(
+            self.base_directory, str(int(management_id))
+        ))
+        if os.path.commonpath([self.base_directory, directory]) != self.base_directory:
+            raise ValidationError('Diretório de anexos internos inválido.')
+        return directory
+
+    def _prepare_files(self, files):
+        uploaded_files = [item for item in files if item and item.filename]
+        if not uploaded_files:
+            raise ValidationError('Selecione pelo menos um arquivo.')
+        if len(uploaded_files) > self.MAX_FILES_PER_UPLOAD:
+            raise ValidationError(
+                f'Envie no máximo {self.MAX_FILES_PER_UPLOAD} arquivos por vez.'
+            )
+
+        prepared = []
+        for uploaded_file in uploaded_files:
+            original_name = secure_filename(uploaded_file.filename)
+            extension = os.path.splitext(original_name)[1].lower().lstrip('.')
+            if not original_name or extension not in self.ALLOWED_EXTENSIONS:
+                raise ValidationError(
+                    f'O arquivo "{uploaded_file.filename}" não é permitido.'
+                )
+            root, file_extension = os.path.splitext(original_name)
+            prepared.append((uploaded_file, f'{root[:160]}{file_extension}'))
+        return prepared
+
+    @classmethod
+    def _parse_stored_name(cls, stored_name):
+        attachment_id, separator, original_name = stored_name.partition('--')
+        if (
+            not separator
+            or not cls._is_attachment_id(attachment_id)
+            or not RequestAttachmentStorage.is_safe_stored_name(original_name)
+        ):
+            return None
+        return attachment_id, original_name
+
+    @staticmethod
+    def _is_attachment_id(value):
+        if not isinstance(value, str) or len(value) != 32:
+            return False
+        try:
+            int(value, 16)
+        except ValueError:
+            return False
+        return True
 
 
 class RequestReviewNotifier:

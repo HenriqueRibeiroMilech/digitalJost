@@ -23,11 +23,14 @@ def default(logger):
         SET
             status = N'Em Andamento',
             startDate = CAST(M.scheduledStartAt AS DATE),
-            deadline = DATEADD(
-                DAY,
-                M.scheduledDeadlineDays,
-                CAST(M.scheduledStartAt AS DATE)
-            ),
+            deadline = CASE
+                WHEN M.scheduledDeadlineDays IS NULL THEN NULL
+                ELSE DATEADD(
+                    DAY,
+                    M.scheduledDeadlineDays,
+                    CAST(M.scheduledStartAt AS DATE)
+                )
+            END,
             updatedAt = GETDATE()
         OUTPUT
             INSERTED.managementId,
@@ -43,7 +46,6 @@ def default(logger):
         FROM dbo.JDT_DEMAND_MANAGEMENT AS M
         WHERE M.status = N'A Fazer'
             AND M.scheduledStartAt IS NOT NULL
-            AND M.scheduledDeadlineDays IS NOT NULL
             AND DATEADD(
                 MINUTE,
                 1,
