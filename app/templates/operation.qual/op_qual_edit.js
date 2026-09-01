@@ -190,3 +190,5 @@ function searchProduct(id) {
 
     xhr.send()
 }
+
+// V1
