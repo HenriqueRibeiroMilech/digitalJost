@@ -69,87 +69,6 @@ class DemandManagementService:
             }
         }
 
-    def list_tracking(self, area_id):
-        with self.engine.connect() as connection:
-            demands = [
-                self._serialize_tracking_demand(row)
-                for row in self.repository.list_tracking_demands(
-                    connection, area_id
-                )
-            ]
-            responsibles = [
-                _serialize_row(row)
-                for row in self.repository.list_responsibles(
-                    connection, area_id
-                )
-            ]
-        return {
-            'demands': demands,
-            'responsibles': responsibles,
-            'options': {
-                'status': list(STATUS_OPTIONS),
-                'difficulty': list(DIFFICULTY_OPTIONS),
-                'type': [
-                    demand_type for demand_type in DEMAND_TYPE_OPTIONS
-                    if demand_type != 'atividade'
-                ]
-            }
-        }
-
-    def get_tracking_detail(self, management_id, area_id):
-        with self.engine.connect() as connection:
-            demand = self.repository.get_demand(
-                connection, management_id, area_id
-            )
-            self._require_trackable_demand(demand)
-            tasks = self.repository.list_tasks(
-                connection, management_id, area_id
-            )
-            history = self.repository.list_history(
-                connection, management_id, area_id
-            )
-        result = self._serialize_demand(
-            demand, user_id=None, include_attachments=True
-        )
-        result['tasks'] = [_serialize_row(row) for row in tasks]
-        result['history'] = [_serialize_row(row) for row in history]
-        return self._sanitize_tracking_demand(result)
-
-    def get_tracking_request_attachment(
-        self, management_id, attachment_index, area_id
-    ):
-        with self.engine.connect() as connection:
-            demand = self.repository.get_demand(
-                connection, management_id, area_id
-            )
-        self._require_trackable_demand(demand)
-        request_id = demand['sourceRequestId']
-        if request_id is None:
-            raise NotFoundError('Solicitação original não encontrada.')
-        attachments = self._serialize_attachments(demand['images'] or '')
-        attachment = next((
-            item for item in attachments
-            if item['index'] == attachment_index
-        ), None)
-        if not attachment:
-            raise NotFoundError('Anexo não encontrado.')
-        return (
-            self.attachment_storage.request_directory(request_id),
-            attachment['name']
-        )
-
-    def get_tracking_internal_attachment(
-        self, management_id, attachment_id, area_id
-    ):
-        with self.engine.connect() as connection:
-            demand = self.repository.get_demand(
-                connection, management_id, area_id
-            )
-        self._require_trackable_demand(demand)
-        return self.internal_attachment_storage.resolve(
-            management_id, attachment_id
-        )
-
     def list_review_requests(self, area_id):
         with self.engine.connect() as connection:
             rows = self.repository.list_review_requests(connection, area_id)
@@ -614,40 +533,6 @@ class DemandManagementService:
                 'Somente o responsável atual pode editar esta demanda.'
             )
         return demand
-
-    @staticmethod
-    def _require_trackable_demand(demand):
-        if not demand or demand['demandType'] not in (
-            'melhoria', 'projeto', 'erro'
-        ):
-            raise NotFoundError('Demanda não encontrada.')
-
-    def _serialize_tracking_demand(self, row):
-        return self._sanitize_tracking_demand(
-            self._serialize_demand(row, user_id=None)
-        )
-
-    @staticmethod
-    def _sanitize_tracking_demand(demand):
-        result = dict(demand)
-        for field in (
-            'rowVersion',
-            'isOwnedByCurrentUser',
-            'isDirectDemand',
-            'isRecurringActivity',
-            'isRecurrenceCurrent',
-            'recurrenceGroupId',
-            'recurrenceType',
-            'recurrenceMaxOccurrences',
-            'recurrenceSequence',
-            'recurrenceStatus',
-            'recurrenceAvailableDate',
-            'recurrenceLatestSequence'
-        ):
-            result.pop(field, None)
-        for task in result.get('tasks', []):
-            task.pop('rowVersion', None)
-        return result
 
     def _pending_review(self, connection, request_id, area_id, reviewer_id):
         review = self.repository.get_review_request(

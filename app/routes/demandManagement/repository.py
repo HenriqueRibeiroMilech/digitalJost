@@ -129,26 +129,6 @@ class DemandManagementRepository:
         """)
         return connection.execute(query, {'area_id': area_id}).mappings().all()
 
-    def list_tracking_demands(self, connection, area_id):
-        query = text(self._BASE_SELECT + """
-            WHERE M.areaId = :area_id
-                AND COALESCE(
-                    NULLIF(M.demandType, ''),
-                    NULLIF(R.demandType, ''),
-                    N'melhoria'
-                ) IN (N'melhoria', N'projeto', N'erro')
-                AND (
-                    M.recurrenceAvailableDate IS NULL
-                    OR M.recurrenceAvailableDate <= GETDATE()
-                )
-            ORDER BY
-                CASE WHEN Responsible.name IS NULL THEN 1 ELSE 0 END,
-                Responsible.name,
-                M.deadline,
-                M.managementId
-        """)
-        return connection.execute(query, {'area_id': area_id}).mappings().all()
-
     def list_review_requests(self, connection, area_id):
         query = text(self._REVIEW_SELECT + """
             WHERE R.areaId = :area_id

@@ -30,14 +30,6 @@ from .services import DemandManagementService
 
 demand_management_bp = Blueprint('demand_management', __name__)
 
-_TRACKING_ENDPOINTS = {
-    'demand_management.tracking_page',
-    'demand_management.tracking_list',
-    'demand_management.tracking_detail',
-    'demand_management.tracking_request_attachment',
-    'demand_management.tracking_internal_attachment'
-}
-
 
 def _build_service():
     """Monta as dependências concretas usadas pelas rotas."""
@@ -87,9 +79,6 @@ def authorize_request():
         return abort(403)
 
     _, area = _current_area()
-    if request.endpoint in _TRACKING_ENDPOINTS:
-        return None
-
     if not _is_admin() and not user_has_role(current_user.role, area['role']):
         return abort(403)
 
@@ -114,70 +103,6 @@ def management_page():
         csrf_token=_csrf_token(),
         initial_view=initial_view,
         current_user_name=current_user.name
-    )
-
-
-@demand_management_bp.route('/demandas/acompanhamento', methods=['GET'])
-def tracking_page():
-    area_name, area = _current_area()
-    can_manage = _is_admin() or user_has_role(
-        current_user.role, area['role']
-    )
-    return render_template(
-        'demandManagement/tracking.html',
-        area=area_name,
-        can_manage=can_manage
-    )
-
-
-@demand_management_bp.route(
-    '/demandas/acompanhamento/api', methods=['GET']
-)
-def tracking_list():
-    _, area = _current_area()
-    return jsonify(_build_service().list_tracking(area['id']))
-
-
-@demand_management_bp.route(
-    '/demandas/acompanhamento/api/<int:management_id>', methods=['GET']
-)
-def tracking_detail(management_id):
-    _, area = _current_area()
-    return jsonify(
-        _build_service().get_tracking_detail(management_id, area['id'])
-    )
-
-
-@demand_management_bp.route(
-    '/demandas/acompanhamento/api/<int:management_id>'
-    '/request-attachments/<int:attachment_index>',
-    methods=['GET']
-)
-def tracking_request_attachment(management_id, attachment_index):
-    _, area = _current_area()
-    directory, file_name = _build_service().get_tracking_request_attachment(
-        management_id, attachment_index, area['id']
-    )
-    return send_from_directory(directory, file_name, as_attachment=True)
-
-
-@demand_management_bp.route(
-    '/demandas/acompanhamento/api/<int:management_id>'
-    '/attachments/<string:attachment_id>',
-    methods=['GET']
-)
-def tracking_internal_attachment(management_id, attachment_id):
-    _, area = _current_area()
-    directory, stored_name, download_name = (
-        _build_service().get_tracking_internal_attachment(
-            management_id, attachment_id, area['id']
-        )
-    )
-    return send_from_directory(
-        directory,
-        stored_name,
-        as_attachment=True,
-        download_name=download_name
     )
 
 

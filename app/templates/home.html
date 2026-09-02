@@ -73,7 +73,6 @@
             <a href="/demandas?area=Engenharia de Processo">Engenharia de Processo</a>
             <a href="/demandas?area=Manutenção">Manutenção</a>
             <a href="/demandas?area=SSMA">SSMA</a>
-            <a href="{{ url_for('demand_management.tracking_page', area='Transformação Digital') }}">Acompanhamento de Demandas</a>
             {% if can_manage_digital_demands %}
                 <a href="{{ url_for('demand_management.management_page', area='Transformação Digital', view='demands') }}">Gerenciador de Demandas</a>
             {% endif %}
