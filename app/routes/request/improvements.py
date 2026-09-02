@@ -888,31 +888,17 @@ def improvements_image_download():
     return send_file(rf'{os.getcwd()}\{file}', as_attachment=True)
 
 
-@request_improvements_bp.route('/solicitar/dash', methods=['GET', 'POST'])
+@request_improvements_bp.route('/solicitar/dash', methods=['GET'])
 def improvements_dash():
 
     # -------------------------
     # GET → abre a página
     # -------------------------
     if request.method == 'GET':
-        engine = get_engine('jdt')
-        with engine.connect() as cnnx:
-            query = "SELECT name, id FROM JDT_USER_DETAILS WHERE admin = 1"
-            responsible = pd.read_sql(query, cnnx)
-            responsible = responsible[responsible['name'] != 'Digital JOST'].sort_values(by='name')
-
-            query = """
-                SELECT DISTINCT T2.name, T2.id
-                FROM JDT_REQUEST_IMPROVEMENTS_SMALL T1
-                JOIN JDT_USER_DETAILS T2 ON T1.requesterId = T2.id
-            """
-            requester = pd.read_sql(query, cnnx).sort_values(by='name')
-
-        return render_template(
-            'request.improvements/improvements_dash.html',
-            responsible=responsible.to_dict(orient='records'),
-            requester=requester.to_dict(orient='records')
-        )
+        return redirect(url_for(
+            'demand_management.tracking_page',
+            area='Transformação Digital'
+        ))
 
     # -------------------------
     # POST → BUSCA DADOS
