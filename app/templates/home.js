@@ -11,6 +11,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro2") {
         document.getElementById("burro1").style.width = "0px";
@@ -24,6 +25,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro3") {
         document.getElementById("burro1").style.width = "0px";
@@ -37,6 +39,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro4") {
         document.getElementById("burro1").style.width = "0px";
@@ -50,6 +53,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro5") {
         document.getElementById("burro1").style.width = "0px";
@@ -63,6 +67,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro6") {
         document.getElementById("burro1").style.width = "0px";
@@ -76,6 +81,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro7") {
         document.getElementById("burro1").style.width = "0px";
@@ -89,6 +95,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro8") {
         document.getElementById("burro1").style.width = "0px";
@@ -102,6 +109,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro9") {
         document.getElementById("burro1").style.width = "0px";
@@ -115,6 +123,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "470px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro10") {
         document.getElementById("burro1").style.width = "0px";
@@ -128,6 +137,7 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "470px";
         document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "0px";
 
     } else if (id == "burro11") {
         document.getElementById("burro1").style.width = "0px";
@@ -141,7 +151,22 @@ function openBurroNav(id) {
         document.getElementById("burro9").style.width = "0px";
         document.getElementById("burro10").style.width = "0px";
         document.getElementById("burro11").style.width = "470px";
-    } 
+        document.getElementById("burro12").style.width = "0px";
+
+    } else if (id == "burro12") {
+        document.getElementById("burro1").style.width = "0px";
+        document.getElementById("burro2").style.width = "0px";
+        document.getElementById("burro3").style.width = "0px";
+        document.getElementById("burro4").style.width = "0px";
+        document.getElementById("burro5").style.width = "0px";
+        document.getElementById("burro6").style.width = "0px";
+        document.getElementById("burro7").style.width = "0px";
+        document.getElementById("burro8").style.width = "0px";
+        document.getElementById("burro9").style.width = "0px";
+        document.getElementById("burro10").style.width = "0px";
+        document.getElementById("burro11").style.width = "0px";
+        document.getElementById("burro12").style.width = "470px";
+    }
 
     
 }
@@ -212,7 +237,8 @@ function closeBurroNav() {
     document.getElementById("burro8").style.width = "0px";
     document.getElementById("burro9").style.width = "0px";
     document.getElementById("burro10").style.width = "0px";
-    document.getElementById("burro11").style.width = "0px"
+    document.getElementById("burro11").style.width = "0px";
+    document.getElementById("burro12").style.width = "0px";
 }
 
 function changeNav() {
