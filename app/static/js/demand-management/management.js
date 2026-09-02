@@ -464,13 +464,13 @@
         });
 
         return filtered.sort(function (left, right) {
-            const leftPriority = left.priority == null ? -1 : Number(left.priority);
-            const rightPriority = right.priority == null ? -1 : Number(right.priority);
+            const leftPriority = left.priority == null ? Number.POSITIVE_INFINITY : Number(left.priority);
+            const rightPriority = right.priority == null ? Number.POSITIVE_INFINITY : Number(right.priority);
             const leftDeadline = left.deadline ? String(left.deadline).substring(0, 10) : null;
             const rightDeadline = right.deadline ? String(right.deadline).substring(0, 10) : null;
 
             if (elements.sort.value === 'priority' && leftPriority !== rightPriority) {
-                return rightPriority - leftPriority;
+                return leftPriority - rightPriority;
             }
             if (leftDeadline !== rightDeadline) {
                 if (leftDeadline == null) return 1;
@@ -478,7 +478,7 @@
                 return leftDeadline.localeCompare(rightDeadline);
             }
             if (elements.sort.value !== 'priority' && leftPriority !== rightPriority) {
-                return rightPriority - leftPriority;
+                return leftPriority - rightPriority;
             }
             return Number(left.managementId) - Number(right.managementId);
         });

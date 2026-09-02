@@ -362,8 +362,10 @@ textarea {
 
 .dm-owner__category > h3 {
     margin: 1rem 1rem 0;
-    color: var(--dm-muted);
-    font-size: .7rem;
+    padding-left: .55rem;
+    border-left: 3px solid var(--dm-orange);
+    color: var(--dm-navy);
+    font-size: .72rem;
     font-weight: 700;
     letter-spacing: .09em;
     text-transform: uppercase;
@@ -374,9 +376,9 @@ textarea {
 }
 
 .dm-owner__divider {
-    height: 1px;
-    margin: 0 1rem;
-    background: var(--dm-line);
+    height: 2px;
+    margin: .15rem 1rem .2rem;
+    background: #cbd2da;
 }
 
 .dm-card:hover {
