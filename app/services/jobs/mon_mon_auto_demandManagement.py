@@ -71,7 +71,7 @@ def _create_next_recurrence(
     result = connection.execute(text("""
         INSERT INTO dbo.JDT_DEMAND_MANAGEMENT (
             sourceRequestId, areaId, status, deadline, startDate,
-            estimatedHours, dailyHours, completedHours, difficulty,
+            estimatedHours, dailyHours, completedHours, difficulty, priority,
             observations, responsibleId, createdBy, demandType, title,
             initialDescription, assumptions, actualProblems, benefits,
             recurrenceGroupId, recurrenceType, recurrenceEndDate,
@@ -82,7 +82,7 @@ def _create_next_recurrence(
         )
         SELECT
             NULL, M.areaId, N'A Fazer', NULL, NULL,
-            M.estimatedHours, M.dailyHours, NULL, M.difficulty,
+            M.estimatedHours, M.dailyHours, NULL, M.difficulty, M.priority,
             NULL, M.responsibleId, M.createdBy, N'atividade', M.title,
             M.initialDescription, M.assumptions, M.actualProblems, M.benefits,
             M.recurrenceGroupId, M.recurrenceType, NULL,

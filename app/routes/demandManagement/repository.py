@@ -46,6 +46,7 @@ class DemandManagementRepository:
             M.dailyHours,
             M.completedHours,
             M.difficulty,
+            M.priority,
             M.observations,
             M.recurrenceGroupId,
             M.recurrenceType,

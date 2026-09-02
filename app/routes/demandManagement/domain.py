@@ -21,6 +21,8 @@ STATUS_OPTIONS = (
 
 DIFFICULTY_OPTIONS = ('Baixa', 'Média', 'Alta')
 
+PRIORITY_OPTIONS = tuple(range(1, 11))
+
 DEMAND_TYPE_OPTIONS = ('atividade', 'projeto', 'melhoria', 'erro')
 
 ACTIVITY_RECURRENCE_OPTIONS = ('daily', 'weekly', 'monthly')
@@ -34,6 +36,7 @@ MANAGEMENT_FIELDS = {
     'dailyHours': 'dailyHours',
     'completedHours': 'completedHours',
     'difficulty': 'difficulty',
+    'priority': 'priority',
     'observations': 'observations',
     'responsibleId': 'responsibleId'
 }
@@ -149,6 +152,8 @@ def validate_management_change(field, value):
         if value not in DIFFICULTY_OPTIONS:
             raise ValidationError('Dificuldade inválida.')
         return value
+    if field == 'priority':
+        return _optional_positive_integer(value, 'A prioridade', maximum=10)
     if field == 'deadline':
         return _optional_date(value)
     if field in ('estimatedHours', 'dailyHours', 'completedHours'):

@@ -153,7 +153,7 @@ textarea {
 
 .dm-toolbar {
     display: grid;
-    grid-template-columns: minmax(240px, 2fr) repeat(4, minmax(130px, 1fr)) auto;
+    grid-template-columns: minmax(240px, 2fr) repeat(5, minmax(125px, 1fr)) auto;
     align-items: end;
     gap: .75rem;
     max-width: 1600px;
@@ -356,8 +356,27 @@ textarea {
     padding: 1rem;
 }
 
-.dm-owner--collapsed .dm-owner__cards {
+.dm-owner--collapsed .dm-owner__content {
     display: none;
+}
+
+.dm-owner__category > h3 {
+    margin: 1rem 1rem 0;
+    color: var(--dm-muted);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.dm-owner__category .dm-owner__cards {
+    padding-top: .65rem;
+}
+
+.dm-owner__divider {
+    height: 1px;
+    margin: 0 1rem;
+    background: var(--dm-line);
 }
 
 .dm-card:hover {
@@ -515,6 +534,11 @@ textarea {
 .dm-badge--difficulty-alta { color: var(--dm-red); background: #fee7e5; }
 .dm-badge--difficulty-media { color: var(--dm-yellow); background: #fff1c2; }
 .dm-badge--difficulty-baixa { color: var(--dm-green); background: #e1f4eb; }
+.dm-badge--priority {
+    color: #fff;
+    background: #7b2cbf;
+    box-shadow: 0 2px 6px rgba(123, 44, 191, .28);
+}
 .dm-badge--type { color: #8a3f00; background: #ffead3; }
 .dm-badge--type-atividade { color: #24685f; background: #def2ee; }
 .dm-badge--recurrence { color: #3f4f8c; background: #e8ebfb; }
@@ -826,8 +850,9 @@ textarea {
 }
 
 .dm-form-grid .dm-field--responsibleid,
-.dm-form-grid .dm-field--difficulty {
-    grid-column: span 3;
+.dm-form-grid .dm-field--difficulty,
+.dm-form-grid .dm-field--priority {
+    grid-column: span 2;
 }
 
 .dm-form-grid .dm-field--estimatedhours,

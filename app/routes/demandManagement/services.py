@@ -6,6 +6,7 @@ from .domain import (
     DEMAND_TYPE_OPTIONS,
     DIFFICULTY_OPTIONS,
     DIRECT_DEMAND_FIELDS,
+    PRIORITY_OPTIONS,
     STATUS_OPTIONS,
     ConflictError,
     ForbiddenError,
@@ -65,6 +66,7 @@ class DemandManagementService:
             'options': {
                 'status': list(STATUS_OPTIONS),
                 'difficulty': list(DIFFICULTY_OPTIONS),
+                'priority': list(PRIORITY_OPTIONS),
                 'type': list(DEMAND_TYPE_OPTIONS)
             }
         }

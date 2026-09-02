@@ -5,7 +5,7 @@
     const state = {
         demands: [],
         responsibles: [],
-        options: { status: [], difficulty: [], type: [] },
+        options: { status: [], difficulty: [], priority: [], type: [] },
         detail: null,
         requests: [],
         requestDetail: null,
@@ -30,6 +30,7 @@
         type: document.getElementById('dm-filter-type'),
         status: document.getElementById('dm-filter-status'),
         difficulty: document.getElementById('dm-filter-difficulty'),
+        sort: document.getElementById('dm-sort'),
         clearFilters: document.getElementById('dm-clear-filters'),
         createDemand: document.getElementById('dm-create-demand'),
         requestList: document.getElementById('dm-request-list'),
@@ -411,12 +412,16 @@
         elements.responsible.innerHTML = '<option value="">Todos</option>' +
             optionList(state.responsibles, selectedResponsible) +
             '<option value="__unassigned__">Histórico de antigos colaboradores</option>';
-        elements.type.innerHTML = '<option value="">Todos</option>' +
-            Array.from(new Set(state.demands.map(function (item) { return item.demandType; })))
-                .filter(Boolean)
-                .map(function (item) {
-                    return `<option value="${escapeHtml(item)}">${escapeHtml(typeLabel(item))}</option>`;
-                }).join('');
+        elements.type.innerHTML = [
+            ['', 'Todos'],
+            ['atividade', 'Atividades'],
+            ['__requested__', 'Demandas solicitadas'],
+            ['projeto', 'Projetos'],
+            ['melhoria', 'Melhorias'],
+            ['erro', 'Erros']
+        ].map(function (item) {
+            return `<option value="${item[0]}">${item[1]}</option>`;
+        }).join('');
         elements.status.innerHTML = '<option value="">Todos</option>' + 
             '<option value="__active__">Ativas</option>' +
             optionList(state.options.status || [], selectedStatus) +
@@ -432,11 +437,17 @@
 
     function filteredDemands() {
         const search = normalize(elements.search.value);
-        return state.demands.filter(function (demand) {
+        const requestedTypes = ['projeto', 'melhoria', 'erro'];
+        const filtered = state.demands.filter(function (demand) {
             const responsibleFilter = elements.responsible.value;
             const statusFilter = elements.status.value;
+            const typeFilter = elements.type.value;
             const matchesResponsible = !responsibleFilter ||
                 (responsibleFilter === '__unassigned__' ? !demand.responsibleId : demand.responsibleId === responsibleFilter);
+            const matchesType = !typeFilter ||
+                (typeFilter === '__requested__'
+                    ? requestedTypes.includes(demand.demandType)
+                    : demand.demandType === typeFilter);
             let matchesStatus = !statusFilter;
             if (statusFilter === '__active__') {
                 matchesStatus = ['A Fazer', 'Em Andamento', 'Pausado'].includes(demand.status);
@@ -446,10 +457,30 @@
                 matchesStatus = demand.status === statusFilter;
             }
             return matchesResponsible &&
-                (!elements.type.value || demand.demandType === elements.type.value) &&
+                matchesType &&
                 matchesStatus &&
                 (!elements.difficulty.value || demand.difficulty === elements.difficulty.value) &&
                 (!search || normalize(demand.title).includes(search));
+        });
+
+        return filtered.sort(function (left, right) {
+            const leftPriority = left.priority == null ? -1 : Number(left.priority);
+            const rightPriority = right.priority == null ? -1 : Number(right.priority);
+            const leftDeadline = left.deadline ? String(left.deadline).substring(0, 10) : null;
+            const rightDeadline = right.deadline ? String(right.deadline).substring(0, 10) : null;
+
+            if (elements.sort.value === 'priority' && leftPriority !== rightPriority) {
+                return rightPriority - leftPriority;
+            }
+            if (leftDeadline !== rightDeadline) {
+                if (leftDeadline == null) return 1;
+                if (rightDeadline == null) return -1;
+                return leftDeadline.localeCompare(rightDeadline);
+            }
+            if (elements.sort.value !== 'priority' && leftPriority !== rightPriority) {
+                return rightPriority - leftPriority;
+            }
+            return Number(left.managementId) - Number(right.managementId);
         });
     }
 
@@ -511,7 +542,12 @@
             groups.get(key).demands.push(demand);
         });
 
-        elements.board.innerHTML = Array.from(groups.values()).map(renderOwner).join('');
+        const orderedGroups = Array.from(groups.values()).sort(function (left, right) {
+            if (left.key === '__unassigned__') return 1;
+            if (right.key === '__unassigned__') return -1;
+            return left.name.localeCompare(right.name, 'pt-BR');
+        });
+        elements.board.innerHTML = orderedGroups.map(renderOwner).join('');
     }
 
     function filteredRequests() {
@@ -558,6 +594,24 @@
         const active = group.demands.filter(function (item) {
             return !['Concluído', 'Cancelado'].includes(item.status);
         }).length;
+        const requestedDemands = group.demands.filter(function (item) {
+            return item.demandType !== 'atividade';
+        });
+        const activities = group.demands.filter(function (item) {
+            return item.demandType === 'atividade';
+        });
+        const hasBothCategories = requestedDemands.length && activities.length;
+        const cards = hasBothCategories ? `
+            <section class="dm-owner__category">
+                <h3>Demandas solicitadas</h3>
+                <div class="dm-owner__cards">${requestedDemands.map(renderCard).join('')}</div>
+            </section>
+            <div class="dm-owner__divider" aria-hidden="true"></div>
+            <section class="dm-owner__category">
+                <h3>Atividades</h3>
+                <div class="dm-owner__cards">${activities.map(renderCard).join('')}</div>
+            </section>` : `
+            <div class="dm-owner__cards">${group.demands.map(renderCard).join('')}</div>`;
         return `
             <section class="dm-owner${collapsed ? ' dm-owner--collapsed' : ''}" data-owner-section="${escapeHtml(group.key)}">
                 <button class="dm-owner__header" type="button" data-owner-toggle="${escapeHtml(group.key)}" aria-expanded="${!collapsed}">
@@ -565,7 +619,7 @@
                     <span class="dm-owner__name">${escapeHtml(group.name)}</span>
                     <span class="dm-owner__capacity">${group.demands.length} demanda(s) · ${active} ativa(s)</span>
                 </button>
-                <div class="dm-owner__cards">${group.demands.map(renderCard).join('')}</div>
+                <div class="dm-owner__content">${cards}</div>
             </section>`;
     }
 
@@ -815,6 +869,7 @@
         const taskProgress = `${demand.completedTasks || 0}/${demand.totalTasks || 0}`;
         const badges = [
             `<span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>`,
+            demand.priority != null ? `<span class="dm-badge dm-badge--priority">Prioridade ${escapeHtml(demand.priority)}</span>` : '',
             `<span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>`,
             demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : '',
             demand.isRecurringActivity ? `<span class="dm-badge dm-badge--recurrence">${escapeHtml(recurrenceTypeLabel(demand.recurrenceType))}</span>` : '',
@@ -1321,6 +1376,7 @@
             <header class="dm-modal__header">
                 <div class="dm-badges">
                     <span class="dm-badge ${typeBadgeClass(demand.demandType)}">${escapeHtml(typeLabel(demand.demandType))}</span>
+                    ${demand.priority != null ? `<span class="dm-badge dm-badge--priority">Prioridade ${escapeHtml(demand.priority)}</span>` : ''}
                     <span class="dm-badge dm-badge--status-${slug(demand.status)}">${escapeHtml(demand.status)}</span>
                     ${demand.difficulty ? `<span class="dm-badge dm-badge--difficulty-${slug(demand.difficulty)}">${escapeHtml(demand.difficulty)}</span>` : ''}
                     ${isLate(demand) ? '<span class="dm-badge dm-badge--late">Atrasada</span>' : ''}
@@ -1337,6 +1393,7 @@
                     <div class="dm-form-grid">
                         ${field('Responsável', 'responsibleId', demand.responsibleId, 'select', state.responsibles, true)}
                         ${field('Dificuldade', 'difficulty', demand.difficulty, 'select', state.options.difficulty || [], demand.isOwnedByCurrentUser)}
+                        ${field('Prioridade', 'priority', demand.priority, 'select', state.options.priority || [], demand.isOwnedByCurrentUser)}
                         ${renderModalDeadlineField(demand)}
                         ${readonlyField('Data de início', 'startDate', demand.startDate && demand.startDate.substring(0, 10), 'date', 'Definida automaticamente ao iniciar a demanda')}
                         ${renderDeadlineChangeForm(demand)}
@@ -1887,7 +1944,7 @@
         }
     });
 
-    [elements.responsible, elements.type, elements.status, elements.difficulty].forEach(function (filter) {
+    [elements.responsible, elements.type, elements.status, elements.difficulty, elements.sort].forEach(function (filter) {
         filter.addEventListener('change', renderBoard);
     });
     elements.search.addEventListener('input', renderBoard);
@@ -1897,6 +1954,7 @@
         elements.type.value = '';
         elements.status.value = '';
         elements.difficulty.value = '';
+        elements.sort.value = 'deadline';
         renderBoard();
     });
     elements.createDemand.addEventListener('click', openCreateDemandModal);
