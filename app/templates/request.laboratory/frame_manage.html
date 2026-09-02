@@ -366,7 +366,7 @@
         <div class="sidebar-title">SSLs {{areaName}}<br>Painel de Controle</div>
         
         <!-- Áreas de ação para cancelar/concluir -->
-        <div class="action-container">
+        <div class="action-container"{% if not can_manage %} hidden{% endif %}>
             <div class="action-button conclude-action" id="conclude-zone">
                 CONCLUIR SSL
             </div>
@@ -487,6 +487,7 @@
 
         const areaId = '{{ areaId }}';
         const areaName = '{{ areaName }}';
+        const canManage = {{ can_manage|tojson }};
         let dataframe = {{ dataframe|tojson }};
         const executionTypes = {{ exec_types|tojson }};
 
@@ -927,24 +928,26 @@
             const itemColor = statusColors[item.status] || '#2e52a7';
             itemElement.style.borderLeft = `5px solid ${itemColor}`;
             
-            // Add priority button
-            const priorityButton = document.createElement('button');
-            priorityButton.className = 'priority-button' + (item.prioritize == true ? ' active' : '');
-            priorityButton.textContent = 'Priorizar';
-            
-            // Disable button for status 0 (aguardando amostra), 3 (aguardando retirada), 4 (concluido), or 5 (cancelado)
-            const statusCode = parseInt(item.status);
-            if (statusCode === 0 || statusCode === 3 || statusCode === 4 || statusCode === 5) {
-                priorityButton.style.opacity = '0.5';
-                priorityButton.style.cursor = 'not-allowed';
-                priorityButton.title = 'Não é possível alterar prioridade neste status';
-            } else {
-                priorityButton.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent card selection when clicking the button
-                    togglePriority(item.requestId);
-                });
+            if (canManage) {
+                // Add priority button
+                const priorityButton = document.createElement('button');
+                priorityButton.className = 'priority-button' + (item.prioritize == true ? ' active' : '');
+                priorityButton.textContent = 'Priorizar';
+
+                // Disable button for status 0 (aguardando amostra), 3 (aguardando retirada), 4 (concluido), or 5 (cancelado)
+                const statusCode = parseInt(item.status);
+                if (statusCode === 0 || statusCode === 3 || statusCode === 4 || statusCode === 5) {
+                    priorityButton.style.opacity = '0.5';
+                    priorityButton.style.cursor = 'not-allowed';
+                    priorityButton.title = 'Não é possível alterar prioridade neste status';
+                } else {
+                    priorityButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent card selection when clicking the button
+                        togglePriority(item.requestId);
+                    });
+                }
+                itemElement.appendChild(priorityButton);
             }
-            itemElement.appendChild(priorityButton);
 
             // Adiciona título com ID da requisição
             const title = document.createElement('div');
@@ -992,18 +995,20 @@
                 duration.textContent = `Duração: ${hours}h${minutes}min`;
                 itemElement.appendChild(duration);
                 
-                // Adiciona botão de pausar/continuar para itens em execução
-                const pauseButton = document.createElement('button');
-                pauseButton.className = 'kanban-item-button';
-                pauseButton.style.marginBottom = '10px';
-                pauseButton.style.backgroundColor = '#DC3545';
-                pauseButton.textContent = item.paused || 'PAUSAR';
-                pauseButton.addEventListener('click', () => togglePause(item.requestId));
-                itemElement.appendChild(pauseButton);
+                if (canManage) {
+                    // Adiciona botão de pausar/continuar para itens em execução
+                    const pauseButton = document.createElement('button');
+                    pauseButton.className = 'kanban-item-button';
+                    pauseButton.style.marginBottom = '10px';
+                    pauseButton.style.backgroundColor = '#DC3545';
+                    pauseButton.textContent = item.paused || 'PAUSAR';
+                    pauseButton.addEventListener('click', () => togglePause(item.requestId));
+                    itemElement.appendChild(pauseButton);
+                }
             }
             
             // Adiciona botão para definir prazo (para status 1 - fila de espera)
-            if (item.status == 1) {
+            if (canManage && item.status == 1) {
                 const deadlineButton = document.createElement('button');
                 deadlineButton.className = 'kanban-item-button';
                 deadlineButton.style.marginBottom = '10px';
@@ -1055,6 +1060,8 @@
         
         // Inicializar funcionalidades de drag-and-drop
         function initDragAndDrop() {
+            if (!canManage) return;
+
             // Habilitar drag-and-drop para itens do kanban
             document.querySelectorAll('.kanban-item').forEach(item => {
                 item.setAttribute('draggable', 'true');

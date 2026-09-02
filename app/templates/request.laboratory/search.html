@@ -406,6 +406,7 @@
         const defaultLastWeek = '{{filter_1}}';
         const defaultThisWeek = '{{filter_2}}';
         const admin = '{{admin}}';
+        const canManageMaterial = {{ can_manage_material|tojson }};
         const userBlocked = '{{userBlocked}}';
 
         // Variáveis para armazenar informações da solicitação a ser reativada
@@ -525,7 +526,11 @@
                 button.onclick = () => handleCopyHeader(info['areaName'], info['requestId']);
                 cell.appendChild(button);
 
-                if (admin == '1' && info['statusId'] == 4 || info['statusId'] == 5) {
+                const canReactivate = info['areaName'].toLowerCase() === 'material'
+                    ? canManageMaterial
+                    : admin == '1';
+
+                if (canReactivate && (info['statusId'] == 4 || info['statusId'] == 5)) {
                     button = document.createElement('button');
                     button.textContent = 'Reativar';
                     button.style.marginTop = '1vh';

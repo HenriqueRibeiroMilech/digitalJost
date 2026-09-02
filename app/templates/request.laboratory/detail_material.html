@@ -1049,7 +1049,7 @@
 
                 // Botão para adicionar comentário (disponível para todos)
                 addButton(buttonContainer, 'Adicionar Comentário', '', () => showOverlay('comment-overlay'));
-            } else if (data.currentUserId === data.requesterId) {
+            } else if (areaName !== 'material' && data.currentUserId === data.requesterId) {
                 // Opções para o solicitante
                 if (data.statusCode != 4 && data.statusCode != 5) { // Aguardando Amostra ou Fila de Espera
                     addButton(buttonContainer, 'Cancelar Solicitação', 'danger-button', () => showCancelOverlay(requestId));

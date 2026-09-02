@@ -30,6 +30,14 @@ _AREA_NOT_REQUIRED_ROUTES = [
 
 _AREAS = {'dimensional': 1, 'material': 2}
 
+_MATERIAL_MANAGER_REGISTRATIONS = {
+    '00003825',
+    '00047631',
+    '00055135',
+    '00063142',
+    '00038137',
+}
+
 _FAMILIES = sorted([
     'Aparelho de Levantamento', 'Articulação de Ônibus', 'CH', 'Engate Automático',
     'Engate Container', 'Engate Esférico', 'Hubodometro', 'Porta Estepe', 'Pino Rei', 'Quinta Roda',
@@ -74,6 +82,13 @@ def route_auth():
 # ========================================
 # HELPERS
 # ========================================
+
+def _can_manage_laboratory_requests(area):
+    if area == 'material':
+        registration = str(getattr(current_user, 'registration', '') or '').strip().zfill(8)
+        return registration in _MATERIAL_MANAGER_REGISTRATIONS
+
+    return p_laboratory.can()
 
 # Atualizar logs
 def _UPDATE_LOGS(requestId, old, new, extra, cnnx=None):
@@ -417,6 +432,7 @@ def laboratory_search_get():
         , userBlocked=userBlocked['status'][0]
         , preload=preload
         , admin=admin
+        , can_manage_material=_can_manage_laboratory_requests('material')
     )
 
 @request_laboratory_bp.route('/lab/consultar', methods=['POST'])
@@ -858,7 +874,7 @@ def laboratory_detail_data_get(area, idReq):
             
             # Add user permissions info
             result["currentUserId"] = current_user.id
-            result["isLabUser"] = user_has_role(current_user.role, "Laboratório") or current_user.admin
+            result["isLabUser"] = _can_manage_laboratory_requests(area)
             
             return jsonify(result)
     except Exception as e:
@@ -1117,8 +1133,10 @@ def laboratory_detail_quality_post(area, idReq):
 # ========================================
 
 @request_laboratory_bp.route('/lab/<string:area>/gerenciar', methods=['GET'])
-@p_laboratory.require(403)
 def laboratory_manage_get(area):
+
+    if not p_laboratory.can() and not _can_manage_laboratory_requests(area):
+        return abort(403)
 
     engine = get_engine('jdt')
     with engine.connect() as cnnx:
@@ -1251,11 +1269,11 @@ def laboratory_manage_get(area):
         , areaId=_AREAS[area]
         , areaName = area
         , id=current_user.id
+        , can_manage=_can_manage_laboratory_requests(area)
         , exec_types=exec_types.to_dict(orient='records')
     )
 
 @request_laboratory_bp.route('/lab/<string:area>/gerenciar', methods=['PATCH'])
-@p_laboratory.require(403)
 def laboratory_manage_patch(area):
     """
     Endpoint para gerenciar alterações em solicitações de laboratório.
@@ -1267,6 +1285,9 @@ def laboratory_manage_patch(area):
     # 1 = FILA DE ESPERA
     # 2 = EM DESENVOLVIMENTO
     # 3 = AGUARDANDO RETIRADA
+
+    if not _can_manage_laboratory_requests(area):
+        return jsonify({"error": "Acesso negado"}), 403
 
     changes_dict = request.get_json()
     
@@ -1291,9 +1312,13 @@ def laboratory_manage_patch(area):
         status_query = f"""
             SELECT requestId, status, deadLine, execArea, qualityProblem, materId, areaId, prioritize
             FROM JDT_REQUEST_LAB 
-            WHERE requestId IN {ssls_clause}
+            WHERE requestId IN {ssls_clause} AND areaId = :area_id
         """
-        status_last = pd.read_sql(text(status_query), cnnx).astype(str)
+        status_last = pd.read_sql(
+            text(status_query),
+            cnnx,
+            params={'area_id': _AREAS[area]}
+        ).astype(str)
         changes_df = pd.DataFrame(changes_dict).astype(str)
         
         # Combinando os DataFrames com base na coluna requestId
@@ -1681,21 +1706,29 @@ def laboratory_manage_patch(area):
     return jsonify({"message": "Alterações aplicadas com sucesso"})
 
 @request_laboratory_bp.route('/lab/<string:area>/gerenciar/<int:id_req>/pausar', methods=['POST'])
-@p_laboratory.require(403)
 def laboratory_manage_pause_post(area, id_req):
 
     try:
 
-        if not (user_has_role(current_user.role, "Laboratório") or current_user.admin):
-            return {"error": "Acesso negado"}, 403
+        if not _can_manage_laboratory_requests(area):
+            return jsonify({"error": "Acesso negado"}), 403
 
         engine = get_engine('jdt')
         with engine.connect() as cnnx:
 
-            query = f"""SELECT COUNT(*) AS qtt, execArea FROM JDT_REQUEST_LAB WHERE requestId = :requestId AND status = 2 GROUP BY execArea"""
-            check = pd.read_sql(text(query), cnnx, params={'requestId': id_req})
+            query = """
+                SELECT COUNT(*) AS qtt, execArea
+                FROM JDT_REQUEST_LAB
+                WHERE requestId = :requestId AND areaId = :area_id AND status = 2
+                GROUP BY execArea
+            """
+            check = pd.read_sql(
+                text(query),
+                cnnx,
+                params={'requestId': id_req, 'area_id': _AREAS[area]}
+            )
 
-            if check['qtt'][0] == 0:
+            if check.empty or check['qtt'][0] == 0:
                 return {"error": "A solicitação deve estar em desenvolvimento para ser pausada"}, 400
 
             query = """SELECT TOP 1 COALESCE(new, 'False') AS active_pauses
@@ -1792,12 +1825,11 @@ def laboratory_manage_pause_post(area, id_req):
         return {"error": f"Erro ao criar pausa: {str(e)}"}, 500
 
 @request_laboratory_bp.route('/lab/<string:area>/gerenciar/<int:id_req>/pausar', methods=['PATCH'])
-@p_laboratory.require(403)
 def laboratory_manage_pause_patch(area, id_req):
 
     try:
-        if not (user_has_role(current_user.role, "Laboratório") or current_user.admin):
-            return {"error": "Acesso negado"}, 403
+        if not _can_manage_laboratory_requests(area):
+            return jsonify({"error": "Acesso negado"}), 403
 
         engine = get_engine('jdt')
         with engine.connect() as cnnx:
@@ -1808,9 +1840,13 @@ def laboratory_manage_pause_patch(area, id_req):
                         , K.execArea
                     FROM JDT_REQUEST_LAB_LOGS T
                         JOIN JDT_REQUEST_LAB K ON T.requestId = K.requestId
-                    WHERE T.requestId = :id_req AND T.extra = 'pause'
+                    WHERE T.requestId = :id_req AND K.areaId = :area_id AND T.extra = 'pause'
                     ORDER BY T.date DESC"""
-            check = pd.read_sql(text(query), cnnx, params={'id_req': id_req})
+            check = pd.read_sql(
+                text(query),
+                cnnx,
+                params={'id_req': id_req, 'area_id': _AREAS[area]}
+            )
 
             if check.empty or check['active_pauses'][0] == 'False':
                 return {"error": "A solicitação deve estar pausada."}, 400
@@ -1913,16 +1949,27 @@ def laboratory_manage_pause_patch(area, id_req):
 
 @request_laboratory_bp.route('/lab/<string:area>/gerenciar/<int:id_req>/cancelar', methods=['PATCH'])
 def laboratory_manage_cancel_patch(area, id_req):
+
+    if area == 'material' and not _can_manage_laboratory_requests(area):
+        return jsonify({"error": "Acesso negado"}), 403
     
-    query = "SELECT requesterId FROM JDT_REQUEST_LAB WHERE requestId = :id_req AND status NOT IN (2, 3, 4, 5)"
-    requester = engine_run_query(query, 'jdt', params={'id_req': id_req})
+    query = """
+        SELECT requesterId
+        FROM JDT_REQUEST_LAB
+        WHERE requestId = :id_req AND areaId = :area_id AND status NOT IN (2, 3, 4, 5)
+    """
+    requester = engine_run_query(
+        query,
+        'jdt',
+        params={'id_req': id_req, 'area_id': _AREAS[area]}
+    )
 
     if requester.empty:
         return {"error": "Solicitação não encontrada ou já está em andamento/concluída/cancelada"}, 404
         
     requester = requester['requesterId'][0]
 
-    if not p_laboratory.can() and current_user.id != requester:
+    if area != 'material' and not p_laboratory.can() and current_user.id != requester:
         return {"error": "Acesso negado"}, 403
 
     try:
@@ -1941,9 +1988,9 @@ def laboratory_manage_cancel_patch(area, id_req):
             query = """
                 UPDATE JDT_REQUEST_LAB SET 
                     status = 5, execArea = NULL, endDate = GETDATE()
-                WHERE requestId = :id_req
+                WHERE requestId = :id_req AND areaId = :area_id
             """
-            cnnx.execute(text(query), {'id_req': id_req})
+            cnnx.execute(text(query), {'id_req': id_req, 'area_id': _AREAS[area]})
             
             # Inserir texto de cancelamento (sem tentar obter ID na mesma consulta)
             query = """
@@ -1973,11 +2020,21 @@ def laboratory_manage_cancel_patch(area, id_req):
         return jsonify({"error": f"Erro ao cancelar: {str(e)}"}), 500
 
 @request_laboratory_bp.route('/lab/<string:area>/gerenciar/<int:id_req>/concluir', methods=['PATCH'])
-@p_laboratory.require(403)
 def laboratory_manage_conclude_patch(area, id_req):
 
-    query = "SELECT requesterId FROM JDT_REQUEST_LAB WHERE requestId = :id_req AND status = 3"
-    requester = engine_run_query(query, 'jdt', params={'id_req': id_req})
+    if not _can_manage_laboratory_requests(area):
+        return jsonify({"error": "Acesso negado"}), 403
+
+    query = """
+        SELECT requesterId
+        FROM JDT_REQUEST_LAB
+        WHERE requestId = :id_req AND areaId = :area_id AND status = 3
+    """
+    requester = engine_run_query(
+        query,
+        'jdt',
+        params={'id_req': id_req, 'area_id': _AREAS[area]}
+    )
 
     if requester.empty:
         return {"error": "Solicitação não encontrada ou não está aguardando retirada."}, 404
@@ -1985,8 +2042,12 @@ def laboratory_manage_conclude_patch(area, id_req):
     try:
         engine = get_engine('jdt')
         with engine.connect() as cnnx:
-            update_query = f"""UPDATE JDT_REQUEST_LAB SET status = 4 WHERE requestId = :id_req"""
-            cnnx.execute(text(update_query), {'id_req': id_req})
+            update_query = """
+                UPDATE JDT_REQUEST_LAB
+                SET status = 4
+                WHERE requestId = :id_req AND areaId = :area_id
+            """
+            cnnx.execute(text(update_query), {'id_req': id_req, 'area_id': _AREAS[area]})
             _UPDATE_LOGS(id_req, 3, 4, 'status', cnnx)
 
             cnnx.commit()
@@ -1996,25 +2057,39 @@ def laboratory_manage_conclude_patch(area, id_req):
         return jsonify({"error": f"Erro ao concluir: {str(e)}"}), 500
 
 @request_laboratory_bp.route('/lab/<string:area>/gerenciar/<int:id_req>/reativar', methods=['PATCH'])
-@p_laboratory.require(403)
 def laboratory_manage_reactivate_patch(area, id_req):
 
     try:
+        if not _can_manage_laboratory_requests(area):
+            return jsonify({"error": "Acesso negado"}), 403
+
         engine = get_engine('jdt')
         with engine.connect() as cnnx:
 
             # Obter o status atual antes de atualizar
-            query = """SELECT status FROM JDT_REQUEST_LAB WHERE requestId = :id_req"""
-            result = pd.read_sql(text(query), cnnx, params={'id_req': id_req})
+            query = """
+                SELECT status
+                FROM JDT_REQUEST_LAB
+                WHERE requestId = :id_req AND areaId = :area_id
+            """
+            result = pd.read_sql(
+                text(query),
+                cnnx,
+                params={'id_req': id_req, 'area_id': _AREAS[area]}
+            )
+
+            if result.empty:
+                return jsonify({"error": "Solicitação não encontrada"}), 404
+
             oldStatus = result['status'][0] if not result.empty else None
 
             # Atualiza o status para aguardando amostra e limpa campos relacionados
             query = """
                 UPDATE JDT_REQUEST_LAB SET 
                     status = 0, endDate = NULL, deadLine = NULL
-                WHERE requestId = :id_req
+                WHERE requestId = :id_req AND areaId = :area_id
             """
-            cnnx.execute(text(query), {'id_req': id_req})
+            cnnx.execute(text(query), {'id_req': id_req, 'area_id': _AREAS[area]})
             _UPDATE_LOGS(id_req, oldStatus, 0, 'status', cnnx)
 
             cnnx.commit()
