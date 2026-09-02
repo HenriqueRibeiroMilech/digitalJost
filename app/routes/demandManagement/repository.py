@@ -775,3 +775,5 @@ class DemandManagementRepository:
             'row_version': row_version
         })
         return result.rowcount == 1
+
+# V3

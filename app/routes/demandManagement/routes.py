@@ -336,3 +336,5 @@ def management_task_detail(management_id, task_id):
             management_id, task_id, area['id'], payload, current_user.id
         )
     return jsonify(detail)
+
+# V2

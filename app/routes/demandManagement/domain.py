@@ -368,3 +368,5 @@ def validate_status_transition(current_status, payload, deadline_required=True):
         'expectedReturn': expected_return,
         'rowVersion': parse_row_version(payload.get('rowVersion'))
     }
+
+# V2

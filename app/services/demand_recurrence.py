@@ -105,3 +105,5 @@ def next_activity_occurrence(demand, scheduled_anchor=None):
     )
     available_at = _next_available_at(recurrence_anchor, recurrence_type)
     return available_at, None, next_sequence
+
+# V1

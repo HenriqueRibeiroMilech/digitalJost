@@ -249,3 +249,5 @@ def default(logger):
         )
     else:
         logger.debug('Nenhuma demanda com início agendado pendente.')
+
+# V2
