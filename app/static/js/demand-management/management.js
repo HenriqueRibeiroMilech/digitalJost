@@ -333,11 +333,16 @@
 
     function initializeCollapsedOwners() {
         if (state.ownerCollapseInitialized) return;
-        state.collapsedOwners = new Set(state.demands.filter(function (demand) {
-            return !demand.isOwnedByCurrentUser;
-        }).map(function (demand) {
-            return demand.responsibleId || '__unassigned__';
-        }));
+        const hasOwnDemands = state.demands.some(function (demand) {
+            return demand.isOwnedByCurrentUser;
+        });
+        state.collapsedOwners = new Set(hasOwnDemands
+            ? state.demands.filter(function (demand) {
+                return !demand.isOwnedByCurrentUser;
+            }).map(function (demand) {
+                return demand.responsibleId || '__unassigned__';
+            })
+            : []);
         state.ownerCollapseInitialized = true;
     }
 
