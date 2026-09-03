@@ -13,6 +13,7 @@
             ? config.initialView
             : 'demands',
         collapsedOwners: new Set(),
+        ownerCollapseInitialized: false,
         updateQueues: new Map(),
         deadlineChanges: new Map(),
         filtersInitialized: false,
@@ -330,6 +331,16 @@
         }, 3200);
     }
 
+    function initializeCollapsedOwners() {
+        if (state.ownerCollapseInitialized) return;
+        state.collapsedOwners = new Set(state.demands.filter(function (demand) {
+            return !demand.isOwnedByCurrentUser;
+        }).map(function (demand) {
+            return demand.responsibleId || '__unassigned__';
+        }));
+        state.ownerCollapseInitialized = true;
+    }
+
     async function loadBoard(showLoading) {
         if (showLoading !== false) {
             elements.loading.style.display = 'flex';
@@ -340,6 +351,7 @@
             state.demands = data.demands || [];
             state.responsibles = data.responsibles || [];
             state.options = data.options || state.options;
+            initializeCollapsedOwners();
             configureFilters();
             renderAll();
             elements.createDemand.disabled = false;
