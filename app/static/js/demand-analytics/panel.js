@@ -68,18 +68,14 @@
     }
 
     function renderSummary(summary) {
-        const rate = summary.onTimeRate == null ? '—' : `${summary.onTimeRate}%`;
         const items = [
-            [summary.total, 'Solicitações', ''],
-            [summary.pending, 'Em análise', ''],
-            [summary.active, 'Ativas', ''],
-            [summary.completed, 'Concluídas', ''],
-            [summary.overdue, 'Atrasadas', 'warning'],
-            [rate, 'Concluídas no prazo', 'success']
+            [summary.total, 'Solicitações'],
+            [summary.pending, 'Em análise'],
+            [summary.active, 'Ativas'],
+            [summary.completed, 'Concluídas']
         ];
         elements.summary.innerHTML = items.map(function (item) {
-            const modifier = item[2] ? ` da-summary__item--${item[2]}` : '';
-            return `<article class="da-summary__item${modifier}"><strong>${escapeHtml(item[0])}</strong><span>${escapeHtml(item[1])}</span></article>`;
+            return `<article class="da-summary__item"><strong>${escapeHtml(item[0])}</strong><span>${escapeHtml(item[1])}</span></article>`;
         }).join('');
     }
 
@@ -119,7 +115,12 @@
             hovertemplate: '%{x}: %{y}<extra></extra>'
         }], {
             showlegend: false,
-            yaxis: { title: 'Solicitações', rangemode: 'tozero', dtick: 1 }
+            yaxis: {
+                rangemode: 'tozero',
+                showgrid: false,
+                zeroline: false,
+                showticklabels: false
+            }
         });
     }
 
@@ -156,22 +157,30 @@
         });
     }
 
-    function renderDeadlineChart(items, sampleSize) {
-        if (!sampleSize || !hasValues(items)) {
-            chartEmpty('da-deadline-chart', 'Ainda não há conclusões com prazo para comparar.');
+    function renderResponsibleChart(items) {
+        if (!hasValues(items)) {
+            chartEmpty('da-responsible-chart', 'Ainda não existem demandas ativas atribuídas.');
             return;
         }
-        plot('da-deadline-chart', [{
-            type: 'pie',
-            labels: items.map(function (item) { return item.label; }),
-            values: items.map(function (item) { return item.value; }),
-            hole: .62,
-            textinfo: 'label+percent',
-            hovertemplate: '%{label}: %{value}<extra></extra>',
-            marker: { colors: ['#18794e', '#b42318'] }
+        plot('da-responsible-chart', [{
+            type: 'bar',
+            orientation: 'h',
+            x: items.map(function (item) { return item.value; }),
+            y: items.map(function (item) { return item.label; }),
+            text: items.map(function (item) { return item.value; }),
+            textposition: 'auto',
+            marker: { color: '#163a8a' },
+            hovertemplate: '%{y}: %{x} demandas ativas<extra></extra>'
         }], {
-            margin: { l: 10, r: 10, t: 20, b: 25 },
-            legend: { orientation: 'h', x: 0, y: -0.05 }
+            showlegend: false,
+            margin: { l: 150, r: 20, t: 20, b: 35 },
+            xaxis: {
+                rangemode: 'tozero',
+                showgrid: false,
+                zeroline: false,
+                showticklabels: false
+            },
+            yaxis: { autorange: 'reversed', automargin: true }
         });
     }
 
@@ -180,7 +189,7 @@
         renderStatusChart(payload.status || []);
         renderTypeChart(payload.types || []);
         renderMonthlyChart(payload.monthly || []);
-        renderDeadlineChart(payload.deadlines || [], payload.deadlineSample || 0);
+        renderResponsibleChart(payload.responsibles || []);
     }
 
     async function load() {

@@ -52,13 +52,11 @@ class DemandRequestsService:
         today = self._as_date(database_today) or date.today()
         status_totals = {status: 0 for status in _STATUS_ORDER}
         type_totals = {demand_type: 0 for demand_type, _ in _TYPE_LABELS}
+        responsible_totals = {}
         months = self._analytics_months(today)
         months_by_key = {item['key']: item for item in months}
         active_count = 0
-        overdue_count = 0
         completed_count = 0
-        on_time_count = 0
-        completed_with_deadline = 0
 
         for row in rows:
             status = row['status']
@@ -75,9 +73,13 @@ class DemandRequestsService:
 
             if status in _ACTIVE_STATUSES:
                 active_count += 1
-                deadline = self._as_date(row['deadline'])
-                if deadline and deadline < today:
-                    overdue_count += 1
+                responsible_name = (
+                    str(row['responsibleName']).strip()
+                    if row['responsibleName'] else 'Sem responsável'
+                )
+                responsible_totals[responsible_name] = (
+                    responsible_totals.get(responsible_name, 0) + 1
+                )
 
             if status == 'Concluído':
                 completed_count += 1
@@ -85,24 +87,13 @@ class DemandRequestsService:
                 completed_month = self._month_key(completed_at)
                 if completed_month in months_by_key:
                     months_by_key[completed_month]['completed'] += 1
-                deadline = self._as_date(row['deadline'])
-                if completed_at and deadline:
-                    completed_with_deadline += 1
-                    if completed_at <= deadline:
-                        on_time_count += 1
 
-        late_completion_count = completed_with_deadline - on_time_count
         return {
             'summary': {
                 'total': len(rows),
                 'pending': status_totals['Em análise'],
                 'active': active_count,
-                'completed': completed_count,
-                'overdue': overdue_count,
-                'onTimeRate': (
-                    round(on_time_count * 100 / completed_with_deadline)
-                    if completed_with_deadline else None
-                )
+                'completed': completed_count
             },
             'status': [
                 {'label': status, 'value': status_totals[status]}
@@ -113,11 +104,13 @@ class DemandRequestsService:
                 for demand_type, label in _TYPE_LABELS
             ],
             'monthly': months,
-            'deadlines': [
-                {'label': 'No prazo', 'value': on_time_count},
-                {'label': 'Com atraso', 'value': late_completion_count}
-            ],
-            'deadlineSample': completed_with_deadline
+            'responsibles': [
+                {'label': name, 'value': total}
+                for name, total in sorted(
+                    responsible_totals.items(),
+                    key=lambda item: (-item[1], item[0])
+                )
+            ]
         }
 
     @staticmethod

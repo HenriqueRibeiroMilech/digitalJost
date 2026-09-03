@@ -80,8 +80,8 @@ class DemandRequestsRepository:
                 R.requestId,
                 COALESCE(NULLIF(R.demandType, ''), N'melhoria') AS demandType,
                 R.openDate AS requestDate,
-                COALESCE(M.deadline, R.deliveryDate) AS deadline,
                 COALESCE(Completion.completedAt, R.finalDate) AS completedAt,
+                Responsible.name AS responsibleName,
                 CASE
                     WHEN M.status IS NOT NULL THEN M.status
                     WHEN R.status = 0 THEN N'Em análise'
@@ -95,6 +95,8 @@ class DemandRequestsRepository:
             FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
             LEFT JOIN JDT_DEMAND_MANAGEMENT AS M
                 ON M.sourceRequestId = R.requestId
+            LEFT JOIN JDT_USER_DETAILS AS Responsible
+                ON Responsible.id = COALESCE(M.responsibleId, R.respId)
             OUTER APPLY (
                 SELECT MAX(H.createdAt) AS completedAt
                 FROM JDT_DEMAND_MANAGEMENT_HISTORY AS H
