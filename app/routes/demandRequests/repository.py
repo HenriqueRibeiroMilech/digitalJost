@@ -82,6 +82,7 @@ class DemandRequestsRepository:
                 R.openDate AS requestDate,
                 COALESCE(Completion.completedAt, R.finalDate) AS completedAt,
                 Responsible.name AS responsibleName,
+                CASE WHEN Responsible.active = 1 THEN 1 ELSE 0 END AS responsibleActive,
                 CASE
                     WHEN M.status IS NOT NULL THEN M.status
                     WHEN R.status = 0 THEN N'Em análise'
@@ -100,7 +101,6 @@ class DemandRequestsRepository:
                     WHEN M.managementId IS NULL THEN R.respId
                     ELSE M.responsibleId
                 END
-                AND Responsible.active = 1
             OUTER APPLY (
                 SELECT MAX(H.createdAt) AS completedAt
                 FROM JDT_DEMAND_MANAGEMENT_HISTORY AS H
@@ -108,10 +108,6 @@ class DemandRequestsRepository:
                     AND H.eventType = 'status_complete'
             ) AS Completion
             WHERE R.areaId = :area_id
-                AND (
-                    M.managementId IS NULL
-                    OR Responsible.id IS NOT NULL
-                )
         """)
         rows = connection.execute(
             query, {'area_id': area_id}

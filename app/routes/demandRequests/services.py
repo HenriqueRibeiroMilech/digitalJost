@@ -51,6 +51,7 @@ class DemandRequestsService:
 
         today = self._as_date(database_today) or date.today()
         status_totals = {status: 0 for status in _STATUS_ORDER}
+        active_status_totals = {status: 0 for status in _ACTIVE_STATUSES}
         type_totals = {demand_type: 0 for demand_type, _ in _TYPE_LABELS}
         responsible_totals = {}
         months = self._analytics_months(today)
@@ -71,8 +72,9 @@ class DemandRequestsService:
             if request_month in months_by_key:
                 months_by_key[request_month]['requested'] += 1
 
-            if status in _ACTIVE_STATUSES:
+            if status in _ACTIVE_STATUSES and row['responsibleActive']:
                 active_count += 1
+                active_status_totals[status] += 1
                 responsible_name = (
                     str(row['responsibleName']).strip()
                     if row['responsibleName'] else 'Sem responsável'
@@ -94,9 +96,9 @@ class DemandRequestsService:
                 'completed': completed_count,
                 'pending': status_totals['Em análise'],
                 'active': active_count,
-                'inProgress': status_totals['Em Andamento'],
-                'toDo': status_totals['A Fazer'],
-                'paused': status_totals['Pausado']
+                'inProgress': active_status_totals['Em Andamento'],
+                'toDo': active_status_totals['A Fazer'],
+                'paused': active_status_totals['Pausado']
             },
             'status': [
                 {'label': status, 'value': status_totals[status]}
