@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_requests.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_analytics.css') }}">
 </head>
 <body>
 <main class="dr-page" aria-labelledby="dr-title">
@@ -32,6 +33,9 @@
         <button class="dr-tab" type="button" role="tab" data-tab="minhas" aria-controls="dr-requests-view">
             Minhas solicitações
             <span class="dr-tab__count">{{ requests|length }}</span>
+        </button>
+        <button class="dr-tab" type="button" role="tab" data-tab="graficos" aria-controls="dr-analytics-view">
+            Gráficos da Área
         </button>
     </nav>
 
@@ -182,6 +186,10 @@
 
         <section class="dr-request-grid" id="dr-request-grid" aria-live="polite"></section>
     </section>
+
+    <section id="dr-analytics-view" class="dr-view" role="tabpanel" hidden>
+        {% include 'demandAnalytics/panel.html' %}
+    </section>
 </main>
 
 <div class="dr-modal" id="dr-modal" aria-hidden="true">
@@ -205,7 +213,13 @@
         portalUrl: {{ url_for('demand_requests.requests_page', area=area)|tojson }},
         apiRoot: {{ url_for('demand_requests.requests_create')|tojson }}
     };
+    window.demandAnalyticsConfig = {
+        apiUrl: {{ url_for('demand_requests.area_analytics')|tojson }},
+        area: {{ area|tojson }},
+        plotlyUrl: {{ url_for('static', filename='plotly-latest.min.js')|tojson }}
+    };
 </script>
+<script defer src="{{ url_for('static', filename='js/demand-analytics/panel.js') }}"></script>
 <script defer src="{{ url_for('static', filename='js/demand-requests/portal.js') }}"></script>
 </body>
 </html>

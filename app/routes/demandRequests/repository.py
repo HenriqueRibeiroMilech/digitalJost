@@ -71,6 +71,43 @@ class DemandRequestsRepository:
             'user_id': user_id
         }).mappings().all()
 
+    def list_area_analytics(self, connection, area_id):
+        database_today = connection.execute(text("""
+            SELECT CAST(GETDATE() AS DATE)
+        """)).scalar()
+        query = text("""
+            SELECT
+                R.requestId,
+                COALESCE(NULLIF(R.demandType, ''), N'melhoria') AS demandType,
+                R.openDate AS requestDate,
+                COALESCE(M.deadline, R.deliveryDate) AS deadline,
+                COALESCE(Completion.completedAt, R.finalDate) AS completedAt,
+                CASE
+                    WHEN M.status IS NOT NULL THEN M.status
+                    WHEN R.status = 0 THEN N'Em análise'
+                    WHEN R.status = 1 AND R.startDate IS NULL THEN N'A Fazer'
+                    WHEN R.status = 1 THEN N'Em Andamento'
+                    WHEN R.status = 2 THEN N'Concluído'
+                    WHEN R.status = 3 THEN N'Recusada'
+                    WHEN R.status = 4 THEN N'Pausado'
+                    ELSE N'Outro'
+                END AS status
+            FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
+            LEFT JOIN JDT_DEMAND_MANAGEMENT AS M
+                ON M.sourceRequestId = R.requestId
+            OUTER APPLY (
+                SELECT MAX(H.createdAt) AS completedAt
+                FROM JDT_DEMAND_MANAGEMENT_HISTORY AS H
+                WHERE H.managementId = M.managementId
+                    AND H.eventType = 'status_complete'
+            ) AS Completion
+            WHERE R.areaId = :area_id
+        """)
+        rows = connection.execute(
+            query, {'area_id': area_id}
+        ).mappings().all()
+        return database_today, rows
+
     def next_request_id(self, connection):
         query = text("""
             SELECT ISNULL(MAX(requestId), 0) + 1

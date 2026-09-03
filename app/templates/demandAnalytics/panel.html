@@ -1,0 +1,57 @@
+<section class="da-dashboard" id="da-dashboard" aria-labelledby="da-title">
+    <header class="da-heading">
+        <div>
+            <p class="da-eyebrow">Indicadores da área</p>
+            <h2 id="da-title">Visão geral da {{ area }}</h2>
+            <p>
+                Acompanhe as solicitações recebidas e a evolução das demandas da área.
+                Atividades internas não fazem parte destes indicadores.
+            </p>
+        </div>
+        <span class="da-period">Evolução: últimos 12 meses</span>
+    </header>
+
+    <div class="da-loading" id="da-loading" role="status">
+        <span class="da-spinner" aria-hidden="true"></span>
+        Carregando indicadores...
+    </div>
+    <div class="da-error" id="da-error" role="alert" hidden></div>
+
+    <div id="da-content" hidden>
+        <section class="da-summary" id="da-summary" aria-label="Resumo da área"></section>
+
+        <section class="da-chart-grid" aria-label="Gráficos da área">
+            <article class="da-chart-card">
+                <div class="da-chart-card__heading">
+                    <h3>Carteira por status</h3>
+                    <p>Situação atual de todas as solicitações.</p>
+                </div>
+                <div class="da-chart" id="da-status-chart"></div>
+            </article>
+
+            <article class="da-chart-card">
+                <div class="da-chart-card__heading">
+                    <h3>Demandas por tipo</h3>
+                    <p>Distribuição entre projetos, melhorias e erros.</p>
+                </div>
+                <div class="da-chart" id="da-type-chart"></div>
+            </article>
+
+            <article class="da-chart-card">
+                <div class="da-chart-card__heading">
+                    <h3>Entradas e conclusões</h3>
+                    <p>Comparativo mensal dos últimos 12 meses.</p>
+                </div>
+                <div class="da-chart" id="da-monthly-chart"></div>
+            </article>
+
+            <article class="da-chart-card">
+                <div class="da-chart-card__heading">
+                    <h3>Cumprimento de prazo</h3>
+                    <p>Demandas concluídas que possuíam prazo definido.</p>
+                </div>
+                <div class="da-chart" id="da-deadline-chart"></div>
+            </article>
+        </section>
+    </div>
+</section>

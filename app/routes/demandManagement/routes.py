@@ -95,7 +95,7 @@ def handle_demand_management_error(error):
 def management_page():
     area_name, _ = _current_area()
     initial_view = request.args.get('view', 'demands')
-    if initial_view not in ('demands', 'requests'):
+    if initial_view not in ('demands', 'requests', 'charts'):
         initial_view = 'demands'
     return render_template(
         'demandManagement/management.html',

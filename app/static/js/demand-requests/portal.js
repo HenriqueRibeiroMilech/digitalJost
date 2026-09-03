@@ -26,6 +26,7 @@
         tabs: Array.from(document.querySelectorAll('.dr-tab')),
         newView: document.getElementById('dr-new-view'),
         requestsView: document.getElementById('dr-requests-view'),
+        analyticsView: document.getElementById('dr-analytics-view'),
         summary: document.getElementById('dr-summary'),
         grid: document.getElementById('dr-request-grid'),
         search: document.getElementById('dr-search'),
@@ -117,7 +118,9 @@
     }
 
     function setTab(tabName, updateAddress) {
-        const activeTab = tabName === 'minhas' ? 'minhas' : 'nova';
+        const activeTab = ['minhas', 'graficos'].includes(tabName)
+            ? tabName
+            : 'nova';
 
         elements.tabs.forEach(function (tab) {
             const isActive = tab.dataset.tab === activeTab;
@@ -127,13 +130,19 @@
 
         elements.newView.hidden = activeTab !== 'nova';
         elements.requestsView.hidden = activeTab !== 'minhas';
+        elements.analyticsView.hidden = activeTab !== 'graficos';
+        elements.summary.hidden = activeTab === 'graficos';
+
+        if (activeTab === 'graficos') {
+            document.dispatchEvent(new CustomEvent('demand-analytics:show'));
+        }
 
         if (updateAddress && window.history && window.history.replaceState) {
             const url = new URL(window.location.href);
             url.searchParams.delete('sent');
 
-            if (activeTab === 'minhas') {
-                url.searchParams.set('tab', 'minhas');
+            if (activeTab !== 'nova') {
+                url.searchParams.set('tab', activeTab);
             } else {
                 url.searchParams.delete('tab');
             }

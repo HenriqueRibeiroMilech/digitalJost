@@ -87,6 +87,10 @@ textarea {
     gap: .5rem;
 }
 
+.dm-summary[hidden] {
+    display: none;
+}
+
 .dm-summary__item {
     min-width: 82px;
     padding: .55rem .7rem;

@@ -9,7 +9,9 @@
         detail: null,
         requests: [],
         requestDetail: null,
-        view: config.initialView === 'requests' ? 'requests' : 'demands',
+        view: ['requests', 'charts'].includes(config.initialView)
+            ? config.initialView
+            : 'demands',
         collapsedOwners: new Set(),
         updateQueues: new Map(),
         deadlineChanges: new Map(),
@@ -21,6 +23,7 @@
         board: document.getElementById('dm-board'),
         demandsView: document.getElementById('dm-demands-view'),
         requestsView: document.getElementById('dm-requests-view'),
+        analyticsView: document.getElementById('dm-analytics-view'),
         tabs: Array.from(document.querySelectorAll('[data-view]')),
         subtitle: document.getElementById('dm-subtitle'),
         loading: document.getElementById('dm-loading'),
@@ -378,8 +381,10 @@
 
     function renderNavigation() {
         const requestsSelected = state.view === 'requests';
-        elements.demandsView.hidden = requestsSelected;
+        const chartsSelected = state.view === 'charts';
+        elements.demandsView.hidden = requestsSelected || chartsSelected;
         elements.requestsView.hidden = !requestsSelected;
+        elements.analyticsView.hidden = !chartsSelected;
         elements.tabs.forEach(function (tab) {
             const selected = tab.dataset.view === state.view;
             tab.classList.toggle('is-active', selected);
@@ -388,14 +393,21 @@
         elements.pendingCount.textContent = state.requests.filter(function (item) {
             return Number(item.status) === 0;
         }).length;
-        elements.subtitle.textContent = requestsSelected
-            ? 'Solicitações aguardando análise e histórico de recusas.'
-            : 'Demandas aprovadas e atividades internas da Transformação Digital.';
-        renderSummary();
+        elements.subtitle.textContent = chartsSelected
+            ? 'Indicadores consolidados das demandas da Transformação Digital.'
+            : requestsSelected
+                ? 'Solicitações aguardando análise e histórico de recusas.'
+                : 'Demandas aprovadas e atividades internas da Transformação Digital.';
+        elements.summary.hidden = chartsSelected;
+        if (chartsSelected) {
+            document.dispatchEvent(new CustomEvent('demand-analytics:show'));
+        } else {
+            renderSummary();
+        }
     }
 
     function changeView(view) {
-        if (!['demands', 'requests'].includes(view)) return;
+        if (!['demands', 'requests', 'charts'].includes(view)) return;
         state.view = view;
         const url = new URL(window.location.href);
         url.searchParams.set('view', view);

@@ -93,7 +93,10 @@ def handle_demand_requests_error(error):
 def requests_page():
     area_name, area = _current_area()
     requests_list = _build_service().list_user_requests(area['id'], current_user.id)
-    initial_tab = 'minhas' if request.args.get('tab') == 'minhas' else 'nova'
+    requested_tab = request.args.get('tab')
+    initial_tab = (
+        requested_tab if requested_tab in ('minhas', 'graficos') else 'nova'
+    )
 
     return render_template(
         'demandRequests/portal.html',
@@ -116,6 +119,14 @@ def requests_create():
         request.files.getlist('docs')
     )
     return jsonify(detail), 201
+
+
+@demand_requests_bp.route(
+    '/demandas/solicitacoes/api/graficos', methods=['GET']
+)
+def area_analytics():
+    _, area = _current_area()
+    return jsonify(_build_service().get_area_analytics(area['id']))
 
 
 @demand_requests_bp.route(

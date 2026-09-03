@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_management.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/demand_analytics.css') }}">
 </head>
 <body>
 <main class="dm-page" aria-labelledby="dm-title">
@@ -27,6 +28,9 @@
         </button>
         <button class="dm-tab" type="button" data-view="requests">
             Solicitações <span class="dm-tab__count" id="dm-pending-count">0</span>
+        </button>
+        <button class="dm-tab" type="button" data-view="charts">
+            Gráficos da Área
         </button>
     </nav>
 
@@ -119,6 +123,10 @@
         </div>
         <section class="dm-review-grid" id="dm-request-list" aria-live="polite"></section>
     </section>
+
+    <section id="dm-analytics-view" hidden>
+        {% include 'demandAnalytics/panel.html' %}
+    </section>
 </main>
 
 <div class="dm-modal" id="dm-modal" aria-hidden="true">
@@ -139,7 +147,13 @@
         initialView: {{ initial_view | tojson }},
         currentUserName: {{ current_user_name | tojson }}
     };
+    window.demandAnalyticsConfig = {
+        apiUrl: {{ url_for('demand_requests.area_analytics') | tojson }},
+        area: {{ area | tojson }},
+        plotlyUrl: {{ url_for('static', filename='plotly-latest.min.js') | tojson }}
+    };
 </script>
+<script defer src="{{ url_for('static', filename='js/demand-analytics/panel.js') }}"></script>
 <script defer src="{{ url_for('static', filename='js/demand-management/management.js') }}"></script>
 </body>
 </html>
