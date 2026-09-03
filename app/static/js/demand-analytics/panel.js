@@ -70,9 +70,12 @@
     function renderSummary(summary) {
         const items = [
             [summary.total, 'Solicitações'],
+            [summary.completed, 'Concluídas'],
             [summary.pending, 'Em análise'],
             [summary.active, 'Ativas'],
-            [summary.completed, 'Concluídas']
+            [summary.inProgress, 'Em andamento'],
+            [summary.toDo, 'A fazer'],
+            [summary.paused, 'Pausadas']
         ];
         elements.summary.innerHTML = items.map(function (item) {
             return `<article class="da-summary__item"><strong>${escapeHtml(item[0])}</strong><span>${escapeHtml(item[1])}</span></article>`;

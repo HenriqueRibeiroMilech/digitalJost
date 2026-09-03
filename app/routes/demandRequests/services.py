@@ -91,9 +91,12 @@ class DemandRequestsService:
         return {
             'summary': {
                 'total': len(rows),
+                'completed': completed_count,
                 'pending': status_totals['Em análise'],
                 'active': active_count,
-                'completed': completed_count
+                'inProgress': status_totals['Em Andamento'],
+                'toDo': status_totals['A Fazer'],
+                'paused': status_totals['Pausado']
             },
             'status': [
                 {'label': status, 'value': status_totals[status]}

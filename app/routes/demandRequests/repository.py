@@ -96,7 +96,11 @@ class DemandRequestsRepository:
             LEFT JOIN JDT_DEMAND_MANAGEMENT AS M
                 ON M.sourceRequestId = R.requestId
             LEFT JOIN JDT_USER_DETAILS AS Responsible
-                ON Responsible.id = COALESCE(M.responsibleId, R.respId)
+                ON Responsible.id = CASE
+                    WHEN M.managementId IS NULL THEN R.respId
+                    ELSE M.responsibleId
+                END
+                AND Responsible.active = 1
             OUTER APPLY (
                 SELECT MAX(H.createdAt) AS completedAt
                 FROM JDT_DEMAND_MANAGEMENT_HISTORY AS H
@@ -104,6 +108,10 @@ class DemandRequestsRepository:
                     AND H.eventType = 'status_complete'
             ) AS Completion
             WHERE R.areaId = :area_id
+                AND (
+                    M.managementId IS NULL
+                    OR Responsible.id IS NOT NULL
+                )
         """)
         rows = connection.execute(
             query, {'area_id': area_id}
