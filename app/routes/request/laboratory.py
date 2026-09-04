@@ -3441,3 +3441,5 @@ def laboratory_manage_dashboard_post(area):
         , 'barchart4': request_by_motive_query_data.to_dict(orient='records')
         , 'barchart5': request_closed_by_user_data.to_dict(orient='records') if current_user.id in LEADER or current_user.id in COORD or current_user.admin else {}
     }
+
+# V2

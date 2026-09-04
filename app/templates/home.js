@@ -263,4 +263,4 @@ function openMain() {
     document.getElementById("close_icon").style.paddingLeft = "310px";
 }
 
-// V2
+// V3
