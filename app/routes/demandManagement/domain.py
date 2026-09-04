@@ -228,6 +228,9 @@ def validate_task(payload):
     return {
         'description': description,
         'responsibleId': _optional_text(payload.get('responsibleId'), 100),
+        'priority': _optional_positive_integer(
+            payload.get('priority'), 'A prioridade', maximum=10
+        ),
         'deadline': _optional_date(payload.get('deadline')),
         'observations': _optional_text(payload.get('observations'), 2000),
         'completed': completed

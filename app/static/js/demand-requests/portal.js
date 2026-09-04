@@ -300,18 +300,37 @@
         }).join('') + '</ul>';
     }
 
-    function renderPauses(item) {
-        if (!item.pauses || !item.pauses.length) {
-            return '<p class="dr-modal__meta">A demanda não sofreu pausas.</p>';
+    function renderDemandHistory(item) {
+        const history = item.history || [];
+        const eventLabels = {
+            status_start: 'Demanda iniciada',
+            status_pause: 'Demanda pausada',
+            status_resume: 'Demanda despausada',
+            status_complete: 'Demanda concluída',
+            status_cancel: 'Demanda cancelada',
+            status_reopen: 'Demanda retomada',
+            deadline_changed: 'Prazo alterado'
+        };
+        if (!history.length) {
+            return '<p class="dr-history__empty">Nenhum evento foi registrado neste histórico.</p>';
         }
-        return '<ul class="dr-pause-list">' + item.pauses.map(function (pause) {
-            return '<li><strong>' + escapeHtml(formatDate(pause.initDate, true)) + '</strong>' +
-                ' até ' + escapeHtml(formatDate(
-                    pause.finalDate || pause.expectDate,
-                    Boolean(pause.finalDate)
-                )) +
-                '<br>' + escapeHtml(pause.reason || 'Sem justificativa informada.') + '</li>';
-        }).join('') + '</ul>';
+        return '<ol class="dr-history__list">' + history.map(function (historyItem) {
+            const statusChanged = historyItem.previousStatus && historyItem.newStatus &&
+                historyItem.previousStatus !== historyItem.newStatus;
+            const deadlineChanged = historyItem.previousDeadline !== historyItem.newDeadline &&
+                (historyItem.previousDeadline || historyItem.newDeadline);
+            return '<li class="dr-history__item">' +
+                '<div class="dr-history__heading">' +
+                    '<strong>' + escapeHtml(eventLabels[historyItem.eventType] || 'Atualização da demanda') + '</strong>' +
+                    '<time>' + escapeHtml(formatDate(historyItem.createdAt, true)) + '</time>' +
+                '</div>' +
+                '<p class="dr-history__actor">Por ' + escapeHtml(historyItem.actorName || 'Usuário não identificado') + '</p>' +
+                (statusChanged ? '<p>Status: <strong>' + escapeHtml(historyItem.previousStatus) + '</strong> → <strong>' + escapeHtml(historyItem.newStatus) + '</strong></p>' : '') +
+                (deadlineChanged ? '<p>Prazo: <strong>' + escapeHtml(formatDate(historyItem.previousDeadline, false)) + '</strong> → <strong>' + escapeHtml(formatDate(historyItem.newDeadline, false)) + '</strong></p>' : '') +
+                (historyItem.expectedReturn ? '<p>Previsão de retorno: <strong>' + escapeHtml(formatDate(historyItem.expectedReturn, false)) + '</strong></p>' : '') +
+                (historyItem.reason ? '<div class="dr-history__reason"><span>Justificativa</span><p>' + escapeHtml(historyItem.reason) + '</p></div>' : '') +
+            '</li>';
+        }).join('') + '</ol>';
     }
 
     function renderRequestDetail(item) {
@@ -361,7 +380,7 @@
                     '<h3>Documentos</h3>' + renderAttachments(item) +
                 '</section>' +
                 '<section class="dr-detail-panel dr-detail-panel--full">' +
-                    '<h3>Histórico de pausas</h3>' + renderPauses(item) +
+                    '<h3>Histórico da demanda</h3>' + renderDemandHistory(item) +
                 '</section>' +
             '</div>';
     }

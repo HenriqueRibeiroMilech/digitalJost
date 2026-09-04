@@ -680,6 +680,7 @@ class DemandManagementRepository:
                 T.description,
                 T.responsibleId,
                 U.name AS responsibleName,
+                T.priority,
                 T.deadline,
                 T.observations,
                 T.completedAt,
@@ -703,12 +704,12 @@ class DemandManagementRepository:
     def create_task(self, connection, management_id, area_id, task, created_by):
         query = text("""
             INSERT INTO JDT_DEMAND_MANAGEMENT_TASKS (
-                managementId, description, responsibleId, deadline,
+                managementId, description, responsibleId, priority, deadline,
                 observations, completedAt, createdBy, createdAt, updatedAt
             )
             OUTPUT INSERTED.taskId
             SELECT
-                M.managementId, :description, :responsible_id, :deadline,
+                M.managementId, :description, :responsible_id, :priority, :deadline,
                 :observations, CASE WHEN :completed = 1 THEN GETDATE() ELSE NULL END,
                 :created_by, GETDATE(), GETDATE()
             FROM JDT_DEMAND_MANAGEMENT AS M
@@ -719,6 +720,7 @@ class DemandManagementRepository:
             'area_id': area_id,
             'description': task['description'],
             'responsible_id': task['responsibleId'],
+            'priority': task['priority'],
             'deadline': task['deadline'],
             'observations': task['observations'],
             'completed': 1 if task['completed'] else 0,
@@ -732,6 +734,7 @@ class DemandManagementRepository:
             SET
                 description = :description,
                 responsibleId = :responsible_id,
+                priority = :priority,
                 deadline = :deadline,
                 observations = :observations,
                 completedAt = CASE
@@ -752,6 +755,7 @@ class DemandManagementRepository:
             'area_id': area_id,
             'description': task['description'],
             'responsible_id': task['responsibleId'],
+            'priority': task['priority'],
             'deadline': task['deadline'],
             'observations': task['observations'],
             'completed': 1 if task['completed'] else 0,

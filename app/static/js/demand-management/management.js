@@ -17,6 +17,7 @@
         updateQueues: new Map(),
         deadlineChanges: new Map(),
         filtersInitialized: false,
+        taskSort: 'deadline',
         statusAction: null
     };
 
@@ -1444,7 +1445,13 @@
             ${renderActivityRecurrencePanel(demand)}
 
             <section class="dm-panel dm-tasks">
-                <h3>Tarefas · ${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</h3>
+                <div class="dm-tasks__heading">
+                    <h3>Tarefas · ${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</h3>
+                    <label class="dm-task-sort"><span>Ordenar por</span><select class="dm-input" data-task-sort>
+                        <option value="deadline"${state.taskSort === 'deadline' ? ' selected' : ''}>Prazo mais próximo</option>
+                        <option value="priority"${state.taskSort === 'priority' ? ' selected' : ''}>Maior prioridade</option>
+                    </select></label>
+                </div>
                 ${demand.isOwnedByCurrentUser ? `<div class="dm-task-warning" data-task-warning role="status" aria-live="polite" hidden>
                     <span class="dm-task-warning__dot" aria-hidden="true"></span>
                     <strong>Alterações pendentes</strong>
@@ -1656,9 +1663,55 @@
         }
     }
 
+    function taskIsCompleted(task) {
+        return Boolean(task.completed !== undefined ? task.completed : task.completedAt);
+    }
+
+    function compareTaskDeadlines(left, right) {
+        const leftDeadline = left.deadline ? String(left.deadline).substring(0, 10) : null;
+        const rightDeadline = right.deadline ? String(right.deadline).substring(0, 10) : null;
+        if (leftDeadline === rightDeadline) return 0;
+        if (leftDeadline === null) return 1;
+        if (rightDeadline === null) return -1;
+        return leftDeadline.localeCompare(rightDeadline);
+    }
+
+    function compareTaskOrder(left, right) {
+        const completedDifference = Number(taskIsCompleted(left)) - Number(taskIsCompleted(right));
+        if (completedDifference) return completedDifference;
+
+        const leftPriority = left.priority == null || left.priority === ''
+            ? Number.POSITIVE_INFINITY
+            : Number(left.priority);
+        const rightPriority = right.priority == null || right.priority === ''
+            ? Number.POSITIVE_INFINITY
+            : Number(right.priority);
+        const priorityDifference = leftPriority === rightPriority ? 0 : leftPriority - rightPriority;
+        const deadlineDifference = compareTaskDeadlines(left, right);
+
+        if (state.taskSort === 'priority' && priorityDifference) return priorityDifference;
+        if (deadlineDifference) return deadlineDifference;
+        if (state.taskSort !== 'priority' && priorityDifference) return priorityDifference;
+        return Number(left.taskId) - Number(right.taskId);
+    }
+
+    function sortRenderedTasks() {
+        const list = elements.modalContent.querySelector('.dm-task-list');
+        if (!list) return;
+        Array.from(list.querySelectorAll('[data-task-id]')).sort(function (left, right) {
+            const leftTask = taskPayload(left);
+            const rightTask = taskPayload(right);
+            leftTask.taskId = Number(left.dataset.taskId);
+            rightTask.taskId = Number(right.dataset.taskId);
+            return compareTaskOrder(leftTask, rightTask);
+        }).forEach(function (row) {
+            list.appendChild(row);
+        });
+    }
+
     function renderTasks(tasks, editable) {
         if (!tasks.length) return '<div class="dm-empty">Nenhuma tarefa cadastrada.</div>';
-        return tasks.map(function (task) {
+        return tasks.slice().sort(compareTaskOrder).map(function (task) {
             const completed = Boolean(task.completedAt);
             const taskLate = !completed && task.deadline && new Date(`${task.deadline.substring(0, 10)}T00:00:00`) < new Date(new Date().setHours(0, 0, 0, 0));
             const taskStatus = completed ? 'Concluída' : (taskLate ? 'Atrasada' : 'Em andamento');
@@ -1669,6 +1722,7 @@
                     <input class="dm-task__check" name="completed" type="checkbox" ${completed ? 'checked' : ''}${disabled} title="Marcar como concluída">
                     <label class="dm-field dm-task__description"><span>Tarefa · ${taskStatus}</span><textarea class="dm-textarea" name="description"${readonly}>${escapeHtml(task.description)}</textarea></label>
                     <label class="dm-field dm-task__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId"${disabled}>${optionList(state.responsibles, task.responsibleId, 'Não informado')}</select></label>
+                    <label class="dm-field dm-task__priority"><span>Prioridade</span><select class="dm-input" name="priority"${disabled}>${optionList(state.options.priority || [], task.priority, 'Não informado')}</select></label>
                     <label class="dm-field dm-task__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date" value="${escapeHtml(task.deadline ? task.deadline.substring(0, 10) : '')}"${readonly}></label>
                     <label class="dm-field dm-task__observations"><span>Observações</span><textarea class="dm-textarea" name="observations"${readonly}>${escapeHtml(valueOrEmpty(task.observations))}</textarea></label>
                     ${editable ? `<div class="dm-task__actions">
@@ -1686,6 +1740,7 @@
             <form class="dm-task-form" id="dm-new-task">
                 <label class="dm-field dm-task-form__description"><span>Nova tarefa</span><input class="dm-input" name="description" type="text" required maxlength="1000" placeholder="Descreva uma entrega objetiva"></label>
                 <label class="dm-field dm-task-form__responsible"><span>Responsável</span><select class="dm-input" name="responsibleId">${optionList(state.responsibles, '', 'Não informado')}</select></label>
+                <label class="dm-field dm-task-form__priority"><span>Prioridade</span><select class="dm-input" name="priority">${optionList(state.options.priority || [], '', 'Não informado')}</select></label>
                 <label class="dm-field dm-task-form__deadline"><span>Prazo</span><input class="dm-input" name="deadline" type="date"></label>
                 <button class="dm-button" type="submit">Adicionar tarefa</button>
             </form>`;
@@ -1696,6 +1751,7 @@
         return {
             description: container.querySelector('[name="description"]').value,
             responsibleId: container.querySelector('[name="responsibleId"]').value || null,
+            priority: container.querySelector('[name="priority"]').value || null,
             deadline: container.querySelector('[name="deadline"]').value || null,
             observations: observationsInput ? observationsInput.value || null : null,
             completed: Boolean(container.querySelector('[name="completed"]') && container.querySelector('[name="completed"]').checked)
@@ -1723,6 +1779,7 @@
         return {
             description: String(valueOrEmpty(task.description)),
             responsibleId: String(valueOrEmpty(task.responsibleId)),
+            priority: String(valueOrEmpty(task.priority)),
             deadline: task.deadline ? String(task.deadline).substring(0, 10) : '',
             observations: String(valueOrEmpty(task.observations)),
             completed: Boolean(task.completed !== undefined ? task.completed : task.completedAt)
@@ -1909,6 +1966,11 @@
     });
 
     elements.modal.addEventListener('change', function (event) {
+        if (event.target.matches('[data-task-sort]')) {
+            state.taskSort = event.target.value === 'priority' ? 'priority' : 'deadline';
+            sortRenderedTasks();
+            return;
+        }
         if (event.target.matches('[data-internal-attachment-input]')) {
             updateInternalAttachmentSelection(event.target);
             return;

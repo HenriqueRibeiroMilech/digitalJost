@@ -161,17 +161,29 @@ class DemandRequestsRepository:
             'area_id': area_id
         }).mappings().first()
 
-    def list_pauses(self, connection, request_id):
+    def list_history(self, connection, request_id, area_id):
         query = text("""
             SELECT
-                initDate,
-                expectDate,
-                finalDate,
-                text AS reason
-            FROM JDT_REQUEST_PAUSES
-            WHERE requestId = :request_id
-            ORDER BY initDate
+                H.historyId,
+                H.eventType,
+                H.previousStatus,
+                H.newStatus,
+                H.previousDeadline,
+                H.newDeadline,
+                H.reason,
+                H.expectedReturn,
+                H.actorName,
+                H.createdAt
+            FROM JDT_DEMAND_MANAGEMENT_HISTORY AS H
+            JOIN JDT_DEMAND_MANAGEMENT AS M
+                ON M.managementId = H.managementId
+            WHERE M.sourceRequestId = :request_id
+                AND M.areaId = :area_id
+            ORDER BY H.createdAt DESC, H.historyId DESC
         """)
-        return connection.execute(query, {'request_id': request_id}).mappings().all()
+        return connection.execute(query, {
+            'request_id': request_id,
+            'area_id': area_id
+        }).mappings().all()
 
 # V2

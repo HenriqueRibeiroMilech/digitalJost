@@ -175,7 +175,9 @@ class DemandRequestsService:
                 raise NotFoundError('Solicitação não encontrada.')
             if not allow_area_access and str(row['requesterId']) != str(user_id):
                 raise NotFoundError('Solicitação não encontrada.')
-            pauses = self.repository.list_pauses(connection, request_id)
+            history = self.repository.list_history(
+                connection, request_id, area_id
+            )
 
         result = {key: _serialize_value(value) for key, value in dict(row).items()}
         result.pop('requesterId', None)
@@ -186,9 +188,9 @@ class DemandRequestsService:
             for index, name in enumerate(stored_names)
             if self.storage.is_safe_stored_name(name)
         ]
-        result['pauses'] = [
-            {key: _serialize_value(value) for key, value in dict(pause).items()}
-            for pause in pauses
+        result['history'] = [
+            {key: _serialize_value(value) for key, value in dict(item).items()}
+            for item in history
         ]
         return result
 

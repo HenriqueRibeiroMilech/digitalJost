@@ -1352,6 +1352,32 @@ textarea {
     margin-top: 1rem;
 }
 
+.dm-tasks__heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .85rem;
+}
+
+.dm-tasks__heading h3 {
+    margin: 0;
+}
+
+.dm-task-sort {
+    display: grid;
+    flex: 0 0 190px;
+    gap: .25rem;
+}
+
+.dm-task-sort span {
+    color: var(--dm-muted);
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
 .dm-task-list {
     display: grid;
     gap: .7rem;
@@ -1387,7 +1413,7 @@ textarea {
 .dm-task {
     position: relative;
     display: grid;
-    grid-template-columns: 28px minmax(260px, 2fr) minmax(170px, 1fr) 150px auto;
+    grid-template-columns: 28px minmax(240px, 2fr) minmax(160px, 1fr) 110px 150px auto;
     align-items: start;
     gap: .65rem;
     padding: .85rem;
@@ -1422,7 +1448,7 @@ textarea {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    grid-column: 5;
+    grid-column: 6;
     grid-row: 1 / span 2;
     align-self: center;
     gap: .35rem;
@@ -1450,15 +1476,16 @@ textarea {
 
 .dm-task__description { grid-column: 2; grid-row: 1; }
 .dm-task__responsible { grid-column: 3; grid-row: 1; }
-.dm-task__deadline { grid-column: 4; grid-row: 1; }
-.dm-task__observations { grid-column: 2 / 5; grid-row: 2; }
+.dm-task__priority { grid-column: 4; grid-row: 1; }
+.dm-task__deadline { grid-column: 5; grid-row: 1; }
+.dm-task__observations { grid-column: 2 / 6; grid-row: 2; }
 .dm-task .dm-textarea {
     min-height: 62px;
 }
 
 .dm-task-form {
     display: grid;
-    grid-template-columns: minmax(300px, 2fr) minmax(190px, 1fr) 180px auto;
+    grid-template-columns: minmax(280px, 2fr) minmax(170px, 1fr) 110px 160px auto;
     align-items: end;
     gap: .65rem;
     padding-top: 1rem;
@@ -1467,8 +1494,9 @@ textarea {
 
 .dm-task-form__description { grid-column: 1; grid-row: 1; }
 .dm-task-form__responsible { grid-column: 2; grid-row: 1; }
-.dm-task-form__deadline { grid-column: 3; grid-row: 1; }
-.dm-task-form .dm-button { grid-column: 4; grid-row: 1; align-self: end; white-space: nowrap; }
+.dm-task-form__priority { grid-column: 3; grid-row: 1; }
+.dm-task-form__deadline { grid-column: 4; grid-row: 1; }
+.dm-task-form .dm-button { grid-column: 5; grid-row: 1; align-self: end; white-space: nowrap; }
 
 .dm-task-form .dm-input,
 .dm-task-form .dm-button {
@@ -1502,20 +1530,22 @@ body.dm-modal-open { overflow: hidden; }
     .dm-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dm-modal__columns { grid-template-columns: 1fr; }
     .dm-task {
-        grid-template-columns: 28px repeat(2, minmax(0, 1fr));
+        grid-template-columns: 28px repeat(3, minmax(0, 1fr));
         padding-top: 2.75rem;
     }
     .dm-task__check { grid-column: 1; grid-row: 1; }
-    .dm-task__description { grid-column: 2 / 4; grid-row: 1; }
+    .dm-task__description { grid-column: 2 / 5; grid-row: 1; }
     .dm-task__responsible { grid-column: 2; grid-row: 2; }
-    .dm-task__deadline { grid-column: 3; grid-row: 2; }
-    .dm-task__observations { grid-column: 2 / 4; grid-row: 3; }
-    .dm-task__actions { grid-column: 2 / 4; grid-row: 4; align-self: end; }
-    .dm-task-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .dm-task-form__description { grid-column: 1 / 3; grid-row: 1; }
+    .dm-task__priority { grid-column: 3; grid-row: 2; }
+    .dm-task__deadline { grid-column: 4; grid-row: 2; }
+    .dm-task__observations { grid-column: 2 / 5; grid-row: 3; }
+    .dm-task__actions { grid-column: 2 / 5; grid-row: 4; align-self: end; }
+    .dm-task-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .dm-task-form__description { grid-column: 1 / 4; grid-row: 1; }
     .dm-task-form__responsible { grid-column: 1; grid-row: 2; }
-    .dm-task-form__deadline { grid-column: 2; grid-row: 2; }
-    .dm-task-form .dm-button { grid-column: 1 / 3; grid-row: 3; justify-self: start; }
+    .dm-task-form__priority { grid-column: 2; grid-row: 2; }
+    .dm-task-form__deadline { grid-column: 3; grid-row: 2; }
+    .dm-task-form .dm-button { grid-column: 1 / 4; grid-row: 3; justify-self: start; }
 }
 
 @media (max-width: 760px) {
@@ -1550,18 +1580,22 @@ body.dm-modal-open { overflow: hidden; }
     .dm-activity-recurrence__fields { grid-template-columns: 1fr; }
     .dm-internal-attachment-list li { align-items: stretch; flex-direction: column; }
     .dm-internal-attachment__delete { align-self: start; }
+    .dm-tasks__heading { align-items: stretch; flex-direction: column; }
+    .dm-task-sort { flex-basis: auto; width: 100%; }
     .dm-task { grid-template-columns: 28px minmax(0, 1fr); }
     .dm-task__check { grid-column: 1; grid-row: 1; justify-self: start; }
     .dm-task__description { grid-column: 2; grid-row: 1; }
     .dm-task__responsible { grid-column: 2; grid-row: 2; }
-    .dm-task__deadline { grid-column: 2; grid-row: 3; }
-    .dm-task__observations { grid-column: 2; grid-row: 4; }
-    .dm-task__actions { grid-column: 2; grid-row: 5; }
+    .dm-task__priority { grid-column: 2; grid-row: 3; }
+    .dm-task__deadline { grid-column: 2; grid-row: 4; }
+    .dm-task__observations { grid-column: 2; grid-row: 5; }
+    .dm-task__actions { grid-column: 2; grid-row: 6; }
     .dm-task-form { grid-template-columns: 1fr; }
     .dm-task-form__description { grid-column: 1; grid-row: 1; }
     .dm-task-form__responsible { grid-column: 1; grid-row: 2; }
-    .dm-task-form__deadline { grid-column: 1; grid-row: 3; }
-    .dm-task-form .dm-button { grid-column: 1; grid-row: 4; justify-self: start; }
+    .dm-task-form__priority { grid-column: 1; grid-row: 3; }
+    .dm-task-form__deadline { grid-column: 1; grid-row: 4; }
+    .dm-task-form .dm-button { grid-column: 1; grid-row: 5; justify-self: start; }
 }
 
 @media (max-width: 480px) {
