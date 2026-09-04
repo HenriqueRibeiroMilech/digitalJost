@@ -173,3 +173,5 @@ class DemandRequestsRepository:
             ORDER BY initDate
         """)
         return connection.execute(query, {'request_id': request_id}).mappings().all()
+
+# V2

@@ -620,3 +620,5 @@
         openRequestDetail(config.initialRequestId, false);
     }
 }());
+
+// V2
