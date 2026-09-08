@@ -1,6 +1,7 @@
 import json
-import pandas as pd
 
+import pandas as pd
+from sqlalchemy.exc import DBAPIError
 
 from app.utils.dynamic_constants import getPlex
 from app.utils.db_utils import engine_run_query, get_engine
@@ -19,16 +20,24 @@ def _add_parameterized_list_filter(conditions, params, expression, values, prefi
     conditions.append(f"{expression} IN ({', '.join(placeholders)})")
 
 
+def _run_query_with_deadlock_retry(query, engine_name, params):
+    try:
+        return engine_run_query(query, engine_name, params)
+    except DBAPIError as error:
+        if '1205' not in str(error.orig):
+            raise
+
+        return engine_run_query(query, engine_name, params)
+
+
 def _get_status_reason_time_stops(received_data):
     workcenters = getPlex('workcenters')[[
         'Workcenter_Key', 'Workcenter_Code', 'Name', 'Workcenter_Group'
     ]].copy()
 
     scoped_workcenters = workcenters.copy()
-    has_workcenter_scope = False
 
     if received_data.get('w_name_plex'):
-        has_workcenter_scope = True
         selected_keys = {str(value) for value in received_data['w_name_plex']}
         scoped_workcenters = scoped_workcenters[
             scoped_workcenters['Workcenter_Key'].astype(str).isin(selected_keys)
@@ -41,12 +50,19 @@ def _get_status_reason_time_stops(received_data):
         ])
 
     if received_data.get('w_group'):
-        has_workcenter_scope = True
         scoped_workcenters = scoped_workcenters[
             scoped_workcenters['Workcenter_Group'].isin(received_data['w_group'])
         ]
 
-    if has_workcenter_scope and scoped_workcenters.empty:
+    target_workcenters = (
+        scoped_workcenters['Workcenter_Code']
+        .dropna()
+        .astype(str)
+        .drop_duplicates()
+        .tolist()
+    )
+
+    if not target_workcenters:
         return pd.DataFrame(columns=[
             'Log_Key', 'Workcenter_Key', 'Workcenter_Name', 'Workcenter_Group',
             'Log_Date', 'End_Date', 'Log_Minutes', 'Code', 'Status', 'Shift',
@@ -69,7 +85,7 @@ def _get_status_reason_time_stops(received_data):
     END"""
     end_expression = """COALESCE(
         DATEADD(SECOND, T1.wc_status_reason_time, T1.record_time),
-        NextReason.record_time,
+        T1.NextReasonTime,
         GETDATE()
     )"""
 
@@ -77,24 +93,20 @@ def _get_status_reason_time_stops(received_data):
         'start_date': received_data['start_date'],
         'end_date': received_data['end_date']
     }
+    target_workcenter_rows = []
+    for index, workcenter in enumerate(target_workcenters):
+        parameter_name = f'target_workcenter_{index}'
+        params[parameter_name] = workcenter
+        target_workcenter_rows.append(f'(CAST(:{parameter_name} AS VARCHAR(50)))')
+
     conditions = [
         "NULLIF(LTRIM(RTRIM(T1.workcenter)), '') IS NOT NULL",
         """(
             NULLIF(LTRIM(RTRIM(T1.wc_reason)), '') IS NOT NULL
             OR COALESCE(NULLIF(LTRIM(RTRIM(T1.wc_stauts)), ''), 'Produção') <> 'Produção'
         )""",
-        'T1.record_time < :end_date',
         f'{end_expression} > :start_date'
     ]
-
-    if has_workcenter_scope:
-        _add_parameterized_list_filter(
-            conditions,
-            params,
-            'T1.workcenter',
-            scoped_workcenters['Workcenter_Code'].dropna().astype(str).tolist(),
-            'workcenter'
-        )
 
     if received_data.get('w_group'):
         _add_parameterized_list_filter(
@@ -133,11 +145,63 @@ def _get_status_reason_time_stops(received_data):
     )
 
     query = f"""
+        WITH TargetWorkcenters AS (
+            SELECT Workcenter_Code
+            FROM (VALUES {', '.join(target_workcenter_rows)}) AS Target(Workcenter_Code)
+        ),
+        PeriodRows AS (
+            SELECT
+                T1.id
+                , T1.workcenter
+                , T1.wc_shift
+                , T1.wc_stauts
+                , T1.wc_reason
+                , T1.wc_status_reason_time
+                , T1.record_time
+            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T1
+            JOIN TargetWorkcenters Target
+                ON Target.Workcenter_Code = T1.workcenter
+            WHERE T1.record_time >= :start_date
+                AND T1.record_time < :end_date
+        ),
+        PreviousRows AS (
+            SELECT Previous.*
+            FROM TargetWorkcenters Target
+            CROSS APPLY (
+                SELECT TOP 1
+                    T1.id
+                    , T1.workcenter
+                    , T1.wc_shift
+                    , T1.wc_stauts
+                    , T1.wc_reason
+                    , T1.wc_status_reason_time
+                    , T1.record_time
+                FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T1
+                WHERE T1.workcenter = Target.Workcenter_Code
+                    AND T1.record_time < :start_date
+                ORDER BY T1.record_time DESC, T1.id DESC
+            ) Previous
+        ),
+        CandidateRows AS (
+            SELECT * FROM PreviousRows
+            UNION ALL
+            SELECT * FROM PeriodRows
+        ),
+        PreparedRows AS (
+            SELECT
+                CandidateRows.*
+                , LEAD(record_time) OVER (
+                    PARTITION BY workcenter
+                    ORDER BY record_time, id
+                ) AS NextReasonTime
+            FROM CandidateRows
+        )
+
         SELECT
             T1.id AS Log_Key
             , T1.workcenter AS Workcenter_Code
-            , FORMAT(Bounds.Log_Start, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-            , FORMAT(Bounds.Log_End, 'dd/MM/yyyy HH:mm:ss') AS End_Date
+            , Bounds.Log_Start AS Log_Date
+            , Bounds.Log_End AS End_Date
             , ROUND(DATEDIFF(SECOND, Bounds.Log_Start, Bounds.Log_End) / 60.0, 2) AS Log_Minutes
             , CAST('' AS VARCHAR(1)) AS Code
             , {status_expression} AS Status
@@ -145,18 +209,7 @@ def _get_status_reason_time_stops(received_data):
             , 1 AS Plex
             , {reason_expression} AS Event
 
-        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T1
-
-        OUTER APPLY (
-            SELECT TOP 1 T2.record_time
-            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T2
-            WHERE T2.workcenter = T1.workcenter
-                AND (
-                    T2.record_time > T1.record_time
-                    OR (T2.record_time = T1.record_time AND T2.id > T1.id)
-                )
-            ORDER BY T2.record_time, T2.id
-        ) NextReason
+        FROM PreparedRows T1
 
         CROSS APPLY (
             SELECT
@@ -175,7 +228,12 @@ def _get_status_reason_time_stops(received_data):
             AND Bounds.Log_End > Bounds.Log_Start
     """
 
-    event = engine_run_query(query, 'plex', params)
+    event = _run_query_with_deadlock_retry(query, 'plex', params)
+
+    if not event.empty:
+        event['Log_Date'] = pd.to_datetime(event['Log_Date']).dt.strftime('%d/%m/%Y %H:%M:%S')
+        event['End_Date'] = pd.to_datetime(event['End_Date']).dt.strftime('%d/%m/%Y %H:%M:%S')
+
     event = pd.merge(
         left=event,
         right=workcenters,

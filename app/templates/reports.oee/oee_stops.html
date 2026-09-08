@@ -685,6 +685,10 @@
 
         function updateGraph() {
 
+            if (![data.barchart1, data.barchart2, data.barchart3].every(Array.isArray)) {
+                return;
+            }
+
             let traces;
             function createBarChart(data, title, elementId) {
                 if (elementId == 'chart1' || elementId == 'chart2') {
@@ -807,6 +811,7 @@
             document.querySelector('#data-table4 tbody').innerHTML = ''
             document.querySelector('#data-table5 tbody').innerHTML = ''
 
+            data = {}
             showLoaders()
 
             if (xhr && xhr.readyState !== XMLHttpRequest.UNSENT) {
@@ -819,18 +824,32 @@
             xhr.setRequestHeader("Content-type","application/json");
             xhr.onreadystatechange = function () {
 
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    document.getElementById('searchButton').disabled = false;
+                if (xhr.readyState !== 4) {
+                    return;
+                }
+
+                document.getElementById('searchButton').disabled = false;
+
+                if (xhr.status !== 200) {
+                    data = {};
+                    hideLoaders();
+                    document.getElementById('chart1').innerHTML = '<p>Não foi possível carregar os dados das paradas.</p>';
+                    console.error(`Erro ao carregar paradas. HTTP ${xhr.status}`);
+                    return;
+                }
+
+                try {
+                    const response = JSON.parse(xhr.responseText);
 
                     data = {}
-                    data['table1'] = JSON.parse(JSON.parse(xhr.responseText)['table1'])
-                    data['table2'] = JSON.parse(JSON.parse(xhr.responseText)['table2'])
-                    data['table3'] = JSON.parse(JSON.parse(xhr.responseText)['table3'])
-                    data['table4'] = JSON.parse(JSON.parse(xhr.responseText)['table4'])
-                    data['table5'] = JSON.parse(JSON.parse(xhr.responseText)['table5'])
-                    data['barchart1'] = JSON.parse(JSON.parse(xhr.responseText)['barchart1'])
-                    data['barchart2'] = JSON.parse(JSON.parse(xhr.responseText)['barchart2'])
-                    data['barchart3'] = JSON.parse(JSON.parse(xhr.responseText)['barchart3'])
+                    data['table1'] = JSON.parse(response['table1'])
+                    data['table2'] = JSON.parse(response['table2'])
+                    data['table3'] = JSON.parse(response['table3'])
+                    data['table4'] = JSON.parse(response['table4'])
+                    data['table5'] = JSON.parse(response['table5'])
+                    data['barchart1'] = JSON.parse(response['barchart1'])
+                    data['barchart2'] = JSON.parse(response['barchart2'])
+                    data['barchart3'] = JSON.parse(response['barchart3'])
 
                     data['barchart3'] = data['barchart3'].map(entry => {
                         const [monthAbbrev, year] = entry.Month.split('-'); // Divide em mês e ano
@@ -841,8 +860,8 @@
                         };
                     });
 
-                    document.getElementById('total_qtt').innerHTML = JSON.parse(xhr.responseText)['total_qtt']
-                    document.getElementById('total_min').innerHTML = JSON.parse(xhr.responseText)['total_minutes']
+                    document.getElementById('total_qtt').innerHTML = response['total_qtt']
+                    document.getElementById('total_min').innerHTML = response['total_minutes']
 
                     document.getElementById("t1_qtt").innerHTML = data['table2'].reduce((sum, item) => sum + item.Log_Minutes_Count, 0);
                     document.getElementById("t1_min").innerHTML = data['table2'].reduce((sum, item) => sum + item.Log_Minutes_Sum, 0).toFixed(2);
@@ -855,6 +874,11 @@
                     
                     hideLoaders()
                     insertData()
+                } catch (error) {
+                    data = {};
+                    hideLoaders();
+                    document.getElementById('chart1').innerHTML = '<p>Não foi possível interpretar os dados das paradas.</p>';
+                    console.error('Resposta inválida ao carregar paradas.', error);
                 }
             }
             
