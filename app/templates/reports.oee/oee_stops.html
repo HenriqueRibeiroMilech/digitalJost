@@ -366,7 +366,7 @@
                 <div class="dropdown-content" id="m_event">
                     <label><input oninput="toggleExclusiveFilter('group0')" type="checkbox" id="sel_group0">Selecionar todos</label>
                     {% for event in events %}
-                    <label><input type="checkbox" id="event{{event.Code}}" name="group0" value="{{event.Code}}">{{event.Code}}-{{event.Description}}</label>
+                    <label><input type="checkbox" name="group0" value="{{event.Description}}">{{event.Description}}</label>
                     {% endfor %}
                 </div>
             </div>
@@ -568,8 +568,8 @@
         };
 
         const stopsFromAreas = {
-            '4': ['3', '4', '19', '42'],
-            '5': ['20', '31', '32', '37', '43', '44', '100']
+            '4': ['Medicao', 'Problema de Qualidade', 'Aguardando Inspecao', 'Retrabalho'],
+            '5': ['Troca de Insumo', 'Processo', 'Troca de Graxa', 'Centralizacao de Bico', 'Falta de Ferramenta de Usinagem', 'Sistema Indisponivel', 'Setup']
         }
 
         const preload = JSON.parse('{{preload | tojson}}')
@@ -588,7 +588,12 @@
 
                 if (preload.preload == '4' || preload.preload == '5') {
                     stopsFromAreas[preload.preload].forEach((item) => {
-                        document.getElementById(`event${item}`).checked = true
+                        const checkbox = Array.from(document.querySelectorAll("input[name='group0']"))
+                            .find(input => input.value === item)
+
+                        if (checkbox) {
+                            checkbox.checked = true
+                        }
                     });
                 }
 

@@ -5,7 +5,173 @@ import pandas as pd
 from app.utils.dynamic_constants import getPlex
 from app.utils.db_utils import engine_run_query, get_engine
 
-def getStopsData(received_data):
+
+def _add_parameterized_list_filter(conditions, params, expression, values, prefix):
+    if not values:
+        return
+
+    placeholders = []
+    for index, value in enumerate(values):
+        parameter_name = f'{prefix}_{index}'
+        placeholders.append(f':{parameter_name}')
+        params[parameter_name] = value
+
+    conditions.append(f"{expression} IN ({', '.join(placeholders)})")
+
+
+def _get_current_status_stops(received_data):
+    workcenters = getPlex('workcenters')[[
+        'Workcenter_Key', 'Workcenter_Code', 'Name', 'Workcenter_Group'
+    ]].copy()
+
+    scoped_workcenters = workcenters.copy()
+    has_workcenter_scope = False
+
+    if received_data.get('w_name_plex'):
+        has_workcenter_scope = True
+        selected_keys = {str(value) for value in received_data['w_name_plex']}
+        scoped_workcenters = scoped_workcenters[
+            scoped_workcenters['Workcenter_Key'].astype(str).isin(selected_keys)
+        ]
+    elif received_data.get('w_name_mic'):
+        return pd.DataFrame(columns=[
+            'Log_Key', 'Workcenter_Key', 'Workcenter_Name', 'Workcenter_Group',
+            'Log_Date', 'End_Date', 'Log_Minutes', 'Code', 'Status', 'Shift',
+            'Plex', 'Event'
+        ])
+
+    if received_data.get('w_group'):
+        has_workcenter_scope = True
+        scoped_workcenters = scoped_workcenters[
+            scoped_workcenters['Workcenter_Group'].isin(received_data['w_group'])
+        ]
+
+    if has_workcenter_scope and scoped_workcenters.empty:
+        return pd.DataFrame(columns=[
+            'Log_Key', 'Workcenter_Key', 'Workcenter_Name', 'Workcenter_Group',
+            'Log_Date', 'End_Date', 'Log_Minutes', 'Code', 'Status', 'Shift',
+            'Plex', 'Event'
+        ])
+
+    reason_expression = (
+        "COALESCE(NULLIF(LTRIM(RTRIM(T1.WcReason)), ''), 'Sem Justificativa')"
+    )
+    status_expression = """CASE
+        WHEN NULLIF(LTRIM(RTRIM(T1.WcStatus)), '') IS NULL THEN 'Sem Categoria'
+        WHEN LTRIM(RTRIM(T1.WcStatus)) = 'Manutenção Parada' THEN 'Manutenção'
+        ELSE LTRIM(RTRIM(T1.WcStatus))
+    END"""
+    shift_expression = """CASE T1.CurrentShift
+        WHEN 'Turno 1' THEN 'Primeiro'
+        WHEN 'Turno 2' THEN 'Segundo'
+        WHEN 'Turno 3' THEN 'Terceiro'
+        ELSE T1.CurrentShift
+    END"""
+
+    params = {
+        'start_date': received_data['start_date'],
+        'end_date': received_data['end_date']
+    }
+    conditions = [
+        'T1.DowntimeStatus = 1',
+        'T1.StatusBegin < :end_date',
+        'COALESCE(T1.StatusEnd, GETDATE()) > :start_date'
+    ]
+
+    if has_workcenter_scope:
+        _add_parameterized_list_filter(
+            conditions,
+            params,
+            'T1.Workcenter',
+            scoped_workcenters['Workcenter_Code'].dropna().astype(str).tolist(),
+            'workcenter'
+        )
+
+    if received_data.get('w_group'):
+        _add_parameterized_list_filter(
+            conditions,
+            params,
+            status_expression,
+            received_data.get('m_group', []),
+            'status'
+        )
+
+        selected_shifts = {
+            '1': 'Primeiro',
+            '2': 'Segundo',
+            '3': 'Terceiro',
+            'Extra': 'Extra'
+        }
+        shift_values = [
+            selected_shifts[shift]
+            for shift in received_data.get('shift', [])
+            if shift in selected_shifts
+        ]
+        _add_parameterized_list_filter(
+            conditions,
+            params,
+            shift_expression,
+            shift_values,
+            'shift'
+        )
+
+    _add_parameterized_list_filter(
+        conditions,
+        params,
+        reason_expression,
+        received_data.get('m_event', []),
+        'reason'
+    )
+
+    query = f"""
+        SELECT
+            T1.ID AS Log_Key
+            , T1.Workcenter AS Workcenter_Code
+            , FORMAT(Bounds.Log_Start, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
+            , FORMAT(Bounds.Log_End, 'dd/MM/yyyy HH:mm:ss') AS End_Date
+            , ROUND(DATEDIFF(SECOND, Bounds.Log_Start, Bounds.Log_End) / 60.0, 2) AS Log_Minutes
+            , CAST('' AS VARCHAR(1)) AS Code
+            , {status_expression} AS Status
+            , {shift_expression} AS Shift
+            , 1 AS Plex
+            , {reason_expression} AS Event
+
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status] T1
+
+        CROSS APPLY (
+            SELECT
+                CASE
+                    WHEN T1.StatusBegin < :start_date THEN CAST(:start_date AS DATETIME2)
+                    ELSE T1.StatusBegin
+                END AS Log_Start
+                , CASE
+                    WHEN COALESCE(T1.StatusEnd, GETDATE()) > :end_date THEN CAST(:end_date AS DATETIME2)
+                    ELSE COALESCE(T1.StatusEnd, GETDATE())
+                END AS Log_End
+        ) Bounds
+
+        WHERE {' AND '.join(conditions)}
+            AND Bounds.Log_End > Bounds.Log_Start
+    """
+
+    event = engine_run_query(query, 'plex', params)
+    event = pd.merge(
+        left=event,
+        right=workcenters,
+        how='left',
+        on='Workcenter_Code'
+    )
+
+    event['Workcenter_Name'] = (
+        event['Workcenter_Code'].astype(str)
+        + event['Name'].fillna('').apply(lambda name: f'-{name}' if name else '')
+    )
+    event['Workcenter_Group'] = event['Workcenter_Group'].fillna('Sem Área')
+
+    return event
+
+
+def getStopsData(received_data, use_current_status=False):
     """
         DADOS DE PAYLOAD:
         
@@ -19,6 +185,9 @@ def getStopsData(received_data):
             w_group: LISTA DE Workcenter_Group/GRUPO
             m_group: LISTA DE Workcenter_Event_Group/CATEGORIA
 
+        3. CONTROLE DA FONTE PLEX:
+            use_current_status: usa Mach_2_Current_Status no lugar da procedure legada
+
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
 
@@ -27,60 +196,62 @@ def getStopsData(received_data):
     shift_filter = {"1": 'primeiro', "2": 'segundo', "3": 'terceiro', 'Extra': None}
     received_data["shift_plex"] = [shift_filter[shift] for shift in received_data["shift"] if shift_filter[shift] is not None]
 
-    events_join = getPlex('events')
-    events_join.loc[len(events_join)] = [1, 'Sem Justificativa', 'Sem Categoria', 1, "0"]
-
-
-    workcenter_filter = ''
-    if received_data.get('w_name_plex'):
-        workcenter_filter = json.dumps(received_data['w_name_plex'], ensure_ascii=False)
-    elif received_data.get('w_name_mic'):
-        workcenter_filter = '[1]'
-
-    if received_data.get('w_group'):
-        workcenter_group = json.dumps(received_data.get('w_group', '[1]'), ensure_ascii=False)
-        workcenter_event_group = json.dumps(received_data.get('m_group', '[1]'), ensure_ascii=False)
-        shift_group = json.dumps(received_data.get('shift_plex', '[1]'), ensure_ascii=False)
+    if use_current_status:
+        event = _get_current_status_stops(received_data)
     else:
-        workcenter_group = ''
-        workcenter_event_group = ''
-        shift_group = ''
+        events_join = getPlex('events')
+        events_join.loc[len(events_join)] = [1, 'Sem Justificativa', 'Sem Categoria', 1, "0"]
 
-    code = json.dumps(received_data.get('m_event', ''), ensure_ascii=False) if isinstance(received_data.get('m_event', ''), list) else ''
+        workcenter_filter = ''
+        if received_data.get('w_name_plex'):
+            workcenter_filter = json.dumps(received_data['w_name_plex'], ensure_ascii=False)
+        elif received_data.get('w_name_mic'):
+            workcenter_filter = '[1]'
 
-    # AJUSTE DE FUSO HORÁRIO DO PLEX
-    # ALTERAÇÃO FEITA PARA TESTE DO AJUSTE DA HORA NO DJ.
-    # COMO O PLEX ESTÁ +1 HORA EM RELAÇÃO À TELA:
-    # 1) SOMA +1 HORA NO FILTRO ENVIADO PARA O PLEX.
-    # 2) DEPOIS SUBTRAI -1 HORA NO RESULTADO RETORNADO.
-    plex_start_date = (
-        pd.to_datetime(received_data['start_date']) + pd.Timedelta(hours=1)
-    ).strftime('%Y-%m-%d %H:%M:%S')
+        if received_data.get('w_group'):
+            workcenter_group = json.dumps(received_data.get('w_group', '[1]'), ensure_ascii=False)
+            workcenter_event_group = json.dumps(received_data.get('m_group', '[1]'), ensure_ascii=False)
+            shift_group = json.dumps(received_data.get('shift_plex', '[1]'), ensure_ascii=False)
+        else:
+            workcenter_group = ''
+            workcenter_event_group = ''
+            shift_group = ''
 
-    plex_end_date = (
-        pd.to_datetime(received_data['end_date']) + pd.Timedelta(hours=1)
-    ).strftime('%Y-%m-%d %H:%M:%S')
+        code = json.dumps(received_data.get('m_event', ''), ensure_ascii=False) if isinstance(received_data.get('m_event', ''), list) else ''
 
-    query = f"""EXEC('sproc329396_18311230_1268435(?, ?, ?, ?, ?, ?, ?)'
-                    , '{plex_start_date}'
-                    , '{plex_end_date}'
-                    , '{workcenter_filter}'
-                    , '{workcenter_group}'
-                    , '{workcenter_event_group}'
-                    , '{shift_group}'
-                    , '{code}'
-                ) AT [PLEX_DSN_JOST]"""
+        # AJUSTE DE FUSO HORÁRIO DO PLEX
+        # ALTERAÇÃO FEITA PARA TESTE DO AJUSTE DA HORA NO DJ.
+        # COMO O PLEX ESTÁ +1 HORA EM RELAÇÃO À TELA:
+        # 1) SOMA +1 HORA NO FILTRO ENVIADO PARA O PLEX.
+        # 2) DEPOIS SUBTRAI -1 HORA NO RESULTADO RETORNADO.
+        plex_start_date = (
+            pd.to_datetime(received_data['start_date']) + pd.Timedelta(hours=1)
+        ).strftime('%Y-%m-%d %H:%M:%S')
 
-    event = engine_run_query(query, 'plex')
+        plex_end_date = (
+            pd.to_datetime(received_data['end_date']) + pd.Timedelta(hours=1)
+        ).strftime('%Y-%m-%d %H:%M:%S')
 
-    # AJUSTE DE FUSO HORÁRIO DO RESULTADO DO PLEX
-    # ATUALMENTE CONFIGURADO PARA -1 HORA.
-    if not event.empty:
-        event['Log_Date'] = pd.to_datetime(event['Log_Date'], format='%d/%m/%Y %H:%M:%S') - pd.Timedelta(hours=1)
-        event['End_Date'] = pd.to_datetime(event['End_Date'], format='%d/%m/%Y %H:%M:%S') - pd.Timedelta(hours=1)
+        query = f"""EXEC('sproc329396_18311230_1268435(?, ?, ?, ?, ?, ?, ?)'
+                        , '{plex_start_date}'
+                        , '{plex_end_date}'
+                        , '{workcenter_filter}'
+                        , '{workcenter_group}'
+                        , '{workcenter_event_group}'
+                        , '{shift_group}'
+                        , '{code}'
+                    ) AT [PLEX_DSN_JOST]"""
 
-        event['Log_Date'] = event['Log_Date'].dt.strftime('%d/%m/%Y %H:%M:%S')
-        event['End_Date'] = event['End_Date'].dt.strftime('%d/%m/%Y %H:%M:%S')
+        event = engine_run_query(query, 'plex')
+
+        # AJUSTE DE FUSO HORÁRIO DO RESULTADO DO PLEX
+        # ATUALMENTE CONFIGURADO PARA -1 HORA.
+        if not event.empty:
+            event['Log_Date'] = pd.to_datetime(event['Log_Date'], format='%d/%m/%Y %H:%M:%S') - pd.Timedelta(hours=1)
+            event['End_Date'] = pd.to_datetime(event['End_Date'], format='%d/%m/%Y %H:%M:%S') - pd.Timedelta(hours=1)
+
+            event['Log_Date'] = event['Log_Date'].dt.strftime('%d/%m/%Y %H:%M:%S')
+            event['End_Date'] = event['End_Date'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
     def format_tuple(data):
         return f"('{data[0]}')" if len(data) == 1 else tuple(data)
@@ -97,7 +268,7 @@ def getStopsData(received_data):
         f"T3.CATEGORIA IN {format_tuple(received_data['m_group'])}" if received_data['m_group'] else "T3.CATEGORIA = 'aaa'"
     ] if received_data.get('w_group') else []
 
-    if received_data.get('m_event'):
+    if received_data.get('m_event') and not use_current_status:
         filters.append(f"T3.COD_PARADA IN {format_tuple(received_data['m_event'])}")
 
     conditions = []
@@ -110,6 +281,7 @@ def getStopsData(received_data):
     workcenter_condition = f"({ ' OR '.join(conditions) })" if conditions else "(1=1)"
 
     filter_string = "AND " + " AND ".join(filters) if filters else ""
+    mic_event_description = ", T3.DESC_PARADA AS Event" if use_current_status else ""
 
     query = f"""
         SELECT
@@ -122,6 +294,7 @@ def getStopsData(received_data):
             , ROUND(T1.lSeconds / 60.0, 2) AS Log_Minutes
             , T3.COD_PARADA AS Code
             , T3.CATEGORIA AS Status
+            {mic_event_description}
             , CASE 
                 WHEN T1.nShift = 1 THEN 'Primeiro'
                 WHEN T1.nShift = 2 THEN 'Segundo'
@@ -158,9 +331,15 @@ def getStopsData(received_data):
 
     mic_event = engine_run_query(query, 'ftm')
 
+    if use_current_status and received_data.get('m_event'):
+        mic_event = mic_event[mic_event['Event'].isin(received_data['m_event'])]
+
     data = pd.concat([event, mic_event])
     data['Code'] = data['Code'].astype(str)
-    
+
+    if use_current_status:
+        return data
+
     data = pd.merge(left=data, right=events_join, left_on='Code', right_on='Code').drop(columns=['Workcenter_Event_Key', 'Workcenter_Event_Group', 'Active']).rename(columns={"Description": "Event"})
 
     return data

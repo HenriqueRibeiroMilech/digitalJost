@@ -207,10 +207,16 @@ def oee_stops_get():
     mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
     workcenters = pd.concat([mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])], mic_workcenters])
 
-    events = getPlex('events')
-    events = events[~events['Code'].isna()].reset_index(drop=True)
-    events.loc[len(events)] = [1, 'Sem Justificativa', 'Sem Categoria', 1, "0"]
-    events['Code'] = events['Code'].astype(int)
+    events_query = """
+        SELECT DISTINCT
+            COALESCE(
+                NULLIF(LTRIM(RTRIM(WcReason)), ''),
+                'Sem Justificativa'
+            ) AS Description
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+        WHERE DowntimeStatus = 1
+    """
+    events = engine_run_query(events_query, 'plex')
 
     preload = {}
     if 'preload' in request.args:
@@ -232,7 +238,7 @@ def oee_stops_get():
 
     return render_template(
         'reports.oee/oee_stops.html'
-        , events=events.sort_values(by='Code').to_dict(orient='records')
+        , events=events.sort_values(by='Description').to_dict(orient='records')
         , workcenters=workcenters.sort_values(by="Workcenter_Code").to_dict(orient="records")
         , preload=preload
     )
@@ -244,9 +250,7 @@ def oee_stops_post():
     payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
     payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-    event = getStopsData(payload)
-
-    event['Event'] = event['Code'] + '-' + event['Event']
+    event = getStopsData(payload, use_current_status=True)
     table1 = event[['Workcenter_Name', 'Workcenter_Group', 'Log_Date', 'End_Date', 'Log_Minutes', 'Event', 'Status']]
 
     if table1.shape[0] > 5000:
@@ -417,7 +421,7 @@ def oee_stops_excel():
     payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
     payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-    data = getStopsData(payload)[['Workcenter_Name', 'Workcenter_Group', 'Status', 'Event', 'Log_Minutes', 'Shift', 'Log_Date', 'End_Date']]
+    data = getStopsData(payload, use_current_status=True)[['Workcenter_Name', 'Workcenter_Group', 'Status', 'Event', 'Log_Minutes', 'Shift', 'Log_Date', 'End_Date']]
     data = data.rename(columns={'Workcenter_Name': 'Centro de Trabalho', 'Shift': 'Turno', 'Event': 'Parada', 'Status': 'Ms', 'Log_Date': 'Hora de Início', 'Workcenter_Group': 'Área', 'Log_Minutes': 'Duração em Minutos', 'End_Date' : 'Data Fim'})
     data.to_excel(excel_filename, index=False, header=True)
 
@@ -449,4 +453,4 @@ def oee_signal_excel():
     data = data.rename(columns={'Record_Time': 'Fim', 'Workcenter': 'Centro de Trabalho', 'Part': 'Peça', 'Job': 'Ordem de Produção', 'Signal': 'Sinal', 'Routing_Time': 'Tempo Padrão (min)', 'Duration': 'Duração (min)'})
     data.to_excel(excel_filename, index=False, header=True)
 
-    return send_file(excel_filename, as_attachment=True)                
+    return send_file(excel_filename, as_attachment=True)
