@@ -1385,6 +1385,7 @@
                     ${demand.demandType !== 'erro' ? readonlyItem('Problemas atuais', demand.actualProblems, true) : ''}
                     ${demand.demandType !== 'erro' ? readonlyItem('Ganhos esperados', demand.benefits, true) : ''}
                     ${readonlyItem('Solicitante', demand.requesterName)}
+                    ${readonlyItem('Contribuinte', demand.contributorName)}
                     ${readonlyItem('ID da solicitação', `#${demand.sourceRequestId}`)}
                     ${readonlyItem('Tipo', typeLabel(demand.demandType))}
                     ${readonlyItem('Urgência', demand.urgency)}
@@ -1487,6 +1488,7 @@
                         ${item.demandType !== 'erro' ? readonlyItem('Problemas atuais', item.actualProblems, true) : ''}
                         ${item.demandType !== 'erro' ? readonlyItem('Ganhos esperados', item.benefits, true) : ''}
                         ${readonlyItem('Solicitante', item.requesterName)}
+                        ${readonlyItem('Contribuinte', item.contributorName)}
                         ${readonlyItem('Tipo', typeLabel(item.demandType))}
                         ${readonlyItem('Urgência', item.urgency)}
                         ${readonlyItem('Data da solicitação', formatDate(item.requestDate, true))}

@@ -28,6 +28,14 @@ def _required_text(data, key, label, max_length):
     return value
 
 
+def _optional_user_id(data, key):
+    raw_value = data.get(key, '')
+    value = '' if raw_value is None else str(raw_value).strip()
+    if len(value) > 20:
+        raise ValidationError('Contribuinte inválido.')
+    return value or None
+
+
 def validate_new_request(data):
     if not hasattr(data, 'get'):
         raise ValidationError('Dados da solicitação inválidos.')
@@ -46,6 +54,7 @@ def validate_new_request(data):
             data, 'objetivo', 'a descrição ou objetivo da demanda', 4000
         ),
         'urgency': urgency,
+        'contributorId': _optional_user_id(data, 'contributorId'),
         'assumptions': None,
         'actualProblems': None,
         'benefits': None

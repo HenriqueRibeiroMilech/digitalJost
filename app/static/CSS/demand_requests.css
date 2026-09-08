@@ -223,6 +223,10 @@ select {
     grid-column: span 3;
 }
 
+.dr-field--third {
+    grid-column: span 2;
+}
+
 .dr-field--full {
     grid-column: 1 / -1;
 }
@@ -234,6 +238,12 @@ select {
     font-weight: 600;
     letter-spacing: .08em;
     text-transform: uppercase;
+}
+
+.dr-field__hint {
+    color: var(--dr-muted);
+    font-size: .66rem;
+    line-height: 1.4;
 }
 
 .dr-field input,
@@ -560,6 +570,11 @@ select {
 .dr-badge--status-6 {
     color: #8f1d16;
     background: #fde5e2;
+}
+
+.dr-badge--contributor {
+    color: #155e75;
+    background: #cffafe;
 }
 
 .dr-request-card h3 {
@@ -994,7 +1009,8 @@ body.dr-modal-open {
         flex-direction: column;
     }
 
-    .dr-field--half {
+    .dr-field--half,
+    .dr-field--third {
         grid-column: 1 / -1;
     }
 

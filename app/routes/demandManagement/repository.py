@@ -27,10 +27,19 @@ class DemandManagementRepository:
             Requester.id AS requesterId,
             Requester.name AS requesterName,
             Requester.companyEmail AS requesterEmail,
+            R.contributorId,
+            Contributor.name AS contributorName,
+            CASE
+                WHEN Contributor.active = 1 AND Contributor.generic = 0
+                THEN LTRIM(RTRIM(Contributor.companyEmail))
+                ELSE NULL
+            END AS contributorEmail,
             Responsible.id AS responsibleId,
             Responsible.name AS responsibleName
         FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
         JOIN JDT_USER_DETAILS AS Requester ON Requester.id = R.requesterId
+        LEFT JOIN JDT_USER_DETAILS AS Contributor
+            ON Contributor.id = R.contributorId
         LEFT JOIN JDT_USER_DETAILS AS Responsible ON Responsible.id = R.respId
     """
 
@@ -81,6 +90,13 @@ class DemandManagementRepository:
             COALESCE(Requester.id, Creator.id) AS requesterId,
             COALESCE(Requester.name, Creator.name) AS requesterName,
             COALESCE(Requester.companyEmail, Creator.companyEmail) AS requesterEmail,
+            R.contributorId,
+            Contributor.name AS contributorName,
+            CASE
+                WHEN Contributor.active = 1 AND Contributor.generic = 0
+                THEN LTRIM(RTRIM(Contributor.companyEmail))
+                ELSE NULL
+            END AS contributorEmail,
             Creator.name AS createdByName,
             CASE
                 WHEN Responsible.active = 1 THEN Responsible.name
@@ -94,6 +110,8 @@ class DemandManagementRepository:
             ON R.requestId = M.sourceRequestId
         LEFT JOIN JDT_USER_DETAILS AS Requester
             ON Requester.id = R.requesterId
+        LEFT JOIN JDT_USER_DETAILS AS Contributor
+            ON Contributor.id = R.contributorId
         LEFT JOIN JDT_USER_DETAILS AS Creator
             ON Creator.id = M.createdBy
         LEFT JOIN JDT_USER_DETAILS AS Responsible

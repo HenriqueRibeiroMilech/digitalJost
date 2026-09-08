@@ -191,6 +191,9 @@ class RequestReviewNotifier:
     @staticmethod
     def _message(subject, review, copied_users):
         copied_emails = []
+        contributor_email = review.get('contributorEmail')
+        if contributor_email and contributor_email != review['requesterEmail']:
+            copied_emails.append(contributor_email)
         for user in copied_users:
             email = user.get('email')
             if email and email != review['requesterEmail'] and email not in copied_emails:

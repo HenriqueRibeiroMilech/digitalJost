@@ -92,7 +92,9 @@ def handle_demand_requests_error(error):
 @demand_requests_bp.route('/demandas/solicitacoes', methods=['GET'])
 def requests_page():
     area_name, area = _current_area()
-    requests_list = _build_service().list_user_requests(area['id'], current_user.id)
+    service = _build_service()
+    requests_list = service.list_user_requests(area['id'], current_user.id)
+    contributors = service.list_contributors(current_user.id)
     requested_tab = request.args.get('tab')
     initial_tab = (
         requested_tab if requested_tab in ('minhas', 'graficos') else 'nova'
@@ -102,6 +104,7 @@ def requests_page():
         'demandRequests/portal.html',
         area=area_name,
         requests=requests_list,
+        contributors=contributors,
         initial_tab=initial_tab,
         request_sent=request.args.get('sent') == '1',
         initial_request_id=request.args.get('request', type=int),

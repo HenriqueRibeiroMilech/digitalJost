@@ -3,6 +3,7 @@
 
     const config = window.demandRequestsConfig || {};
     const requests = Array.isArray(config.requests) ? config.requests : [];
+    const contributors = Array.isArray(config.contributors) ? config.contributors : [];
     const selectedFiles = [];
     const maxFiles = 10;
     let activeRequestDetail = null;
@@ -224,6 +225,11 @@
         return normalizeText(urgency) === 'alta' ? ' dr-badge--urgency-high' : '';
     }
 
+    function relationshipBadge(requestItem) {
+        if (requestItem.userRelationship !== 'contributor') return '';
+        return '<span class="dr-badge dr-badge--contributor">Você contribui</span>';
+    }
+
     function requestCard(requestItem) {
         const type = requestType(requestItem);
         const status = requestStatus(requestItem);
@@ -236,6 +242,7 @@
                     '<span class="dr-badge dr-badge--type-' + type + '">' + escapeHtml(typeLabels[type]) + '</span>' +
                     '<span class="dr-badge dr-badge--status-' + status + '">' + escapeHtml(statusLabels[status]) + '</span>' +
                     '<span class="dr-badge' + urgencyClass(urgency) + '">' + escapeHtml(urgency) + '</span>' +
+                    relationshipBadge(requestItem) +
                 '</div>' +
                 '<h3>' + escapeHtml(requestItem.title || 'Demanda sem título') + '</h3>' +
                 '<p class="dr-request-card__description">' + escapeHtml(requestItem.initialDescription || 'Sem descrição informada.') + '</p>' +
@@ -244,7 +251,9 @@
                     '<div><span>' + escapeHtml(detail[0]) + '</span><strong>' + escapeHtml(detail[1]) + '</strong></div>' +
                 '</div>' +
                 '<div class="dr-request-card__footer">' +
-                    '<span>Solicitação #' + escapeHtml(requestItem.requestId) + '</span>' +
+                    '<span>' + (requestItem.userRelationship === 'contributor'
+                        ? 'Solicitada por ' + escapeHtml(requestItem.requesterName) + ' · '
+                        : '') + 'Solicitação #' + escapeHtml(requestItem.requestId) + '</span>' +
                     '<button class="dr-button dr-button--card" type="button">Ver detalhes</button>' +
                 '</div>' +
             '</article>';
@@ -257,7 +266,9 @@
 
         return requests.filter(function (requestItem) {
             const text = normalizeText(
-                (requestItem.title || '') + ' ' + (requestItem.initialDescription || '')
+                (requestItem.title || '') + ' ' +
+                (requestItem.initialDescription || '') + ' ' +
+                (requestItem.requesterName || '')
             );
             return (!search || text.includes(search)) &&
                 (!type || requestType(requestItem) === type) &&
@@ -273,7 +284,7 @@
                 elements.search.value || elements.typeFilter.value || elements.statusFilter.value
             );
             elements.grid.innerHTML = '<div class="dr-empty">' +
-                '<strong>' + (hasFilters ? 'Nenhuma solicitação encontrada' : 'Você ainda não fez nenhuma solicitação') + '</strong>' +
+                '<strong>' + (hasFilters ? 'Nenhuma solicitação encontrada' : 'Você ainda não possui solicitações para acompanhar') + '</strong>' +
                 '<span>' + (hasFilters ? 'Altere os filtros para tentar novamente.' : 'Use a primeira aba para enviar uma nova demanda.') + '</span>' +
             '</div>';
             return;
@@ -293,6 +304,17 @@
         return '<option value="' + escapeHtml(value) + '"' +
             (value === selectedValue ? ' selected' : '') + '>' +
             escapeHtml(label) + '</option>';
+    }
+
+    function contributorOptions(selectedValue) {
+        return selectOption('', 'Sem contribuinte', selectedValue || '') +
+            contributors.map(function (contributor) {
+                return selectOption(
+                    String(contributor.id),
+                    contributor.name,
+                    String(selectedValue || '')
+                );
+            }).join('');
     }
 
     function renderAttachments(item) {
@@ -352,6 +374,7 @@
                     '<span class="dr-badge dr-badge--type-' + type + '">' + escapeHtml(typeLabels[type]) + '</span>' +
                     '<span class="dr-badge dr-badge--status-' + status + '">' + escapeHtml(statusLabels[status]) + '</span>' +
                     '<span class="dr-badge' + urgencyClass(item.urgency) + '">' + escapeHtml(item.urgency || 'Não informada') + '</span>' +
+                    relationshipBadge(item) +
                 '</div>' +
                 '<h2 id="dr-modal-title">' + escapeHtml(item.title) + '</h2>' +
                 '<p class="dr-modal__meta">Solicitação #' + escapeHtml(item.requestId) +
@@ -372,6 +395,7 @@
                         (structured ? readonlyItem('Ganhos esperados', item.benefits, true) : '') +
                         readonlyItem('Tipo', typeLabels[type]) +
                         readonlyItem('Urgência', item.urgency) +
+                        readonlyItem('Contribuinte', item.contributorName) +
                     '</dl>' +
                 '</section>' +
                 '<section class="dr-detail-panel">' +
@@ -409,7 +433,7 @@
                 '<section class="dr-detail-panel dr-detail-panel--full">' +
                     '<h3>Dados principais</h3>' +
                     '<div class="dr-form-grid">' +
-                        '<label class="dr-field dr-field--half">' +
+                        '<label class="dr-field dr-field--third">' +
                             '<span>Tipo de demanda *</span>' +
                             '<select required name="demandType" id="dr-edit-demand-type">' +
                                 selectOption('melhoria', 'Melhoria', type) +
@@ -417,13 +441,20 @@
                                 selectOption('erro', 'Erro/Defeito em aplicação', type) +
                             '</select>' +
                         '</label>' +
-                        '<label class="dr-field dr-field--half">' +
+                        '<label class="dr-field dr-field--third">' +
                             '<span>Nível de urgência *</span>' +
                             '<select required name="options">' +
                                 selectOption('Alta', 'Alta', item.urgency) +
                                 selectOption('Média', 'Média', item.urgency) +
                                 selectOption('Baixa', 'Baixa', item.urgency) +
                             '</select>' +
+                        '</label>' +
+                        '<label class="dr-field dr-field--third">' +
+                            '<span>Contribuinte (opcional)</span>' +
+                            '<select name="contributorId">' +
+                                contributorOptions(item.contributorId) +
+                            '</select>' +
+                            '<small class="dr-field__hint">Poderá acompanhar a demanda e receberá as atualizações por e-mail.</small>' +
                         '</label>' +
                         '<label class="dr-field dr-field--full">' +
                             '<span>Título da demanda *</span>' +

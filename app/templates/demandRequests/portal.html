@@ -57,7 +57,7 @@
                 </div>
 
                 <div class="dr-form-grid">
-                    <label class="dr-field dr-field--half">
+                    <label class="dr-field dr-field--third">
                         <span>Tipo de demanda *</span>
                         <select required autocomplete="off" name="demandType" id="dr-demand-type">
                             <option value="" disabled selected>Selecione o tipo</option>
@@ -67,7 +67,7 @@
                         </select>
                     </label>
 
-                    <label class="dr-field dr-field--half">
+                    <label class="dr-field dr-field--third">
                         <span>Nível de urgência *</span>
                         <select required autocomplete="off" name="options">
                             <option value="" disabled selected>Selecione a urgência</option>
@@ -75,6 +75,17 @@
                             <option value="Média">Média</option>
                             <option value="Baixa">Baixa</option>
                         </select>
+                    </label>
+
+                    <label class="dr-field dr-field--third">
+                        <span>Contribuinte (opcional)</span>
+                        <select autocomplete="off" name="contributorId">
+                            <option value="">Sem contribuinte</option>
+                            {% for contributor in contributors %}
+                                <option value="{{ contributor.id }}">{{ contributor.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="dr-field__hint">Poderá acompanhar a demanda e receberá as atualizações por e-mail.</small>
                     </label>
 
                     <label class="dr-field dr-field--full">
@@ -208,6 +219,7 @@
         initialTab: {{ initial_tab|tojson }},
         requestSent: {{ request_sent|tojson }},
         requests: {{ requests|tojson }},
+        contributors: {{ contributors|tojson }},
         csrfToken: {{ csrf_token|tojson }},
         initialRequestId: {{ initial_request_id|tojson }},
         portalUrl: {{ url_for('demand_requests.requests_page', area=area)|tojson }},

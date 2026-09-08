@@ -552,6 +552,7 @@ class DemandManagementService:
         result = _serialize_row(row)
         images = result.pop('images', '') or ''
         result.pop('requesterEmail', None)
+        result.pop('contributorEmail', None)
         if include_attachments:
             result['attachments'] = self._serialize_attachments(images)
             result['internalAttachments'] = self.internal_attachment_storage.list(
@@ -581,6 +582,7 @@ class DemandManagementService:
             result['attachments'] = self._serialize_attachments(images)
         # O e-mail é necessário somente no servidor para enviar a notificação.
         result.pop('requesterEmail', None)
+        result.pop('contributorEmail', None)
         return result
 
     def _serialize_attachments(self, images):

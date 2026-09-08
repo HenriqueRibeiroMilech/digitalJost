@@ -1,7 +1,12 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from .domain import ConflictError, NotFoundError, validate_new_request
+from .domain import (
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+    validate_new_request
+)
 
 
 _ACTIVE_STATUSES = ('A Fazer', 'Em Andamento', 'Pausado')
@@ -42,6 +47,11 @@ class DemandRequestsService:
             {key: _serialize_value(value) for key, value in dict(row).items()}
             for row in rows
         ]
+
+    def list_contributors(self, user_id):
+        with self.engine.connect() as connection:
+            rows = self.repository.list_contributors(connection, user_id)
+        return [dict(row) for row in rows]
 
     def get_area_analytics(self, area_id):
         with self.engine.connect() as connection:
@@ -152,6 +162,7 @@ class DemandRequestsService:
 
         try:
             with self.engine.begin() as connection:
+                self._validate_contributor(connection, demand, user_id)
                 request_id = self.repository.next_request_id(connection)
                 stored_names = self.storage.save(request_id, files)
                 images = ''.join(f'{name}||' for name in stored_names)
@@ -172,15 +183,20 @@ class DemandRequestsService:
         demand = validate_new_request(payload)
 
         with self.engine.begin() as connection:
+            current = self.repository.get_request(
+                connection, request_id, area_id, lock=True
+            )
+            if not current or str(current['requesterId']) != str(user_id):
+                raise NotFoundError('Solicitação não encontrada.')
+            if not current['pendingEditable']:
+                raise ConflictError(
+                    'Esta solicitação já foi analisada e não pode mais ser editada.'
+                )
+            self._validate_contributor(connection, demand, user_id)
             updated = self.repository.update_pending_request(
                 connection, request_id, area_id, user_id, demand
             )
             if not updated:
-                current = self.repository.get_request(
-                    connection, request_id, area_id
-                )
-                if not current or str(current['requesterId']) != str(user_id):
-                    raise NotFoundError('Solicitação não encontrada.')
                 raise ConflictError(
                     'Esta solicitação já foi analisada e não pode mais ser editada.'
                 )
@@ -192,7 +208,12 @@ class DemandRequestsService:
             row = self.repository.get_request(connection, request_id, area_id)
             if not row:
                 raise NotFoundError('Solicitação não encontrada.')
-            if not allow_area_access and str(row['requesterId']) != str(user_id):
+            is_requester = str(row['requesterId']) == str(user_id)
+            is_contributor = (
+                row['contributorId'] is not None
+                and str(row['contributorId']) == str(user_id)
+            )
+            if not allow_area_access and not is_requester and not is_contributor:
                 raise NotFoundError('Solicitação não encontrada.')
             history = self.repository.list_history(
                 connection, request_id, area_id
@@ -201,8 +222,13 @@ class DemandRequestsService:
         result = {key: _serialize_value(value) for key, value in dict(row).items()}
         pending_editable = bool(result.pop('pendingEditable', False))
         result['canEdit'] = (
-            str(result.get('requesterId')) == str(user_id)
+            is_requester
             and pending_editable
+        )
+        result['userRelationship'] = (
+            'requester' if is_requester
+            else 'contributor' if is_contributor
+            else 'area'
         )
         result.pop('requesterId', None)
         images = result.pop('images', '') or ''
@@ -230,5 +256,18 @@ class DemandRequestsService:
         if not attachment:
             raise NotFoundError('Anexo não encontrado.')
         return self.storage.request_directory(request_id), attachment['name']
+
+    def _validate_contributor(self, connection, demand, user_id):
+        contributor_id = demand['contributorId']
+        if contributor_id is None:
+            return
+        if str(contributor_id) == str(user_id):
+            raise ValidationError(
+                'O solicitante não pode ser contribuinte da própria solicitação.'
+            )
+        if not self.repository.get_contributor(connection, contributor_id):
+            raise ValidationError(
+                'Selecione um contribuinte ativo com e-mail corporativo.'
+            )
 
 # V2
