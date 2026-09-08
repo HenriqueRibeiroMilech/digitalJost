@@ -210,11 +210,15 @@ def oee_stops_get():
     events_query = """
         SELECT DISTINCT
             COALESCE(
-                NULLIF(LTRIM(RTRIM(WcReason)), ''),
+                NULLIF(LTRIM(RTRIM(wc_reason)), ''),
                 'Sem Justificativa'
             ) AS Description
-        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
-        WHERE DowntimeStatus = 1
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time]
+        WHERE NULLIF(LTRIM(RTRIM(workcenter)), '') IS NOT NULL
+            AND (
+                NULLIF(LTRIM(RTRIM(wc_reason)), '') IS NOT NULL
+                OR COALESCE(NULLIF(LTRIM(RTRIM(wc_stauts)), ''), 'Produção') <> 'Produção'
+            )
     """
     events = engine_run_query(events_query, 'plex')
 
@@ -250,7 +254,7 @@ def oee_stops_post():
     payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
     payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-    event = getStopsData(payload, use_current_status=True)
+    event = getStopsData(payload, use_status_reason_time=True)
     table1 = event[['Workcenter_Name', 'Workcenter_Group', 'Log_Date', 'End_Date', 'Log_Minutes', 'Event', 'Status']]
 
     if table1.shape[0] > 5000:
@@ -421,7 +425,7 @@ def oee_stops_excel():
     payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
     payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-    data = getStopsData(payload, use_current_status=True)[['Workcenter_Name', 'Workcenter_Group', 'Status', 'Event', 'Log_Minutes', 'Shift', 'Log_Date', 'End_Date']]
+    data = getStopsData(payload, use_status_reason_time=True)[['Workcenter_Name', 'Workcenter_Group', 'Status', 'Event', 'Log_Minutes', 'Shift', 'Log_Date', 'End_Date']]
     data = data.rename(columns={'Workcenter_Name': 'Centro de Trabalho', 'Shift': 'Turno', 'Event': 'Parada', 'Status': 'Ms', 'Log_Date': 'Hora de Início', 'Workcenter_Group': 'Área', 'Log_Minutes': 'Duração em Minutos', 'End_Date' : 'Data Fim'})
     data.to_excel(excel_filename, index=False, header=True)
 

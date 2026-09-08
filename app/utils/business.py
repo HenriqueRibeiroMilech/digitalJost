@@ -19,7 +19,7 @@ def _add_parameterized_list_filter(conditions, params, expression, values, prefi
     conditions.append(f"{expression} IN ({', '.join(placeholders)})")
 
 
-def _get_current_status_stops(received_data):
+def _get_status_reason_time_stops(received_data):
     workcenters = getPlex('workcenters')[[
         'Workcenter_Key', 'Workcenter_Code', 'Name', 'Workcenter_Group'
     ]].copy()
@@ -54,35 +54,44 @@ def _get_current_status_stops(received_data):
         ])
 
     reason_expression = (
-        "COALESCE(NULLIF(LTRIM(RTRIM(T1.WcReason)), ''), 'Sem Justificativa')"
+        "COALESCE(NULLIF(LTRIM(RTRIM(T1.wc_reason)), ''), 'Sem Justificativa')"
     )
     status_expression = """CASE
-        WHEN NULLIF(LTRIM(RTRIM(T1.WcStatus)), '') IS NULL THEN 'Sem Categoria'
-        WHEN LTRIM(RTRIM(T1.WcStatus)) = 'Manutenção Parada' THEN 'Manutenção'
-        ELSE LTRIM(RTRIM(T1.WcStatus))
+        WHEN NULLIF(LTRIM(RTRIM(T1.wc_stauts)), '') IS NULL THEN 'Sem Categoria'
+        WHEN LTRIM(RTRIM(T1.wc_stauts)) IN ('Manutenção Parada', 'Manutenção Produtiva') THEN 'Manutenção'
+        ELSE LTRIM(RTRIM(T1.wc_stauts))
     END"""
-    shift_expression = """CASE T1.CurrentShift
+    shift_expression = """CASE T1.wc_shift
         WHEN 'Turno 1' THEN 'Primeiro'
         WHEN 'Turno 2' THEN 'Segundo'
         WHEN 'Turno 3' THEN 'Terceiro'
-        ELSE T1.CurrentShift
+        ELSE T1.wc_shift
     END"""
+    end_expression = """COALESCE(
+        DATEADD(SECOND, T1.wc_status_reason_time, T1.record_time),
+        NextReason.record_time,
+        GETDATE()
+    )"""
 
     params = {
         'start_date': received_data['start_date'],
         'end_date': received_data['end_date']
     }
     conditions = [
-        'T1.DowntimeStatus = 1',
-        'T1.StatusBegin < :end_date',
-        'COALESCE(T1.StatusEnd, GETDATE()) > :start_date'
+        "NULLIF(LTRIM(RTRIM(T1.workcenter)), '') IS NOT NULL",
+        """(
+            NULLIF(LTRIM(RTRIM(T1.wc_reason)), '') IS NOT NULL
+            OR COALESCE(NULLIF(LTRIM(RTRIM(T1.wc_stauts)), ''), 'Produção') <> 'Produção'
+        )""",
+        'T1.record_time < :end_date',
+        f'{end_expression} > :start_date'
     ]
 
     if has_workcenter_scope:
         _add_parameterized_list_filter(
             conditions,
             params,
-            'T1.Workcenter',
+            'T1.workcenter',
             scoped_workcenters['Workcenter_Code'].dropna().astype(str).tolist(),
             'workcenter'
         )
@@ -125,8 +134,8 @@ def _get_current_status_stops(received_data):
 
     query = f"""
         SELECT
-            T1.ID AS Log_Key
-            , T1.Workcenter AS Workcenter_Code
+            T1.id AS Log_Key
+            , T1.workcenter AS Workcenter_Code
             , FORMAT(Bounds.Log_Start, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
             , FORMAT(Bounds.Log_End, 'dd/MM/yyyy HH:mm:ss') AS End_Date
             , ROUND(DATEDIFF(SECOND, Bounds.Log_Start, Bounds.Log_End) / 60.0, 2) AS Log_Minutes
@@ -136,17 +145,29 @@ def _get_current_status_stops(received_data):
             , 1 AS Plex
             , {reason_expression} AS Event
 
-        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status] T1
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T1
+
+        OUTER APPLY (
+            SELECT TOP 1 T2.record_time
+            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T2
+            WHERE T2.workcenter = T1.workcenter
+                AND (
+                    T2.record_time > T1.record_time
+                    OR (T2.record_time = T1.record_time AND T2.id > T1.id)
+                )
+            ORDER BY T2.record_time, T2.id
+        ) NextReason
 
         CROSS APPLY (
             SELECT
                 CASE
-                    WHEN T1.StatusBegin < :start_date THEN CAST(:start_date AS DATETIME2)
-                    ELSE T1.StatusBegin
+                    WHEN T1.record_time < :start_date THEN CAST(:start_date AS DATETIME2)
+                    ELSE T1.record_time
                 END AS Log_Start
                 , CASE
-                    WHEN COALESCE(T1.StatusEnd, GETDATE()) > :end_date THEN CAST(:end_date AS DATETIME2)
-                    ELSE COALESCE(T1.StatusEnd, GETDATE())
+                    WHEN {end_expression} > :end_date
+                    THEN CAST(:end_date AS DATETIME2)
+                    ELSE {end_expression}
                 END AS Log_End
         ) Bounds
 
@@ -171,7 +192,7 @@ def _get_current_status_stops(received_data):
     return event
 
 
-def getStopsData(received_data, use_current_status=False):
+def getStopsData(received_data, use_status_reason_time=False):
     """
         DADOS DE PAYLOAD:
         
@@ -186,7 +207,7 @@ def getStopsData(received_data, use_current_status=False):
             m_group: LISTA DE Workcenter_Event_Group/CATEGORIA
 
         3. CONTROLE DA FONTE PLEX:
-            use_current_status: usa Mach_2_Current_Status no lugar da procedure legada
+            use_status_reason_time: usa Mach_2_Status_Reason_Time no lugar da procedure legada
 
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
@@ -196,8 +217,8 @@ def getStopsData(received_data, use_current_status=False):
     shift_filter = {"1": 'primeiro', "2": 'segundo', "3": 'terceiro', 'Extra': None}
     received_data["shift_plex"] = [shift_filter[shift] for shift in received_data["shift"] if shift_filter[shift] is not None]
 
-    if use_current_status:
-        event = _get_current_status_stops(received_data)
+    if use_status_reason_time:
+        event = _get_status_reason_time_stops(received_data)
     else:
         events_join = getPlex('events')
         events_join.loc[len(events_join)] = [1, 'Sem Justificativa', 'Sem Categoria', 1, "0"]
@@ -268,7 +289,7 @@ def getStopsData(received_data, use_current_status=False):
         f"T3.CATEGORIA IN {format_tuple(received_data['m_group'])}" if received_data['m_group'] else "T3.CATEGORIA = 'aaa'"
     ] if received_data.get('w_group') else []
 
-    if received_data.get('m_event') and not use_current_status:
+    if received_data.get('m_event') and not use_status_reason_time:
         filters.append(f"T3.COD_PARADA IN {format_tuple(received_data['m_event'])}")
 
     conditions = []
@@ -281,7 +302,7 @@ def getStopsData(received_data, use_current_status=False):
     workcenter_condition = f"({ ' OR '.join(conditions) })" if conditions else "(1=1)"
 
     filter_string = "AND " + " AND ".join(filters) if filters else ""
-    mic_event_description = ", T3.DESC_PARADA AS Event" if use_current_status else ""
+    mic_event_description = ", T3.DESC_PARADA AS Event" if use_status_reason_time else ""
 
     query = f"""
         SELECT
@@ -331,13 +352,13 @@ def getStopsData(received_data, use_current_status=False):
 
     mic_event = engine_run_query(query, 'ftm')
 
-    if use_current_status and received_data.get('m_event'):
+    if use_status_reason_time and received_data.get('m_event'):
         mic_event = mic_event[mic_event['Event'].isin(received_data['m_event'])]
 
     data = pd.concat([event, mic_event])
     data['Code'] = data['Code'].astype(str)
 
-    if use_current_status:
+    if use_status_reason_time:
         return data
 
     data = pd.merge(left=data, right=events_join, left_on='Code', right_on='Code').drop(columns=['Workcenter_Event_Key', 'Workcenter_Event_Group', 'Active']).rename(columns={"Description": "Event"})
