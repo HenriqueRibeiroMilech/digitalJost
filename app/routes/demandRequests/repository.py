@@ -30,7 +30,11 @@ class DemandRequestsRepository:
             R.deliveryDate AS deadline,
             R.finalDate,
             R.reprogs,
-            R.deniedText
+            R.deniedText,
+            CASE
+                WHEN R.status = 0 AND M.managementId IS NULL THEN 1
+                ELSE 0
+            END AS pendingEditable
         FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
         LEFT JOIN JDT_DEMAND_MANAGEMENT AS M
             ON M.sourceRequestId = R.requestId
@@ -144,6 +148,42 @@ class DemandRequestsRepository:
             'initial_description': demand['initialDescription'],
             'urgency': demand['urgency'],
             'images': images,
+            'assumptions': demand['assumptions'],
+            'actual_problems': demand['actualProblems'],
+            'benefits': demand['benefits'],
+            'demand_type': demand['demandType']
+        })
+        return result.rowcount == 1
+
+    def update_pending_request(self, connection, request_id, area_id, user_id, demand):
+        query = text("""
+            UPDATE R
+            SET
+                title = :title,
+                info = :initial_description,
+                urgency = :urgency,
+                assumptions = :assumptions,
+                actualProblems = :actual_problems,
+                benefits = :benefits,
+                demandType = :demand_type
+            FROM JDT_REQUEST_IMPROVEMENTS_SMALL AS R
+            WHERE R.requestId = :request_id
+                AND R.areaId = :area_id
+                AND R.requesterId = :user_id
+                AND R.status = 0
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM JDT_DEMAND_MANAGEMENT AS M
+                    WHERE M.sourceRequestId = R.requestId
+                )
+        """)
+        result = connection.execute(query, {
+            'request_id': request_id,
+            'area_id': area_id,
+            'user_id': user_id,
+            'title': demand['title'],
+            'initial_description': demand['initialDescription'],
+            'urgency': demand['urgency'],
             'assumptions': demand['assumptions'],
             'actual_problems': demand['actualProblems'],
             'benefits': demand['benefits'],

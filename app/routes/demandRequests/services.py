@@ -168,6 +168,25 @@ class DemandRequestsService:
 
         return self.get_request(request_id, area_id, user_id, False)
 
+    def update_pending_request(self, request_id, area_id, user_id, payload):
+        demand = validate_new_request(payload)
+
+        with self.engine.begin() as connection:
+            updated = self.repository.update_pending_request(
+                connection, request_id, area_id, user_id, demand
+            )
+            if not updated:
+                current = self.repository.get_request(
+                    connection, request_id, area_id
+                )
+                if not current or str(current['requesterId']) != str(user_id):
+                    raise NotFoundError('Solicitação não encontrada.')
+                raise ConflictError(
+                    'Esta solicitação já foi analisada e não pode mais ser editada.'
+                )
+
+        return self.get_request(request_id, area_id, user_id, False)
+
     def get_request(self, request_id, area_id, user_id, allow_area_access):
         with self.engine.connect() as connection:
             row = self.repository.get_request(connection, request_id, area_id)
@@ -180,6 +199,11 @@ class DemandRequestsService:
             )
 
         result = {key: _serialize_value(value) for key, value in dict(row).items()}
+        pending_editable = bool(result.pop('pendingEditable', False))
+        result['canEdit'] = (
+            str(result.get('requesterId')) == str(user_id)
+            and pending_editable
+        )
         result.pop('requesterId', None)
         images = result.pop('images', '') or ''
         stored_names = [name for name in images.split('||') if name]

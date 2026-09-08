@@ -80,7 +80,7 @@ def authorize_request():
     if not get_permission('GENERAL').can():
         return abort(403)
     _current_area()
-    if request.method == 'POST':
+    if request.method in ('POST', 'PATCH'):
         _validate_csrf()
 
 
@@ -131,16 +131,25 @@ def area_analytics():
 
 @demand_requests_bp.route(
     '/demandas/solicitacoes/api/<int:request_id>',
-    methods=['GET']
+    methods=['GET', 'PATCH']
 )
 def request_detail(request_id):
     _, area = _current_area()
-    detail = _build_service().get_request(
-        request_id,
-        area['id'],
-        current_user.id,
-        _can_review(area)
-    )
+    service = _build_service()
+    if request.method == 'PATCH':
+        detail = service.update_pending_request(
+            request_id,
+            area['id'],
+            current_user.id,
+            request.get_json(silent=True)
+        )
+    else:
+        detail = service.get_request(
+            request_id,
+            area['id'],
+            current_user.id,
+            _can_review(area)
+        )
     return jsonify(detail)
 
 

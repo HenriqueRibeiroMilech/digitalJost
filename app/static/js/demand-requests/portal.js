@@ -5,6 +5,7 @@
     const requests = Array.isArray(config.requests) ? config.requests : [];
     const selectedFiles = [];
     const maxFiles = 10;
+    let activeRequestDetail = null;
 
     const typeLabels = {
         melhoria: 'Melhoria',
@@ -288,6 +289,12 @@
         '</div>';
     }
 
+    function selectOption(value, label, selectedValue) {
+        return '<option value="' + escapeHtml(value) + '"' +
+            (value === selectedValue ? ' selected' : '') + '>' +
+            escapeHtml(label) + '</option>';
+    }
+
     function renderAttachments(item) {
         if (!item.attachments || !item.attachments.length) {
             return '<p class="dr-modal__meta">Nenhum documento anexado.</p>';
@@ -337,6 +344,7 @@
         const type = requestType(item);
         const status = requestStatus(item);
         const structured = type !== 'erro';
+        activeRequestDetail = item;
 
         elements.modalContent.innerHTML =
             '<header class="dr-modal__header">' +
@@ -349,6 +357,9 @@
                 '<p class="dr-modal__meta">Solicitação #' + escapeHtml(item.requestId) +
                     ' · ' + escapeHtml(item.requesterName) +
                     ' · ' + escapeHtml(formatDate(item.requestDate, true)) + '</p>' +
+                (item.canEdit ? '<div class="dr-modal__actions">' +
+                    '<button class="dr-button" type="button" data-edit-request>Editar solicitação</button>' +
+                '</div>' : '') +
             '</header>' +
             '<div class="dr-modal__grid">' +
                 '<section class="dr-detail-panel">' +
@@ -383,6 +394,164 @@
                     '<h3>Histórico da demanda</h3>' + renderDemandHistory(item) +
                 '</section>' +
             '</div>';
+    }
+
+    function renderRequestEdit(item) {
+        const type = requestType(item);
+
+        elements.modalContent.innerHTML =
+            '<header class="dr-modal__header">' +
+                '<p class="dr-section-label">Em análise</p>' +
+                '<h2 id="dr-modal-title">Editar solicitação #' + escapeHtml(item.requestId) + '</h2>' +
+                '<p class="dr-modal__meta">A edição deixa de estar disponível assim que a solicitação for aceita ou recusada.</p>' +
+            '</header>' +
+            '<form class="dr-edit-form" id="dr-edit-form" data-request-id="' + escapeHtml(item.requestId) + '">' +
+                '<section class="dr-detail-panel dr-detail-panel--full">' +
+                    '<h3>Dados principais</h3>' +
+                    '<div class="dr-form-grid">' +
+                        '<label class="dr-field dr-field--half">' +
+                            '<span>Tipo de demanda *</span>' +
+                            '<select required name="demandType" id="dr-edit-demand-type">' +
+                                selectOption('melhoria', 'Melhoria', type) +
+                                selectOption('projeto', 'Projeto', type) +
+                                selectOption('erro', 'Erro/Defeito em aplicação', type) +
+                            '</select>' +
+                        '</label>' +
+                        '<label class="dr-field dr-field--half">' +
+                            '<span>Nível de urgência *</span>' +
+                            '<select required name="options">' +
+                                selectOption('Alta', 'Alta', item.urgency) +
+                                selectOption('Média', 'Média', item.urgency) +
+                                selectOption('Baixa', 'Baixa', item.urgency) +
+                            '</select>' +
+                        '</label>' +
+                        '<label class="dr-field dr-field--full">' +
+                            '<span>Título da demanda *</span>' +
+                            '<input required maxlength="250" type="text" name="titulo" value="' + escapeHtml(item.title) + '">' +
+                        '</label>' +
+                        '<label class="dr-field dr-field--full">' +
+                            '<span id="dr-edit-objective-label">Objetivo da demanda *</span>' +
+                            '<textarea required maxlength="4000" name="objetivo" id="dr-edit-objective" rows="4">' + escapeHtml(item.initialDescription) + '</textarea>' +
+                        '</label>' +
+                    '</div>' +
+                '</section>' +
+                '<section class="dr-detail-panel dr-detail-panel--full" id="dr-edit-structured">' +
+                    '<h3>Detalhamento</h3>' +
+                    '<div class="dr-detail-grid">' +
+                        '<label class="dr-field">' +
+                            '<span>Premissas da demanda *</span>' +
+                            '<textarea maxlength="4000" name="premissas" rows="5">' + escapeHtml(item.assumptions) + '</textarea>' +
+                        '</label>' +
+                        '<label class="dr-field">' +
+                            '<span>Problemas atuais *</span>' +
+                            '<textarea maxlength="4000" name="problemas" rows="5">' + escapeHtml(item.actualProblems) + '</textarea>' +
+                        '</label>' +
+                        '<label class="dr-field">' +
+                            '<span>Ganhos esperados *</span>' +
+                            '<textarea maxlength="4000" name="beneficios" rows="5">' + escapeHtml(item.benefits) + '</textarea>' +
+                        '</label>' +
+                    '</div>' +
+                '</section>' +
+                '<section class="dr-detail-panel dr-detail-panel--full">' +
+                    '<h3>Documentos</h3>' +
+                    '<p class="dr-modal__meta">Os documentos já anexados serão mantidos sem alteração.</p>' +
+                '</section>' +
+                '<div class="dr-form-feedback" id="dr-edit-feedback" role="alert" hidden></div>' +
+                '<div class="dr-form-actions">' +
+                    '<button class="dr-button dr-button--quiet" type="button" data-cancel-edit>Cancelar edição</button>' +
+                    '<button class="dr-button" type="submit">Salvar alterações</button>' +
+                '</div>' +
+            '</form>';
+
+        updateEditDemandFields(elements.modalContent.querySelector('#dr-edit-form'));
+    }
+
+    function updateEditDemandFields(form) {
+        if (!form) return;
+        const typeInput = form.elements.demandType;
+        const objectiveLabel = form.querySelector('#dr-edit-objective-label');
+        const objective = form.elements.objetivo;
+        const structuredFields = form.querySelector('#dr-edit-structured');
+        const isError = typeInput.value === 'erro';
+
+        structuredFields.hidden = isError;
+        objectiveLabel.textContent = isError
+            ? 'Descrição completa do problema *'
+            : 'Objetivo da demanda *';
+        objective.placeholder = isError
+            ? 'Descreva detalhadamente o erro ou defeito encontrado'
+            : 'Explique de forma clara o objetivo da demanda';
+        structuredFields.querySelectorAll('textarea').forEach(function (input) {
+            input.required = !isError;
+        });
+    }
+
+    function updateRequestSummary(item) {
+        const summary = requests.find(function (requestItem) {
+            return String(requestItem.requestId) === String(item.requestId);
+        });
+        if (!summary) return;
+        Object.assign(summary, {
+            title: item.title,
+            initialDescription: item.initialDescription,
+            demandType: item.demandType,
+            urgency: item.urgency
+        });
+        renderSummary();
+        renderRequests();
+    }
+
+    async function submitRequestEdit(form) {
+        const feedback = form.querySelector('#dr-edit-feedback');
+        const submit = form.querySelector('[type="submit"]');
+        const requestId = form.dataset.requestId;
+        feedback.hidden = true;
+        feedback.textContent = '';
+        submit.disabled = true;
+        submit.textContent = 'Salvando...';
+
+        try {
+            const payload = Object.fromEntries(new FormData(form).entries());
+            const response = await fetch(apiUrl('/' + requestId), {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': config.csrfToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.redirected && new URL(response.url).pathname.includes('/login')) {
+                window.location.assign(response.url);
+                return;
+            }
+
+            const result = await response.json().catch(function () { return {}; });
+            if (!response.ok) {
+                const requestError = new Error(
+                    result.error || 'Não foi possível salvar as alterações.'
+                );
+                requestError.status = response.status;
+                throw requestError;
+            }
+
+            updateRequestSummary(result);
+            renderRequestDetail(result);
+            showToast('Solicitação atualizada com sucesso.');
+        } catch (error) {
+            feedback.textContent = error.message || 'Não foi possível salvar as alterações.';
+            feedback.hidden = false;
+            if (error.status === 409) {
+                form.querySelectorAll('input, select, textarea').forEach(function (field) {
+                    field.disabled = true;
+                });
+                submit.textContent = 'Edição encerrada';
+            } else {
+                submit.disabled = false;
+                submit.textContent = 'Salvar alterações';
+            }
+        }
     }
 
     function closeModal(updateAddress) {
@@ -584,6 +753,29 @@
         if (card && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault();
             openRequestDetail(card.dataset.requestId);
+        }
+    });
+
+    elements.modalContent.addEventListener('click', function (event) {
+        if (event.target.closest('[data-edit-request]') && activeRequestDetail) {
+            renderRequestEdit(activeRequestDetail);
+            return;
+        }
+        if (event.target.closest('[data-cancel-edit]') && activeRequestDetail) {
+            renderRequestDetail(activeRequestDetail);
+        }
+    });
+
+    elements.modalContent.addEventListener('change', function (event) {
+        if (event.target.matches('#dr-edit-demand-type')) {
+            updateEditDemandFields(event.target.form);
+        }
+    });
+
+    elements.modalContent.addEventListener('submit', function (event) {
+        if (event.target.matches('#dr-edit-form')) {
+            event.preventDefault();
+            submitRequestEdit(event.target);
         }
     });
 

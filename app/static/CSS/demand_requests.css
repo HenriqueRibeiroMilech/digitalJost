@@ -713,6 +713,11 @@ select {
     font-size: .72rem;
 }
 
+.dr-modal__actions {
+    display: flex;
+    margin-top: .8rem;
+}
+
 .dr-modal__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -740,6 +745,20 @@ select {
     font-size: .82rem;
     letter-spacing: .05em;
     text-transform: uppercase;
+}
+
+.dr-edit-form {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.dr-edit-form .dr-detail-panel {
+    grid-column: 1 / -1;
+}
+
+.dr-edit-form .dr-form-feedback {
+    margin-bottom: 0;
 }
 
 .dr-readonly-grid {
