@@ -416,4 +416,4 @@ def sync_approved_request(connection, request_id):
     """)
     connection.execute(query, {'request_id': request_id})
 
-# V2
+# V3
