@@ -526,3 +526,5 @@ def quality_edit_get():
         shutil.rmtree(rf'{APP_PATH}\app\static\uploads\operation\img_ok\{request.args["entryID"]}')
 
         return redirect('/op/qualidade/edit_select')
+
+# V2

@@ -175,4 +175,4 @@ function searchProduct(id) {
     xhr.send()
 }
 
-// V1
+// V2
