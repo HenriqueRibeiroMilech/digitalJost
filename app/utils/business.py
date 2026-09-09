@@ -429,3 +429,5 @@ def getStopsData(received_data, use_status_reason_time=False):
     data = pd.merge(left=data, right=events_join, left_on='Code', right_on='Code').drop(columns=['Workcenter_Event_Key', 'Workcenter_Event_Group', 'Active']).rename(columns={"Description": "Event"})
 
     return data
+
+# V2
