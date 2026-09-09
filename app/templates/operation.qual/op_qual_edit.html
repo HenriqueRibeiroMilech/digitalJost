@@ -40,10 +40,7 @@
         </select>
         <br>
 
-        <label class="op_label" for="op_local_info" style="width: 20vw;">Local especifico:</label><br>
-        <input class="input_qual" autocomplete="off" id="op_local_info" name="op_local_info" placeholder="Selecione ou digite aqui..." required
-               type="text" list="ct" onkeyup="this.value=this.value.replace(/'/g, '')">
-        <br>
+        {% include 'operation.qual/op_qual_location.html' %}
 
         <label class="op_label" for="ct" style="width: 20vw;">Centro de Trabalho:</label><br>
         <input class="input_qual" oninput="filter(this.name)" required onkeyup="this.value=this.value.replace(/'/g, '')" placeholder="Selecione uma opção..." autocomplete="off" list="ct" name="ct" id="center">
@@ -130,6 +127,7 @@
     <br>
 </body>
 
+<script src="{{ url_for('static', filename='js/operation.quality/qsb_locations.js') }}"></script>
 <script>
 {% include 'operation.qual/op_qual_edit.js' %}
 </script>

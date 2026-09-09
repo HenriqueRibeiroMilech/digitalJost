@@ -336,6 +336,97 @@ ul {
   border-bottom: 2px solid #1C7C54;
 }
 
+.qsb-location-field {
+  align-items: flex-end;
+  display: flex;
+  gap: 0.75rem;
+  width: max-content;
+}
+
+.qsb-location-add-button {
+  align-items: center;
+  background-color: #1C7C54;
+  border: 0;
+  border-radius: 50%;
+  color: #DBDFAC;
+  display: flex;
+  font-size: 1.5rem;
+  height: 2.2rem;
+  justify-content: center;
+  line-height: 1;
+  width: 2.2rem;
+}
+
+.qsb-location-add-button:hover {
+  background-color: #EF7B04;
+  cursor: pointer;
+}
+
+.qsb-location-modal {
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: none;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 10000;
+}
+
+.qsb-location-modal.is-open {
+  display: flex;
+}
+
+.qsb-location-modal-content {
+  background-color: #EFF1DD;
+  border-radius: 0.5rem;
+  color: #1C7C54;
+  min-width: min(28rem, 85vw);
+  padding: 2rem;
+  position: relative;
+}
+
+.qsb-location-modal-content label,
+.qsb-location-modal-content input {
+  display: block;
+  width: 100%;
+}
+
+.qsb-location-modal-content input {
+  border: 0;
+  border-bottom: 2px solid #1C7C54;
+  margin: 1rem 0;
+  outline: 0;
+  padding: 0.5rem;
+}
+
+.qsb-location-modal-close {
+  background: none;
+  border: 0;
+  color: #1C7C54;
+  font-size: 1.75rem;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.5rem;
+}
+
+.qsb-location-modal-save {
+  background-color: #1C7C54;
+  border: 0;
+  color: #DBDFAC;
+  padding: 0.65rem 1.25rem;
+}
+
+.qsb-location-modal-save:hover,
+.qsb-location-modal-close:hover {
+  color: #EF7B04;
+  cursor: pointer;
+}
+
+.qsb-location-modal-error {
+  color: #b00020;
+  min-height: 1.5rem;
+}
+
 #op_problema_label {
   margin-top: 10px;
   color: #DBDFAC;

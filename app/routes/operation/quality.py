@@ -5,8 +5,9 @@ import json
 import os
 
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
-from flask import Blueprint, abort, render_template, request, redirect, send_file, url_for
+from flask import Blueprint, abort, jsonify, render_template, request, redirect, send_file, url_for
 from flask_login import current_user
 
 from app.utils.constants import APP_PATH
@@ -19,6 +20,62 @@ from app.utils.permissions import get_permission
 p_quality = get_permission('QUALITY')
 
 operation_quality_bp = Blueprint('operation_quality', __name__)
+
+_QSB_LOCATION_MANAGER_REGISTRATIONS = {
+    '00023485',
+    '00019945',
+    '00029754',
+    '00028755',
+    '00039285',
+    '00040893',
+}
+
+
+def _can_manage_qsb_locations():
+    registration = str(getattr(current_user, 'registration', '') or '').strip().zfill(8)
+    return registration in _QSB_LOCATION_MANAGER_REGISTRATIONS
+
+
+def _get_quality_workcenters():
+    query = """SELECT
+                    GRUPO AS Workcenter_Group
+                    , LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code
+                    , SUBSTRING(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) + 1, LEN(NOME_MAQUINA)) AS Name
+                    , 1 AS Workcenter_Key
+                FROM CONFIG_TABLET WHERE CT_PLEX IS NULL"""
+    mic_workcenters = engine_run_query(query, 'ftm')
+
+    mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
+    return pd.concat([
+        mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])],
+        mic_workcenters,
+    ]).sort_values(by='Workcenter_Code')
+
+
+def _get_registered_qsb_locations():
+    query = "SELECT name FROM dbo.JDT_OPE_QUAL_LOCATIONS ORDER BY name"
+    locations = engine_run_query(query, 'jdt')
+    return [str(name).strip() for name in locations['name'].tolist() if str(name).strip()]
+
+
+def _get_caxias_qsb_locations(workcenters=None):
+    if workcenters is None:
+        workcenters = _get_quality_workcenters()
+
+    locations = [
+        f"{row['Workcenter_Code']}-{row['Name']}"
+        for _, row in workcenters.iterrows()
+    ]
+    locations.extend(_get_registered_qsb_locations())
+
+    unique_locations = {}
+    for location in locations:
+        normalized_location = str(location).strip()
+        if normalized_location:
+            unique_locations.setdefault(normalized_location.casefold(), normalized_location)
+
+    return sorted(unique_locations.values(), key=str.casefold)
+
 
 @operation_quality_bp.before_request
 def route_auth():
@@ -124,6 +181,27 @@ def quality_detail_get():
 @p_quality.require(403)
 def quality_detail_post():
 
+    try:
+        unit = int(request.form.get('unidade', ''))
+    except (TypeError, ValueError):
+        return abort(400, 'Unidade inválida.')
+
+    if unit not in (0, 1):
+        return abort(400, 'Unidade inválida.')
+
+    specific_location = str(request.form.get('op_local_info', '') or '').strip()
+    if not specific_location:
+        return abort(400, 'Local específico é obrigatório.')
+
+    if unit == 0:
+        allowed_locations = {
+            location.casefold(): location
+            for location in _get_caxias_qsb_locations()
+        }
+        specific_location = allowed_locations.get(specific_location.casefold())
+        if specific_location is None:
+            return abort(400, 'Selecione um local específico cadastrado para Caxias do Sul.')
+
     repeat = 0
     if 'op_reincidente' in request.form:
         repeat = 1
@@ -222,23 +300,23 @@ def quality_detail_post():
 
     if request.args['command'] == 'add':  # condição caso o usuario queira criar uma ocorrencia
 
-        query = f"""INSERT INTO JDT_OPE_QUAL VALUES 
-                    ('{request.form['op_local_ocorr']}',
-                    '{request.form['op_local_info']}',
-                    '{request.form['op_problema']}',
-                    '{request.form['ct']}',
-                    '{request.form['id_mater']}',
-                    {repeat},
-                    '{request.form['op_cont_1']}',
-                    '{request.form['op_cont_2']}',
-                    '{request.form['op_cont_3']}',
-                    '{img_ok}',
-                    '{img_nok}',
-                    '{request.form['op_date']}',
-                    '{request.form['op_familia']}',
-                    '{caminho}',
-                    '{turno}',
-                    '{request.form['unidade']}')"""  # query para criar a ocorrencia
+        query = text("""INSERT INTO JDT_OPE_QUAL VALUES
+                    (:occurrence_type,
+                    :specific_location,
+                    :problem,
+                    :workcenter,
+                    :product_code,
+                    :repeat,
+                    :containment_what,
+                    :containment_how,
+                    :containment_who,
+                    :images_ok,
+                    :images_nok,
+                    :open_date,
+                    :product_family,
+                    :entry_id,
+                    :shift,
+                    :unit)""")  # query para criar a ocorrencia
 
     else:  # condicao caso o usuario queria atualizar uma ocorrencia
         for image in request.form['deletar1'].split("__,"):
@@ -253,28 +331,47 @@ def quality_detail_post():
                 if os.path.exists(rf'{APP_PATH}\app\static\uploads\operation\img_ok\{request.args["entryID"]}\{image}'):
                     os.remove(rf'{APP_PATH}\app\static\uploads\operation\img_ok\{request.args["entryID"]}\{image}')
 
-        query = f"""UPDATE JDT_OPE_QUAL SET 
-                            type = '{request.form['op_local_ocorr']}',
-                            typeDesc  = '{request.form['op_local_info']}',
-                            description = '{request.form['op_problema']}',
-                            workCenter = '{request.form['ct']}',
-                            prodCode = '{request.form['id_mater']}',
-                            repeat = {repeat},
-                            text1 = '{request.form['op_cont_1']}',
-                            text2 = '{request.form['op_cont_2']}',
-                            text3 = '{request.form['op_cont_3']}',
-                            imgNOK = '{img_nok}',
-                            imgOK = '{img_ok}',
-                            openDate = '{request.form['op_date']}',
-                            prodFamily = '{request.form['op_familia']}',
-                            shift = '{turno}',
-                            unit = {request.form['unidade']}
-                    WHERE 
-                        id = {int(request.args['entryID'])}"""
+        query = text("""UPDATE JDT_OPE_QUAL SET
+                            type = :occurrence_type,
+                            typeDesc = :specific_location,
+                            description = :problem,
+                            workCenter = :workcenter,
+                            prodCode = :product_code,
+                            repeat = :repeat,
+                            text1 = :containment_what,
+                            text2 = :containment_how,
+                            text3 = :containment_who,
+                            imgNOK = :images_nok,
+                            imgOK = :images_ok,
+                            openDate = :open_date,
+                            prodFamily = :product_family,
+                            shift = :shift,
+                            unit = :unit
+                    WHERE
+                        id = :entry_id""")
+
+    query_params = {
+        'occurrence_type': request.form['op_local_ocorr'],
+        'specific_location': specific_location,
+        'problem': request.form['op_problema'],
+        'workcenter': request.form['ct'],
+        'product_code': request.form['id_mater'],
+        'repeat': repeat,
+        'containment_what': request.form['op_cont_1'],
+        'containment_how': request.form['op_cont_2'],
+        'containment_who': request.form['op_cont_3'],
+        'images_nok': img_nok,
+        'images_ok': img_ok,
+        'open_date': request.form['op_date'],
+        'product_family': request.form['op_familia'],
+        'entry_id': int(request.args['entryID']) if 'entryID' in request.args else caminho,
+        'shift': turno,
+        'unit': unit,
+    }
 
     engine = get_engine('jdt')
     with engine.begin() as cnnx:
-        cnnx.execute(text(query))
+        cnnx.execute(query, query_params)
 
     return redirect("/op/qualidade/edit_select")
 
@@ -292,20 +389,12 @@ def quality_printer_get():
 # PÁGINA DA ADIÇÃO DE ENTRADAS AO INFORMATIVO DA QUALIDADE - OPERATION MEETING
 @operation_quality_bp.route('/op/qualidade/add', methods=['GET'])
 def quality_add_get():
-
-    query = f"""SELECT 
-                    GRUPO AS Workcenter_Group
-                    , LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code
-                    , SUBSTRING(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) + 1, LEN(NOME_MAQUINA)) AS Name
-                    , 1 AS Workcenter_Key
-                FROM CONFIG_TABLET WHERE CT_PLEX IS NULL"""
-    mic_workcenters = engine_run_query(query, 'ftm')
-
-    mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
-    workcenters = pd.concat([mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])], mic_workcenters])
+    workcenters = _get_quality_workcenters()
 
     return render_template('operation.qual/op_qual_add.html'
-                           , workcenters=workcenters.sort_values(by="Workcenter_Code").to_dict(orient="records"))
+                           , workcenters=workcenters.to_dict(orient="records")
+                           , caxias_locations=_get_caxias_qsb_locations(workcenters)
+                           , can_manage_locations=_can_manage_qsb_locations())
 
 @operation_quality_bp.route('/op/qualidade/add', methods=['POST'])
 def quality_add_post():
@@ -319,12 +408,50 @@ def quality_add_post():
         return json.dumps(data)
 
     elif 'searchCt' in request.args:
-        query = f"""SELECT DISTINCT(ID_MATER) FROM WORK_CELL_OP 
+        query = f"""SELECT DISTINCT(ID_MATER) FROM WORK_CELL_OP
                     WHERE ID_WORK_UNIT = '{request.args["searchCt"].split('-')[0]}'"""
         df = engine_run_query(query, 'ftm')
         data = [item[0] for item in df.values.tolist()]
 
         return json.dumps(data)
+
+
+@operation_quality_bp.route('/op/qualidade/locations', methods=['POST'])
+def quality_location_post():
+    if not _can_manage_qsb_locations():
+        return abort(403)
+
+    payload = request.get_json(silent=True) or {}
+    location = ' '.join(str(payload.get('name', '') or '').split())
+
+    if not location:
+        return jsonify({'error': 'Informe o nome do local.'}), 400
+
+    if len(location) > 150:
+        return jsonify({'error': 'O local deve ter no máximo 150 caracteres.'}), 400
+
+    existing_locations = {
+        existing_location.casefold()
+        for existing_location in _get_caxias_qsb_locations()
+    }
+    if location.casefold() in existing_locations:
+        return jsonify({'error': 'Este local já está disponível para seleção.'}), 409
+
+    query = text("""INSERT INTO dbo.JDT_OPE_QUAL_LOCATIONS (name, createdBy)
+                    VALUES (:name, :created_by)""")
+    params = {
+        'name': location,
+        'created_by': current_user.id,
+    }
+
+    try:
+        engine = get_engine('jdt')
+        with engine.begin() as cnnx:
+            cnnx.execute(query, params)
+    except IntegrityError:
+        return jsonify({'error': 'Este local já está cadastrado.'}), 409
+
+    return jsonify({'location': location}), 201
 
 
 # PÁGINA DA SELEÇÃO PARA EDIÇÃO DE ENTRADAS AO INFORMATIVO DA QUALIDADE - OPERATION MEETING
@@ -372,16 +499,7 @@ def quality_edit_get():
         photos_ok = data['imgOK'][0].split('||')[:-1]
         photos_nok = data['imgNOK'][0].split('||')[:-1]
             
-        query = f"""SELECT 
-                        GRUPO AS Workcenter_Group
-                        , LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code
-                        , SUBSTRING(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) + 1, LEN(NOME_MAQUINA)) AS Name
-                        , 1 AS Workcenter_Key
-                    FROM CONFIG_TABLET WHERE CT_PLEX IS NULL"""
-        mic_workcenters = engine_run_query(query, 'ftm')
-
-        mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
-        workcenters = pd.concat([mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])], mic_workcenters])
+        workcenters = _get_quality_workcenters()
 
         day = str(data.values.tolist()[0][9]).split(' ')[0]
 
@@ -391,7 +509,9 @@ def quality_edit_get():
                                , photos_ok=photos_ok
                                , day=day, comm='edit'
                                , entry=request.args["entryID"]
-                               , workcenters=workcenters.sort_values(by="Workcenter_Code").to_dict(orient="records"))
+                               , workcenters=workcenters.to_dict(orient="records")
+                               , caxias_locations=_get_caxias_qsb_locations(workcenters)
+                               , can_manage_locations=_can_manage_qsb_locations())
 
     elif request.args['command'] == 'remove':
 
