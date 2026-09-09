@@ -83,11 +83,18 @@ def _get_status_reason_time_stops(received_data):
         WHEN 'Turno 3' THEN 'Terceiro'
         ELSE T1.wc_shift
     END"""
-    end_expression = """COALESCE(
-        DATEADD(SECOND, T1.wc_status_reason_time, T1.record_time),
-        T1.NextReasonTime,
-        GETDATE()
-    )"""
+    duration_end_expression = (
+        "DATEADD(SECOND, T1.wc_status_reason_time, T1.record_time)"
+    )
+    end_expression = f"""CASE
+        WHEN T1.NextReasonTime IS NOT NULL
+            AND (
+                {duration_end_expression} IS NULL
+                OR T1.NextReasonTime < {duration_end_expression}
+            )
+        THEN T1.NextReasonTime
+        ELSE COALESCE({duration_end_expression}, GETDATE())
+    END"""
 
     params = {
         'start_date': received_data['start_date'],
