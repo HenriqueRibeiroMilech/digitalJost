@@ -334,11 +334,12 @@
 
     function initializeCollapsedOwners() {
         if (state.ownerCollapseInitialized) return;
-        const hasOwnDemands = state.demands.some(function (demand) {
+        const demands = logicalDemands();
+        const hasOwnDemands = demands.some(function (demand) {
             return demand.isOwnedByCurrentUser;
         });
         state.collapsedOwners = new Set(hasOwnDemands
-            ? state.demands.filter(function (demand) {
+            ? demands.filter(function (demand) {
                 return !demand.isOwnedByCurrentUser;
             }).map(function (demand) {
                 return demand.responsibleId || '__unassigned__';
@@ -465,10 +466,45 @@
         state.filtersInitialized = true;
     }
 
+    function logicalDemands() {
+        const demands = [];
+        const recurrenceIndexes = new Map();
+
+        state.demands.forEach(function (demand) {
+            if (!demand.isRecurringActivity || !demand.recurrenceGroupId) {
+                demands.push(demand);
+                return;
+            }
+
+            const groupId = String(demand.recurrenceGroupId);
+            if (!recurrenceIndexes.has(groupId)) {
+                recurrenceIndexes.set(groupId, demands.length);
+                demands.push(demand);
+                return;
+            }
+
+            const index = recurrenceIndexes.get(groupId);
+            const current = demands[index];
+            const sequence = Number(demand.recurrenceSequence || 0);
+            const currentSequence = Number(current.recurrenceSequence || 0);
+            if (
+                sequence > currentSequence
+                || (
+                    sequence === currentSequence
+                    && Number(demand.managementId) > Number(current.managementId)
+                )
+            ) {
+                demands[index] = demand;
+            }
+        });
+
+        return demands;
+    }
+
     function filteredDemands() {
         const search = normalize(elements.search.value);
         const requestedTypes = ['projeto', 'melhoria', 'erro'];
-        const filtered = state.demands.filter(function (demand) {
+        const filtered = logicalDemands().filter(function (demand) {
             const responsibleFilter = elements.responsible.value;
             const statusFilter = elements.status.value;
             const typeFilter = elements.type.value;
@@ -532,13 +568,14 @@
             }).join('');
             return;
         }
-        const active = state.demands.filter(function (item) {
+        const demands = logicalDemands();
+        const active = demands.filter(function (item) {
             return !['Concluído', 'Cancelado'].includes(item.status);
         }).length;
-        const late = state.demands.filter(isLate).length;
-        const completed = state.demands.filter(function (item) { return item.status === 'Concluído'; }).length;
+        const late = demands.filter(isLate).length;
+        const completed = demands.filter(function (item) { return item.status === 'Concluído'; }).length;
         elements.summary.innerHTML = [
-            [state.demands.length, 'Total'],
+            [demands.length, 'Total'],
             [completed, 'Concluídas'],
             [active, 'Ativas'],
             [late, 'Atrasadas']
@@ -891,6 +928,71 @@
             paused: 'Pausada',
             ended: 'Encerrada'
         }[status] || 'Não configurada';
+    }
+
+    function recurrenceOccurrences(demand) {
+        if (!demand.isRecurringActivity || !demand.recurrenceGroupId) return [];
+        return state.demands.filter(function (item) {
+            return item.isRecurringActivity
+                && String(item.recurrenceGroupId) === String(demand.recurrenceGroupId);
+        }).sort(function (left, right) {
+            const sequenceDifference = Number(right.recurrenceSequence || 0)
+                - Number(left.recurrenceSequence || 0);
+            return sequenceDifference || Number(right.managementId) - Number(left.managementId);
+        });
+    }
+
+    function renderRecurrenceOccurrence(item, selectedId, current) {
+        const selected = Number(item.managementId) === Number(selectedId);
+        const referenceDate = item.recurrenceAvailableDate || item.startDate || item.createdAt;
+        const referenceLabel = item.recurrenceAvailableDate
+            ? 'Disponível em'
+            : item.startDate ? 'Iniciada em' : 'Criada em';
+        return `
+            <button class="dm-recurrence-occurrence${selected ? ' is-selected' : ''}" type="button"
+                data-open-recurrence-occurrence="${escapeHtml(item.managementId)}"
+                ${selected ? 'disabled aria-current="true"' : ''}>
+                <span class="dm-recurrence-occurrence__identity">
+                    <strong>Ocorrência ${escapeHtml(item.recurrenceSequence)}</strong>
+                    ${current ? '<small>Atual</small>' : ''}
+                </span>
+                <span class="dm-badge dm-badge--status-${slug(item.status)}">${escapeHtml(item.status)}</span>
+                <small>${referenceLabel} ${escapeHtml(formatDate(referenceDate, false))}</small>
+            </button>`;
+    }
+
+    function renderRecurrenceOccurrencesPanel(demand) {
+        const occurrences = recurrenceOccurrences(demand);
+        if (occurrences.length < 2) return '';
+
+        const current = occurrences[0];
+        const previous = occurrences.slice(1);
+        const currentShortcut = Number(demand.managementId) === Number(current.managementId)
+            ? ''
+            : `
+                <div class="dm-recurrence-current">
+                    <span>Você está consultando uma ocorrência anterior.</span>
+                    ${renderRecurrenceOccurrence(current, demand.managementId, true)}
+                </div>`;
+
+        return `
+            <section class="dm-panel dm-recurrence-history">
+                <h3>Ocorrências da atividade</h3>
+                <p class="dm-personal-note">O card principal mostra somente a ocorrência atual. As anteriores continuam disponíveis individualmente.</p>
+                ${currentShortcut}
+                <details class="dm-recurrence-history__details">
+                    <summary>Ocorrências anteriores <span>${previous.length}</span></summary>
+                    <div class="dm-recurrence-history__list">
+                        ${previous.map(function (item) {
+                            return renderRecurrenceOccurrence(
+                                item,
+                                demand.managementId,
+                                false
+                            );
+                        }).join('')}
+                    </div>
+                </details>
+            </section>`;
     }
 
     function renderCard(demand) {
@@ -1445,6 +1547,8 @@
 
             ${renderActivityRecurrencePanel(demand)}
 
+            ${renderRecurrenceOccurrencesPanel(demand)}
+
             <section class="dm-panel dm-tasks">
                 <div class="dm-tasks__heading">
                     <h3>Tarefas · ${demand.completedTasks || 0}/${demand.totalTasks || 0} concluídas</h3>
@@ -1959,6 +2063,11 @@
                 recurrenceButton.dataset.activityRecurrenceAction,
                 recurrenceButton
             );
+            return;
+        }
+        const occurrenceButton = event.target.closest('[data-open-recurrence-occurrence]');
+        if (occurrenceButton) {
+            openModal(Number(occurrenceButton.dataset.openRecurrenceOccurrence));
             return;
         }
         const saveButton = event.target.closest('[data-save-task]');
