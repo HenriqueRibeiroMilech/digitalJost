@@ -406,6 +406,9 @@
             const row = document.createElement("tr");
             const eventName = String(item.Event || '').trim();
             const isLackOfBalance = eventName.replace(/^-+\s*/, '') === 'Falta de Saldo';
+            const displayedEventName = isLackOfBalance
+                ? 'Falta de Saldo'
+                : eventName.replace(/^\d+\s*-\s*/, '');
 
             // item.Oee = item.Performance * item.Availability * 100 / 10000;
             // if (item.Oee < 0) item.Oee = 0;
@@ -459,7 +462,7 @@
             cell.style.boxSizing = 'border-box';
             cell.style.paddingLeft = '10px'
             cell.innerHTML += eventName != "-"
-                ? `&ensp;${isLackOfBalance ? 'Falta de Saldo' : eventName}`
+                ? `&ensp;${displayedEventName}`
                 : "&ensp;Produzindo";
 
 
