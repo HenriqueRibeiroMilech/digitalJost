@@ -400,16 +400,16 @@ textarea {
 
 .dm-wall__header {
     border-left: 0;
-    color: var(--dm-navy-dark);
-    background: #e8eef5;
+    color: #fff;
+    background: var(--dm-orange);
 }
 
 .dm-wall__header .dm-owner__chevron {
-    color: var(--dm-navy);
+    color: #fff;
 }
 
 .dm-wall__header .dm-owner__capacity {
-    color: var(--dm-muted);
+    color: rgba(255, 255, 255, .82);
 }
 
 .dm-wall__cards {
@@ -448,6 +448,35 @@ textarea {
     outline: 2px solid rgba(33, 76, 122, .25);
     outline-offset: 2px;
     transform: translateY(-1px);
+}
+
+.dm-notice-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .65rem;
+}
+
+.dm-notice-card__finish {
+    min-height: 26px;
+    padding: .3rem .55rem;
+    border: 1px solid #d2d8df;
+    border-radius: 4px;
+    color: var(--dm-navy-dark);
+    background: #f7f8fa;
+    font-size: .65rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.dm-notice-card__finish:hover {
+    border-color: var(--dm-navy);
+    background: #eef2f7;
+}
+
+.dm-notice-card__finish:disabled {
+    cursor: wait;
+    opacity: .55;
 }
 
 .dm-notice-card__title {

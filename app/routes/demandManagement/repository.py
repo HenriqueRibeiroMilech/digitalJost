@@ -166,6 +166,7 @@ class DemandManagementRepository:
             LEFT JOIN JDT_USER_DETAILS AS Creator
                 ON Creator.id = N.createdBy
             WHERE N.areaId = :area_id
+                AND N.finalizedAt IS NULL
                 AND (
                     N.hideAfterEnd = 0
                     OR N.endsAt IS NULL
@@ -409,6 +410,7 @@ class DemandManagementRepository:
             WHERE noticeId = :notice_id
                 AND areaId = :area_id
                 AND createdBy = :user_id
+                AND finalizedAt IS NULL
                 AND rowVersion = :row_version
         """)
         result = connection.execute(query, {
@@ -419,6 +421,26 @@ class DemandManagementRepository:
             'starts_at': notice['startsAt'],
             'ends_at': notice['endsAt'],
             'hide_after_end': 1 if notice['hideAfterEnd'] else 0,
+            'user_id': user_id,
+            'row_version': row_version
+        })
+        return result.rowcount == 1
+
+    def finalize_wall_notice(
+        self, connection, notice_id, area_id, user_id, row_version
+    ):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT_NOTICES
+            SET finalizedAt = GETDATE()
+            WHERE noticeId = :notice_id
+                AND areaId = :area_id
+                AND createdBy = :user_id
+                AND finalizedAt IS NULL
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'notice_id': notice_id,
+            'area_id': area_id,
             'user_id': user_id,
             'row_version': row_version
         })

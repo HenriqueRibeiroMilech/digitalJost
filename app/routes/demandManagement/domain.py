@@ -248,13 +248,13 @@ def validate_wall_notice(payload):
     ends_at = _optional_datetime(payload.get('endsAt'), 'a data e hora de fim')
     hide_after_end = payload.get('hideAfterEnd', False)
     if not isinstance(hide_after_end, bool):
-        raise ValidationError('A opção de ocultar o aviso é inválida.')
+        raise ValidationError('A opção de finalização automática é inválida.')
     if starts_at and ends_at and ends_at <= starts_at:
         raise ValidationError('O fim do aviso deve ser posterior ao início.')
     if hide_after_end and not ends_at:
-        raise ValidationError('Informe a data final para ocultar o aviso automaticamente.')
+        raise ValidationError('Informe a data final para finalizar o aviso automaticamente.')
     if hide_after_end and ends_at <= datetime.now():
-        raise ValidationError('O fim do aviso deve estar no futuro.')
+        raise ValidationError('A data final deve estar no futuro para finalizar o aviso automaticamente.')
 
     return {
         'title': title,

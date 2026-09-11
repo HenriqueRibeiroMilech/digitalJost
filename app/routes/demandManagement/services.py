@@ -241,6 +241,20 @@ class DemandManagementService:
                 )
         return {'noticeId': notice_id}
 
+    def finalize_wall_notice(self, notice_id, area_id, payload, user_id):
+        row_version = parse_row_version(
+            payload.get('rowVersion') if isinstance(payload, dict) else None
+        )
+        with self.engine.begin() as connection:
+            finalized = self.repository.finalize_wall_notice(
+                connection, notice_id, area_id, user_id, row_version
+            )
+            if not finalized:
+                raise ConflictError(
+                    'O aviso foi alterado, finalizado ou somente o autor pode finalizá-lo.'
+                )
+        return {'noticeId': notice_id}
+
     def update_demand(
         self, management_id, area_id, payload, actor, area_name, area_role
     ):

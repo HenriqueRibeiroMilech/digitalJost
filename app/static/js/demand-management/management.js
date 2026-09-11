@@ -638,9 +638,12 @@
         return `
             <article class="dm-notice-card${scheduled ? ' dm-notice-card--scheduled' : ''}${editable ? ' dm-notice-card--editable' : ''}"
                 ${editable ? `data-notice-id="${escapeHtml(notice.noticeId)}" tabindex="0" role="button" aria-label="Editar aviso ${escapeHtml(notice.title)}"` : ''}>
-                <div class="dm-badges">
-                    <span class="dm-badge dm-badge--notice">Aviso</span>
-                    <span class="dm-badge ${scheduled ? 'dm-badge--notice-scheduled' : 'dm-badge--notice-active'}">${scheduled ? 'Agendado' : 'Em vigor'}</span>
+                <div class="dm-notice-card__top">
+                    <div class="dm-badges">
+                        <span class="dm-badge dm-badge--notice">Aviso</span>
+                        <span class="dm-badge ${scheduled ? 'dm-badge--notice-scheduled' : 'dm-badge--notice-active'}">${scheduled ? 'Agendado' : 'Em vigor'}</span>
+                    </div>
+                    ${editable ? `<button class="dm-notice-card__finish" type="button" data-finalize-notice="${escapeHtml(notice.noticeId)}">Finalizar</button>` : ''}
                 </div>
                 <h2 class="dm-notice-card__title">${escapeHtml(notice.title)}</h2>
                 <p class="dm-notice-card__description">${escapeHtml(notice.description)}</p>
@@ -1289,7 +1292,7 @@
                         </label>
                         <label class="dm-notice-expiration" data-notice-expiration${editing && notice.endsAt ? '' : ' hidden'}>
                             <input type="checkbox" name="hideAfterEnd"${editing && notice.hideAfterEnd ? ' checked' : ''}>
-                            <span>Ocultar este aviso automaticamente após a data final</span>
+                            <span>Finalizar este aviso automaticamente após a data final</span>
                         </label>
                     </div>
                 </section>
@@ -1508,6 +1511,22 @@
             closeModal();
             await loadBoard(false);
             toast(noticeId ? 'Aviso atualizado.' : 'Aviso publicado no mural.');
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+        }
+    }
+
+    async function finalizeWallNotice(notice, button) {
+        if (!window.confirm('Finalizar este aviso? Ele deixará de aparecer no mural.')) return;
+        button.disabled = true;
+        try {
+            await api(`${config.apiRoot}/notices/${notice.noticeId}/finalize`, {
+                method: 'PATCH',
+                body: JSON.stringify({ rowVersion: notice.rowVersion })
+            });
+            await loadBoard(false);
+            toast('Aviso finalizado.');
         } catch (error) {
             toast(error.message, true);
             button.disabled = false;
@@ -2148,6 +2167,16 @@
             const key = toggle.dataset.ownerToggle;
             state.collapsedOwners.has(key) ? state.collapsedOwners.delete(key) : state.collapsedOwners.add(key);
             renderBoard();
+            return;
+        }
+        const finalizeButton = event.target.closest('[data-finalize-notice]');
+        if (finalizeButton) {
+            const notice = state.notices.find(function (item) {
+                return Number(item.noticeId) === Number(finalizeButton.dataset.finalizeNotice);
+            });
+            if (notice && notice.isOwnedByCurrentUser) {
+                finalizeWallNotice(notice, finalizeButton);
+            }
             return;
         }
         if (event.target.closest('input, select, textarea, button, a')) return;
