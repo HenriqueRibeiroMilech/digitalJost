@@ -4,6 +4,7 @@
     const config = window.demandManagementConfig;
     const state = {
         demands: [],
+        notices: [],
         responsibles: [],
         options: { status: [], difficulty: [], priority: [], type: [] },
         detail: null,
@@ -18,7 +19,8 @@
         deadlineChanges: new Map(),
         filtersInitialized: false,
         taskSort: 'deadline',
-        statusAction: null
+        statusAction: null,
+        wallRefreshTimer: null
     };
 
     const elements = {
@@ -38,6 +40,7 @@
         sort: document.getElementById('dm-sort'),
         clearFilters: document.getElementById('dm-clear-filters'),
         createDemand: document.getElementById('dm-create-demand'),
+        createNotice: document.getElementById('dm-create-notice'),
         requestList: document.getElementById('dm-request-list'),
         requestLoading: document.getElementById('dm-request-loading'),
         requestSearch: document.getElementById('dm-request-search'),
@@ -356,12 +359,15 @@
         try {
             const data = await api(config.apiRoot);
             state.demands = data.demands || [];
+            state.notices = data.notices || [];
             state.responsibles = data.responsibles || [];
             state.options = data.options || state.options;
             initializeCollapsedOwners();
             configureFilters();
             renderAll();
+            scheduleWallRefresh();
             elements.createDemand.disabled = false;
+            elements.createNotice.disabled = false;
         } catch (error) {
             elements.board.innerHTML = `<div class="dm-empty">${escapeHtml(error.message)}</div>`;
         } finally {
@@ -589,9 +595,75 @@
         renderBoard();
     }
 
+    function currentWallNotices() {
+        const now = Date.now();
+        return state.notices.filter(function (notice) {
+            const endsAt = new Date(notice.endsAt).getTime();
+            return !Number.isNaN(endsAt) && endsAt >= now;
+        });
+    }
+
+    function scheduleWallRefresh() {
+        window.clearTimeout(state.wallRefreshTimer);
+        const now = Date.now();
+        const changes = [];
+        state.notices.forEach(function (notice) {
+            [notice.startsAt, notice.endsAt].forEach(function (value) {
+                const timestamp = new Date(value).getTime();
+                if (!Number.isNaN(timestamp) && timestamp > now) {
+                    changes.push(timestamp);
+                }
+            });
+        });
+        if (!changes.length) return;
+        const maximumDelay = 2147483647;
+        const delay = Math.min(Math.min.apply(null, changes) - now + 500, maximumDelay);
+        state.wallRefreshTimer = window.setTimeout(function () {
+            renderBoard();
+            scheduleWallRefresh();
+        }, delay);
+    }
+
+    function renderNoticeCard(notice) {
+        const scheduled = new Date(notice.startsAt).getTime() > Date.now();
+        return `
+            <article class="dm-notice-card${scheduled ? ' dm-notice-card--scheduled' : ''}">
+                <div class="dm-badges">
+                    <span class="dm-badge dm-badge--notice">Aviso</span>
+                    <span class="dm-badge ${scheduled ? 'dm-badge--notice-scheduled' : 'dm-badge--notice-active'}">${scheduled ? 'Agendado' : 'Em vigor'}</span>
+                </div>
+                <h2 class="dm-notice-card__title">${escapeHtml(notice.title)}</h2>
+                <p class="dm-notice-card__description">${escapeHtml(notice.description)}</p>
+                <dl class="dm-notice-card__period">
+                    <div><dt>Início</dt><dd>${escapeHtml(formatDate(notice.startsAt, true))}</dd></div>
+                    <div><dt>Fim</dt><dd>${escapeHtml(formatDate(notice.endsAt, true))}</dd></div>
+                </dl>
+                <small>Publicado por ${escapeHtml(display(notice.createdByName, 'Usuário não identificado'))}</small>
+            </article>`;
+    }
+
+    function renderWall(notices) {
+        if (!notices.length) return '';
+        const key = '__wall__';
+        const collapsed = state.collapsedOwners.has(key);
+        const count = notices.length;
+        return `
+            <section class="dm-owner dm-wall${collapsed ? ' dm-owner--collapsed' : ''}" data-owner-section="${key}">
+                <button class="dm-owner__header dm-wall__header" type="button" data-owner-toggle="${key}" aria-expanded="${!collapsed}">
+                    <span class="dm-owner__chevron" aria-hidden="true">▼</span>
+                    <span class="dm-owner__name">Mural</span>
+                    <span class="dm-owner__capacity">${count} aviso${count === 1 ? '' : 's'}</span>
+                </button>
+                <div class="dm-owner__content">
+                    <div class="dm-wall__cards">${notices.map(renderNoticeCard).join('')}</div>
+                </div>
+            </section>`;
+    }
+
     function renderBoard() {
         const demands = filteredDemands();
-        if (!demands.length) {
+        const notices = currentWallNotices();
+        if (!demands.length && !notices.length) {
             elements.board.innerHTML = '<div class="dm-empty"><strong>Nenhuma demanda encontrada.</strong><br>Ajuste os filtros ou aguarde uma nova aprovação.</div>';
             return;
         }
@@ -614,7 +686,8 @@
             if (right.key === '__unassigned__') return -1;
             return left.name.localeCompare(right.name, 'pt-BR');
         });
-        elements.board.innerHTML = orderedGroups.map(renderOwner).join('');
+        elements.board.innerHTML = renderWall(notices)
+            + orderedGroups.map(renderOwner).join('');
     }
 
     function filteredRequests() {
@@ -1170,15 +1243,61 @@
         renderCreateDemandModal();
     }
 
+    function openCreateNoticeModal() {
+        state.detail = null;
+        state.requestDetail = null;
+        state.statusAction = null;
+        elements.modal.classList.add('is-open');
+        elements.modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('dm-modal-open');
+        elements.modalContent.innerHTML = `
+            <header class="dm-modal__header">
+                <div class="dm-badges">
+                    <span class="dm-badge dm-badge--notice">Mural</span>
+                </div>
+                <h2 id="dm-modal-title">Publicar aviso</h2>
+                <p class="dm-modal__meta">O aviso será exibido no mural da área até a data final informada.</p>
+            </header>
+
+            <form class="dm-create-form" id="dm-create-notice-form">
+                <section class="dm-panel">
+                    <h3>Dados do aviso</h3>
+                    <div class="dm-create-grid dm-notice-form__grid">
+                        <label class="dm-field dm-create-grid__title">
+                            <span>Título</span>
+                            <input class="dm-input" name="title" type="text" required maxlength="250" placeholder="Ex.: Férias programadas">
+                        </label>
+                        <label class="dm-field dm-create-grid__description">
+                            <span>Descrição</span>
+                            <textarea class="dm-textarea" name="description" required maxlength="4000" placeholder="Compartilhe o aviso com a equipe"></textarea>
+                        </label>
+                        <label class="dm-field">
+                            <span>Início</span>
+                            <input class="dm-input" name="startsAt" type="datetime-local" required>
+                        </label>
+                        <label class="dm-field">
+                            <span>Fim</span>
+                            <input class="dm-input" name="endsAt" type="datetime-local" required>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="dm-modal__footer">
+                    <button class="dm-button dm-button--quiet" type="button" data-close-modal>Cancelar</button>
+                    <button class="dm-button" type="submit">Publicar aviso</button>
+                </div>
+            </form>`;
+    }
+
     function renderCreateDemandModal() {
         const difficulties = state.options.difficulty || [];
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
                 <div class="dm-badges">
-                    <span class="dm-badge dm-badge--type dm-badge--type-atividade">Nova atividade pessoal</span>
+                    <span class="dm-badge dm-badge--type dm-badge--type-atividade">Nova atividade</span>
                 </div>
                 <h2 id="dm-modal-title">Criar atividade</h2>
-                <p class="dm-modal__meta">Ela será atribuída automaticamente a ${escapeHtml(config.currentUserName)}.</p>
+                <p class="dm-modal__meta">Escolha quem será responsável pela atividade dentro da área.</p>
             </header>
 
             <form class="dm-create-form" id="dm-create-demand-form">
@@ -1199,6 +1318,7 @@
                 <section class="dm-panel">
                     <h3>Planejamento inicial</h3>
                     <div class="dm-form-grid dm-create-planning-grid">
+                        ${createSelectField('Responsável', 'responsibleId', state.responsibles, config.currentUserId, 'Selecione um responsável', true)}
                         ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
                         ${createInputField('Tempo total estimado (h)', 'estimatedHours', 'number')}
                         ${createInputField('Tempo diário (h)', 'dailyHours', 'number')}
@@ -1233,11 +1353,13 @@
             </form>`;
     }
 
-    function createSelectField(label, name, options, selected, emptyLabel) {
+    function createSelectField(
+        label, name, options, selected, emptyLabel, required
+    ) {
         return `
             <label class="dm-field dm-field--${slug(name)}">
                 <span>${escapeHtml(label)}</span>
-                <select class="dm-input" name="${name}">${optionList(options, selected, emptyLabel)}</select>
+                <select class="dm-input" name="${name}"${required ? ' required' : ''}>${optionList(options, selected, emptyLabel)}</select>
             </label>`;
     }
 
@@ -1257,6 +1379,7 @@
         const recurring = form.querySelector('[data-activity-recurrence-toggle]').checked;
         return {
             demandType: 'atividade',
+            responsibleId: value('responsibleId'),
             title: value('title'),
             initialDescription: value('initialDescription'),
             difficulty: value('difficulty'),
@@ -1266,6 +1389,15 @@
             observations: value('observations'),
             recurrenceType: recurring ? value('recurrenceType') : null,
             recurrenceMaxOccurrences: recurring ? value('recurrenceMaxOccurrences') : null
+        };
+    }
+
+    function wallNoticePayload(form) {
+        return {
+            title: form.elements.title.value || null,
+            description: form.elements.description.value || null,
+            startsAt: form.elements.startsAt.value || null,
+            endsAt: form.elements.endsAt.value || null
         };
     }
 
@@ -1336,10 +1468,30 @@
                 });
             }
             configureFilters();
+            if (created.responsibleId) {
+                state.collapsedOwners.delete(created.responsibleId);
+            }
             state.detail = created;
             renderAll();
             renderModal(state.detail);
-            toast('Demanda criada e atribuída a você.');
+            toast(`Atividade criada para ${display(created.responsibleName)}.`);
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+        }
+    }
+
+    async function createWallNotice(form) {
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            await api(`${config.apiRoot}/notices`, {
+                method: 'POST',
+                body: JSON.stringify(wallNoticePayload(form))
+            });
+            closeModal();
+            await loadBoard(false);
+            toast('Aviso publicado no mural.');
         } catch (error) {
             toast(error.message, true);
             button.disabled = false;
@@ -2118,6 +2270,9 @@
         } else if (event.target.id === 'dm-create-demand-form') {
             event.preventDefault();
             createPersonalDemand(event.target);
+        } else if (event.target.id === 'dm-create-notice-form') {
+            event.preventDefault();
+            createWallNotice(event.target);
         } else if (event.target.id === 'dm-new-task') {
             event.preventDefault();
             createTask(event.target);
@@ -2160,6 +2315,7 @@
         renderBoard();
     });
     elements.createDemand.addEventListener('click', openCreateDemandModal);
+    elements.createNotice.addEventListener('click', openCreateNoticeModal);
 
     [elements.requestType, elements.requestStatus, elements.requestUrgency].forEach(function (filter) {
         filter.addEventListener('change', renderRequests);

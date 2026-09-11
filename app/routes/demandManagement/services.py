@@ -21,7 +21,8 @@ from .domain import (
     validate_review_decline,
     validate_start_schedule,
     validate_status_transition,
-    validate_task
+    validate_task,
+    validate_wall_notice
 )
 from .integration import sync_approved_request
 
@@ -53,15 +54,27 @@ class DemandManagementService:
         self.internal_attachment_storage = internal_attachment_storage
         self.review_notifier = review_notifier
 
-    def list_board(self, area_id, user_id):
+    def list_board(self, area_id, user_id, area_role):
         with self.engine.connect() as connection:
             demands = [
                 self._serialize_demand(row, user_id)
                 for row in self.repository.list_demands(connection, area_id)
             ]
-            responsibles = [_serialize_row(row) for row in self.repository.list_responsibles(connection, area_id)]
+            notices = [
+                self._serialize_wall_notice(row, user_id)
+                for row in self.repository.list_wall_notices(
+                    connection, area_id
+                )
+            ]
+            responsibles = [
+                _serialize_row(row)
+                for row in self.repository.list_responsibles(
+                    connection, area_id, area_role
+                )
+            ]
         return {
             'demands': demands,
+            'notices': notices,
             'responsibles': responsibles,
             'options': {
                 'status': list(STATUS_OPTIONS),
@@ -129,12 +142,14 @@ class DemandManagementService:
             )
         return self.get_detail(management_id, area_id, user_id)
 
-    def approve_review_request(self, request_id, area_id, payload, reviewer, area_name):
+    def approve_review_request(
+        self, request_id, area_id, payload, reviewer, area_name, area_role
+    ):
         responsible_id = validate_review_approval(payload)
         with self.engine.begin() as connection:
             review = self._pending_review(connection, request_id, area_id, reviewer['id'])
             responsible = self.repository.get_responsible(
-                connection, responsible_id, area_id
+                connection, responsible_id, area_id, area_role
             )
             if not responsible:
                 raise ValidationError('O responsável deve ser um usuário ativo da área.')
@@ -181,9 +196,17 @@ class DemandManagementService:
         result['history'] = [_serialize_row(row) for row in history]
         return result
 
-    def create_personal_demand(self, area_id, payload, user_id):
+    def create_personal_demand(
+        self, area_id, payload, user_id, area_role
+    ):
         demand = validate_personal_demand(payload)
         with self.engine.begin() as connection:
+            if not self.repository.responsible_belongs_to_area(
+                connection, demand['responsibleId'], area_id, area_role
+            ):
+                raise ValidationError(
+                    'O responsável deve ser um usuário ativo da área.'
+                )
             management_id = self.repository.create_personal_demand(
                 connection, area_id, demand, user_id
             )
@@ -191,7 +214,19 @@ class DemandManagementService:
                 raise ConflictError('Não foi possível criar a demanda.')
         return self.get_detail(management_id, area_id, user_id)
 
-    def update_demand(self, management_id, area_id, payload, actor, area_name):
+    def create_wall_notice(self, area_id, payload, user_id):
+        notice = validate_wall_notice(payload)
+        with self.engine.begin() as connection:
+            notice_id = self.repository.create_wall_notice(
+                connection, area_id, notice, user_id
+            )
+            if notice_id is None:
+                raise ConflictError('Não foi possível publicar o aviso.')
+        return {'noticeId': notice_id}
+
+    def update_demand(
+        self, management_id, area_id, payload, actor, area_name, area_role
+    ):
         if not isinstance(payload, dict):
             raise ValidationError('Dados da alteração inválidos.')
         field = payload.get('field')
@@ -271,7 +306,9 @@ class DemandManagementService:
                 if field == 'responsibleId':
                     if not value:
                         raise ValidationError('Selecione o novo responsável da demanda.')
-                    if not self.repository.responsible_belongs_to_area(connection, value, area_id):
+                    if not self.repository.responsible_belongs_to_area(
+                        connection, value, area_id, area_role
+                    ):
                         raise ValidationError('O responsável deve ser um usuário ativo da área.')
                 updated = self.repository.update_field(
                     connection, management_id, area_id, field, value, row_version
@@ -394,13 +431,17 @@ class DemandManagementService:
                 )
         return self.get_detail(management_id, area_id, user_id)
 
-    def create_task(self, management_id, area_id, payload, created_by):
+    def create_task(
+        self, management_id, area_id, payload, created_by, area_role
+    ):
         task = validate_task(payload)
         with self.engine.begin() as connection:
             self._require_owned_demand(
                 connection, management_id, area_id, created_by, lock=True
             )
-            self._validate_task_responsible(connection, task, area_id)
+            self._validate_task_responsible(
+                connection, task, area_id, area_role
+            )
             task_id = self.repository.create_task(
                 connection, management_id, area_id, task, created_by
             )
@@ -408,14 +449,18 @@ class DemandManagementService:
                 raise NotFoundError('Demanda não encontrada.')
         return self.get_detail(management_id, area_id, created_by)
 
-    def update_task(self, management_id, task_id, area_id, payload, user_id):
+    def update_task(
+        self, management_id, task_id, area_id, payload, user_id, area_role
+    ):
         task = validate_task(payload)
         row_version = parse_row_version(payload.get('rowVersion'))
         with self.engine.begin() as connection:
             self._require_owned_demand(
                 connection, management_id, area_id, user_id, lock=True
             )
-            self._validate_task_responsible(connection, task, area_id)
+            self._validate_task_responsible(
+                connection, task, area_id, area_role
+            )
             updated = self.repository.update_task(
                 connection, management_id, task_id, area_id, task, row_version
             )
@@ -436,10 +481,12 @@ class DemandManagementService:
                 raise ConflictError('A tarefa foi alterada ou não existe mais. Reabra a demanda.')
         return self.get_detail(management_id, area_id, user_id)
 
-    def _validate_task_responsible(self, connection, task, area_id):
+    def _validate_task_responsible(
+        self, connection, task, area_id, area_role
+    ):
         responsible_id = task['responsibleId']
         if responsible_id and not self.repository.responsible_belongs_to_area(
-            connection, responsible_id, area_id
+            connection, responsible_id, area_id, area_role
         ):
             raise ValidationError('O responsável da tarefa deve ser um usuário ativo da área.')
 
@@ -572,6 +619,13 @@ class DemandManagementService:
         )
         result['isOwnedByCurrentUser'] = (
             str(result.get('responsibleId')) == str(user_id)
+        )
+        return result
+
+    def _serialize_wall_notice(self, row, user_id):
+        result = _serialize_row(row)
+        result['isOwnedByCurrentUser'] = (
+            str(result.get('createdBy')) == str(user_id)
         )
         return result
 
