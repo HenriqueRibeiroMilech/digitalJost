@@ -598,6 +598,7 @@
     function currentWallNotices() {
         const now = Date.now();
         return state.notices.filter(function (notice) {
+            if (!notice.hideAfterEnd || !notice.endsAt) return true;
             const endsAt = new Date(notice.endsAt).getTime();
             return !Number.isNaN(endsAt) && endsAt >= now;
         });
@@ -625,20 +626,26 @@
     }
 
     function renderNoticeCard(notice) {
-        const scheduled = new Date(notice.startsAt).getTime() > Date.now();
+        const scheduled = notice.startsAt
+            && new Date(notice.startsAt).getTime() > Date.now();
+        const editable = notice.isOwnedByCurrentUser;
+        const period = notice.startsAt || notice.endsAt
+            ? `<dl class="dm-notice-card__period">
+                ${notice.startsAt ? `<div><dt>Início</dt><dd>${escapeHtml(formatDate(notice.startsAt, true))}</dd></div>` : ''}
+                ${notice.endsAt ? `<div><dt>Fim</dt><dd>${escapeHtml(formatDate(notice.endsAt, true))}</dd></div>` : ''}
+            </dl>`
+            : '';
         return `
-            <article class="dm-notice-card${scheduled ? ' dm-notice-card--scheduled' : ''}">
+            <article class="dm-notice-card${scheduled ? ' dm-notice-card--scheduled' : ''}${editable ? ' dm-notice-card--editable' : ''}"
+                ${editable ? `data-notice-id="${escapeHtml(notice.noticeId)}" tabindex="0" role="button" aria-label="Editar aviso ${escapeHtml(notice.title)}"` : ''}>
                 <div class="dm-badges">
                     <span class="dm-badge dm-badge--notice">Aviso</span>
                     <span class="dm-badge ${scheduled ? 'dm-badge--notice-scheduled' : 'dm-badge--notice-active'}">${scheduled ? 'Agendado' : 'Em vigor'}</span>
                 </div>
                 <h2 class="dm-notice-card__title">${escapeHtml(notice.title)}</h2>
                 <p class="dm-notice-card__description">${escapeHtml(notice.description)}</p>
-                <dl class="dm-notice-card__period">
-                    <div><dt>Início</dt><dd>${escapeHtml(formatDate(notice.startsAt, true))}</dd></div>
-                    <div><dt>Fim</dt><dd>${escapeHtml(formatDate(notice.endsAt, true))}</dd></div>
-                </dl>
-                <small>Publicado por ${escapeHtml(display(notice.createdByName, 'Usuário não identificado'))}</small>
+                ${period}
+                <div class="dm-notice-card__author"><span>Publicado por</span><strong>${escapeHtml(display(notice.createdByName, 'Usuário não identificado'))}</strong>${editable ? '<small>Clique para editar</small>' : ''}</div>
             </article>`;
     }
 
@@ -1243,7 +1250,8 @@
         renderCreateDemandModal();
     }
 
-    function openCreateNoticeModal() {
+    function openCreateNoticeModal(notice) {
+        const editing = Boolean(notice);
         state.detail = null;
         state.requestDetail = null;
         state.statusAction = null;
@@ -1255,36 +1263,40 @@
                 <div class="dm-badges">
                     <span class="dm-badge dm-badge--notice">Mural</span>
                 </div>
-                <h2 id="dm-modal-title">Publicar aviso</h2>
-                <p class="dm-modal__meta">O aviso será exibido no mural da área até a data final informada.</p>
+                <h2 id="dm-modal-title">${editing ? 'Editar aviso' : 'Publicar aviso'}</h2>
+                <p class="dm-modal__meta">As datas são opcionais. Você pode usá-las para informar o período do aviso.</p>
             </header>
 
-            <form class="dm-create-form" id="dm-create-notice-form">
+            <form class="dm-create-form" id="dm-create-notice-form"${editing ? ` data-notice-id="${escapeHtml(notice.noticeId)}" data-row-version="${escapeHtml(notice.rowVersion)}"` : ''}>
                 <section class="dm-panel">
                     <h3>Dados do aviso</h3>
                     <div class="dm-create-grid dm-notice-form__grid">
                         <label class="dm-field dm-create-grid__title">
                             <span>Título</span>
-                            <input class="dm-input" name="title" type="text" required maxlength="250" placeholder="Ex.: Férias programadas">
+                            <input class="dm-input" name="title" type="text" required maxlength="250" value="${escapeHtml(editing ? notice.title : '')}" placeholder="Ex.: Férias programadas">
                         </label>
                         <label class="dm-field dm-create-grid__description">
                             <span>Descrição</span>
-                            <textarea class="dm-textarea" name="description" required maxlength="4000" placeholder="Compartilhe o aviso com a equipe"></textarea>
+                            <textarea class="dm-textarea" name="description" required maxlength="4000" placeholder="Compartilhe o aviso com a equipe">${escapeHtml(editing ? notice.description : '')}</textarea>
                         </label>
                         <label class="dm-field">
                             <span>Início</span>
-                            <input class="dm-input" name="startsAt" type="datetime-local" required>
+                            <input class="dm-input" name="startsAt" type="datetime-local" value="${escapeHtml(editing && notice.startsAt ? notice.startsAt.substring(0, 16) : '')}">
                         </label>
                         <label class="dm-field">
                             <span>Fim</span>
-                            <input class="dm-input" name="endsAt" type="datetime-local" required>
+                            <input class="dm-input" name="endsAt" type="datetime-local" value="${escapeHtml(editing && notice.endsAt ? notice.endsAt.substring(0, 16) : '')}" data-notice-end>
+                        </label>
+                        <label class="dm-notice-expiration" data-notice-expiration${editing && notice.endsAt ? '' : ' hidden'}>
+                            <input type="checkbox" name="hideAfterEnd"${editing && notice.hideAfterEnd ? ' checked' : ''}>
+                            <span>Ocultar este aviso automaticamente após a data final</span>
                         </label>
                     </div>
                 </section>
 
                 <div class="dm-modal__footer">
                     <button class="dm-button dm-button--quiet" type="button" data-close-modal>Cancelar</button>
-                    <button class="dm-button" type="submit">Publicar aviso</button>
+                    <button class="dm-button" type="submit">${editing ? 'Salvar aviso' : 'Publicar aviso'}</button>
                 </div>
             </form>`;
     }
@@ -1397,7 +1409,8 @@
             title: form.elements.title.value || null,
             description: form.elements.description.value || null,
             startsAt: form.elements.startsAt.value || null,
-            endsAt: form.elements.endsAt.value || null
+            endsAt: form.elements.endsAt.value || null,
+            hideAfterEnd: form.elements.hideAfterEnd.checked
         };
     }
 
@@ -1485,13 +1498,16 @@
         const button = form.querySelector('button[type="submit"]');
         button.disabled = true;
         try {
-            await api(`${config.apiRoot}/notices`, {
-                method: 'POST',
-                body: JSON.stringify(wallNoticePayload(form))
+            const noticeId = form.dataset.noticeId;
+            const payload = wallNoticePayload(form);
+            if (noticeId) payload.rowVersion = form.dataset.rowVersion;
+            await api(noticeId ? `${config.apiRoot}/notices/${noticeId}` : `${config.apiRoot}/notices`, {
+                method: noticeId ? 'PATCH' : 'POST',
+                body: JSON.stringify(payload)
             });
             closeModal();
             await loadBoard(false);
-            toast('Aviso publicado no mural.');
+            toast(noticeId ? 'Aviso atualizado.' : 'Aviso publicado no mural.');
         } catch (error) {
             toast(error.message, true);
             button.disabled = false;
@@ -2135,12 +2151,28 @@
             return;
         }
         if (event.target.closest('input, select, textarea, button, a')) return;
+        const noticeCard = event.target.closest('[data-notice-id]');
+        if (noticeCard) {
+            const notice = state.notices.find(function (item) {
+                return Number(item.noticeId) === Number(noticeCard.dataset.noticeId);
+            });
+            if (notice && notice.isOwnedByCurrentUser) openCreateNoticeModal(notice);
+            return;
+        }
         const card = event.target.closest('[data-management-id]');
         if (card) openModal(Number(card.dataset.managementId));
     });
 
     elements.board.addEventListener('keydown', function (event) {
         if (event.key !== 'Enter' || event.target.closest('input, select, textarea, button, a')) return;
+        const noticeCard = event.target.closest('[data-notice-id]');
+        if (noticeCard) {
+            const notice = state.notices.find(function (item) {
+                return Number(item.noticeId) === Number(noticeCard.dataset.noticeId);
+            });
+            if (notice && notice.isOwnedByCurrentUser) openCreateNoticeModal(notice);
+            return;
+        }
         const card = event.target.closest('[data-management-id]');
         if (card) openModal(Number(card.dataset.managementId));
     });
@@ -2229,6 +2261,16 @@
     });
 
     elements.modal.addEventListener('change', function (event) {
+        if (event.target.matches('[data-notice-end]')) {
+            const expiration = elements.modalContent.querySelector('[data-notice-expiration]');
+            if (expiration) {
+                expiration.hidden = !event.target.value;
+                if (!event.target.value) {
+                    expiration.querySelector('input[type="checkbox"]').checked = false;
+                }
+            }
+            return;
+        }
         if (event.target.matches('[data-task-sort]')) {
             state.taskSort = event.target.value === 'priority' ? 'priority' : 'deadline';
             sortRenderedTasks();
@@ -2315,7 +2357,9 @@
         renderBoard();
     });
     elements.createDemand.addEventListener('click', openCreateDemandModal);
-    elements.createNotice.addEventListener('click', openCreateNoticeModal);
+    elements.createNotice.addEventListener('click', function () {
+        openCreateNoticeModal(null);
+    });
 
     [elements.requestType, elements.requestStatus, elements.requestUrgency].forEach(function (filter) {
         filter.addEventListener('change', renderRequests);

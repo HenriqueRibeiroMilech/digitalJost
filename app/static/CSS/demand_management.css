@@ -394,13 +394,22 @@ textarea {
 }
 
 .dm-wall {
-    border-color: #d9c7ad;
-    background: #fffdf9;
+    border-color: var(--dm-line);
+    background: #fff;
 }
 
 .dm-wall__header {
-    border-left: 5px solid var(--dm-orange);
-    background: #243653;
+    border-left: 0;
+    color: var(--dm-navy-dark);
+    background: #e8eef5;
+}
+
+.dm-wall__header .dm-owner__chevron {
+    color: var(--dm-navy);
+}
+
+.dm-wall__header .dm-owner__capacity {
+    color: var(--dm-muted);
 }
 
 .dm-wall__cards {
@@ -416,16 +425,29 @@ textarea {
     gap: .65rem;
     min-width: 0;
     padding: .9rem;
-    border: 1px solid #e5d5bb;
-    border-left: 5px solid var(--dm-orange);
+    border: 1px solid var(--dm-line);
+    border-left: 4px solid #7892b2;
     border-radius: 6px;
-    background: #fffaf2;
+    background: #fff;
 }
 
 .dm-notice-card--scheduled {
     border-color: #ccd4df;
-    border-left-color: var(--dm-navy);
+    border-left-color: #9baabd;
     background: #f7f9fc;
+}
+
+.dm-notice-card--editable {
+    cursor: pointer;
+    transition: box-shadow .16s ease, transform .16s ease;
+}
+
+.dm-notice-card--editable:hover,
+.dm-notice-card--editable:focus-visible {
+    box-shadow: 0 4px 12px rgba(30, 38, 49, .14);
+    outline: 2px solid rgba(33, 76, 122, .25);
+    outline-offset: 2px;
+    transform: translateY(-1px);
 }
 
 .dm-notice-card__title {
@@ -473,9 +495,33 @@ textarea {
     font-weight: 600;
 }
 
-.dm-notice-card > small {
+.dm-notice-card__author {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .12rem .6rem;
+    padding-top: .65rem;
+    border-top: 1px solid rgba(101, 113, 127, .2);
+}
+
+.dm-notice-card__author > span {
+    grid-column: 1 / -1;
     color: var(--dm-muted);
-    font-size: .66rem;
+    font-size: .59rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.dm-notice-card__author > strong {
+    color: var(--dm-navy-dark);
+    font-size: .76rem;
+}
+
+.dm-notice-card__author > small {
+    align-self: end;
+    color: var(--dm-navy);
+    font-size: .63rem;
+    font-weight: 600;
 }
 
 .dm-badge.dm-badge--notice {
@@ -989,7 +1035,28 @@ textarea {
 .dm-create-planning-grid .dm-field--estimatedhours,
 .dm-create-planning-grid .dm-field--dailyhours,
 .dm-create-planning-grid .dm-field--completedhours {
-    grid-column: span 3;
+    grid-column: span 2;
+}
+
+.dm-notice-expiration {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: .55rem;
+    color: var(--dm-ink);
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dm-notice-expiration[hidden] {
+    display: none;
+}
+
+.dm-notice-expiration input {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--dm-navy);
 }
 
 .dm-form-grid .dm-field--wide {

@@ -133,6 +133,17 @@ def management_notice_create():
     return jsonify(notice), 201
 
 
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/notices/<int:notice_id>', methods=['PATCH']
+)
+def management_notice_update(notice_id):
+    _, area = _current_area()
+    notice = _build_service().update_wall_notice(
+        notice_id, area['id'], request.get_json(silent=True), current_user.id
+    )
+    return jsonify(notice)
+
+
 @demand_management_bp.route('/demandas/gerenciador/api/requests', methods=['GET'])
 def review_request_list():
     _, area = _current_area()

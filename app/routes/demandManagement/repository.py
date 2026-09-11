@@ -157,6 +157,7 @@ class DemandManagementRepository:
                 N.description,
                 N.startsAt,
                 N.endsAt,
+                N.hideAfterEnd,
                 N.createdBy,
                 Creator.name AS createdByName,
                 N.createdAt,
@@ -165,9 +166,13 @@ class DemandManagementRepository:
             LEFT JOIN JDT_USER_DETAILS AS Creator
                 ON Creator.id = N.createdBy
             WHERE N.areaId = :area_id
-                AND N.endsAt >= GETDATE()
+                AND (
+                    N.hideAfterEnd = 0
+                    OR N.endsAt IS NULL
+                    OR N.endsAt >= GETDATE()
+                )
             ORDER BY
-                CASE WHEN N.startsAt <= GETDATE() THEN 0 ELSE 1 END,
+                CASE WHEN N.startsAt IS NULL OR N.startsAt <= GETDATE() THEN 0 ELSE 1 END,
                 N.startsAt,
                 N.noticeId
         """)
@@ -369,12 +374,13 @@ class DemandManagementRepository:
     def create_wall_notice(self, connection, area_id, notice, user_id):
         query = text("""
             INSERT INTO JDT_DEMAND_MANAGEMENT_NOTICES (
-                areaId, title, description, startsAt, endsAt,
+                areaId, title, description, startsAt, endsAt, hideAfterEnd,
                 createdBy, createdAt
             )
             OUTPUT INSERTED.noticeId
             VALUES (
                 :area_id, :title, :description, :starts_at, :ends_at,
+                :hide_after_end,
                 :created_by, GETDATE()
             )
         """)
@@ -384,9 +390,39 @@ class DemandManagementRepository:
             'description': notice['description'],
             'starts_at': notice['startsAt'],
             'ends_at': notice['endsAt'],
+            'hide_after_end': 1 if notice['hideAfterEnd'] else 0,
             'created_by': user_id
         }).first()
         return row[0] if row else None
+
+    def update_wall_notice(
+        self, connection, notice_id, area_id, notice, user_id, row_version
+    ):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT_NOTICES
+            SET
+                title = :title,
+                description = :description,
+                startsAt = :starts_at,
+                endsAt = :ends_at,
+                hideAfterEnd = :hide_after_end
+            WHERE noticeId = :notice_id
+                AND areaId = :area_id
+                AND createdBy = :user_id
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'notice_id': notice_id,
+            'area_id': area_id,
+            'title': notice['title'],
+            'description': notice['description'],
+            'starts_at': notice['startsAt'],
+            'ends_at': notice['endsAt'],
+            'hide_after_end': 1 if notice['hideAfterEnd'] else 0,
+            'user_id': user_id,
+            'row_version': row_version
+        })
+        return result.rowcount == 1
 
     # def list_responsibles(self, connection, area_id):
     #     query = text("""

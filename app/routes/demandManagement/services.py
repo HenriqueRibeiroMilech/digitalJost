@@ -224,6 +224,23 @@ class DemandManagementService:
                 raise ConflictError('Não foi possível publicar o aviso.')
         return {'noticeId': notice_id}
 
+    def update_wall_notice(
+        self, notice_id, area_id, payload, user_id
+    ):
+        notice = validate_wall_notice(payload)
+        row_version = parse_row_version(
+            payload.get('rowVersion') if isinstance(payload, dict) else None
+        )
+        with self.engine.begin() as connection:
+            updated = self.repository.update_wall_notice(
+                connection, notice_id, area_id, notice, user_id, row_version
+            )
+            if not updated:
+                raise ConflictError(
+                    'O aviso foi alterado ou somente o autor pode editá-lo.'
+                )
+        return {'noticeId': notice_id}
+
     def update_demand(
         self, management_id, area_id, payload, actor, area_name, area_role
     ):
