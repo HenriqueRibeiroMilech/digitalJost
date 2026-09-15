@@ -95,6 +95,7 @@ O impacto efetivo depende também da configuração do IIS, das permissões do b
 | Hospedagem | Planejar inicialmente a convivência no Windows/IIS e no mesmo domínio. | Pressuposto a confirmar. |
 | Estilização | Tailwind CSS 4, design tokens e componentes Vue reutilizáveis. | Decisão consolidada; integração a validar no piloto. |
 | Biblioteca de interface | Volt sobre PrimeVue em modo unstyled; componentes adicionados sob demanda ao código do frontend. | Decisão consolidada; manutenção e integração a validar na feature de referência. |
+| Ícones | PrimeIcons importado localmente; o backend fornece identificadores semânticos permitidos e o Vue resolve a representação visual. | Decisão consolidada para o piloto. |
 | Implantação | Mudanças graduais e publicações explícitas. | Direção recomendada. |
 
 Flask-Smorest com Marshmallow foi considerado como alternativa para validação e documentação. A preferência consolidada é APIFlask com Pydantic, pela combinação de funções de rota pequenas e contratos baseados em tipos Python. Não há motivo para adotar os dois mecanismos de API simultaneamente na base nova.
@@ -404,6 +405,7 @@ frontend/src/
 │   │   └── errors.ts
 │   ├── components/
 │   ├── composables/
+│   ├── icons/
 │   └── styles/
 │       ├── main.css                # importação do Tailwind
 │       └── tokens.css              # identidade visual do Digital JOST
@@ -424,6 +426,10 @@ Volt será a base dos controles de interface novos. Ele usa o PrimeVue em modo u
 Tailwind cuida da composição das páginas, dos componentes próprios e da identidade visual. Os tokens do Digital JOST devem alimentar também as variáveis consumidas por `tailwindcss-primeui`, mantendo uma única linguagem visual. Alterações nos componentes Volt devem resolver uma necessidade compartilhada de apresentação ou acessibilidade; regras de negócio e variações específicas de uma feature permanecem em `features/<feature>/`. A origem e a versão usadas para adicionar cada componente devem ser registradas para apoiar manutenção futura.
 
 Os componentes compartilhados devem permanecer pequenos e combináveis. Um componente como `AppUserSelect`, que concentra uma convenção real do sistema, tende a ser útil. Uma tabela universal que tenta absorver filtros, exportação, permissões, formulários e exceções de todos os módulos tende a esconder comportamento e aumentar a complexidade. Nesses casos, compor os componentes Volt ou, quando ainda não houver equivalente, usar o PrimeVue unstyled com Pass Through e extrair apenas os padrões comprovadamente repetidos.
+
+PrimeIcons será a biblioteca inicial para ícones visíveis da aplicação. Seu CSS é empacotado pelo Vite e servido pelo mesmo domínio; não usar CDN. O catálogo e as APIs não enviam classes como `pi pi-cog`. Eles enviam identificadores semânticos estáveis, como `settings` ou `maintenance`, e o frontend mantém em `shared/icons/` um mapa fechado para as classes correspondentes. Identificadores desconhecidos usam um ícone neutro ou deixam o espaço vazio, sem interpretar HTML ou classes arbitrárias.
+
+Ícones decorativos devem ser ignorados por tecnologias assistivas. Toda ação representada apenas por um ícone recebe nome acessível, como `aria-label`, e mantém foco visível. Cor e ícone não podem ser os únicos meios de comunicar estado, setor ou ação.
 
 TanStack Vue Query é o candidato para carregamento, cache e atualização de dados da API. Pinia entra para estado compartilhado de interface quando necessário, evitando manter cópias dos mesmos dados em mecanismos diferentes.
 
@@ -605,6 +611,7 @@ As referências abaixo apoiam as escolhas propostas. A disponibilidade de uma ca
 - [Tailwind CSS with Vite](https://tailwindcss.com/docs/installation/using-vite) — integração do Tailwind CSS 4 com o build do frontend.
 - [Volt Overview](https://volt.primevue.org/overview) — modelo de propriedade do código e integração entre PrimeVue unstyled e Tailwind.
 - [Volt with Vite](https://volt.primevue.org/vite/) — instalação do Volt, `tailwindcss-primeui` e configuração do PrimeVue em modo unstyled.
+- [Volt Icons](https://volt.primevue.org/icons/) e [PrimeIcons](https://primevue.org/icons/) — alternativas de ícones e instalação do pacote adotado no piloto.
 - [Volt DataTable](https://volt.primevue.org/datatable/) — referência de componente complexo mantido no código do frontend.
 - [TanStack Vue Query](https://tanstack.com/query/latest/docs/framework/vue/overview) e [Pinia](https://pinia.vuejs.org/introduction) — dados da API e estado compartilhado.
 - [OpenAPI TypeScript](https://openapi-ts.dev/introduction) — geração de tipos a partir dos contratos.
@@ -723,7 +730,7 @@ Instalar as dependências aprovadas e gerar um lockfile:
 Set-Location frontend
 npm install
 npm install tailwindcss @tailwindcss/vite
-npm install primevue tailwindcss-primeui tailwind-merge
+npm install primevue primeicons tailwindcss-primeui tailwind-merge
 npm install @tanstack/vue-query
 npx volt-vue add Button
 npx volt-vue add InputText
@@ -740,6 +747,7 @@ O bootstrap do Vue configura o PrimeVue uma única vez com `{ unstyled: true }`.
 
 ```ts
 import PrimeVue from 'primevue/config'
+import 'primeicons/primeicons.css'
 
 app.use(PrimeVue, {
   unstyled: true,
@@ -747,6 +755,21 @@ app.use(PrimeVue, {
 ```
 
 Confirmar também o alias `@` apontando para `frontend/src`, pois os componentes serão importados como `@/volt/Button.vue` e equivalentes.
+
+Criar o mapa inicial em `shared/icons/home.ts` sem montar nomes de classe dinamicamente:
+
+```ts
+export const homeIcons = {
+  home: 'pi pi-home',
+  search: 'pi pi-search',
+  settings: 'pi pi-cog',
+  maintenance: 'pi pi-wrench',
+} as const
+
+export type HomeIcon = keyof typeof homeIcons
+```
+
+O tipo consumido pela Home deve usar `HomeIcon`. O schema do backend valida o mesmo conjunto conceitual, e novos ícones entram por alteração explícita nos dois contratos.
 
 O TanStack Vue Query é justificado nesta entrega para controlar carregamento, cache, erro e renovação do endpoint da home. Pinia continua fora enquanto o estado puder permanecer na URL, na query ou dentro dos componentes.
 
@@ -815,6 +838,8 @@ DigitalJost/
 │   │       │   ├── client.ts
 │   │       │   └── errors.ts
 │   │       ├── components/
+│   │       ├── icons/
+│   │       │   └── home.ts         # mapa de identificadores semânticos para PrimeIcons
 │   │       └── styles/
 │   │           ├── main.css
 │   │           └── tokens.css
@@ -890,7 +915,7 @@ O backend deve:
 3. Manter os oito setores na resposta e filtrar apenas os módulos internos conforme as permissões do usuário.
 4. Associar funcionalidades aos identificadores estáveis do catálogo, evitando depender de variações textuais como `Engenharia de Processo` e `Engenharia de Processos`.
 5. Retornar somente os campos necessários à home.
-6. Usar identificadores e nomes de ícones permitidos, sem HTML fornecido pelo banco ou pelo cliente.
+6. Usar identificadores semânticos de ícones presentes em uma lista permitida, como `maintenance` ou `settings`; não retornar HTML nem classes `pi` pelo backend.
 7. Validar que cada URL pertence ao próprio sistema e corresponde a uma rota ativa.
 8. Retornar erros JSON previsíveis para sessão ausente, acesso negado e falha inesperada.
 9. Não aceitar usuário, área, role, administrador ou permissões enviados pelo frontend.
