@@ -404,6 +404,11 @@
 
         function addRowToTable(tableBody, item) {
             const row = document.createElement("tr");
+            const eventName = String(item.Event || '').trim();
+            const isLackOfBalance = eventName.replace(/^-+\s*/, '') === 'Falta de Saldo';
+            const displayedEventName = isLackOfBalance
+                ? 'Falta de Saldo'
+                : eventName.replace(/^\d+\s*-\s*/, '');
 
             // item.Oee = item.Performance * item.Availability * 100 / 10000;
             // if (item.Oee < 0) item.Oee = 0;
@@ -435,7 +440,9 @@
             cell = document.createElement('td');
 
             let statusClass = '';
-            if (item.Responsible == 'Processos') {
+            if (isLackOfBalance) {
+                statusClass = 'border-logistica';
+            } else if (item.Responsible == 'Processos') {
                 statusClass = 'border-processos';
             } else if (item.Responsible === 'Qualidade') {
                 statusClass = 'border-qualidade';
@@ -454,7 +461,9 @@
             cell.className = `${statusClass}`
             cell.style.boxSizing = 'border-box';
             cell.style.paddingLeft = '10px'
-            cell.innerHTML += item.Event != "-" ? `&ensp;${item.Event}` : "&ensp;Produzindo";
+            cell.innerHTML += eventName != "-"
+                ? `&ensp;${displayedEventName}`
+                : "&ensp;Produzindo";
 
 
             row.appendChild(cell);
@@ -475,4 +484,4 @@
 </body>
 </html>
 
-<!-- V2 -->
+<!-- V4 -->

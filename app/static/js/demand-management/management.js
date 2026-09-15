@@ -4,6 +4,7 @@
     const config = window.demandManagementConfig;
     const state = {
         demands: [],
+        notices: [],
         responsibles: [],
         options: { status: [], difficulty: [], priority: [], type: [] },
         detail: null,
@@ -18,7 +19,8 @@
         deadlineChanges: new Map(),
         filtersInitialized: false,
         taskSort: 'deadline',
-        statusAction: null
+        statusAction: null,
+        wallRefreshTimer: null
     };
 
     const elements = {
@@ -38,6 +40,7 @@
         sort: document.getElementById('dm-sort'),
         clearFilters: document.getElementById('dm-clear-filters'),
         createDemand: document.getElementById('dm-create-demand'),
+        createNotice: document.getElementById('dm-create-notice'),
         requestList: document.getElementById('dm-request-list'),
         requestLoading: document.getElementById('dm-request-loading'),
         requestSearch: document.getElementById('dm-request-search'),
@@ -334,11 +337,12 @@
 
     function initializeCollapsedOwners() {
         if (state.ownerCollapseInitialized) return;
-        const hasOwnDemands = state.demands.some(function (demand) {
+        const demands = logicalDemands();
+        const hasOwnDemands = demands.some(function (demand) {
             return demand.isOwnedByCurrentUser;
         });
         state.collapsedOwners = new Set(hasOwnDemands
-            ? state.demands.filter(function (demand) {
+            ? demands.filter(function (demand) {
                 return !demand.isOwnedByCurrentUser;
             }).map(function (demand) {
                 return demand.responsibleId || '__unassigned__';
@@ -355,12 +359,15 @@
         try {
             const data = await api(config.apiRoot);
             state.demands = data.demands || [];
+            state.notices = data.notices || [];
             state.responsibles = data.responsibles || [];
             state.options = data.options || state.options;
             initializeCollapsedOwners();
             configureFilters();
             renderAll();
+            scheduleWallRefresh();
             elements.createDemand.disabled = false;
+            elements.createNotice.disabled = false;
         } catch (error) {
             elements.board.innerHTML = `<div class="dm-empty">${escapeHtml(error.message)}</div>`;
         } finally {
@@ -465,10 +472,45 @@
         state.filtersInitialized = true;
     }
 
+    function logicalDemands() {
+        const demands = [];
+        const recurrenceIndexes = new Map();
+
+        state.demands.forEach(function (demand) {
+            if (!demand.isRecurringActivity || !demand.recurrenceGroupId) {
+                demands.push(demand);
+                return;
+            }
+
+            const groupId = String(demand.recurrenceGroupId);
+            if (!recurrenceIndexes.has(groupId)) {
+                recurrenceIndexes.set(groupId, demands.length);
+                demands.push(demand);
+                return;
+            }
+
+            const index = recurrenceIndexes.get(groupId);
+            const current = demands[index];
+            const sequence = Number(demand.recurrenceSequence || 0);
+            const currentSequence = Number(current.recurrenceSequence || 0);
+            if (
+                sequence > currentSequence
+                || (
+                    sequence === currentSequence
+                    && Number(demand.managementId) > Number(current.managementId)
+                )
+            ) {
+                demands[index] = demand;
+            }
+        });
+
+        return demands;
+    }
+
     function filteredDemands() {
         const search = normalize(elements.search.value);
         const requestedTypes = ['projeto', 'melhoria', 'erro'];
-        const filtered = state.demands.filter(function (demand) {
+        const filtered = logicalDemands().filter(function (demand) {
             const responsibleFilter = elements.responsible.value;
             const statusFilter = elements.status.value;
             const typeFilter = elements.type.value;
@@ -532,13 +574,14 @@
             }).join('');
             return;
         }
-        const active = state.demands.filter(function (item) {
+        const demands = logicalDemands();
+        const active = demands.filter(function (item) {
             return !['Concluído', 'Cancelado'].includes(item.status);
         }).length;
-        const late = state.demands.filter(isLate).length;
-        const completed = state.demands.filter(function (item) { return item.status === 'Concluído'; }).length;
+        const late = demands.filter(isLate).length;
+        const completed = demands.filter(function (item) { return item.status === 'Concluído'; }).length;
         elements.summary.innerHTML = [
-            [state.demands.length, 'Total'],
+            [demands.length, 'Total'],
             [completed, 'Concluídas'],
             [active, 'Ativas'],
             [late, 'Atrasadas']
@@ -552,9 +595,85 @@
         renderBoard();
     }
 
+    function currentWallNotices() {
+        const now = Date.now();
+        return state.notices.filter(function (notice) {
+            if (!notice.hideAfterEnd || !notice.endsAt) return true;
+            const endsAt = new Date(notice.endsAt).getTime();
+            return !Number.isNaN(endsAt) && endsAt >= now;
+        });
+    }
+
+    function scheduleWallRefresh() {
+        window.clearTimeout(state.wallRefreshTimer);
+        const now = Date.now();
+        const changes = [];
+        state.notices.forEach(function (notice) {
+            [notice.startsAt, notice.endsAt].forEach(function (value) {
+                const timestamp = new Date(value).getTime();
+                if (!Number.isNaN(timestamp) && timestamp > now) {
+                    changes.push(timestamp);
+                }
+            });
+        });
+        if (!changes.length) return;
+        const maximumDelay = 2147483647;
+        const delay = Math.min(Math.min.apply(null, changes) - now + 500, maximumDelay);
+        state.wallRefreshTimer = window.setTimeout(function () {
+            renderBoard();
+            scheduleWallRefresh();
+        }, delay);
+    }
+
+    function renderNoticeCard(notice) {
+        const scheduled = notice.startsAt
+            && new Date(notice.startsAt).getTime() > Date.now();
+        const editable = notice.isOwnedByCurrentUser;
+        const period = notice.startsAt || notice.endsAt
+            ? `<dl class="dm-notice-card__period">
+                ${notice.startsAt ? `<div><dt>Início</dt><dd>${escapeHtml(formatDate(notice.startsAt, true))}</dd></div>` : ''}
+                ${notice.endsAt ? `<div><dt>Fim</dt><dd>${escapeHtml(formatDate(notice.endsAt, true))}</dd></div>` : ''}
+            </dl>`
+            : '';
+        return `
+            <article class="dm-notice-card${scheduled ? ' dm-notice-card--scheduled' : ''}${editable ? ' dm-notice-card--editable' : ''}"
+                ${editable ? `data-notice-id="${escapeHtml(notice.noticeId)}" tabindex="0" role="button" aria-label="Editar aviso ${escapeHtml(notice.title)}"` : ''}>
+                <div class="dm-notice-card__top">
+                    <div class="dm-badges">
+                        <span class="dm-badge dm-badge--notice">Aviso</span>
+                        <span class="dm-badge ${scheduled ? 'dm-badge--notice-scheduled' : 'dm-badge--notice-active'}">${scheduled ? 'Agendado' : 'Em vigor'}</span>
+                    </div>
+                    ${editable ? `<button class="dm-notice-card__finish" type="button" data-finalize-notice="${escapeHtml(notice.noticeId)}">Finalizar</button>` : ''}
+                </div>
+                <h2 class="dm-notice-card__title">${escapeHtml(notice.title)}</h2>
+                <p class="dm-notice-card__description">${escapeHtml(notice.description)}</p>
+                ${period}
+                <div class="dm-notice-card__author"><span>Publicado por</span><strong>${escapeHtml(display(notice.createdByName, 'Usuário não identificado'))}</strong>${editable ? '<small>Clique para editar</small>' : ''}</div>
+            </article>`;
+    }
+
+    function renderWall(notices) {
+        if (!notices.length) return '';
+        const key = '__wall__';
+        const collapsed = state.collapsedOwners.has(key);
+        const count = notices.length;
+        return `
+            <section class="dm-owner dm-wall${collapsed ? ' dm-owner--collapsed' : ''}" data-owner-section="${key}">
+                <button class="dm-owner__header dm-wall__header" type="button" data-owner-toggle="${key}" aria-expanded="${!collapsed}">
+                    <span class="dm-owner__chevron" aria-hidden="true">▼</span>
+                    <span class="dm-owner__name">Mural</span>
+                    <span class="dm-owner__capacity">${count} aviso${count === 1 ? '' : 's'}</span>
+                </button>
+                <div class="dm-owner__content">
+                    <div class="dm-wall__cards">${notices.map(renderNoticeCard).join('')}</div>
+                </div>
+            </section>`;
+    }
+
     function renderBoard() {
         const demands = filteredDemands();
-        if (!demands.length) {
+        const notices = currentWallNotices();
+        if (!demands.length && !notices.length) {
             elements.board.innerHTML = '<div class="dm-empty"><strong>Nenhuma demanda encontrada.</strong><br>Ajuste os filtros ou aguarde uma nova aprovação.</div>';
             return;
         }
@@ -577,7 +696,8 @@
             if (right.key === '__unassigned__') return -1;
             return left.name.localeCompare(right.name, 'pt-BR');
         });
-        elements.board.innerHTML = orderedGroups.map(renderOwner).join('');
+        elements.board.innerHTML = renderWall(notices)
+            + orderedGroups.map(renderOwner).join('');
     }
 
     function filteredRequests() {
@@ -893,6 +1013,71 @@
         }[status] || 'Não configurada';
     }
 
+    function recurrenceOccurrences(demand) {
+        if (!demand.isRecurringActivity || !demand.recurrenceGroupId) return [];
+        return state.demands.filter(function (item) {
+            return item.isRecurringActivity
+                && String(item.recurrenceGroupId) === String(demand.recurrenceGroupId);
+        }).sort(function (left, right) {
+            const sequenceDifference = Number(right.recurrenceSequence || 0)
+                - Number(left.recurrenceSequence || 0);
+            return sequenceDifference || Number(right.managementId) - Number(left.managementId);
+        });
+    }
+
+    function renderRecurrenceOccurrence(item, selectedId, current) {
+        const selected = Number(item.managementId) === Number(selectedId);
+        const referenceDate = item.recurrenceAvailableDate || item.startDate || item.createdAt;
+        const referenceLabel = item.recurrenceAvailableDate
+            ? 'Disponível em'
+            : item.startDate ? 'Iniciada em' : 'Criada em';
+        return `
+            <button class="dm-recurrence-occurrence${selected ? ' is-selected' : ''}" type="button"
+                data-open-recurrence-occurrence="${escapeHtml(item.managementId)}"
+                ${selected ? 'disabled aria-current="true"' : ''}>
+                <span class="dm-recurrence-occurrence__identity">
+                    <strong>Ocorrência ${escapeHtml(item.recurrenceSequence)}</strong>
+                    ${current ? '<small>Atual</small>' : ''}
+                </span>
+                <span class="dm-badge dm-badge--status-${slug(item.status)}">${escapeHtml(item.status)}</span>
+                <small>${referenceLabel} ${escapeHtml(formatDate(referenceDate, false))}</small>
+            </button>`;
+    }
+
+    function renderRecurrenceOccurrencesPanel(demand) {
+        const occurrences = recurrenceOccurrences(demand);
+        if (occurrences.length < 2) return '';
+
+        const current = occurrences[0];
+        const previous = occurrences.slice(1);
+        const currentShortcut = Number(demand.managementId) === Number(current.managementId)
+            ? ''
+            : `
+                <div class="dm-recurrence-current">
+                    <span>Você está consultando uma ocorrência anterior.</span>
+                    ${renderRecurrenceOccurrence(current, demand.managementId, true)}
+                </div>`;
+
+        return `
+            <section class="dm-panel dm-recurrence-history">
+                <h3>Ocorrências da atividade</h3>
+                <p class="dm-personal-note">O card principal mostra somente a ocorrência atual. As anteriores continuam disponíveis individualmente.</p>
+                ${currentShortcut}
+                <details class="dm-recurrence-history__details">
+                    <summary>Ocorrências anteriores <span>${previous.length}</span></summary>
+                    <div class="dm-recurrence-history__list">
+                        ${previous.map(function (item) {
+                            return renderRecurrenceOccurrence(
+                                item,
+                                demand.managementId,
+                                false
+                            );
+                        }).join('')}
+                    </div>
+                </details>
+            </section>`;
+    }
+
     function renderCard(demand) {
         const late = isLate(demand);
         const statusClass = `dm-card--status-${slug(demand.status)}`;
@@ -1068,15 +1253,66 @@
         renderCreateDemandModal();
     }
 
+    function openCreateNoticeModal(notice) {
+        const editing = Boolean(notice);
+        state.detail = null;
+        state.requestDetail = null;
+        state.statusAction = null;
+        elements.modal.classList.add('is-open');
+        elements.modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('dm-modal-open');
+        elements.modalContent.innerHTML = `
+            <header class="dm-modal__header">
+                <div class="dm-badges">
+                    <span class="dm-badge dm-badge--notice">Mural</span>
+                </div>
+                <h2 id="dm-modal-title">${editing ? 'Editar aviso' : 'Publicar aviso'}</h2>
+                <p class="dm-modal__meta">As datas são opcionais. Você pode usá-las para informar o período do aviso.</p>
+            </header>
+
+            <form class="dm-create-form" id="dm-create-notice-form"${editing ? ` data-notice-id="${escapeHtml(notice.noticeId)}" data-row-version="${escapeHtml(notice.rowVersion)}"` : ''}>
+                <section class="dm-panel">
+                    <h3>Dados do aviso</h3>
+                    <div class="dm-create-grid dm-notice-form__grid">
+                        <label class="dm-field dm-create-grid__title">
+                            <span>Título</span>
+                            <input class="dm-input" name="title" type="text" required maxlength="250" value="${escapeHtml(editing ? notice.title : '')}" placeholder="Ex.: Férias programadas">
+                        </label>
+                        <label class="dm-field dm-create-grid__description">
+                            <span>Descrição</span>
+                            <textarea class="dm-textarea" name="description" required maxlength="4000" placeholder="Compartilhe o aviso com a equipe">${escapeHtml(editing ? notice.description : '')}</textarea>
+                        </label>
+                        <label class="dm-field">
+                            <span>Início</span>
+                            <input class="dm-input" name="startsAt" type="datetime-local" value="${escapeHtml(editing && notice.startsAt ? notice.startsAt.substring(0, 16) : '')}">
+                        </label>
+                        <label class="dm-field">
+                            <span>Fim</span>
+                            <input class="dm-input" name="endsAt" type="datetime-local" value="${escapeHtml(editing && notice.endsAt ? notice.endsAt.substring(0, 16) : '')}" data-notice-end>
+                        </label>
+                        <label class="dm-notice-expiration" data-notice-expiration${editing && notice.endsAt ? '' : ' hidden'}>
+                            <input type="checkbox" name="hideAfterEnd"${editing && notice.hideAfterEnd ? ' checked' : ''}>
+                            <span>Finalizar este aviso automaticamente após a data final</span>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="dm-modal__footer">
+                    <button class="dm-button dm-button--quiet" type="button" data-close-modal>Cancelar</button>
+                    <button class="dm-button" type="submit">${editing ? 'Salvar aviso' : 'Publicar aviso'}</button>
+                </div>
+            </form>`;
+    }
+
     function renderCreateDemandModal() {
         const difficulties = state.options.difficulty || [];
         elements.modalContent.innerHTML = `
             <header class="dm-modal__header">
                 <div class="dm-badges">
-                    <span class="dm-badge dm-badge--type dm-badge--type-atividade">Nova atividade pessoal</span>
+                    <span class="dm-badge dm-badge--type dm-badge--type-atividade">Nova atividade</span>
                 </div>
                 <h2 id="dm-modal-title">Criar atividade</h2>
-                <p class="dm-modal__meta">Ela será atribuída automaticamente a ${escapeHtml(config.currentUserName)}.</p>
+                <p class="dm-modal__meta">Escolha quem será responsável pela atividade dentro da área.</p>
             </header>
 
             <form class="dm-create-form" id="dm-create-demand-form">
@@ -1097,6 +1333,7 @@
                 <section class="dm-panel">
                     <h3>Planejamento inicial</h3>
                     <div class="dm-form-grid dm-create-planning-grid">
+                        ${createSelectField('Responsável', 'responsibleId', state.responsibles, config.currentUserId, 'Selecione um responsável', true)}
                         ${createSelectField('Dificuldade', 'difficulty', difficulties, '', 'Não informada')}
                         ${createInputField('Tempo total estimado (h)', 'estimatedHours', 'number')}
                         ${createInputField('Tempo diário (h)', 'dailyHours', 'number')}
@@ -1131,11 +1368,13 @@
             </form>`;
     }
 
-    function createSelectField(label, name, options, selected, emptyLabel) {
+    function createSelectField(
+        label, name, options, selected, emptyLabel, required
+    ) {
         return `
             <label class="dm-field dm-field--${slug(name)}">
                 <span>${escapeHtml(label)}</span>
-                <select class="dm-input" name="${name}">${optionList(options, selected, emptyLabel)}</select>
+                <select class="dm-input" name="${name}"${required ? ' required' : ''}>${optionList(options, selected, emptyLabel)}</select>
             </label>`;
     }
 
@@ -1155,6 +1394,7 @@
         const recurring = form.querySelector('[data-activity-recurrence-toggle]').checked;
         return {
             demandType: 'atividade',
+            responsibleId: value('responsibleId'),
             title: value('title'),
             initialDescription: value('initialDescription'),
             difficulty: value('difficulty'),
@@ -1164,6 +1404,16 @@
             observations: value('observations'),
             recurrenceType: recurring ? value('recurrenceType') : null,
             recurrenceMaxOccurrences: recurring ? value('recurrenceMaxOccurrences') : null
+        };
+    }
+
+    function wallNoticePayload(form) {
+        return {
+            title: form.elements.title.value || null,
+            description: form.elements.description.value || null,
+            startsAt: form.elements.startsAt.value || null,
+            endsAt: form.elements.endsAt.value || null,
+            hideAfterEnd: form.elements.hideAfterEnd.checked
         };
     }
 
@@ -1234,10 +1484,49 @@
                 });
             }
             configureFilters();
+            if (created.responsibleId) {
+                state.collapsedOwners.delete(created.responsibleId);
+            }
             state.detail = created;
             renderAll();
             renderModal(state.detail);
-            toast('Demanda criada e atribuída a você.');
+            toast(`Atividade criada para ${display(created.responsibleName)}.`);
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+        }
+    }
+
+    async function createWallNotice(form) {
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+            const noticeId = form.dataset.noticeId;
+            const payload = wallNoticePayload(form);
+            if (noticeId) payload.rowVersion = form.dataset.rowVersion;
+            await api(noticeId ? `${config.apiRoot}/notices/${noticeId}` : `${config.apiRoot}/notices`, {
+                method: noticeId ? 'PATCH' : 'POST',
+                body: JSON.stringify(payload)
+            });
+            closeModal();
+            await loadBoard(false);
+            toast(noticeId ? 'Aviso atualizado.' : 'Aviso publicado no mural.');
+        } catch (error) {
+            toast(error.message, true);
+            button.disabled = false;
+        }
+    }
+
+    async function finalizeWallNotice(notice, button) {
+        if (!window.confirm('Finalizar este aviso? Ele deixará de aparecer no mural.')) return;
+        button.disabled = true;
+        try {
+            await api(`${config.apiRoot}/notices/${notice.noticeId}/finalize`, {
+                method: 'PATCH',
+                body: JSON.stringify({ rowVersion: notice.rowVersion })
+            });
+            await loadBoard(false);
+            toast('Aviso finalizado.');
         } catch (error) {
             toast(error.message, true);
             button.disabled = false;
@@ -1444,6 +1733,8 @@
             ${renderInternalAttachments(demand)}
 
             ${renderActivityRecurrencePanel(demand)}
+
+            ${renderRecurrenceOccurrencesPanel(demand)}
 
             <section class="dm-panel dm-tasks">
                 <div class="dm-tasks__heading">
@@ -1878,13 +2169,39 @@
             renderBoard();
             return;
         }
+        const finalizeButton = event.target.closest('[data-finalize-notice]');
+        if (finalizeButton) {
+            const notice = state.notices.find(function (item) {
+                return Number(item.noticeId) === Number(finalizeButton.dataset.finalizeNotice);
+            });
+            if (notice && notice.isOwnedByCurrentUser) {
+                finalizeWallNotice(notice, finalizeButton);
+            }
+            return;
+        }
         if (event.target.closest('input, select, textarea, button, a')) return;
+        const noticeCard = event.target.closest('[data-notice-id]');
+        if (noticeCard) {
+            const notice = state.notices.find(function (item) {
+                return Number(item.noticeId) === Number(noticeCard.dataset.noticeId);
+            });
+            if (notice && notice.isOwnedByCurrentUser) openCreateNoticeModal(notice);
+            return;
+        }
         const card = event.target.closest('[data-management-id]');
         if (card) openModal(Number(card.dataset.managementId));
     });
 
     elements.board.addEventListener('keydown', function (event) {
         if (event.key !== 'Enter' || event.target.closest('input, select, textarea, button, a')) return;
+        const noticeCard = event.target.closest('[data-notice-id]');
+        if (noticeCard) {
+            const notice = state.notices.find(function (item) {
+                return Number(item.noticeId) === Number(noticeCard.dataset.noticeId);
+            });
+            if (notice && notice.isOwnedByCurrentUser) openCreateNoticeModal(notice);
+            return;
+        }
         const card = event.target.closest('[data-management-id]');
         if (card) openModal(Number(card.dataset.managementId));
     });
@@ -1961,6 +2278,11 @@
             );
             return;
         }
+        const occurrenceButton = event.target.closest('[data-open-recurrence-occurrence]');
+        if (occurrenceButton) {
+            openModal(Number(occurrenceButton.dataset.openRecurrenceOccurrence));
+            return;
+        }
         const saveButton = event.target.closest('[data-save-task]');
         if (saveButton) saveTask(saveButton.closest('[data-task-id]'));
         const deleteButton = event.target.closest('[data-delete-task]');
@@ -1968,6 +2290,16 @@
     });
 
     elements.modal.addEventListener('change', function (event) {
+        if (event.target.matches('[data-notice-end]')) {
+            const expiration = elements.modalContent.querySelector('[data-notice-expiration]');
+            if (expiration) {
+                expiration.hidden = !event.target.value;
+                if (!event.target.value) {
+                    expiration.querySelector('input[type="checkbox"]').checked = false;
+                }
+            }
+            return;
+        }
         if (event.target.matches('[data-task-sort]')) {
             state.taskSort = event.target.value === 'priority' ? 'priority' : 'deadline';
             sortRenderedTasks();
@@ -2009,6 +2341,9 @@
         } else if (event.target.id === 'dm-create-demand-form') {
             event.preventDefault();
             createPersonalDemand(event.target);
+        } else if (event.target.id === 'dm-create-notice-form') {
+            event.preventDefault();
+            createWallNotice(event.target);
         } else if (event.target.id === 'dm-new-task') {
             event.preventDefault();
             createTask(event.target);
@@ -2051,6 +2386,9 @@
         renderBoard();
     });
     elements.createDemand.addEventListener('click', openCreateDemandModal);
+    elements.createNotice.addEventListener('click', function () {
+        openCreateNoticeModal(null);
+    });
 
     [elements.requestType, elements.requestStatus, elements.requestUrgency].forEach(function (filter) {
         filter.addEventListener('change', renderRequests);
@@ -2077,4 +2415,4 @@
     Promise.all([loadBoard(), loadRequests()]);
 }());
 
-// V6
+// V7

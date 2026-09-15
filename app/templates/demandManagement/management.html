@@ -37,7 +37,10 @@
     <section id="dm-demands-view">
         <div class="dm-demand-actions">
             <span>Registre suas atividades internas do dia a dia.</span>
-            <button class="dm-button" id="dm-create-demand" type="button" disabled>+ Nova atividade</button>
+            <div class="dm-demand-actions__buttons">
+                <button class="dm-button" id="dm-create-demand" type="button" disabled>+ Nova atividade</button>
+                <button class="dm-button dm-button--quiet" id="dm-create-notice" type="button" disabled>+ Novo aviso</button>
+            </div>
         </div>
         <section class="dm-toolbar" aria-label="Filtros das demandas">
             <label class="dm-search">
@@ -145,6 +148,7 @@
         area: {{ area | tojson }},
         csrfToken: {{ csrf_token | tojson }},
         initialView: {{ initial_view | tojson }},
+        currentUserId: {{ current_user_id | tojson }},
         currentUserName: {{ current_user_name | tojson }}
     };
     window.demandAnalyticsConfig = {
@@ -158,4 +162,4 @@
 </body>
 </html>
 
-<!-- V2 -->
+<!-- V3 -->

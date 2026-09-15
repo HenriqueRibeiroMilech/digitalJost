@@ -1,0 +1,50 @@
+<label class="op_label" id="qsb_location_label" for="op_local_info_select" style="width: 20vw;">Local especifico:</label><br>
+<div
+    class="qsb-location-field"
+    id="qsb_location_field"
+    data-create-url="{{ url_for('operation_quality.quality_location_post') }}"
+>
+    <select class="input_qual" id="op_local_info_select" name="op_local_info" required>
+        <option value="" disabled selected>Selecione uma opção...</option>
+        {% for location in caxias_locations %}
+            <option value="{{ location }}">{{ location }}</option>
+        {% endfor %}
+    </select>
+
+    <input
+        class="input_qual"
+        autocomplete="off"
+        disabled
+        id="op_local_info"
+        name="op_local_info"
+        placeholder="Digite aqui..."
+        required
+        type="text"
+        onkeyup="this.value=this.value.replace(/'/g, '')"
+    >
+
+    {% if can_manage_locations %}
+        <button
+            aria-label="Cadastrar novo local específico"
+            class="qsb-location-add-button"
+            id="qsb_location_add_button"
+            type="button"
+        >+</button>
+    {% endif %}
+</div>
+<br>
+
+{% if can_manage_locations %}
+    <div aria-hidden="true" class="qsb-location-modal" id="qsb_location_modal">
+        <div class="qsb-location-modal-content" role="dialog" aria-labelledby="qsb_location_modal_title" aria-modal="true">
+            <button aria-label="Fechar" class="qsb-location-modal-close" id="qsb_location_modal_close" type="button">&times;</button>
+            <h2 id="qsb_location_modal_title">Cadastrar local específico</h2>
+            <label for="qsb_location_name">Nome do local</label>
+            <input id="qsb_location_name" maxlength="150" type="text" autocomplete="off">
+            <p class="qsb-location-modal-error" id="qsb_location_modal_error" role="alert"></p>
+            <button class="qsb-location-modal-save" id="qsb_location_modal_save" type="button">Cadastrar</button>
+        </div>
+    </div>
+{% endif %}
+
+<!-- V1 -->

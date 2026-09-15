@@ -148,6 +148,37 @@ class DemandManagementRepository:
         """)
         return connection.execute(query, {'area_id': area_id}).mappings().all()
 
+    def list_wall_notices(self, connection, area_id):
+        query = text("""
+            SELECT
+                N.noticeId,
+                N.areaId,
+                N.title,
+                N.description,
+                N.startsAt,
+                N.endsAt,
+                N.hideAfterEnd,
+                N.createdBy,
+                Creator.name AS createdByName,
+                N.createdAt,
+                N.rowVersion
+            FROM JDT_DEMAND_MANAGEMENT_NOTICES AS N
+            LEFT JOIN JDT_USER_DETAILS AS Creator
+                ON Creator.id = N.createdBy
+            WHERE N.areaId = :area_id
+                AND N.finalizedAt IS NULL
+                AND (
+                    N.hideAfterEnd = 0
+                    OR N.endsAt IS NULL
+                    OR N.endsAt >= GETDATE()
+                )
+            ORDER BY
+                CASE WHEN N.startsAt IS NULL OR N.startsAt <= GETDATE() THEN 0 ELSE 1 END,
+                N.startsAt,
+                N.noticeId
+        """)
+        return connection.execute(query, {'area_id': area_id}).mappings().all()
+
     def list_review_requests(self, connection, area_id):
         query = text(self._REVIEW_SELECT + """
             WHERE R.areaId = :area_id
@@ -305,7 +336,7 @@ class DemandManagementRepository:
             VALUES (
                 NULL, :area_id, :status, :deadline, :start_date,
                 :estimated_hours, :daily_hours, :completed_hours, :difficulty,
-                :observations, :user_id, :user_id, :demand_type, :title,
+                :observations, :responsible_id, :user_id, :demand_type, :title,
                 :initial_description, :assumptions, :actual_problems, :benefits,
                 CASE WHEN :recurrence_type IS NULL THEN NULL ELSE NEWID() END,
                 :recurrence_type, :recurrence_end_date,
@@ -327,6 +358,7 @@ class DemandManagementRepository:
             'completed_hours': demand['completedHours'],
             'difficulty': demand['difficulty'],
             'observations': demand['observations'],
+            'responsible_id': demand['responsibleId'],
             'user_id': user_id,
             'demand_type': demand['demandType'],
             'title': demand['title'],
@@ -340,6 +372,80 @@ class DemandManagementRepository:
         }).first()
         return row[0] if row else None
 
+    def create_wall_notice(self, connection, area_id, notice, user_id):
+        query = text("""
+            INSERT INTO JDT_DEMAND_MANAGEMENT_NOTICES (
+                areaId, title, description, startsAt, endsAt, hideAfterEnd,
+                createdBy, createdAt
+            )
+            OUTPUT INSERTED.noticeId
+            VALUES (
+                :area_id, :title, :description, :starts_at, :ends_at,
+                :hide_after_end,
+                :created_by, GETDATE()
+            )
+        """)
+        row = connection.execute(query, {
+            'area_id': area_id,
+            'title': notice['title'],
+            'description': notice['description'],
+            'starts_at': notice['startsAt'],
+            'ends_at': notice['endsAt'],
+            'hide_after_end': 1 if notice['hideAfterEnd'] else 0,
+            'created_by': user_id
+        }).first()
+        return row[0] if row else None
+
+    def update_wall_notice(
+        self, connection, notice_id, area_id, notice, user_id, row_version
+    ):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT_NOTICES
+            SET
+                title = :title,
+                description = :description,
+                startsAt = :starts_at,
+                endsAt = :ends_at,
+                hideAfterEnd = :hide_after_end
+            WHERE noticeId = :notice_id
+                AND areaId = :area_id
+                AND createdBy = :user_id
+                AND finalizedAt IS NULL
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'notice_id': notice_id,
+            'area_id': area_id,
+            'title': notice['title'],
+            'description': notice['description'],
+            'starts_at': notice['startsAt'],
+            'ends_at': notice['endsAt'],
+            'hide_after_end': 1 if notice['hideAfterEnd'] else 0,
+            'user_id': user_id,
+            'row_version': row_version
+        })
+        return result.rowcount == 1
+
+    def finalize_wall_notice(
+        self, connection, notice_id, area_id, user_id, row_version
+    ):
+        query = text("""
+            UPDATE JDT_DEMAND_MANAGEMENT_NOTICES
+            SET finalizedAt = GETDATE()
+            WHERE noticeId = :notice_id
+                AND areaId = :area_id
+                AND createdBy = :user_id
+                AND finalizedAt IS NULL
+                AND rowVersion = :row_version
+        """)
+        result = connection.execute(query, {
+            'notice_id': notice_id,
+            'area_id': area_id,
+            'user_id': user_id,
+            'row_version': row_version
+        })
+        return result.rowcount == 1
+
     # def list_responsibles(self, connection, area_id):
     #     query = text("""
     #         SELECT id, name
@@ -349,7 +455,7 @@ class DemandManagementRepository:
     #     """)
     #     return connection.execute(query, {'area_id': area_id}).mappings().all()
 
-    def list_responsibles(self, connection, area_id):
+    def list_responsibles(self, connection, area_id, area_role):
         query = text("""
             SELECT DISTINCT
                 U.id,
@@ -358,7 +464,13 @@ class DemandManagementRepository:
             WHERE U.active = 1
                 AND U.generic = 0
                 AND (
-                    U.areaId = :area_id
+                    EXISTS (
+                        SELECT 1
+                        FROM OPENJSON(
+                            CASE WHEN ISJSON(U.role) = 1 THEN U.role ELSE N'[]' END
+                        ) AS UserRole
+                        WHERE UserRole.value = :area_role
+                    )
                     OR EXISTS (
                         SELECT 1
                         FROM JDT_DEMAND_MANAGEMENT AS M
@@ -369,7 +481,8 @@ class DemandManagementRepository:
             ORDER BY U.name
         """)
         return connection.execute(query, {
-            'area_id': area_id
+            'area_id': area_id,
+            'area_role': area_role
         }).mappings().all()
 
     # def responsible_belongs_to_area(self, connection, responsible_id, area_id):
@@ -386,7 +499,9 @@ class DemandManagementRepository:
     #         'area_id': area_id
     #     }).first() is not None
 
-    def responsible_belongs_to_area(self, connection, responsible_id, area_id):
+    def responsible_belongs_to_area(
+        self, connection, responsible_id, area_id, area_role
+    ):
         query = text("""
             SELECT 1
             FROM JDT_USER_DETAILS AS U
@@ -394,7 +509,13 @@ class DemandManagementRepository:
                 AND U.active = 1
                 AND U.generic = 0
                 AND (
-                    U.areaId = :area_id
+                    EXISTS (
+                        SELECT 1
+                        FROM OPENJSON(
+                            CASE WHEN ISJSON(U.role) = 1 THEN U.role ELSE N'[]' END
+                        ) AS UserRole
+                        WHERE UserRole.value = :area_role
+                    )
                     OR EXISTS (
                         SELECT 1
                         FROM JDT_DEMAND_MANAGEMENT AS M
@@ -405,10 +526,13 @@ class DemandManagementRepository:
         """)
         return connection.execute(query, {
             'responsible_id': responsible_id,
-            'area_id': area_id
+            'area_id': area_id,
+            'area_role': area_role
         }).first() is not None
 
-    def get_responsible(self, connection, responsible_id, area_id):
+    def get_responsible(
+        self, connection, responsible_id, area_id, area_role
+    ):
         query = text("""
             SELECT U.id, U.name, U.companyEmail AS email
             FROM JDT_USER_DETAILS AS U
@@ -416,7 +540,13 @@ class DemandManagementRepository:
                 AND U.active = 1
                 AND U.generic = 0
                 AND (
-                    U.areaId = :area_id
+                    EXISTS (
+                        SELECT 1
+                        FROM OPENJSON(
+                            CASE WHEN ISJSON(U.role) = 1 THEN U.role ELSE N'[]' END
+                        ) AS UserRole
+                        WHERE UserRole.value = :area_role
+                    )
                     OR EXISTS (
                         SELECT 1
                         FROM JDT_DEMAND_MANAGEMENT AS M
@@ -427,7 +557,8 @@ class DemandManagementRepository:
         """)
         return connection.execute(query, {
             'responsible_id': responsible_id,
-            'area_id': area_id
+            'area_id': area_id,
+            'area_role': area_role
         }).mappings().first()
 
     def transition_demand(
@@ -799,4 +930,4 @@ class DemandManagementRepository:
         })
         return result.rowcount == 1
 
-# V5
+# V6

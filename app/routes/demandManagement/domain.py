@@ -101,6 +101,21 @@ def _optional_date(value):
         raise ValidationError('A data informada é inválida.') from error
 
 
+def _optional_datetime(value, field_label):
+    value = _optional_text(value, 30)
+    if not value:
+        return None
+    if 'T' not in value:
+        raise ValidationError(f'{field_label.capitalize()} é inválida.')
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as error:
+        raise ValidationError(f'{field_label.capitalize()} é inválida.') from error
+    if parsed.tzinfo is not None:
+        raise ValidationError(f'{field_label.capitalize()} é inválida.')
+    return parsed.replace(second=0, microsecond=0)
+
+
 def _optional_hours(value):
     if value in (None, ''):
         return None
@@ -184,6 +199,10 @@ def validate_personal_demand(payload):
     if not description:
         raise ValidationError('Informe a descrição da demanda.')
 
+    responsible_id = _optional_text(payload.get('responsibleId'), 100)
+    if not responsible_id:
+        raise ValidationError('Selecione o responsável pela atividade.')
+
     recurrence_type = _optional_text(payload.get('recurrenceType'), 20)
     if recurrence_type and recurrence_type not in ACTIVITY_RECURRENCE_OPTIONS:
         raise ValidationError('Frequência da recorrência inválida.')
@@ -208,8 +227,41 @@ def validate_personal_demand(payload):
         'completedHours': validate_management_change('completedHours', payload.get('completedHours')),
         'difficulty': validate_management_change('difficulty', payload.get('difficulty')),
         'observations': validate_management_change('observations', payload.get('observations')),
+        'responsibleId': responsible_id,
         'recurrenceType': recurrence_type,
         'recurrenceMaxOccurrences': recurrence_max_occurrences if recurrence_type else None
+    }
+
+
+def validate_wall_notice(payload):
+    if not isinstance(payload, dict):
+        raise ValidationError('Dados do aviso inválidos.')
+
+    title = _optional_text(payload.get('title'), 250)
+    description = _optional_text(payload.get('description'), 4000)
+    if not title:
+        raise ValidationError('Informe o título do aviso.')
+    if not description:
+        raise ValidationError('Informe a descrição do aviso.')
+
+    starts_at = _optional_datetime(payload.get('startsAt'), 'a data e hora de início')
+    ends_at = _optional_datetime(payload.get('endsAt'), 'a data e hora de fim')
+    hide_after_end = payload.get('hideAfterEnd', False)
+    if not isinstance(hide_after_end, bool):
+        raise ValidationError('A opção de finalização automática é inválida.')
+    if starts_at and ends_at and ends_at <= starts_at:
+        raise ValidationError('O fim do aviso deve ser posterior ao início.')
+    if hide_after_end and not ends_at:
+        raise ValidationError('Informe a data final para finalizar o aviso automaticamente.')
+    if hide_after_end and ends_at <= datetime.now():
+        raise ValidationError('A data final deve estar no futuro para finalizar o aviso automaticamente.')
+
+    return {
+        'title': title,
+        'description': description,
+        'startsAt': starts_at,
+        'endsAt': ends_at,
+        'hideAfterEnd': hide_after_end
     }
 
 
@@ -377,4 +429,4 @@ def validate_status_transition(current_status, payload, deadline_required=True):
         'rowVersion': parse_row_version(payload.get('rowVersion'))
     }
 
-# V4
+# V5

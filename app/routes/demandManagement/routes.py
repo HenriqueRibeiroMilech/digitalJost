@@ -102,6 +102,7 @@ def management_page():
         area=area_name,
         csrf_token=_csrf_token(),
         initial_view=initial_view,
+        current_user_id=current_user.id,
         current_user_name=current_user.name
     )
 
@@ -112,10 +113,47 @@ def management_list():
     service = _build_service()
     if request.method == 'POST':
         detail = service.create_personal_demand(
-            area['id'], request.get_json(silent=True), current_user.id
+            area['id'], request.get_json(silent=True), current_user.id,
+            area['role']
         )
         return jsonify(detail), 201
-    return jsonify(service.list_board(area['id'], current_user.id))
+    return jsonify(service.list_board(
+        area['id'], current_user.id, area['role']
+    ))
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/notices', methods=['POST']
+)
+def management_notice_create():
+    _, area = _current_area()
+    notice = _build_service().create_wall_notice(
+        area['id'], request.get_json(silent=True), current_user.id
+    )
+    return jsonify(notice), 201
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/notices/<int:notice_id>', methods=['PATCH']
+)
+def management_notice_update(notice_id):
+    _, area = _current_area()
+    notice = _build_service().update_wall_notice(
+        notice_id, area['id'], request.get_json(silent=True), current_user.id
+    )
+    return jsonify(notice)
+
+
+@demand_management_bp.route(
+    '/demandas/gerenciador/api/notices/<int:notice_id>/finalize',
+    methods=['PATCH']
+)
+def management_notice_finalize(notice_id):
+    _, area = _current_area()
+    notice = _build_service().finalize_wall_notice(
+        notice_id, area['id'], request.get_json(silent=True), current_user.id
+    )
+    return jsonify(notice)
 
 
 @demand_management_bp.route('/demandas/gerenciador/api/requests', methods=['GET'])
@@ -161,7 +199,8 @@ def review_request_approve(request_id):
         area['id'],
         request.get_json(silent=True),
         reviewer,
-        area_name
+        area_name,
+        area['role']
     )
     return jsonify(result)
 
@@ -202,7 +241,8 @@ def management_detail(management_id):
             area['id'],
             request.get_json(silent=True),
             actor,
-            area_name
+            area_name,
+            area['role']
         ))
     return jsonify(service.get_detail(management_id, area['id'], current_user.id))
 
@@ -313,7 +353,8 @@ def management_task_create(management_id):
         management_id,
         area['id'],
         request.get_json(silent=True),
-        current_user.id
+        current_user.id,
+        area['role']
     )
     return jsonify(detail), 201
 
@@ -333,8 +374,9 @@ def management_task_detail(management_id, task_id):
         )
     else:
         detail = service.update_task(
-            management_id, task_id, area['id'], payload, current_user.id
+            management_id, task_id, area['id'], payload, current_user.id,
+            area['role']
         )
     return jsonify(detail)
 
-# V3
+# V4

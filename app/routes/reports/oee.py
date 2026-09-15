@@ -458,3 +458,5 @@ def oee_signal_excel():
     data.to_excel(excel_filename, index=False, header=True)
 
     return send_file(excel_filename, as_attachment=True)
+
+# V2

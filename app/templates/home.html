@@ -61,7 +61,7 @@
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
             <t href=""><i class="far fa-folder-open"></i>  Operation Meeting</t>
             <a href="/op/logistica">Indicadores de Logística</a>
-            <a href="/op/producao">Indicadores de Produção</a>
+            <a id="subburro13" onclick="openBurroNav('burro13')">Indicadores de Produção</a>
             <a href="/op/ssma">Indicadores de SSMA</a>
             <a href="/op/qualidade">Informativo da Qualidade</a>
             <a href="/op/plano">Planejamento e<br> Acompanhamento</a>
@@ -198,9 +198,17 @@
 
         <div id="burro12" class="sidebar_burro">
             <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
-            <t><i class="fas fa-rocket"></i>  Transformação Digital</t>
+            <t><i class="fas fa-rocket"></i>  Excelência Operacional</t>
             <a href="/cadastros/5s">Cadastro de Auditorias - 5s</a>
         </div>
+
+        <div id="burro13" class="sidebar_burro">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeBurroNav()">&times;</a>
+            <t><i class="fas fa-rocket"></i>  Indicadores de Produção</t>
+            <a href="http://digitaljost.randon.com.br:6989/operation-meeting/">KPIs de Produção -<br>A partir de 14/09/2026 </a>
+            <a href="/op/producao">KPIs de Produção -<br>Histórico até 12/09/26</a>
+        </div>
+
 
         <script>
             {% include 'home.js' %}
@@ -209,4 +217,4 @@
     </body>
 </html>
 
-<!-- V8 -->
+<!-- V11 -->
