@@ -19,6 +19,7 @@ STOPS_FROM_AREAS = {
     , '65-Problema de Qualidade - @1': 'Qualidade'
     , '19-Aguardando Inspecao': 'Qualidade'
     , '42-Retrabalho': 'Qualidade'
+    , '-Falta de Saldo': 'Material'
 }
 
 def default(logger):
