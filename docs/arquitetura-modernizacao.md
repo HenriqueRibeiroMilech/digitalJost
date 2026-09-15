@@ -1,12 +1,12 @@
 # Arquitetura e modernização do Digital JOST
 
-**Data:** 14 de setembro de 2026
+**Data:** 15 de setembro de 2026
 
 **Situação:** proposta para orientar a implementação progressiva
 
 **Público:** desenvolvimento e manutenção do Digital JOST
 
-A arquitetura principal será um **monólito modular organizado em fatias verticais, com complexidade progressiva e uma pequena camada de plataforma**. Flask permanece no backend, enquanto o frontend novo usa Vue 3 e Tailwind CSS 4. Contratos de API explícitos e recursos compartilhados reduzem as tarefas repetitivas. A modernização deve facilitar a criação de funcionalidades e permitir que as existentes sejam migradas por partes, preservando suas regras e os processos industriais atendidos pelo sistema.
+A arquitetura principal será um **monólito modular organizado em fatias verticais, com complexidade progressiva e uma pequena camada de plataforma**. Flask permanece no backend, enquanto o frontend novo usa Vue 3, Tailwind CSS 4 e Volt sobre o PrimeVue em modo unstyled. Contratos de API explícitos e recursos compartilhados reduzem as tarefas repetitivas. A modernização deve facilitar a criação de funcionalidades e permitir que as existentes sejam migradas por partes, preservando suas regras e os processos industriais atendidos pelo sistema.
 
 A primeira entrega funcional será a nova home em Vue. Ela será construída como parte permanente do Digital JOST e ficará disponível inicialmente por uma URL própria, enquanto a home atual permanece oficial. Essa entrega pode anteceder a criação de um banco separado porque não terá gravações, mudanças de schema nem consultas adicionais: o frontend começa com dados simulados e depois consome apenas a identidade e um catálogo de acessos versionado no backend.
 
@@ -94,7 +94,7 @@ O impacto efetivo depende também da configuração do IIS, das permissões do b
 | Ambientes | Desenvolvimento, homologação e produção isolados. | Necessidade confirmada; infraestrutura a definir. |
 | Hospedagem | Planejar inicialmente a convivência no Windows/IIS e no mesmo domínio. | Pressuposto a confirmar. |
 | Estilização | Tailwind CSS 4, design tokens e componentes Vue reutilizáveis. | Decisão consolidada; integração a validar no piloto. |
-| Interface pronta | PrimeVue para controles complexos e componentes específicos do Digital JOST. | Candidato a validar na feature de referência. |
+| Biblioteca de interface | Volt sobre PrimeVue em modo unstyled; componentes adicionados sob demanda ao código do frontend. | Decisão consolidada; manutenção e integração a validar na feature de referência. |
 | Implantação | Mudanças graduais e publicações explícitas. | Direção recomendada. |
 
 Flask-Smorest com Marshmallow foi considerado como alternativa para validação e documentação. A preferência consolidada é APIFlask com Pydantic, pela combinação de funções de rota pequenas e contratos baseados em tipos Python. Não há motivo para adotar os dois mecanismos de API simultaneamente na base nova.
@@ -126,6 +126,10 @@ O termo MVC não identifica a arquitetura nem determina três pastas globais cha
 
 ```text
 DigitalJost/
+├── main.py                         # ponto de entrada do IIS e composição do legado durante a transição
+├── web.config                      # configuração de hospedagem no IIS
+├── requirements.txt                # dependências Python de produção
+├── requirements-dev.txt            # ferramentas locais, quando criado
 ├── app/
 │   ├── __init__.py                 # factory configurável
 │   ├── config.py                   # configuração por ambiente
@@ -227,6 +231,8 @@ create_app(config_name)
 
 O registro atual dos blueprints legados em `main.py` permanece como está durante o primeiro piloto. Movê-lo integralmente para uma função `register_legacy()` produziria uma alteração ampla sem benefício necessário para a home. A migração futura pode trazer esse registro para a composição da factory por etapas, depois de mapear imports e efeitos externos.
 
+`main.py` permanece na raiz de `DigitalJost/`, ao lado de `app/`, `frontend/` e `web.config`, preservando o ponto de entrada esperado pelo IIS. Com a migração progressiva, ele pode se tornar um arquivo fino que apenas obtém a aplicação da factory, mas essa simplificação só deve acontecer depois que o registro dos blueprints legados for transferido e validado por partes. A criação da nova home não move nem renomeia esse arquivo.
+
 A lista dos módulos modernos deve ser explícita e revisável. Acrescentar uma feature significa criar sua pasta e adicioná-la nesse registro, sem espalhar novos imports e chamadas por vários arquivos.
 
 ## 5 Ferramentas do backend
@@ -238,7 +244,7 @@ A lista dos módulos modernos deve ser explícita e revisável. Acrescentar uma 
 | SQLAlchemy 2 | ORM, consultas e transações. | Aproveita a base existente; manter clareza sobre engine, sessão e transação utilizadas. |
 | Pydantic Settings | Carregamento e validação de configurações. | Detecta campos obrigatórios ausentes; não substitui isolamento de rede ou gestão de segredos. |
 | Alembic | Alterações de schema versionadas. | Mudanças revisadas e limitadas aos objetos sob responsabilidade do sistema. |
-| uv | Dependências e ambientes Python. | Lockfile e reprodução do ambiente; adoção gradual a partir das dependências atuais. |
+| `venv` e `pip` | Ambiente virtual e instalação das dependências Python. | Compatíveis com o processo atual; usar arquivos versionados com versões fixadas e nunca instalar no Python global. |
 | Ruff | Formatação e verificações de código. | Convenções comuns; evitar reformatação ampla do legado junto de mudanças funcionais. |
 | Copier | Geração da estrutura de módulos. | Código inicial consistente e editável; o template deve nascer de exemplos validados. |
 
@@ -391,6 +397,7 @@ frontend/src/
 ├── app/
 │   ├── router/
 │   └── layouts/
+├── volt/                           # componentes Volt copiados sob demanda e mantidos pelo projeto
 ├── shared/
 │   ├── api/
 │   │   ├── client.ts
@@ -412,9 +419,11 @@ Tailwind será responsável por layout, espaçamento, responsividade, tipografia
 
 As cores, tipografia, espaçamentos, bordas e demais decisões visuais recorrentes devem ser representadas por tokens do Digital JOST. Classes utilitárias podem permanecer diretamente nos componentes quando forem curtas e locais. Padrões repetidos ou trechos extensos devem virar componentes Vue ou estilos compartilhados, evitando templates difíceis de ler.
 
-PrimeVue é o candidato para controles com comportamento complexo, como tabelas, seletores de data, autocomplete, diálogos e upload. Tailwind cuida da composição das páginas e dos componentes próprios. O tema do PrimeVue deve respeitar os mesmos tokens, sem criar duas identidades visuais. Os componentes específicos do Digital JOST devem acrescentar convenções reais de uso e aparência, sem encapsular toda a biblioteca por obrigação.
+Volt será a base dos controles de interface novos. Ele usa o PrimeVue em modo unstyled e aplica Tailwind aos elementos internos por meio da API Pass Through. Cada componente necessário será copiado sob demanda para `frontend/src/volt/`, tornando-se parte do código mantido pelo projeto. Não importar um catálogo inteiro antecipadamente nem combinar essa configuração inicial com os temas prontos de `@primeuix/themes`.
 
-Os componentes compartilhados devem permanecer pequenos e combináveis. Um componente como `AppUserSelect`, que concentra uma convenção real do sistema, tende a ser útil. Uma tabela universal que tenta absorver filtros, exportação, permissões, formulários e exceções de todos os módulos tende a esconder comportamento e aumentar a complexidade. Nesses casos, usar os componentes do PrimeVue diretamente e extrair apenas os padrões comprovadamente repetidos.
+Tailwind cuida da composição das páginas, dos componentes próprios e da identidade visual. Os tokens do Digital JOST devem alimentar também as variáveis consumidas por `tailwindcss-primeui`, mantendo uma única linguagem visual. Alterações nos componentes Volt devem resolver uma necessidade compartilhada de apresentação ou acessibilidade; regras de negócio e variações específicas de uma feature permanecem em `features/<feature>/`. A origem e a versão usadas para adicionar cada componente devem ser registradas para apoiar manutenção futura.
+
+Os componentes compartilhados devem permanecer pequenos e combináveis. Um componente como `AppUserSelect`, que concentra uma convenção real do sistema, tende a ser útil. Uma tabela universal que tenta absorver filtros, exportação, permissões, formulários e exceções de todos os módulos tende a esconder comportamento e aumentar a complexidade. Nesses casos, compor os componentes Volt ou, quando ainda não houver equivalente, usar o PrimeVue unstyled com Pass Through e extrair apenas os padrões comprovadamente repetidos.
 
 TanStack Vue Query é o candidato para carregamento, cache e atualização de dados da API. Pinia entra para estado compartilhado de interface quando necessário, evitando manter cópias dos mesmos dados em mecanismos diferentes.
 
@@ -585,7 +594,8 @@ As referências abaixo apoiam as escolhas propostas. A disponibilidade de uma ca
 - [Alembic Autogeneration](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) — geração e revisão de migrations.
 - [Pydantic Settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) — configuração tipada.
 - [Flask WTF CSRF](https://flask-wtf.readthedocs.io/en/1.2.x/csrf/) — mecanismo de proteção CSRF.
-- [uv](https://docs.astral.sh/uv/), [Ruff](https://docs.astral.sh/ruff/) e [Copier](https://copier.readthedocs.io/en/stable/) — ferramentas de desenvolvimento.
+- [Python `venv`](https://docs.python.org/3/library/venv.html), [pip](https://pip.pypa.io/en/stable/) e [requirements files](https://pip.pypa.io/en/stable/user_guide/#requirements-files) — ambiente virtual e dependências Python.
+- [Ruff](https://docs.astral.sh/ruff/) e [Copier](https://copier.readthedocs.io/en/stable/) — ferramentas de desenvolvimento.
 - [SQL Server Editions](https://learn.microsoft.com/en-us/sql/sql-server/editions-and-components-of-sql-server-2022?view=sql-server-ver16) — contexto das edições para desenvolvimento e testes.
 - [Vue Quick Start](https://vuejs.org/guide/quick-start.html) — criação oficial do projeto Vue com Vite e opções de ferramentas.
 - [Vue Ways of Using Vue](https://vuejs.org/guide/extras/ways-of-using-vue.html) — formas de adoção do frontend.
@@ -593,8 +603,9 @@ As referências abaixo apoiam as escolhas propostas. A disponibilidade de uma ca
 - [Vite Backend Integration](https://vite.dev/guide/backend-integration) — integração com backend tradicional e assets compilados.
 - [Vue Router History Modes](https://router.vuejs.org/guide/essentials/history-mode.html) — navegação e fallback no servidor.
 - [Tailwind CSS with Vite](https://tailwindcss.com/docs/installation/using-vite) — integração do Tailwind CSS 4 com o build do frontend.
-- [PrimeVue with Vite](https://primevue.org/vite/) — instalação e configuração do PrimeVue e de seus temas.
-- [PrimeVue DataTable](https://primevue.org/datatable/) — referência de componentes para interfaces de dados.
+- [Volt Overview](https://volt.primevue.org/overview) — modelo de propriedade do código e integração entre PrimeVue unstyled e Tailwind.
+- [Volt with Vite](https://volt.primevue.org/vite/) — instalação do Volt, `tailwindcss-primeui` e configuração do PrimeVue em modo unstyled.
+- [Volt DataTable](https://volt.primevue.org/datatable/) — referência de componente complexo mantido no código do frontend.
 - [TanStack Vue Query](https://tanstack.com/query/latest/docs/framework/vue/overview) e [Pinia](https://pinia.vuejs.org/introduction) — dados da API e estado compartilhado.
 - [OpenAPI TypeScript](https://openapi-ts.dev/introduction) — geração de tipos a partir dos contratos.
 - [Vue Testing](https://vuejs.org/guide/scaling-up/testing.html) — estratégia e ferramentas para testes do frontend.
@@ -606,7 +617,7 @@ As referências abaixo apoiam as escolhas propostas. A disponibilidade de uma ca
 
 A nova home será a primeira funcionalidade real da modernização. Ela deve ser construída para permanecer no Digital JOST e, depois de aprovada, poderá se tornar a entrada oficial. Durante a implantação inicial, a home atual continua sendo a entrada padrão e a nova versão fica disponível em uma URL própria para avaliação controlada.
 
-Esta é a primeira fatia da arquitetura nova, construída com intenção de permanência e validada inicialmente como piloto. Ela avalia o fluxo de desenvolvimento, Vue, Tailwind, PrimeVue, os contratos da API e a publicação no IIS. A interface não deve parecer descartável nem depender de dados fictícios em produção. O uso de dados simulados existe apenas para permitir o desenvolvimento do frontend antes do isolamento completo do banco.
+Esta é a primeira fatia da arquitetura nova, construída com intenção de permanência e validada inicialmente como piloto. Ela avalia o fluxo de desenvolvimento, Vue, Tailwind, Volt sobre PrimeVue unstyled, os contratos da API e a publicação no IIS. A interface não deve parecer descartável nem depender de dados fictícios em produção. O uso de dados simulados existe apenas para permitir o desenvolvimento do frontend antes do isolamento completo do banco.
 
 ### 17.1 Resultado esperado
 
@@ -712,22 +723,49 @@ Instalar as dependências aprovadas e gerar um lockfile:
 Set-Location frontend
 npm install
 npm install tailwindcss @tailwindcss/vite
-npm install primevue @primeuix/themes
+npm install primevue tailwindcss-primeui tailwind-merge
 npm install @tanstack/vue-query
+npx volt-vue add Button
+npx volt-vue add InputText
 ```
 
-O Tailwind deve usar o plugin oficial `@tailwindcss/vite` e `@import "tailwindcss"` no CSS principal. O TanStack Vue Query é justificado nesta entrega para controlar carregamento, cache, erro e renovação do endpoint da home. PrimeVue deve ser usado em um componente que realmente ajude a interface, como navegação móvel ou seleção, sem forçar uma tabela ou criar wrappers vazios. Pinia continua fora enquanto o estado puder permanecer na URL, na query ou dentro dos componentes.
+O Tailwind deve usar o plugin oficial `@tailwindcss/vite`. O CSS principal importa `tailwindcss` e `tailwindcss-primeui`:
+
+```css
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+```
+
+O bootstrap do Vue configura o PrimeVue uma única vez com `{ unstyled: true }`. Os componentes Volt ficam em `frontend/src/volt/` e são adicionados com `npx volt-vue add <Componente>` somente quando usados. `Button` e `InputText` formam o ponto de partida da home; diálogo, drawer, tooltip, badge, avatar ou skeleton entram quando o desenho comprovar a necessidade. O projeto não instala `@primeuix/themes`, pois a aparência será controlada por Tailwind, pelas variáveis do `tailwindcss-primeui` e pelos componentes Volt mantidos no repositório.
+
+```ts
+import PrimeVue from 'primevue/config'
+
+app.use(PrimeVue, {
+  unstyled: true,
+})
+```
+
+Confirmar também o alias `@` apontando para `frontend/src`, pois os componentes serão importados como `@/volt/Button.vue` e equivalentes.
+
+O TanStack Vue Query é justificado nesta entrega para controlar carregamento, cache, erro e renovação do endpoint da home. Pinia continua fora enquanto o estado puder permanecer na URL, na query ou dentro dos componentes.
 
 #### Backend
 
-Adotar `uv` somente depois de levantar e preservar as dependências Python atuais. A migração para `pyproject.toml` e lockfile não deve atualizar o legado indiscriminadamente nem remover o arquivo de dependências anterior antes de comprovar equivalência.
+Usar `pip` exclusivamente dentro da `.venv` criada na raiz do repositório. Adicionar `.venv/` ao `.gitignore`; o ambiente virtual não entra no Git. Antes da instalação, preservar `requirements.txt`, levantar a versão de Python aceita pelo IIS e registrar as novas dependências de produção com versões compatíveis e fixadas. Quando as ferramentas de desenvolvimento forem introduzidas, registrá-las em `requirements-dev.txt`, que pode incluir `-r requirements.txt` para reutilizar a base.
 
-Depois da preparação do gerenciador, o conjunto inicial proposto para a API nova é:
+O fluxo pretendido no PowerShell é:
 
 ```powershell
-uv add "apiflask>=3" pydantic pydantic-settings
-uv add --dev ruff pytest
+Set-Location <raiz-do-repositorio>
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 ```
+
+Usar o executável da `.venv` diretamente evita instalar pacotes no Python global mesmo quando o ambiente não estiver ativado no terminal. A ativação com `.\.venv\Scripts\Activate.ps1` continua opcional para os comandos interativos seguintes.
+
+As dependências de produção propostas para a API nova são APIFlask, Pydantic e Pydantic Settings. Ruff e pytest ficam nas dependências de desenvolvimento. Os nomes acima devem ser acrescentados aos respectivos arquivos antes dos comandos de instalação; não usar instalações avulsas sem refletir a mudança nos arquivos versionados.
 
 APIFlask e Pydantic devem entrar primeiro por uma integração pequena e reversível. Antes de trocar a classe usada pela factory, verificar estaticamente o impacto sobre blueprints, Flask-Login, Flask-Principal, error handlers, redirects e páginas Jinja. Caso a integração exija uma mudança global na criação da aplicação, separar essa mudança e demonstrar como o comportamento antigo será preservado.
 
@@ -738,50 +776,54 @@ Não instalar Alembic ou criar migrations apenas para a home, pois essa entrega 
 Criar a casa definitiva do código moderno, implementando somente os elementos usados pela home. Um diretório planejado para o futuro permanece representado na arquitetura deste documento, mas só deve ser criado fisicamente quando contiver documentação ou código real; o Git não preserva diretórios vazios e arquivos fictícios apenas criariam ruído.
 
 ```text
-app/
-├── modules/
-│   ├── __init__.py                 # registro explícito dos módulos modernos
-│   └── home/
-│       ├── __init__.py
-│       ├── routes.py
-│       ├── schemas.py
-│       ├── services.py
-│       └── catalog.py
-└── platform/
-    ├── __init__.py                 # inicializa somente os recursos existentes
-    ├── auth/
-    ├── permissions/
-    └── errors/
-
-frontend/
-├── package.json
-├── vite.config.ts
-├── src/
-│   ├── app/
-│   │   ├── router/
-│   │   └── layouts/
-│   ├── features/
+DigitalJost/
+├── main.py                         # entrada do IIS e registro do legado durante o piloto
+├── web.config
+├── requirements.txt
+├── requirements-dev.txt
+├── app/
+│   ├── modules/
+│   │   ├── __init__.py             # registro explícito dos módulos modernos
 │   │   └── home/
-│   │       ├── pages/
+│   │       ├── __init__.py
+│   │       ├── routes.py
+│   │       ├── schemas.py
+│   │       ├── services.py
+│   │       └── catalog.py
+│   └── platform/
+│       ├── __init__.py             # inicializa somente os recursos existentes
+│       ├── auth/
+│       ├── permissions/
+│       └── errors/
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── router/
+│   │   │   └── layouts/
+│   │   ├── volt/                   # componentes adicionados pelo CLI do Volt
+│   │   ├── features/
+│   │   │   └── home/
+│   │   │       ├── pages/
+│   │   │       ├── components/
+│   │   │       ├── __tests__/
+│   │   │       ├── api.ts
+│   │   │       └── types.ts
+│   │   └── shared/
+│   │       ├── api/
+│   │       │   ├── client.ts
+│   │       │   └── errors.ts
 │   │       ├── components/
-│   │       ├── __tests__/
-│   │       ├── api.ts
-│   │       └── types.ts
-│   └── shared/
-│       ├── api/
-│       │   ├── client.ts
-│       │   └── errors.ts
-│       ├── components/
-│       └── styles/
-│           ├── main.css
-│           └── tokens.css
-└── e2e/
-    └── home.spec.ts
-
-tests/
-└── backend/
-    └── modules/
-        └── home/                   # somente testes reais da home
+│   │       └── styles/
+│   │           ├── main.css
+│   │           └── tokens.css
+│   └── e2e/
+│       └── home.spec.ts
+└── tests/
+    └── backend/
+        └── modules/
+            └── home/               # somente testes reais da home
 ```
 
 `catalog.py` descreve OP Meeting, os oito setores e suas funcionalidades ativas usando identificadores estáveis. `services.py` combina o catálogo com a identidade e as permissões. Não criar `repository.py` ou `models.py`, pois a home não possui persistência nem precisa consultar a lista de setores. Se for necessário acessar outro mecanismo legado, usar um adaptador explícito em vez de importar handlers antigos.
@@ -930,7 +972,7 @@ Registrar também:
 - Quantidade e finalidade dos arquivos criados.
 - Código repetido que merece virar recurso compartilhado.
 - Abstrações que não reduziram trabalho e devem ser removidas.
-- Dificuldades de build, autenticação, API, Tailwind, PrimeVue e IIS.
+- Dificuldades de build, autenticação, API, Tailwind, Volt, PrimeVue unstyled e IIS.
 - Comportamentos que ficaram acoplados ao legado.
 - Resultado das verificações e riscos ainda pendentes.
 - Classificação `LEGACY`, `HYBRID` ou `MODERN` da nova home e dos módulos afetados.
