@@ -15,6 +15,7 @@ from app.utils.permissions import get_permission
 from app.utils.security_utils import create_external_user
 
 p_admin = get_permission('SYSADMIN')
+_TRANSFORMATION_DIGITAL_ROLE = 'Transformação Digital'
 
 jdt_userManager_bp = Blueprint('jdt_userManager', __name__)
 
@@ -548,23 +549,41 @@ def userManager_eventsChange_approvers_get():
 
     engine = get_engine('jdt')
     with engine.connect() as cnnx:
-        sql_data = pd.read_sql(
+        area = pd.read_sql(
             text("""
-                SELECT 
-                    T1.id,
-                    T1.name,
-                    T1.position,
-                    T2.areaId, 
-                    T2.name AS areaName 
-                FROM 
-                    JDT_USER_DETAILS AS T1 
-                    JOIN JDT_GENERAL_AREA AS T2 ON T1.areaId = T2.areaId
-                WHERE 
-                    T1.areaId = :area_id AND T1.active = 1
+                SELECT name
+                FROM JDT_GENERAL_AREA
+                WHERE areaId = :area_id
             """),
             cnnx,
             params={"area_id": areaId}
         )
+        areaName = area.iloc[0]['name']
+
+        if areaName == _TRANSFORMATION_DIGITAL_ROLE:
+            sql_data = pd.read_sql(
+                text("""
+                    SELECT id, name, position, role
+                    FROM JDT_USER_DETAILS
+                    WHERE active = 1
+                """),
+                cnnx
+            )
+            sql_data = sql_data[
+                sql_data['role'].apply(
+                    lambda roles: _TRANSFORMATION_DIGITAL_ROLE in _parse_role(roles)
+                )
+            ]
+        else:
+            sql_data = pd.read_sql(
+                text("""
+                    SELECT id, name, position
+                    FROM JDT_USER_DETAILS
+                    WHERE areaId = :area_id AND active = 1
+                """),
+                cnnx,
+                params={"area_id": areaId}
+            )
 
         approvers = pd.read_sql(
             text("""
@@ -577,7 +596,6 @@ def userManager_eventsChange_approvers_get():
             params={"area_id": areaId}
         ).to_json(orient='records')
 
-    areaName = sql_data['areaName'][0] if not sql_data.empty else ''
     table = sql_data[['id', 'name', 'position']].to_json(orient='records')
     users = sql_data[['id']].to_dict(orient='records')
 
