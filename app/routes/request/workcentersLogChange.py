@@ -352,7 +352,7 @@ def stopChanges_main():
         current_user_filters = _USER_FILTERS[current_user.id]
 
         events = getPlex('events')
-        events = events[(events['Code'] != '64') & (events['Active'] == 1) & (events['Workcenter_Event_Group'] != 'Programada')]
+        events = events[(events['Code'] != '64') & (events['Active'] == 1)]
         events = events.sort_values(by='Code', key=lambda col: col.fillna('0').astype(int)).to_dict(orient='records')
 
         return render_template('request.stopChanges/stopChanges_request.html'
