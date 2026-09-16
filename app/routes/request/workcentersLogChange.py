@@ -65,6 +65,48 @@ _PROBLEM_CATEGORY = pd.DataFrame([
 
 _USER_FILTERS = {}
 
+_TRANSFORMATION_DIGITAL_AREA_NAME = 'Transformação Digital'
+# Sistema Indisponível também é responsabilidade da Transformação Digital.
+_TRANSFORMATION_DIGITAL_MOTIVE_CODES = {44}
+
+
+def _current_user_is_admin():
+    admin_value = str(getattr(current_user, 'admin', '')).strip().lower()
+    return admin_value in {'1', 'true', 'yes'} or get_permission('SYSADMIN').can()
+
+
+def _get_problem_area_id(code, events, transformation_digital_area_id):
+    code = int(code)
+    event = events[events['Code'].astype(str) == str(code)]
+
+    is_transformation_digital = (
+        code in _TRANSFORMATION_DIGITAL_MOTIVE_CODES
+        or (
+            not event.empty
+            and str(event.iloc[0]['Workcenter_Event_Group']).strip() == 'Programada'
+        )
+    )
+
+    if is_transformation_digital:
+        return transformation_digital_area_id
+
+    problem_area = _PROBLEM_CATEGORY[_PROBLEM_CATEGORY['Code'] == code]
+    if problem_area.empty:
+        return None
+
+    return int(problem_area.iloc[0]['areaId'])
+
+
+def _get_area_approver(approvers, area_id, shift):
+    area_approvers = approvers[approvers['areaId'] == area_id]
+
+    if len(area_approvers) > 1:
+        area_approvers = area_approvers[
+            area_approvers['shift'].astype(str) == str(shift)
+        ]
+
+    return area_approvers
+
 request_workcentersLogChange_bp = Blueprint('request_workcentersLogChange', __name__)
 
 @request_workcentersLogChange_bp.before_request
@@ -239,16 +281,49 @@ def stopChanges_main():
                             LEFT JOIN JDT_USER_DETAILS AS T2 ON T2.id = T1.userId"""   
                 approvers_info = pd.read_sql(query, cnnx)
 
-                problemAreaOld = _PROBLEM_CATEGORY[_PROBLEM_CATEGORY['Code'] == int(check_request['Code'])]['areaId'].iloc[0]
-                problemAreaNew = _PROBLEM_CATEGORY[_PROBLEM_CATEGORY['Code'] == int(payload["newMotive"])]['areaId'].iloc[0]
+                transformation_digital_area = pd.read_sql(
+                    text("""
+                        SELECT TOP 1 areaId
+                        FROM JDT_GENERAL_AREA
+                        WHERE name = :area_name
+                    """),
+                    cnnx,
+                    params={"area_name": _TRANSFORMATION_DIGITAL_AREA_NAME}
+                )
+                transformation_digital_area_id = (
+                    int(transformation_digital_area.iloc[0]['areaId'])
+                    if not transformation_digital_area.empty
+                    else None
+                )
 
-                approver1 = approvers_info[(approvers_info['areaId'] == problemAreaOld)]
-                if len(approver1) > 1:
-                    approver1 = approver1[(approvers_info['shift'] == check_request['Shift'])]
+                events = getPlex('events')
+                problemAreaOld = _get_problem_area_id(
+                    check_request['Code'],
+                    events,
+                    transformation_digital_area_id
+                )
+                problemAreaNew = _get_problem_area_id(
+                    payload['newMotive'],
+                    events,
+                    transformation_digital_area_id
+                )
 
-                approver2 = approvers_info[(approvers_info['areaId'] == problemAreaNew)]
-                if len(approver2) > 1:
-                    approver2 = approver2[(approvers_info['shift'] == check_request['Shift'])]
+                if problemAreaOld is None or problemAreaNew is None:
+                    return 'AREA RESPONSAVEL PELO MOTIVO NAO CONFIGURADA.', 409
+
+                approver1 = _get_area_approver(
+                    approvers_info,
+                    problemAreaOld,
+                    check_request['Shift']
+                )
+                approver2 = _get_area_approver(
+                    approvers_info,
+                    problemAreaNew,
+                    check_request['Shift']
+                )
+
+                if approver1.empty or approver2.empty:
+                    return 'APROVADOR DO MOTIVO NAO CONFIGURADO.', 409
 
 
                 query = f"""SELECT COALESCE(MAX(requestId) + 1, 1) AS newId FROM JDT_REQUEST_STOPCHANGES"""
@@ -510,8 +585,9 @@ def stopChanges_manage():
 
     if request.method == 'GET':
 
+        is_admin = _current_user_is_admin()
         aux = 'T1.finalDate IS NULL'
-        if not current_user.admin:       
+        if not is_admin:
             aux = f"""(T1.approver1 = '{current_user.id}' AND T1.approverStatus1 = 0) OR (T1.approver2 = '{current_user.id}' AND T1.approverStatus2 = 0)"""
         
         query = f"""
@@ -546,8 +622,9 @@ def stopChanges_manage():
 
         table = engine_run_query(query, 'jdt') 
 
-        table = pd.merge(left=table, right=getPlex('events')[['Code', 'Description']], left_on="motive1", right_on="Code").rename(columns={'Description' : 'motiveDesc1'})
-        table = pd.merge(left=table, right=getPlex('events')[['Code', 'Description']], left_on="motive2", right_on="Code").rename(columns={'Description' : 'motiveDesc2'})
+        events = getPlex('events')
+        table = pd.merge(left=table, right=events[['Code', 'Description']], left_on="motive1", right_on="Code").rename(columns={'Description' : 'motiveDesc1'})
+        table = pd.merge(left=table, right=events[['Code', 'Description']], left_on="motive2", right_on="Code").rename(columns={'Description' : 'motiveDesc2'})
         
         workcenters = getPlex('workcenters')
         workcenters['Workcenter_Key'] = workcenters['Workcenter_Key'].astype(str)
@@ -560,7 +637,31 @@ def stopChanges_manage():
             table.loc[table['Plex'] == 1, 'Workcenter_Name'].map(map_dict)
         )
 
-        return render_template('request.stopChanges/stopChanges_pending.html', table=table.to_json(orient='records'))
+        transformation_digital_table = table
+        if is_admin:
+            transformation_digital_codes = set(
+                pd.to_numeric(
+                    events.loc[
+                        events['Workcenter_Event_Group'].astype(str).str.strip() == 'Programada',
+                        'Code'
+                    ],
+                    errors='coerce'
+                ).dropna().astype(int)
+            ) | _TRANSFORMATION_DIGITAL_MOTIVE_CODES
+
+            motive1 = pd.to_numeric(table['motive1'], errors='coerce')
+            motive2 = pd.to_numeric(table['motive2'], errors='coerce')
+            transformation_digital_table = table[
+                motive1.isin(transformation_digital_codes)
+                | motive2.isin(transformation_digital_codes)
+            ]
+
+        return render_template(
+            'request.stopChanges/stopChanges_pending.html',
+            table=transformation_digital_table.to_json(orient='records'),
+            adminTable=table.to_json(orient='records'),
+            isAdmin=is_admin
+        )
     
     else:
 
@@ -578,7 +679,7 @@ def stopChanges_manage():
         if len(check_request) == 0:
             abort(403)
 
-        elif str(current_user.id) not in [str(check_request['approver1'][0]), str(check_request['approver2'][0])] and not current_user.admin:
+        elif str(current_user.id) not in [str(check_request['approver1'][0]), str(check_request['approver2'][0])] and not _current_user_is_admin():
             abort(403)
         
         elif check_request['finalDate'][0] == 'None':
@@ -599,7 +700,7 @@ def stopChanges_manage():
 
             if received_data['type'] == 'approve':
             
-                if current_user.admin:
+                if _current_user_is_admin():
                     query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
                                     approver1 = '{userId}', 
                                     approver2 = '{userId}', 
@@ -716,7 +817,7 @@ def stopChanges_manage():
                                     requestId = {received_data['requestId']}"""
                     cnnx.execute(text(query))
 
-                elif current_user.admin:
+                elif _current_user_is_admin():
                     query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
                                     approver1 = '{userId}', 
                                     approver2 = '{userId}', 

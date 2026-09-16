@@ -258,20 +258,23 @@
             inputField.type = 'text';
             inputField.name = 'userId';
 
-            if (['Engenharia de Processo', 'Manutenção', 'Engenharia da Qualidade'].includes(areaName)) {
+            if (['Transformação Digital', 'Engenharia de Processo', 'Manutenção', 'Engenharia da Qualidade'].includes(areaName)) {
                 const label = document.createElement('label');
                 label.textContent = 'Matrícula Geral:';
                 inputContainer.appendChild(label);
-                inputField.value = approvers[0].userId;
+                const generalApprover = approvers.find(approver => String(approver.shift) === '0') || approvers[0];
+                inputField.value = generalApprover ? generalApprover.userId : '';
                 inputField.id = 'shift_0'
                 inputContainer.appendChild(inputField);
             } else if (['Logística', 'Produção'].includes(areaName)) {
                 ['Turno 1', 'Turno 2', 'Turno 3'].forEach(turno => {
+                    const shift = turno.split(' ')[1];
                     const turnoLabel = document.createElement('label');
                     turnoLabel.textContent = `Matrícula ${turno}:`;
                     const turnoInput = inputField.cloneNode();
-                    turnoInput.value = approvers[parseInt(turno.split(' ')[1]) - 1].userId;
-                    turnoInput.id = `shift_${turno.split(' ')[1]}`
+                    const shiftApprover = approvers.find(approver => String(approver.shift) === shift);
+                    turnoInput.value = shiftApprover ? shiftApprover.userId : '';
+                    turnoInput.id = `shift_${shift}`
                     inputContainer.appendChild(turnoLabel);
                     inputContainer.appendChild(turnoInput);
                 });

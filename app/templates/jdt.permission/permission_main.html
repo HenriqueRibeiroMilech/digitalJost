@@ -265,6 +265,11 @@
             <span onclick="closeModal('modalParadas')" class="close">&times;</span>
             <p class="title">Selecione a sua área:</p>
             <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: center; margin-top: 2vh; height:40vh; overflow:auto;">
+                {% for area in areas %}
+                    {% if area.name == 'Transformação Digital' %}
+                        <button class="sol_btn" onclick="location.href='/usuarios/paradas?area={{area.areaId}}'">Transformação Digital</button>
+                    {% endif %}
+                {% endfor %}
                 <button class="sol_btn" onclick="location.href='/usuarios/paradas?area=2'">Engenharia de Processos</button>
                 <button class="sol_btn" onclick="location.href='/usuarios/paradas?area=13'">Logistica</button>
                 <button class="sol_btn" onclick="location.href='/usuarios/paradas?area=3'">Manutenção</button>

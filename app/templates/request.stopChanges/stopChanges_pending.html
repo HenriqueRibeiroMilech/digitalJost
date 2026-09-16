@@ -85,6 +85,24 @@
             margin-right: 1vw;
         }
 
+        .pending-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pending-tabs button {
+            flex: 1;
+            background-color: #d9e2f3;
+            color: #153A8A;
+            font-weight: bold;
+        }
+
+        .pending-tabs button.active {
+            background-color: #153A8A;
+            color: white;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -238,6 +256,12 @@
 
     <div class="container">
         <h1>Minhas Pendências - Alteração de Paradas</h1>
+        {% if isAdmin %}
+        <div class="pending-tabs">
+            <button type="button" class="active" data-scope="transformationDigital" onclick="changePendingScope('transformationDigital')">Transformação Digital</button>
+            <button type="button" data-scope="admin" onclick="changePendingScope('admin')">Admin</button>
+        </div>
+        {% endif %}
         <div class="filter-container">
             <input type="text" id="filterRequestId" placeholder="Filtrar por ID da Solicitação" onkeyup="filterTable()">
             <input type="text" id="filterCenter" placeholder="Filtrar por Centro de Trabalho" onkeyup="filterTable()">
@@ -292,7 +316,19 @@
     </div>
 
     <script>
-        const tableData = JSON.parse({{ table | tojson }});
+        const transformationDigitalTableData = JSON.parse({{ table | tojson }});
+        const adminTableData = JSON.parse({{ adminTable | tojson }});
+        let tableData = transformationDigitalTableData;
+
+        function changePendingScope(scope) {
+            tableData = scope === 'admin' ? adminTableData : transformationDigitalTableData;
+
+            document.querySelectorAll('.pending-tabs button').forEach(button => {
+                button.classList.toggle('active', button.dataset.scope === scope);
+            });
+
+            filterTable();
+        }
 
         function openModal(modalType, id, requestText) {
 

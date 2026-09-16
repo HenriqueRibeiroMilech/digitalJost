@@ -22,6 +22,11 @@ jdt_userManager_bp = Blueprint('jdt_userManager', __name__)
 # =========================================================
 # HELPERS
 # =========================================================
+def _current_user_is_admin():
+    admin_value = str(getattr(current_user, 'admin', '')).strip().lower()
+    return admin_value in {'1', 'true', 'yes'} or p_admin.can()
+
+
 def _parse_role(value):
     """
     Faz parse seguro do campo role.
@@ -194,7 +199,7 @@ def _check_area_permission(areaId):
 
     current_roles = _parse_role(getattr(current_user, "role", "[]"))
 
-    not_allowed = managerId != current_user.id and current_user.id not in leaderIds and not current_user.admin
+    not_allowed = managerId != current_user.id and current_user.id not in leaderIds and not _current_user_is_admin()
 
     if (current_user.areaId != areaId or 'Responsável' not in current_roles) and not_allowed:
         abort(403)
@@ -342,11 +347,11 @@ def userManager_get():
     userRoles = allRoles[allRoles['name'].isin(userRoles)].to_json(orient='records')
 
     notShow = []
-    if not current_user.admin:
+    if not _current_user_is_admin():
         notShow.append("b1")
 
     current_roles = _parse_role(getattr(current_user, "role", "[]"))
-    if 'Responsável' not in current_roles and current_user.id not in COORD and current_user.id not in LEADER and not current_user.admin:
+    if 'Responsável' not in current_roles and current_user.id not in COORD and current_user.id not in LEADER and not _current_user_is_admin():
         notShow.append("b2")
         notShow.append("b4")
 
@@ -606,6 +611,16 @@ def userManager_eventsChange_approvers_post():
             )
 
             if compare_df.empty:
+                cnnx.execute(text("""
+                    INSERT INTO JDT_USER_STOPCHANGES (userId, areaId, shift)
+                    VALUES (:user_id, :area_id, :shift)
+                """), {
+                    "user_id": user,
+                    "area_id": areaId,
+                    "shift": shift
+                })
+
+                _update_logs(user, None, user, 'stopChanges_' + str(shift))
                 return
 
             data_to_compare = compare_df['userId'][0]
