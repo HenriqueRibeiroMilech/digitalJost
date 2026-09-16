@@ -77,11 +77,11 @@ def _current_user_is_admin():
     return admin_value in {'1', 'true', 'yes'} or get_permission('SYSADMIN').can()
 
 
-def _get_problem_area_id(code, events, transformation_digital_area_id):
+def _is_transformation_digital_motive(code, events):
     code = int(code)
     event = events[events['Code'].astype(str) == str(code)]
 
-    is_transformation_digital = (
+    return (
         code in _TRANSFORMATION_DIGITAL_MOTIVE_CODES
         or (
             not event.empty
@@ -89,7 +89,11 @@ def _get_problem_area_id(code, events, transformation_digital_area_id):
         )
     )
 
-    if is_transformation_digital:
+
+def _get_problem_area_id(code, events, transformation_digital_area_id):
+    code = int(code)
+
+    if _is_transformation_digital_motive(code, events):
         return transformation_digital_area_id
 
     problem_area = _PROBLEM_CATEGORY[_PROBLEM_CATEGORY['Code'] == code]
@@ -654,7 +658,10 @@ def stopChanges_manage():
         is_admin = _current_user_is_admin()
         aux = 'T1.finalDate IS NULL'
         if not is_admin:
-            aux = f"""(T1.approver1 = '{current_user.id}' AND T1.approverStatus1 = 0) OR (T1.approver2 = '{current_user.id}' AND T1.approverStatus2 = 0)"""
+            aux = f"""T1.finalDate IS NULL AND (
+                        (T1.approver1 = '{current_user.id}' AND T1.approverStatus1 = 0)
+                        OR (T1.approver2 = '{current_user.id}' AND T1.approverStatus2 = 0)
+                    )"""
         
         query = f"""
                     
@@ -717,9 +724,17 @@ def stopChanges_manage():
 
             motive1 = pd.to_numeric(table['motive1'], errors='coerce')
             motive2 = pd.to_numeric(table['motive2'], errors='coerce')
+            status1 = pd.to_numeric(table['approverStatus1'], errors='coerce')
+            status2 = pd.to_numeric(table['approverStatus2'], errors='coerce')
             transformation_digital_table = table[
-                motive1.isin(transformation_digital_codes)
-                | motive2.isin(transformation_digital_codes)
+                (
+                    motive1.isin(transformation_digital_codes)
+                    & status1.eq(0)
+                )
+                | (
+                    motive2.isin(transformation_digital_codes)
+                    & status2.eq(0)
+                )
             ]
 
         return render_template(
@@ -736,26 +751,56 @@ def stopChanges_manage():
         query = f"""SELECT  
                         approver1, approverStatus1,
                         approver2, approverStatus2,
+                        motive1, motive2,
                         requestText, deniedText, finalDate, requesterId
                     
                     FROM JDT_REQUEST_STOPCHANGES WHERE requestId = {received_data['requestId']} ORDER BY openDate DESC"""
         check_request = engine_run_query(query, 'jdt')
+        is_admin = _current_user_is_admin()
+        approval_scope = received_data.get('scope')
 
         # SEÇÃO PARA VERIFICAR PERMISSÃO
         if len(check_request) == 0:
             abort(403)
 
-        elif str(current_user.id) not in [str(check_request['approver1'][0]), str(check_request['approver2'][0])] and not _current_user_is_admin():
+        elif str(current_user.id) not in [str(check_request['approver1'][0]), str(check_request['approver2'][0])] and not is_admin:
             abort(403)
         
         elif check_request['finalDate'][0] == 'None':
             return render_template('request.stopChanges/stopChanges_alert_end.html'), 403
         
-        elif str(check_request['approver1'][0]) == str(current_user.id) and check_request['approverStatus1'][0] != 0:
+        elif not is_admin and str(check_request['approver1'][0]) == str(current_user.id) and check_request['approverStatus1'][0] != 0:
             abort(403)
 
-        elif str(check_request['approver2'][0]) == str(current_user.id) and check_request['approverStatus2'][0] != 0:
+        elif not is_admin and str(check_request['approver2'][0]) == str(current_user.id) and check_request['approverStatus2'][0] != 0:
             abort(403)
+
+        elif is_admin and approval_scope not in {'transformationDigital', 'admin'}:
+            abort(400)
+
+        transformation_digital_sides = {1: False, 2: False}
+        if is_admin and approval_scope == 'transformationDigital':
+            events = getPlex('events')
+            transformation_digital_sides = {
+                1: _is_transformation_digital_motive(
+                    check_request['motive1'][0],
+                    events
+                ),
+                2: _is_transformation_digital_motive(
+                    check_request['motive2'][0],
+                    events
+                )
+            }
+
+            has_pending_transformation_digital_side = (
+                transformation_digital_sides[1]
+                and check_request['approverStatus1'][0] == 0
+            ) or (
+                transformation_digital_sides[2]
+                and check_request['approverStatus2'][0] == 0
+            )
+            if not has_pending_transformation_digital_side:
+                abort(403)
 
 
         # SEÇÃO PARA ATUALIZAR A SOLICITAÇÃO
@@ -766,7 +811,7 @@ def stopChanges_manage():
 
             if received_data['type'] == 'approve':
             
-                if _current_user_is_admin():
+                if is_admin and approval_scope == 'admin':
                     query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
                                     approver1 = '{userId}', 
                                     approver2 = '{userId}', 
@@ -777,6 +822,37 @@ def stopChanges_manage():
                                 WHERE 
                                     requestId = {received_data['requestId']}"""
                     cnnx.execute(text(query))
+
+                elif is_admin:
+                    if (
+                        transformation_digital_sides[1]
+                        and check_request['approverStatus1'][0] == 0
+                    ):
+                        cnnx.execute(text("""
+                            UPDATE JDT_REQUEST_STOPCHANGES
+                            SET approver1 = :user_id,
+                                approverStatus1 = 1,
+                                approverDate1 = GETDATE()
+                            WHERE requestId = :request_id
+                        """), {
+                            "user_id": userId,
+                            "request_id": received_data['requestId']
+                        })
+
+                    if (
+                        transformation_digital_sides[2]
+                        and check_request['approverStatus2'][0] == 0
+                    ):
+                        cnnx.execute(text("""
+                            UPDATE JDT_REQUEST_STOPCHANGES
+                            SET approver2 = :user_id,
+                                approverStatus2 = 1,
+                                approverDate2 = GETDATE()
+                            WHERE requestId = :request_id
+                        """), {
+                            "user_id": userId,
+                            "request_id": received_data['requestId']
+                        })
 
                 else:
 
@@ -863,39 +939,86 @@ def stopChanges_manage():
 
             else:
 
-                if userId == str(check_request['approver1'][0]):
-                    query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
-                                    approverStatus1 = 2, 
-                                    deniedText = '{received_data['deniedText']}',
-                                    approverDate1 = GETDATE(),
-                                    finalDate = GETDATE()  
-                                WHERE 
-                                    requestId = {received_data['requestId']}"""
-                    cnnx.execute(text(query))
+                if is_admin and approval_scope == 'admin':
+                    cnnx.execute(text("""
+                        UPDATE JDT_REQUEST_STOPCHANGES
+                        SET approver1 = :user_id,
+                            approver2 = :user_id,
+                            approverStatus1 = 2,
+                            approverStatus2 = 2,
+                            deniedText = :denied_text,
+                            approverDate1 = GETDATE(),
+                            approverDate2 = GETDATE(),
+                            finalDate = GETDATE()
+                        WHERE requestId = :request_id
+                    """), {
+                        "user_id": userId,
+                        "denied_text": received_data['deniedText'],
+                        "request_id": received_data['requestId']
+                    })
+
+                elif is_admin:
+                    if (
+                        transformation_digital_sides[1]
+                        and check_request['approverStatus1'][0] == 0
+                    ):
+                        cnnx.execute(text("""
+                            UPDATE JDT_REQUEST_STOPCHANGES
+                            SET approver1 = :user_id,
+                                approverStatus1 = 2,
+                                deniedText = :denied_text,
+                                approverDate1 = GETDATE(),
+                                finalDate = GETDATE()
+                            WHERE requestId = :request_id
+                        """), {
+                            "user_id": userId,
+                            "denied_text": received_data['deniedText'],
+                            "request_id": received_data['requestId']
+                        })
+
+                    if (
+                        transformation_digital_sides[2]
+                        and check_request['approverStatus2'][0] == 0
+                    ):
+                        cnnx.execute(text("""
+                            UPDATE JDT_REQUEST_STOPCHANGES
+                            SET approver2 = :user_id,
+                                approverStatus2 = 2,
+                                deniedText = :denied_text,
+                                approverDate2 = GETDATE(),
+                                finalDate = GETDATE()
+                            WHERE requestId = :request_id
+                        """), {
+                            "user_id": userId,
+                            "denied_text": received_data['deniedText'],
+                            "request_id": received_data['requestId']
+                        })
+
+                elif userId == str(check_request['approver1'][0]):
+                    cnnx.execute(text("""
+                        UPDATE JDT_REQUEST_STOPCHANGES
+                        SET approverStatus1 = 2,
+                            deniedText = :denied_text,
+                            approverDate1 = GETDATE(),
+                            finalDate = GETDATE()
+                        WHERE requestId = :request_id
+                    """), {
+                        "denied_text": received_data['deniedText'],
+                        "request_id": received_data['requestId']
+                    })
 
                 elif userId == str(check_request['approver2'][0]):
-                    query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
-                                    approverStatus2 = 2, 
-                                    deniedText = '{received_data['deniedText']}',
-                                    approverDate2 = GETDATE(),
-                                    finalDate = GETDATE()  
-                                WHERE 
-                                    requestId = {received_data['requestId']}"""
-                    cnnx.execute(text(query))
-
-                elif _current_user_is_admin():
-                    query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
-                                    approver1 = '{userId}', 
-                                    approver2 = '{userId}', 
-                                    approverStatus1 = 2, 
-                                    approverStatus2 = 2, 
-                                    deniedText = '{received_data['deniedText']}', 
-                                    approverDate1 = GETDATE(),   
-                                    approverDate2 = GETDATE(),
-                                    finalDate = GETDATE()
-                                WHERE 
-                                    requestId = {received_data['requestId']}"""
-                    cnnx.execute(text(query))
+                    cnnx.execute(text("""
+                        UPDATE JDT_REQUEST_STOPCHANGES
+                        SET approverStatus2 = 2,
+                            deniedText = :denied_text,
+                            approverDate2 = GETDATE(),
+                            finalDate = GETDATE()
+                        WHERE requestId = :request_id
+                    """), {
+                        "denied_text": received_data['deniedText'],
+                        "request_id": received_data['requestId']
+                    })
 
 
                 query = f"""SELECT companyEmail FROM JDT_USER_DETAILS WHERE id = '{check_request['requesterId'][0]}'"""

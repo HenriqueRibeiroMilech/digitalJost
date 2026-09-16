@@ -319,8 +319,10 @@
         const transformationDigitalTableData = JSON.parse({{ table | tojson }});
         const adminTableData = JSON.parse({{ adminTable | tojson }});
         let tableData = transformationDigitalTableData;
+        let pendingScope = 'transformationDigital';
 
         function changePendingScope(scope) {
+            pendingScope = scope;
             tableData = scope === 'admin' ? adminTableData : transformationDigitalTableData;
 
             document.querySelectorAll('.pending-tabs button').forEach(button => {
@@ -365,7 +367,12 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({requestId: requestId, type: type, deniedText: document.getElementById('deniedText').value})
+                body: JSON.stringify({
+                    requestId: requestId,
+                    type: type,
+                    deniedText: document.getElementById('deniedText').value,
+                    scope: pendingScope
+                })
             })
             .then(response => {
                 window.location.reload()
