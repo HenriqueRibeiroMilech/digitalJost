@@ -7,6 +7,9 @@ from app.utils.dynamic_constants import getPlex
 from app.utils.db_utils import engine_run_query, get_engine
 
 
+_APPROVED_STOP_MATCH_TOLERANCE = pd.Timedelta(minutes=1)
+
+
 def _add_parameterized_list_filter(conditions, params, expression, values, prefix):
     if not values:
         return
@@ -28,6 +31,145 @@ def _run_query_with_deadlock_retry(query, engine_name, params):
             raise
 
         return engine_run_query(query, engine_name, params)
+
+
+def _normalize_identifier(value):
+    if pd.isna(value):
+        return None
+
+    value = str(value).strip()
+    if value.endswith('.0') and value[:-2].isdigit():
+        return value[:-2]
+
+    return value
+
+
+def _normalize_stop_description(value):
+    if pd.isna(value):
+        return ''
+
+    return ' '.join(str(value).strip().casefold().split())
+
+
+def _normalize_stop_status(value):
+    if value in ('Manutenção Parada', 'Manutenção Produtiva'):
+        return 'Manutenção'
+
+    return value
+
+
+def _apply_approved_stop_changes(event, workcenters, received_data):
+    """Sobrepõe no relatório as revisões Plex concluídas pelo Digital JOST."""
+    if event.empty:
+        return event.drop(columns=['Source_Log_Date'], errors='ignore')
+
+    query = """
+        SELECT
+            T1.requestId
+            , T1.motive1
+            , T1.motive2
+            , T1.finalDate
+            , T2.workcenter AS Workcenter_Key
+            , T2.startDate
+            , T2.endDate
+        FROM JDT_REQUEST_STOPCHANGES T1
+        JOIN JDT_REQUEST_STOPCHANGES_PLEX T2
+            ON T2.eventId = T1.eventId
+        WHERE T1.plex = 1
+            AND T1.approverStatus1 = 1
+            AND T1.approverStatus2 = 1
+            AND T1.finalDate IS NOT NULL
+            AND T1.deniedText IS NULL
+            AND T2.startDate < :end_date
+            AND T2.endDate > :start_date
+        ORDER BY T1.finalDate, T1.requestId
+    """
+    params = {
+        'start_date': received_data['start_date'],
+        'end_date': received_data['end_date']
+    }
+    approved_changes = _run_query_with_deadlock_retry(query, 'jdt', params)
+
+    if approved_changes.empty:
+        return event.drop(columns=['Source_Log_Date'], errors='ignore')
+
+    workcenter_codes = {
+        _normalize_identifier(row.Workcenter_Key): str(row.Workcenter_Code)
+        for row in workcenters[['Workcenter_Key', 'Workcenter_Code']].itertuples(index=False)
+    }
+
+    event_catalog = {}
+    for row in getPlex('events')[[
+        'Code', 'Description', 'Workcenter_Event_Group'
+    ]].itertuples(index=False):
+        event_catalog[_normalize_identifier(row.Code)] = {
+            'description': row.Description,
+            'status': _normalize_stop_status(row.Workcenter_Event_Group)
+        }
+
+    event = event.copy()
+    event['_Source_Log_Date'] = pd.to_datetime(event['Source_Log_Date'])
+    event['_End_Date'] = pd.to_datetime(event['End_Date'])
+    event['_Normalized_Event'] = event['Event'].apply(_normalize_stop_description)
+
+    for change in approved_changes.itertuples(index=False):
+        old_event = event_catalog.get(_normalize_identifier(change.motive1))
+        new_event = event_catalog.get(_normalize_identifier(change.motive2))
+        workcenter_code = workcenter_codes.get(
+            _normalize_identifier(change.Workcenter_Key)
+        )
+
+        if not old_event or not new_event or not workcenter_code:
+            continue
+
+        change_start = pd.to_datetime(change.startDate)
+        change_end = pd.to_datetime(change.endDate)
+        if pd.isna(change_start) or pd.isna(change_end):
+            continue
+
+        candidates = event[
+            (event['Workcenter_Code'].astype(str) == workcenter_code)
+            & (
+                event['_Normalized_Event']
+                == _normalize_stop_description(old_event['description'])
+            )
+            & (
+                (event['_Source_Log_Date'] - change_start).abs()
+                <= _APPROVED_STOP_MATCH_TOLERANCE
+            )
+            & (
+                event['_End_Date']
+                >= change_start - _APPROVED_STOP_MATCH_TOLERANCE
+            )
+            & (
+                event['_Source_Log_Date']
+                <= change_end + _APPROVED_STOP_MATCH_TOLERANCE
+            )
+        ]
+
+        if candidates.empty:
+            continue
+
+        offsets = (candidates['_Source_Log_Date'] - change_start).abs()
+        closest_candidates = offsets[offsets == offsets.min()]
+        if len(closest_candidates) != 1:
+            continue
+
+        event_index = closest_candidates.index[0]
+        event.at[event_index, 'Code'] = _normalize_identifier(change.motive2)
+        event.at[event_index, 'Event'] = new_event['description']
+        event.at[event_index, 'Status'] = new_event['status']
+        event.at[event_index, '_Normalized_Event'] = _normalize_stop_description(
+            new_event['description']
+        )
+
+    return event.drop(
+        columns=[
+            'Source_Log_Date', '_Source_Log_Date', '_End_Date',
+            '_Normalized_Event'
+        ],
+        errors='ignore'
+    )
 
 
 def _get_status_reason_time_stops(received_data):
@@ -116,14 +258,6 @@ def _get_status_reason_time_stops(received_data):
     ]
 
     if received_data.get('w_group'):
-        _add_parameterized_list_filter(
-            conditions,
-            params,
-            status_expression,
-            received_data.get('m_group', []),
-            'status'
-        )
-
         selected_shifts = {
             '1': 'Primeiro',
             '2': 'Segundo',
@@ -142,14 +276,6 @@ def _get_status_reason_time_stops(received_data):
             shift_values,
             'shift'
         )
-
-    _add_parameterized_list_filter(
-        conditions,
-        params,
-        reason_expression,
-        received_data.get('m_event', []),
-        'reason'
-    )
 
     query = f"""
         WITH TargetWorkcenters AS (
@@ -207,6 +333,7 @@ def _get_status_reason_time_stops(received_data):
         SELECT
             T1.id AS Log_Key
             , T1.workcenter AS Workcenter_Code
+            , T1.record_time AS Source_Log_Date
             , Bounds.Log_Start AS Log_Date
             , Bounds.Log_End AS End_Date
             , ROUND(DATEDIFF(SECOND, Bounds.Log_Start, Bounds.Log_End) / 60.0, 2) AS Log_Minutes
@@ -236,6 +363,13 @@ def _get_status_reason_time_stops(received_data):
     """
 
     event = _run_query_with_deadlock_retry(query, 'plex', params)
+    event = _apply_approved_stop_changes(event, workcenters, received_data)
+
+    if received_data.get('m_group'):
+        event = event[event['Status'].isin(received_data['m_group'])]
+
+    if received_data.get('m_event'):
+        event = event[event['Event'].isin(received_data['m_event'])]
 
     if not event.empty:
         event['Log_Date'] = pd.to_datetime(event['Log_Date']).dt.strftime('%d/%m/%Y %H:%M:%S')
