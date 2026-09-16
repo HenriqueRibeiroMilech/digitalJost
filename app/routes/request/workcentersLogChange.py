@@ -171,7 +171,7 @@ def stopChanges_main():
             payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
             payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-            data = getStopsData(payload)
+            data = getStopsData(payload, apply_approved_changes=True)
 
             query = f"""SELECT 
 
@@ -245,7 +245,7 @@ def stopChanges_main():
                                 SELECT 1 
                                 FROM JDT_REQUEST_STOPCHANGES JDT 
                                 WHERE JDT.eventId = EH.Log_Key
-                                    AND (JDT.finalDate IS NULL OR JDT.finalDate < DATEADD(HOUR, -4, GETDATE()))
+                                    AND JDT.finalDate IS NULL
                             );
                 """ 
 
@@ -271,7 +271,7 @@ def stopChanges_main():
                                 SELECT 1 
                                 FROM JDT_REQUEST_STOPCHANGES JDT 
                                 WHERE JDT.eventId = EH.lOEEEventId
-                                    AND (JDT.finalDate IS NULL OR JDT.finalDate < DATEADD(HOUR, -4, GETDATE()))
+                                    AND JDT.finalDate IS NULL
                             );
                 """
             
@@ -283,6 +283,26 @@ def stopChanges_main():
                     return 'A REQUEST ALREADY EXISTS WITHIN THIS EVENT.', 403                        
                 
                 check_request = check_request.iloc[0]
+
+                if payload.get('Plex'):
+                    approved_motive = pd.read_sql(
+                        text("""
+                            SELECT TOP 1 motive2
+                            FROM JDT_REQUEST_STOPCHANGES
+                            WHERE eventId = :event_id
+                                AND plex = 1
+                                AND approverStatus1 = 1
+                                AND approverStatus2 = 1
+                                AND finalDate IS NOT NULL
+                                AND deniedText IS NULL
+                            ORDER BY finalDate DESC, requestId DESC
+                        """),
+                        cnnx,
+                        params={"event_id": payload['Log_Key']}
+                    )
+
+                    if not approved_motive.empty:
+                        check_request['Code'] = approved_motive.iloc[0]['motive2']
 
                 query = f"""SELECT 
                             T1.userId
@@ -364,31 +384,39 @@ def stopChanges_main():
 
                     try:
                         query = f"""
-                                INSERT INTO JDT_REQUEST_STOPCHANGES_PLEX (
-                                    eventId
-                                    , workcenter
-                                    , startDate
-                                    , endDate
-                                    , logMinutes
-                                ) VALUES (
-                                    {payload['Log_Key']}
-                                    , {check_request['Workcenter_Key']}
-                                    , '{pd.to_datetime(check_request['Log_Date'], format='%d/%m/%Y %H:%M:%S')}'
-                                    , '{pd.to_datetime(check_request['End_Date'], format='%d/%m/%Y %H:%M:%S')}'
-                                    , {check_request['Log_Minutes']}
+                                IF NOT EXISTS (
+                                    SELECT 1
+                                    FROM JDT_REQUEST_STOPCHANGES_PLEX
+                                    WHERE eventId = {payload['Log_Key']}
                                 )
+                                BEGIN
+                                    INSERT INTO JDT_REQUEST_STOPCHANGES_PLEX (
+                                        eventId
+                                        , workcenter
+                                        , startDate
+                                        , endDate
+                                        , logMinutes
+                                    ) VALUES (
+                                        {payload['Log_Key']}
+                                        , {check_request['Workcenter_Key']}
+                                        , '{pd.to_datetime(check_request['Log_Date'], format='%d/%m/%Y %H:%M:%S')}'
+                                        , '{pd.to_datetime(check_request['End_Date'], format='%d/%m/%Y %H:%M:%S')}'
+                                        , {check_request['Log_Minutes']}
+                                    )
+                                END
                         """
                         cnnx.execute(text(query))
                     except Exception as e:
                         # SQLAlchemy IntegrityError is sqlalchemy.exc.IntegrityError
-                        print(e, flush=True)
                         if isinstance(e, IntegrityError):
                             # SQL Server error codes for duplicate key: 2627, 2601
                             if any(code in str(e.orig) for code in ['2627', '2601']):
                                 pass
                             else:
+                                print(e, flush=True)
                                 return 'INTERN SERVER ERROR.', 500
                         else:
+                            print(e, flush=True)
                             return 'INTERN SERVER ERROR.', 500
 
                 cnnx.commit()

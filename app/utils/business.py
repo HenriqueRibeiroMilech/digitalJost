@@ -172,6 +172,71 @@ def _apply_approved_stop_changes(event, workcenters, received_data):
     )
 
 
+def _apply_approved_stop_changes_by_event_id(event, received_data):
+    """Sobrepõe revisões Plex quando a fonte preserva o Log_Key original."""
+    if event.empty:
+        return event
+
+    query = """
+        SELECT
+            T1.eventId
+            , T1.motive2
+        FROM JDT_REQUEST_STOPCHANGES T1
+        JOIN JDT_REQUEST_STOPCHANGES_PLEX T2
+            ON T2.eventId = T1.eventId
+        WHERE T1.plex = 1
+            AND T1.approverStatus1 = 1
+            AND T1.approverStatus2 = 1
+            AND T1.finalDate IS NOT NULL
+            AND T1.deniedText IS NULL
+            AND T2.startDate < :end_date
+            AND T2.endDate > :start_date
+        ORDER BY T1.finalDate, T1.requestId
+    """
+    approved_changes = _run_query_with_deadlock_retry(
+        query,
+        'jdt',
+        {
+            'start_date': received_data['start_date'],
+            'end_date': received_data['end_date']
+        }
+    )
+
+    if approved_changes.empty:
+        return event
+
+    event_catalog = {}
+    for row in getPlex('events')[[
+        'Code', 'Description', 'Workcenter_Event_Group'
+    ]].itertuples(index=False):
+        event_catalog[_normalize_identifier(row.Code)] = {
+            'description': row.Description,
+            'status': _normalize_stop_status(row.Workcenter_Event_Group)
+        }
+
+    event = event.copy()
+    normalized_log_keys = event['Log_Key'].apply(_normalize_identifier)
+    plex_rows = pd.to_numeric(event['Plex'], errors='coerce').eq(1)
+
+    for change in approved_changes.itertuples(index=False):
+        new_event = event_catalog.get(_normalize_identifier(change.motive2))
+        if not new_event:
+            continue
+
+        matching_rows = (
+            plex_rows
+            & (normalized_log_keys == _normalize_identifier(change.eventId))
+        )
+        if not matching_rows.any():
+            continue
+
+        event.loc[matching_rows, 'Code'] = _normalize_identifier(change.motive2)
+        event.loc[matching_rows, 'Event'] = new_event['description']
+        event.loc[matching_rows, 'Status'] = new_event['status']
+
+    return event
+
+
 def _get_status_reason_time_stops(received_data):
     workcenters = getPlex('workcenters')[[
         'Workcenter_Key', 'Workcenter_Code', 'Name', 'Workcenter_Group'
@@ -391,7 +456,11 @@ def _get_status_reason_time_stops(received_data):
     return event
 
 
-def getStopsData(received_data, use_status_reason_time=False):
+def getStopsData(
+    received_data,
+    use_status_reason_time=False,
+    apply_approved_changes=False
+):
     """
         DADOS DE PAYLOAD:
         
@@ -407,6 +476,7 @@ def getStopsData(received_data, use_status_reason_time=False):
 
         3. CONTROLE DA FONTE PLEX:
             use_status_reason_time: usa Mach_2_Status_Reason_Time no lugar da procedure legada
+            apply_approved_changes: sobrepõe alterações aprovadas pelo Log_Key original
 
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
@@ -430,14 +500,20 @@ def getStopsData(received_data, use_status_reason_time=False):
 
         if received_data.get('w_group'):
             workcenter_group = json.dumps(received_data.get('w_group', '[1]'), ensure_ascii=False)
-            workcenter_event_group = json.dumps(received_data.get('m_group', '[1]'), ensure_ascii=False)
+            workcenter_event_group = (
+                ''
+                if apply_approved_changes
+                else json.dumps(received_data.get('m_group', '[1]'), ensure_ascii=False)
+            )
             shift_group = json.dumps(received_data.get('shift_plex', '[1]'), ensure_ascii=False)
         else:
             workcenter_group = ''
             workcenter_event_group = ''
             shift_group = ''
 
-        code = json.dumps(received_data.get('m_event', ''), ensure_ascii=False) if isinstance(received_data.get('m_event', ''), list) else ''
+        code = ''
+        if not apply_approved_changes and isinstance(received_data.get('m_event', ''), list):
+            code = json.dumps(received_data.get('m_event', ''), ensure_ascii=False)
 
         # AJUSTE DE FUSO HORÁRIO DO PLEX
         # ALTERAÇÃO FEITA PARA TESTE DO AJUSTE DA HORA NO DJ.
@@ -488,7 +564,7 @@ def getStopsData(received_data, use_status_reason_time=False):
         f"T3.CATEGORIA IN {format_tuple(received_data['m_group'])}" if received_data['m_group'] else "T3.CATEGORIA = 'aaa'"
     ] if received_data.get('w_group') else []
 
-    if received_data.get('m_event') and not use_status_reason_time:
+    if received_data.get('m_event') and not use_status_reason_time and not apply_approved_changes:
         filters.append(f"T3.COD_PARADA IN {format_tuple(received_data['m_event'])}")
 
     conditions = []
@@ -561,6 +637,21 @@ def getStopsData(received_data, use_status_reason_time=False):
         return data
 
     data = pd.merge(left=data, right=events_join, left_on='Code', right_on='Code').drop(columns=['Workcenter_Event_Key', 'Workcenter_Event_Group', 'Active']).rename(columns={"Description": "Event"})
+
+    if apply_approved_changes:
+        data = _apply_approved_stop_changes_by_event_id(data, received_data)
+
+        if received_data.get('m_group'):
+            data = data[data['Status'].isin(received_data['m_group'])]
+
+        if received_data.get('m_event'):
+            selected_codes = {
+                _normalize_identifier(code)
+                for code in received_data['m_event']
+            }
+            data = data[
+                data['Code'].apply(_normalize_identifier).isin(selected_codes)
+            ]
 
     return data
 
