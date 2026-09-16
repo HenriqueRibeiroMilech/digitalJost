@@ -16,6 +16,7 @@ from app.utils.security_utils import create_external_user
 
 p_admin = get_permission('SYSADMIN')
 _TRANSFORMATION_DIGITAL_ROLE = 'Transformação Digital'
+_TRANSFORMATION_DIGITAL_SECONDARY_SHIFT = '99'
 
 jdt_userManager_bp = Blueprint('jdt_userManager', __name__)
 
@@ -617,6 +618,27 @@ def userManager_eventsChange_approvers_post():
 
     engine = get_engine('jdt')
     with engine.begin() as cnnx:
+        area = pd.read_sql(
+            text("SELECT name FROM JDT_GENERAL_AREA WHERE areaId = :area_id"),
+            cnnx,
+            params={"area_id": areaId}
+        )
+        areaName = area.iloc[0]['name']
+
+        if areaName == _TRANSFORMATION_DIGITAL_ROLE:
+            submitted_shifts = {
+                str(user_info['shift']) for user_info in userIds
+            }
+            submitted_users = {
+                str(user_info['user']) for user_info in userIds
+            }
+
+            if submitted_shifts != {'0', _TRANSFORMATION_DIGITAL_SECONDARY_SHIFT}:
+                abort(400)
+
+            if len(submitted_users) != 2:
+                abort(400)
+
         def execut(user, shift):
             compare_df = pd.read_sql(
                 text("""
@@ -654,31 +676,33 @@ def userManager_eventsChange_approvers_post():
                     "shift": shift
                 })
 
-                cnnx.execute(text("""
-                    UPDATE JDT_REQUEST_STOPCHANGES
-                    SET approver1 = :new_user
-                    WHERE approver1 = :old_user AND approverStatus1 = 0
-                """), {
-                    "new_user": user,
-                    "old_user": data_to_compare
-                })
+                is_transformation_digital_secondary = (
+                    areaName == _TRANSFORMATION_DIGITAL_ROLE
+                    and str(shift) == _TRANSFORMATION_DIGITAL_SECONDARY_SHIFT
+                )
+                if not is_transformation_digital_secondary:
+                    cnnx.execute(text("""
+                        UPDATE JDT_REQUEST_STOPCHANGES
+                        SET approver1 = :new_user
+                        WHERE approver1 = :old_user AND approverStatus1 = 0
+                    """), {
+                        "new_user": user,
+                        "old_user": data_to_compare
+                    })
 
-                cnnx.execute(text("""
-                    UPDATE JDT_REQUEST_STOPCHANGES
-                    SET approver2 = :new_user
-                    WHERE approver2 = :old_user AND approverStatus2 = 0
-                """), {
-                    "new_user": user,
-                    "old_user": data_to_compare
-                })
+                    cnnx.execute(text("""
+                        UPDATE JDT_REQUEST_STOPCHANGES
+                        SET approver2 = :new_user
+                        WHERE approver2 = :old_user AND approverStatus2 = 0
+                    """), {
+                        "new_user": user,
+                        "old_user": data_to_compare
+                    })
 
                 _update_logs(user, data_to_compare, user, 'stopChanges_' + str(shift))
 
-        if len(userIds) == 3:
-            for i in range(3):
-                execut(userIds[i]['user'], userIds[i]['shift'])
-        else:
-            execut(userIds[0]['user'], userIds[0]['shift'])
+        for user_info in userIds:
+            execut(user_info['user'], user_info['shift'])
 
     return 'COMMITED'
 

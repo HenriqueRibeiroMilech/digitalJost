@@ -258,7 +258,23 @@
             inputField.type = 'text';
             inputField.name = 'userId';
 
-            if (['Transformação Digital', 'Engenharia de Processo', 'Manutenção', 'Engenharia da Qualidade'].includes(areaName)) {
+            if (areaName === 'Transformação Digital') {
+                [
+                    { label: 'Matrícula do aprovador principal:', shift: '0' },
+                    { label: 'Matrícula do segundo aprovador:', shift: '99' }
+                ].forEach(config => {
+                    const label = document.createElement('label');
+                    label.textContent = config.label;
+                    const approverInput = inputField.cloneNode();
+                    const configuredApprover = approvers.find(
+                        approver => String(approver.shift) === config.shift
+                    );
+                    approverInput.value = configuredApprover ? configuredApprover.userId : '';
+                    approverInput.id = `shift_${config.shift}`;
+                    inputContainer.appendChild(label);
+                    inputContainer.appendChild(approverInput);
+                });
+            } else if (['Engenharia de Processo', 'Manutenção', 'Engenharia da Qualidade'].includes(areaName)) {
                 const label = document.createElement('label');
                 label.textContent = 'Matrícula Geral:';
                 inputContainer.appendChild(label);
@@ -293,6 +309,14 @@
                     alert('Matrícula inválida preenchida!');
                     return;
                 }
+            }
+
+            if (
+                areaName === 'Transformação Digital'
+                && new Set(userIds.map(info => info.user)).size !== userIds.length
+            ) {
+                alert('Selecione duas matrículas diferentes!');
+                return;
             }
 
             if (userIds) {

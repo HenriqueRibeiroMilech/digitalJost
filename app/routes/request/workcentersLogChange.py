@@ -66,6 +66,8 @@ _PROBLEM_CATEGORY = pd.DataFrame([
 _USER_FILTERS = {}
 
 _TRANSFORMATION_DIGITAL_AREA_NAME = 'Transformação Digital'
+_TRANSFORMATION_DIGITAL_PRIMARY_SHIFT = 0
+_TRANSFORMATION_DIGITAL_SECONDARY_SHIFT = 99
 # Sistema Indisponível também é responsabilidade da Transformação Digital.
 _TRANSFORMATION_DIGITAL_MOTIVE_CODES = {44}
 
@@ -97,8 +99,19 @@ def _get_problem_area_id(code, events, transformation_digital_area_id):
     return int(problem_area.iloc[0]['areaId'])
 
 
-def _get_area_approver(approvers, area_id, shift):
+def _get_area_approver(
+    approvers,
+    area_id,
+    shift,
+    transformation_digital_area_id
+):
     area_approvers = approvers[approvers['areaId'] == area_id]
+
+    if area_id == transformation_digital_area_id:
+        return area_approvers[
+            area_approvers['shift'].astype(str)
+            == str(_TRANSFORMATION_DIGITAL_PRIMARY_SHIFT)
+        ].head(1)
 
     if len(area_approvers) > 1:
         area_approvers = area_approvers[
@@ -314,12 +327,14 @@ def stopChanges_main():
                 approver1 = _get_area_approver(
                     approvers_info,
                     problemAreaOld,
-                    check_request['Shift']
+                    check_request['Shift'],
+                    transformation_digital_area_id
                 )
                 approver2 = _get_area_approver(
                     approvers_info,
                     problemAreaNew,
-                    check_request['Shift']
+                    check_request['Shift'],
+                    transformation_digital_area_id
                 )
 
                 if approver1.empty or approver2.empty:
@@ -378,9 +393,32 @@ def stopChanges_main():
 
                 cnnx.commit()
 
+            email_approvers = pd.concat([approver1, approver2])
+            if transformation_digital_area_id in {problemAreaOld, problemAreaNew}:
+                email_approvers = pd.concat([
+                    email_approvers,
+                    approvers_info[
+                        (approvers_info['areaId'] == transformation_digital_area_id)
+                        & approvers_info['shift'].astype(str).isin({
+                            str(_TRANSFORMATION_DIGITAL_PRIMARY_SHIFT),
+                            str(_TRANSFORMATION_DIGITAL_SECONDARY_SHIFT)
+                        })
+                    ]
+                ])
+
+            recipient_emails = (
+                email_approvers['companyEmail']
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+            recipient_emails = recipient_emails[
+                recipient_emails != ''
+            ].drop_duplicates().tolist()
+
             msg = Message(f'Alteração de Paradas - Nova Solicitação',
                 sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
-                recipients=[approver1['companyEmail'].iloc[0], approver2['companyEmail'].iloc[0]])
+                recipients=recipient_emails)
             
             def format_code_description(code):
                 row = getPlex('events')[getPlex('events')['Code'] == str(code)].iloc[0]
