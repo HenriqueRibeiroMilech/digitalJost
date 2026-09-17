@@ -226,10 +226,11 @@ def oee_stops_get():
     if 'preload' in request.args:
 
         def get_week_start_end(year, week):
-            first_day_of_week = datetime.strptime(f'{year}-W{week - 1}-1', "%Y-W%W-%w")
-            
-            start_of_week = first_day_of_week.replace(hour=0, minute=0, second=0)
-            end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59)
+            start_of_week = datetime.strptime(
+                f'{year}-W{week}-1',
+                "%G-W%V-%u"
+            ).replace(hour=0, minute=0, second=0)
+            end_of_week = start_of_week + timedelta(days=7)
             
             return start_of_week.strftime('%Y-%m-%dT%H:%M'), end_of_week.strftime('%Y-%m-%dT%H:%M')
 

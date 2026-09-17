@@ -146,8 +146,10 @@ def planning_area_post(areaId):
 
         # Ajusta para UTC-3 e formata
         last_week_start_iso = format_to_iso_with_timezone(last_week_start)
-        current_week_start_iso = format_to_iso_with_timezone(current_week_start)
         current_week_end_iso = format_to_iso_with_timezone(current_week_end)
+        current_week_end_exclusive_iso = format_to_iso_with_timezone(
+            current_week_start + timedelta(days=7)
+        )
 
 
         actionPlan_query = f"""
@@ -299,18 +301,13 @@ def planning_area_post(areaId):
 
         stops_payload = {
             'start_date': last_week_start_iso,
-            'end_date': current_week_end_iso,
+            'end_date': current_week_end_exclusive_iso,
             'w_name_plex': [],
             'w_name_mic': [],
             'w_group': ['Montagem', 'Usinagem', 'Soldagem', 'Pré-Fabricação'],
             'm_group': ['Manutenção'],
             'm_event': [],
             'shift': ['1', '2', '3']
-        }
-
-        selected_week_stops_payload = {
-            **stops_payload,
-            'start_date': current_week_start_iso
         }
 
         plex_availability_query = f"""
@@ -367,7 +364,11 @@ def planning_area_post(areaId):
                         
                         NULLIF(SUM(dAvailSec), 0) / 60.0 AS Availability
                         , T2.GRUPO AS Workcenter_Group
-                        , CONCAT(YEAR(tStartTime), '/', DATEPART(WEEK, tStartTime)) AS DATA
+                        , CONCAT(
+                            YEAR(DATEADD(DAY, 26 - DATEPART(ISO_WEEK, tStartTime), tStartTime))
+                            , '/'
+                            , RIGHT('0' + CAST(DATEPART(ISO_WEEK, tStartTime) AS VARCHAR(2)), 2)
+                        ) AS DATA
                         
                         FROM OEEQWorkCellDetail T1
                         JOIN CONFIG_TABLET T2 ON T1.sDescription = T2.NOME_MAQUINA
@@ -384,22 +385,23 @@ def planning_area_post(areaId):
 
                         AND T1.nShift in ('1', '2', '3')
 
-                        GROUP BY CONCAT(YEAR(tStartTime), '/', DATEPART(WEEK, tStartTime)), T2.GRUPO
+                        GROUP BY
+                            CONCAT(
+                                YEAR(DATEADD(DAY, 26 - DATEPART(ISO_WEEK, tStartTime), tStartTime))
+                                , '/'
+                                , RIGHT('0' + CAST(DATEPART(ISO_WEEK, tStartTime) AS VARCHAR(2)), 2)
+                            )
+                            , T2.GRUPO
                         
                         ORDER BY MAX(YEAR(tStartTime)) ASC, MAX(MONTH(tStartTime)) ASC"""
 
 
         with ThreadPoolExecutor() as executor:
             if areaId == 3:
-                # A tendência usa quatro semanas; o Top 5 usa o mesmo recorte semanal de /oee/paradas.
+                # O intervalo é dividido por semana após a consulta para manter todos os gráficos consistentes.
                 stopped_event_future = executor.submit(
                     getStopsData,
                     stops_payload,
-                    use_status_reason_time=True
-                )
-                selected_week_stopped_event_future = executor.submit(
-                    getStopsData,
-                    selected_week_stops_payload,
                     use_status_reason_time=True
                 )
             else:
@@ -413,12 +415,8 @@ def planning_area_post(areaId):
 
         if areaId == 3:
             stopped_event = stopped_event_future.result()
-            selected_week_stopped_event = selected_week_stopped_event_future.result()
             stopped_event = stopped_event[
                 stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
-            ].rename(columns={'Code': 'Event_Code'})
-            selected_week_stopped_event = selected_week_stopped_event[
-                selected_week_stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
             ].rename(columns={'Code': 'Event_Code'})
         else:
             plex_stopped_event = plex_stopped_event.result()
@@ -449,6 +447,40 @@ def planning_area_post(areaId):
                 format='%d/%m/%Y %H:%M:%S',
                 errors='coerce'
             )
+            stopped_event['End_Date'] = pd.to_datetime(
+                stopped_event['End_Date'],
+                format='%d/%m/%Y %H:%M:%S',
+                errors='coerce'
+            )
+
+            weekly_segments = []
+            for _, stopped_row in stopped_event.iterrows():
+                segment_start = stopped_row['Log_Date']
+                event_end = stopped_row['End_Date']
+
+                if pd.isna(segment_start) or pd.isna(event_end) or event_end <= segment_start:
+                    continue
+
+                while segment_start < event_end:
+                    next_week_start = (
+                        segment_start.normalize()
+                        + pd.Timedelta(days=7 - segment_start.weekday())
+                    )
+                    segment_end = min(event_end, next_week_start)
+                    segment = stopped_row.copy()
+                    segment['Log_Date'] = segment_start
+                    segment['End_Date'] = segment_end
+                    segment['Log_Minutes'] = round(
+                        (segment_end - segment_start).total_seconds() / 60.0,
+                        2
+                    )
+                    weekly_segments.append(segment)
+                    segment_start = segment_end
+
+            if weekly_segments:
+                stopped_event = pd.DataFrame(weekly_segments, columns=stopped_event.columns)
+            else:
+                stopped_event = stopped_event.iloc[0:0].copy()
         else:
             stopped_event['Log_Date'] = pd.to_datetime(stopped_event['Log_Date'], errors='coerce')
         # DATA no formato YYYY/WW (semana com 2 dígitos) para bater com Time_Group da SP PLEX (evita merge vazio a partir de 2026/só PLEX)
@@ -528,15 +560,10 @@ def planning_area_post(areaId):
         result_df = result_df.sort_values(by=['Year', 'Week']).drop(columns=['Year', 'Week'])
         result_df = result_df.reset_index(drop=True)
 
-        if areaId == 3:
-            filtered_stopped_event = selected_week_stopped_event[
-                selected_week_stopped_event['Status'] == _MAP_AREA_SLIDES[areaId]
-            ]
-        else:
-            filtered_stopped_event = stopped_event[
-                (stopped_event['DATA'] == week_key)
-                & (stopped_event['Status'] == _MAP_AREA_SLIDES[areaId])
-            ]
+        filtered_stopped_event = stopped_event[
+            (stopped_event['DATA'] == week_key)
+            & (stopped_event['Status'] == _MAP_AREA_SLIDES[areaId])
+        ]
 
         grouped_area = result_df[result_df['MS'].isin([_MAP_AREA_SLIDES[areaId]])].rename(columns={'Log_Minutes_Percentage': 'Percentage', 'WEEK': 'Label'})
         
@@ -599,8 +626,8 @@ def planning_area_post(areaId):
         data = {
 
                 'totals': {
-                    'sum': result_df[(result_df['MS'] == _MAP_AREA_SLIDES[areaId]) & (result_df['WEEK'] == week_key)]['Log_Minutes_Sum'].sum().astype(str),
-                    'count': result_df[(result_df['MS'] == _MAP_AREA_SLIDES[areaId]) & (result_df['WEEK'] == week_key)]['Log_Minutes_Count'].sum().astype(str),
+                    'sum': str(filtered_stopped_event['Log_Minutes'].sum()),
+                    'count': str(filtered_stopped_event['Log_Minutes'].count()),
                 },
                 
                 "general": {

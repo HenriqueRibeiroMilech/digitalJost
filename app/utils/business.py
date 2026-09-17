@@ -579,15 +579,50 @@ def getStopsData(
     filter_string = "AND " + " AND ".join(filters) if filters else ""
     mic_event_description = ", T3.DESC_PARADA AS Event" if use_status_reason_time else ""
 
+    mic_period_end = f"""CASE
+        WHEN T2.CT_PLEX_DATA < '{received_data['end_date']}'
+        THEN T2.CT_PLEX_DATA
+        ELSE '{received_data['end_date']}'
+    END"""
+
+    if use_status_reason_time:
+        mic_log_start = f"""CASE
+            WHEN T1.tStart < '{received_data['start_date']}'
+            THEN CAST('{received_data['start_date']}' AS DATETIME)
+            ELSE T1.tStart
+        END"""
+        mic_log_end = f"""CASE
+            WHEN T1.tEnd > {mic_period_end}
+            THEN {mic_period_end}
+            ELSE T1.tEnd
+        END"""
+        mic_log_minutes = (
+            f"ROUND(DATEDIFF(SECOND, {mic_log_start}, {mic_log_end}) / 60.0, 2)"
+        )
+        mic_period_filter = f"""
+            {mic_period_end} > '{received_data['start_date']}'
+            AND T1.tStart < {mic_period_end}
+            AND T1.tEnd > '{received_data['start_date']}'
+        """
+    else:
+        mic_log_start = "T1.tStart"
+        mic_log_end = "T1.tEnd"
+        mic_log_minutes = "ROUND(T1.lSeconds / 60.0, 2)"
+        mic_period_filter = f"""
+            T1.tStart BETWEEN
+            '{received_data['start_date']}'
+            AND {mic_period_end}
+        """
+
     query = f"""
         SELECT
             T1.lOEEEventId AS Log_Key
             , T2.CT_PLEX AS Workcenter_Key
             , T1.sDescription AS Workcenter_Name
             , T2.GRUPO AS Workcenter_Group
-            , FORMAT(T1.tStart, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-            , FORMAT(T1.tEnd, 'dd/MM/yyyy HH:mm:ss') AS End_Date
-            , ROUND(T1.lSeconds / 60.0, 2) AS Log_Minutes
+            , FORMAT({mic_log_start}, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
+            , FORMAT({mic_log_end}, 'dd/MM/yyyy HH:mm:ss') AS End_Date
+            , {mic_log_minutes} AS Log_Minutes
             , T3.COD_PARADA AS Code
             , T3.CATEGORIA AS Status
             {mic_event_description}
@@ -613,14 +648,8 @@ def getStopsData(
         ) AS T3 ON LTRIM(T1.sEndVal) = T3.MOTIVO
 
         WHERE 
-            T1.tStart BETWEEN 
-            '{received_data['start_date']}' 
-            AND CASE 
-                WHEN T2.CT_PLEX_DATA < '{received_data['end_date']}'
-                THEN T2.CT_PLEX_DATA 
-                ELSE '{received_data['end_date']}'
-            END 
-            
+            {mic_period_filter}
+
             AND {workcenter_condition}
             {filter_string}
     """
