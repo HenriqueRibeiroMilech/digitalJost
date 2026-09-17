@@ -296,6 +296,17 @@ def planning_area_post(areaId):
                 , '{current_week_end_iso}'
             ) AT [PLEX_DSN_JOST]"""
 
+        stops_payload = {
+            'start_date': last_week_start_iso,
+            'end_date': current_week_end_iso,
+            'w_name_plex': [],
+            'w_name_mic': [],
+            'w_group': [],
+            'm_group': [],
+            'm_event': [],
+            'shift': ['1', '2', '3']
+        }
+
         plex_availability_query = f"""
             EXEC ('sproc329396_18311230_1264675(?, ?, ?, ?, ?, ?, ?, ?, ?)', 
                         '{last_week_start_iso}'
@@ -373,16 +384,30 @@ def planning_area_post(areaId):
 
 
         with ThreadPoolExecutor() as executor:
-            plex_stopped_event = executor.submit(engine_run_query, plex_stopped_event_query, 'jdt')
-            mic_stopped_event = executor.submit(engine_run_query, mic_stopped_event_query, 'ftm')
+            if areaId == 3:
+                # Mantém Manutenção alinhada ao histórico usado em /oee/paradas.
+                stopped_event_future = executor.submit(
+                    getStopsData,
+                    stops_payload,
+                    use_status_reason_time=True
+                )
+            else:
+                plex_stopped_event = executor.submit(engine_run_query, plex_stopped_event_query, 'jdt')
+                mic_stopped_event = executor.submit(engine_run_query, mic_stopped_event_query, 'ftm')
             actionPlan = executor.submit(engine_run_query, actionPlan_query, 'jdt')
             oldActionPlan = executor.submit(engine_run_query, oldActionPlan_query, 'jdt')
             goal = executor.submit(engine_run_query, goal_query, 'jdt')
             mic_availability = executor.submit(engine_run_query, mic_availability_query, 'ftm')
             plex_availability = executor.submit(engine_run_query, plex_availability_query, 'jdt')
 
-        plex_stopped_event = plex_stopped_event.result()
-        mic_stopped_event = mic_stopped_event.result()
+        if areaId == 3:
+            stopped_event = stopped_event_future.result()
+            stopped_event = stopped_event[
+                stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
+            ].rename(columns={'Code': 'Event_Code'})
+        else:
+            plex_stopped_event = plex_stopped_event.result()
+            mic_stopped_event = mic_stopped_event.result()
         actionPlan = actionPlan.result()
         oldActionPlan = oldActionPlan.result()
         goal = goal.result()
@@ -392,17 +417,25 @@ def planning_area_post(areaId):
 
         goal['presentationMotiveName'] = goal['presentationMotive'].map(_MAP_AREA_SLIDES)
 
-        plex_stopped_event = pd.merge(plex_stopped_event, getPlex('workcenters')[['Workcenter_Key', 'Name', 'Workcenter_Group']], on='Workcenter_Key', how='left').rename(columns={'Name': 'Workcenter_Name'})
-        plex_stopped_event = pd.merge(plex_stopped_event, getPlex('events')[['Workcenter_Event_Key', 'Description', 'Workcenter_Event_Group', 'Code']], on='Workcenter_Event_Key', how='left').rename(columns={'Workcenter_Event_Group': 'Status', 'Code': 'Event_Code', 'Description': 'Event'})
+        if areaId != 3:
+            plex_stopped_event = pd.merge(plex_stopped_event, getPlex('workcenters')[['Workcenter_Key', 'Name', 'Workcenter_Group']], on='Workcenter_Key', how='left').rename(columns={'Name': 'Workcenter_Name'})
+            plex_stopped_event = pd.merge(plex_stopped_event, getPlex('events')[['Workcenter_Event_Key', 'Description', 'Workcenter_Event_Group', 'Code']], on='Workcenter_Event_Key', how='left').rename(columns={'Workcenter_Event_Group': 'Status', 'Code': 'Event_Code', 'Description': 'Event'})
 
-        # SOLUÇÃO SPI & JOST PARA DASHBOARD IMPACTO DE PARADAS NA DISPONIBILIDADE - DIA 05/02/2026 RESPONSAVEL: ARMESTRONG
-        # Histórico: se FTM retornar dados, junta com PLEX; senão usa só PLEX (ex.: a partir de 2026 ou quando CT_PLEX_DATA corta)
-        if mic_stopped_event is not None and len(mic_stopped_event) > 0:
-            stopped_event = pd.concat([plex_stopped_event, mic_stopped_event])
+            # SOLUÇÃO SPI & JOST PARA DASHBOARD IMPACTO DE PARADAS NA DISPONIBILIDADE - DIA 05/02/2026 RESPONSAVEL: ARMESTRONG
+            # Histórico: se FTM retornar dados, junta com PLEX; senão usa só PLEX (ex.: a partir de 2026 ou quando CT_PLEX_DATA corta)
+            if mic_stopped_event is not None and len(mic_stopped_event) > 0:
+                stopped_event = pd.concat([plex_stopped_event, mic_stopped_event])
+            else:
+                stopped_event = plex_stopped_event.copy()
+
+        if areaId == 3:
+            stopped_event['Log_Date'] = pd.to_datetime(
+                stopped_event['Log_Date'],
+                format='%d/%m/%Y %H:%M:%S',
+                errors='coerce'
+            )
         else:
-            stopped_event = plex_stopped_event.copy()
-
-        stopped_event['Log_Date'] = pd.to_datetime(stopped_event['Log_Date'], errors='coerce')
+            stopped_event['Log_Date'] = pd.to_datetime(stopped_event['Log_Date'], errors='coerce')
         # DATA no formato YYYY/WW (semana com 2 dígitos) para bater com Time_Group da SP PLEX (evita merge vazio a partir de 2026/só PLEX)
         _week = stopped_event['Log_Date'].dt.isocalendar().week.astype(str).str.zfill(2)
         stopped_event['DATA'] = stopped_event['Log_Date'].dt.isocalendar().year.astype(str) + '/' + _week
@@ -430,12 +463,11 @@ def planning_area_post(areaId):
         stopped_event['Status'] = stopped_event['Event_Code'].astype(str).map(stopsFromAreas).fillna(stopped_event['Status'])
 
         stopped_event_grouped = (
-            stopped_event.groupby(['Workcenter_Name', 'Event_Code', 'DATA'], as_index=False)
+            stopped_event.groupby(['Workcenter_Name', 'Event_Code', 'DATA', 'Status'], as_index=False)
             .agg(
                 Log_Minutes_Sum=('Log_Minutes', 'sum'),  # Soma dos minutos
                 Log_Minutes_Count=('Log_Minutes', 'count'),  # Soma dos minutos
-                Workcenter_Group=('Workcenter_Group', 'first'),  # Grupo correspondente
-                Status=('Status', 'first')  # Status correspondente
+                Workcenter_Group=('Workcenter_Group', 'first')  # Grupo correspondente
             )
         )
 
@@ -481,10 +513,10 @@ def planning_area_post(areaId):
         result_df = result_df.sort_values(by=['Year', 'Week']).drop(columns=['Year', 'Week'])
         result_df = result_df.reset_index(drop=True)
 
-        stopped_event['data_datetime'] = pd.to_datetime(stopped_event['DATA'] + '-1', format='%Y/%W-%w')
-        max_date = stopped_event['data_datetime'].max()
-        
-        filtered_stopped_event = stopped_event[(stopped_event['data_datetime'] == max_date) & (stopped_event['Status'] == _MAP_AREA_SLIDES[areaId])]
+        filtered_stopped_event = stopped_event[
+            (stopped_event['DATA'] == week_key)
+            & (stopped_event['Status'] == _MAP_AREA_SLIDES[areaId])
+        ]
 
         grouped_area = result_df[result_df['MS'].isin([_MAP_AREA_SLIDES[areaId]])].rename(columns={'Log_Minutes_Percentage': 'Percentage', 'WEEK': 'Label'})
         
@@ -1511,4 +1543,3 @@ def planning_history_detail_files(plan_id, action):
                 file.save(file_path)
 
             return "Upload successful", 200
-
