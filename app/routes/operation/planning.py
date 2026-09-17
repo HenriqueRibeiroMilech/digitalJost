@@ -142,10 +142,11 @@ def planning_area_post(areaId):
 
         # Obtém datas de início e fim das semanas
         last_week_start, _ = get_week_start_and_end(prev_prev_prev_year, prev_prev_prev_week)
-        _, current_week_end = get_week_start_and_end(filter_year, filter_week)
+        current_week_start, current_week_end = get_week_start_and_end(filter_year, filter_week)
 
         # Ajusta para UTC-3 e formata
         last_week_start_iso = format_to_iso_with_timezone(last_week_start)
+        current_week_start_iso = format_to_iso_with_timezone(current_week_start)
         current_week_end_iso = format_to_iso_with_timezone(current_week_end)
 
 
@@ -301,10 +302,15 @@ def planning_area_post(areaId):
             'end_date': current_week_end_iso,
             'w_name_plex': [],
             'w_name_mic': [],
-            'w_group': [],
-            'm_group': [],
+            'w_group': ['Montagem', 'Usinagem', 'Soldagem', 'Pré-Fabricação'],
+            'm_group': ['Manutenção'],
             'm_event': [],
             'shift': ['1', '2', '3']
+        }
+
+        selected_week_stops_payload = {
+            **stops_payload,
+            'start_date': current_week_start_iso
         }
 
         plex_availability_query = f"""
@@ -385,10 +391,15 @@ def planning_area_post(areaId):
 
         with ThreadPoolExecutor() as executor:
             if areaId == 3:
-                # Mantém Manutenção alinhada ao histórico usado em /oee/paradas.
+                # A tendência usa quatro semanas; o Top 5 usa o mesmo recorte semanal de /oee/paradas.
                 stopped_event_future = executor.submit(
                     getStopsData,
                     stops_payload,
+                    use_status_reason_time=True
+                )
+                selected_week_stopped_event_future = executor.submit(
+                    getStopsData,
+                    selected_week_stops_payload,
                     use_status_reason_time=True
                 )
             else:
@@ -402,8 +413,12 @@ def planning_area_post(areaId):
 
         if areaId == 3:
             stopped_event = stopped_event_future.result()
+            selected_week_stopped_event = selected_week_stopped_event_future.result()
             stopped_event = stopped_event[
                 stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
+            ].rename(columns={'Code': 'Event_Code'})
+            selected_week_stopped_event = selected_week_stopped_event[
+                selected_week_stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
             ].rename(columns={'Code': 'Event_Code'})
         else:
             plex_stopped_event = plex_stopped_event.result()
@@ -513,10 +528,15 @@ def planning_area_post(areaId):
         result_df = result_df.sort_values(by=['Year', 'Week']).drop(columns=['Year', 'Week'])
         result_df = result_df.reset_index(drop=True)
 
-        filtered_stopped_event = stopped_event[
-            (stopped_event['DATA'] == week_key)
-            & (stopped_event['Status'] == _MAP_AREA_SLIDES[areaId])
-        ]
+        if areaId == 3:
+            filtered_stopped_event = selected_week_stopped_event[
+                selected_week_stopped_event['Status'] == _MAP_AREA_SLIDES[areaId]
+            ]
+        else:
+            filtered_stopped_event = stopped_event[
+                (stopped_event['DATA'] == week_key)
+                & (stopped_event['Status'] == _MAP_AREA_SLIDES[areaId])
+            ]
 
         grouped_area = result_df[result_df['MS'].isin([_MAP_AREA_SLIDES[areaId]])].rename(columns={'Log_Minutes_Percentage': 'Percentage', 'WEEK': 'Label'})
         
