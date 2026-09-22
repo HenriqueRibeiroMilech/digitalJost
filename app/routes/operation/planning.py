@@ -717,9 +717,13 @@ def planning_area_post(areaId):
             , 'shift': ['1', '2', '3']
         }
 
+        availability_diagnostic_enabled = areaId == 3 and request.args.get('diagnostic') == '1'
+        mic_avail_sum = 'SUM(dAvailSec)' if availability_diagnostic_enabled else 'NULLIF(SUM(dAvailSec), 0)'
+        mic_having = '' if availability_diagnostic_enabled else 'HAVING SUM(dAvailSec) > 0'
+
         availability_mic_query = f"""
             SELECT
-                NULLIF(SUM(dAvailSec), 0) / 60.0 / 60.0 AS TotalAvail
+                {mic_avail_sum} / 60.0 / 60.0 AS TotalAvail
                 , SUM(dRunSec) / 60.0 AS TotalRun
                 , T1.sDescription AS Workcenter_Name
                 , T2.GRUPO AS Workcenter_Group
@@ -734,7 +738,7 @@ def planning_area_post(areaId):
                 END
                 AND T1.nShift in ('1', '2', '3')
             GROUP BY T1.sDescription, T2.GRUPO
-            HAVING SUM(dAvailSec) > 0
+            {mic_having}
         """
 
         availability_plex_query = f"""
@@ -760,7 +764,24 @@ def planning_area_post(areaId):
         availability_plex = availability_plex.result()
         maintenance_events = maintenance_events.result()
 
+        if availability_diagnostic_enabled:
+            # Expõe no JSON os valores brutos sem incluí-los no indicador mensal.
+            zero_availability = []
+            for source, source_data in (('Plex', availability_plex), ('FTM', availability_mic)):
+                if source_data is None:
+                    continue
+                for row in source_data.loc[~(source_data['TotalAvail'] > 0)].to_dict('records'):
+                    zero_availability.append({
+                        'Source': source,
+                        'Workcenter_Name': row['Workcenter_Name'],
+                        'Workcenter_Group': row['Workcenter_Group'],
+                        'TotalAvail': None if pd.isna(row['TotalAvail']) else float(row['TotalAvail']),
+                        'TotalRun': None if pd.isna(row['TotalRun']) else float(row['TotalRun'])
+                    })
+
         availability_plex = availability_plex[availability_plex['TotalAvail'] > 0]
+        if availability_mic is not None:
+            availability_mic = availability_mic[availability_mic['TotalAvail'] > 0]
         # SOLUÇÃO SPI & JOST (fallback manutenção): se FTM retornar dados, junta com PLEX; senão usa só PLEX - DIA 05/02/2026 RESPONSAVEL: ARMESTRONG
         if availability_mic is not None and len(availability_mic) > 0:
             availability = pd.concat([availability_plex[['TotalRun', 'TotalAvail', 'Workcenter_Name', 'Workcenter_Group', 'Time_Group']], availability_mic])
@@ -827,6 +848,13 @@ def planning_area_post(areaId):
             'extra': merged_data.sort_values(by="CALC", ascending=False).to_dict(orient='records'),
             'overall': str(CALC)
         }
+
+        if availability_diagnostic_enabled:
+            data['availability_zero_diagnostic'] = {
+                'start_date': first_day,
+                'end_date': last_day,
+                'rows': zero_availability
+            }
 
         return jsonify(data)
 
