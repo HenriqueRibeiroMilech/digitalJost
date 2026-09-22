@@ -730,11 +730,23 @@ Instalar as dependências aprovadas e gerar um lockfile:
 Set-Location frontend
 npm install
 npm install tailwindcss @tailwindcss/vite
-npm install primevue primeicons tailwindcss-primeui tailwind-merge
+npm install --save-exact primevue@4.5.5 primeicons@7.0.0 tailwindcss-primeui@0.6.1
+npm install tailwind-merge
 npm install @tanstack/vue-query
-npx volt-vue add Button
-npx volt-vue add InputText
+npx volt-vue@0.0.0-alpha.4 add Button
+npx volt-vue@0.0.0-alpha.4 add InputText
 ```
+
+As dependências da família Prime adotam uma linha de base fixa, sem intervalos com `^` ou `~`:
+
+| Dependência ou ferramenta | Versão aprovada | Regra |
+| --- | --- | --- |
+| `primevue` | `4.5.5` | Última linha adotada sob MIT; manter a versão exata. |
+| `primeicons` | `7.0.0` | Versão MIT compatível com a linha de base; manter a versão exata. |
+| `tailwindcss-primeui` | `0.6.1` | Versão MIT aprovada para a integração com Tailwind CSS 4; manter a versão exata. |
+| `volt-vue` | `0.0.0-alpha.4` | Usar somente como CLI com a versão explícita no comando. |
+
+PrimeVue 5, PrimeIcons 8 e versões posteriores sujeitas à licença PrimeUI não entram nesta arquitetura sem uma nova decisão explícita de licenciamento. Não atualizar as dependências da família Prime automaticamente. Toda mudança nessa linha de base exige revisar a licença, a compatibilidade, o lockfile e os componentes Volt mantidos no repositório.
 
 O Tailwind deve usar o plugin oficial `@tailwindcss/vite`. O CSS principal importa `tailwindcss` e `tailwindcss-primeui`:
 
@@ -743,7 +755,11 @@ O Tailwind deve usar o plugin oficial `@tailwindcss/vite`. O CSS principal impor
 @import "tailwindcss-primeui";
 ```
 
-O bootstrap do Vue configura o PrimeVue uma única vez com `{ unstyled: true }`. Os componentes Volt ficam em `frontend/src/volt/` e são adicionados com `npx volt-vue add <Componente>` somente quando usados. `Button` e `InputText` formam o ponto de partida da home; diálogo, drawer, tooltip, badge, avatar ou skeleton entram quando o desenho comprovar a necessidade. O projeto não instala `@primeuix/themes`, pois a aparência será controlada por Tailwind, pelas variáveis do `tailwindcss-primeui` e pelos componentes Volt mantidos no repositório.
+O bootstrap do Vue configura o PrimeVue uma única vez com `{ unstyled: true }`. Os componentes Volt ficam em `frontend/src/volt/` e são adicionados somente quando usados, com `npx volt-vue@0.0.0-alpha.4 add <Componente>`. `Button` e `InputText` formam o ponto de partida da home; diálogo, drawer, tooltip, badge, avatar ou skeleton entram quando o desenho comprovar a necessidade. Não usar `add all` nem copiar antecipadamente o catálogo inteiro.
+
+Antes de adicionar um componente Volt, confirmar que o componente base é exportado por `primevue@4.5.5`. Depois do comando, revisar o diff, os imports e qualquer alteração no `package.json` e no `package-lock.json`. O componente só permanece se usar APIs disponíveis nessa linha de base e não introduzir `@primeui/license-manager`, PrimeVue 5, PrimeIcons 8 ou outra dependência sujeita à licença PrimeUI. Registrar a versão de origem junto da alteração para que a compatibilidade possa ser conferida novamente.
+
+O projeto não instala `@primeuix/themes`, pois a aparência será controlada por Tailwind, pelas variáveis do `tailwindcss-primeui` e pelos componentes Volt mantidos no repositório.
 
 ```ts
 import PrimeVue from 'primevue/config'
