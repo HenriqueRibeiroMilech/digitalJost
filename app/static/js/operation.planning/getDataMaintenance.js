@@ -10,7 +10,8 @@ async function getDataMaintenance() {
 
     if (year && week) {
 
-        const url = `/op/plano/area/3?type=maintenance&year=${year}&week=${week}`;
+        const diagnostic = new URLSearchParams(window.location.search).get('diagnostic') === '1';
+        const url = `/op/plano/area/3?type=maintenance&year=${year}&week=${week}${diagnostic ? '&diagnostic=1' : ''}`;
 
         fetch(url, { method: 'POST' })
             .then(response => response.json())
