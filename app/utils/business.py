@@ -276,99 +276,77 @@ def _get_current_status_stops(received_data):
             'Plex', 'Event'
         ])
 
-    reason_expression = (
-        "COALESCE(NULLIF(LTRIM(RTRIM(T1.WcReason)), ''), 'Sem Justificativa')"
-    )
-    status_expression = """CASE
-        WHEN NULLIF(LTRIM(RTRIM(T1.WcStatus)), '') IS NULL THEN 'Sem Categoria'
-        WHEN LTRIM(RTRIM(T1.WcStatus)) IN ('Manutenção Parada', 'Manutenção Produtiva') THEN 'Manutenção'
-        ELSE LTRIM(RTRIM(T1.WcStatus))
-    END"""
-    shift_expression = "T1.CurrentShift"
-    end_expression = "COALESCE(T1.StatusEnd, GETDATE())"
-
     params = {
         'start_date': received_data['start_date'],
-        'end_date': received_data['end_date']
+        'end_date': received_data['end_date'],
+        'workcenter_list': ','.join(target_workcenters)
     }
-    target_workcenter_rows = []
-    for index, workcenter in enumerate(target_workcenters):
-        parameter_name = f'target_workcenter_{index}'
-        params[parameter_name] = workcenter
-        target_workcenter_rows.append(f'(CAST(:{parameter_name} AS VARCHAR(50)))')
-
-    conditions = [
-        "NULLIF(LTRIM(RTRIM(T1.Workcenter)), '') IS NOT NULL",
-        """(
-            NULLIF(LTRIM(RTRIM(T1.WcReason)), '') IS NOT NULL
-            OR COALESCE(NULLIF(LTRIM(RTRIM(T1.WcStatus)), ''), 'Produção') <> 'Produção'
-        )""",
-        f'{end_expression} > :start_date'
+    selected_shifts = {
+        '1': 'Turno 1',
+        '2': 'Turno 2',
+        '3': 'Turno 3',
+        'Extra': 'Extra'
+    }
+    shift_values = [
+        selected_shifts[shift]
+        for shift in received_data.get('shift', [])
+        if shift in selected_shifts
     ]
+    params['shift_list'] = ','.join(shift_values) or None
 
-    if received_data.get('w_group'):
-        selected_shifts = {
-            '1': 'Primeiro',
-            '2': 'Segundo',
-            '3': 'Terceiro',
-            'Extra': 'Extra'
-        }
-        shift_values = [
-            selected_shifts[shift]
-            for shift in received_data.get('shift', [])
-            if shift in selected_shifts
-        ]
-        _add_parameterized_list_filter(
-            conditions,
-            params,
-            shift_expression,
-            shift_values,
-            'shift'
-        )
-
-    query = f"""
-        WITH TargetWorkcenters AS (
-            SELECT Workcenter_Code
-            FROM (VALUES {', '.join(target_workcenter_rows)}) AS Target(Workcenter_Code)
-        )
-
-        SELECT
-            T1.ID AS Log_Key
-            , T1.Workcenter AS Workcenter_Code
-            , T1.StatusBegin AS Source_Log_Date
-            , Bounds.Log_Start AS Log_Date
-            , Bounds.Log_End AS End_Date
-            , ROUND(DATEDIFF(SECOND, Bounds.Log_Start, Bounds.Log_End) / 60.0, 2) AS Log_Minutes
-            , CAST('' AS VARCHAR(1)) AS Code
-            , {status_expression} AS Status
-            , {shift_expression} AS Shift
-            , 1 AS Plex
-            , {reason_expression} AS Event
-
-        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status] T1
-
-        JOIN TargetWorkcenters Target
-            ON Target.Workcenter_Code = T1.Workcenter
-
-        CROSS APPLY (
-            SELECT
-                CASE
-                    WHEN T1.StatusBegin < :start_date THEN CAST(:start_date AS DATETIME2)
-                    ELSE T1.StatusBegin
-                END AS Log_Start
-                , CASE
-                    WHEN {end_expression} > :end_date
-                    THEN CAST(:end_date AS DATETIME2)
-                    ELSE {end_expression}
-                END AS Log_End
-        ) Bounds
-
-        WHERE {' AND '.join(conditions)}
-            AND T1.StatusBegin < :end_date
-            AND Bounds.Log_End > Bounds.Log_Start
+    query = """
+        EXEC [JOST_INTEGRATION_PRD].[dbo].[TD_OEE_ObterParadas]
+            @data_inicio = :start_date,
+            @data_fim = :end_date,
+            @workcenter_list = :workcenter_list,
+            @shift_list = :shift_list
     """
 
     event = _run_query_with_deadlock_retry(query, 'plex', params)
+    event = event.rename(columns={
+        'id': 'Log_Key',
+        'workcenter': 'Workcenter_Code',
+        'status': 'Status',
+        'motivo': 'Event',
+        'data_inicio': 'Source_Log_Date',
+        'data_fim': 'Source_End_Date',
+        'turno': 'Shift',
+        'minutos_parados': 'Log_Minutes'
+    })
+
+    start_date = pd.to_datetime(received_data['start_date'])
+    end_date = pd.to_datetime(received_data['end_date'])
+    now = pd.Timestamp.now()
+
+    event['Source_Log_Date'] = pd.to_datetime(event['Source_Log_Date'])
+    event['Source_End_Date'] = pd.to_datetime(event['Source_End_Date'])
+    event['Log_Date'] = event['Source_Log_Date'].clip(lower=start_date)
+    event['End_Date'] = event['Source_End_Date'].fillna(min(now, end_date))
+    event['End_Date'] = event['End_Date'].clip(upper=end_date)
+
+    event['Event'] = (
+        event['Event']
+        .fillna('')
+        .astype(str)
+        .str.strip()
+        .replace('', 'Sem Justificativa')
+    )
+    event['Status'] = (
+        event['Status']
+        .fillna('')
+        .astype(str)
+        .str.strip()
+        .replace('', 'Sem Categoria')
+        .apply(_normalize_stop_status)
+    )
+    event['Shift'] = event['Shift'].replace({
+        'Turno 1': 'Primeiro',
+        'Turno 2': 'Segundo',
+        'Turno 3': 'Terceiro'
+    })
+
+    event['Code'] = ''
+    event['Plex'] = 1
     event = _apply_approved_stop_changes(event, workcenters, received_data)
 
     if received_data.get('m_group'):
