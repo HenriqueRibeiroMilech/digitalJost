@@ -402,7 +402,7 @@ def planning_area_post(areaId):
                 stopped_event_future = executor.submit(
                     getStopsData,
                     stops_payload,
-                    use_status_reason_time=True
+                    use_current_status=True
                 )
             else:
                 plex_stopped_event = executor.submit(engine_run_query, plex_stopped_event_query, 'jdt')
