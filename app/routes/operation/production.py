@@ -25,7 +25,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 
 from concurrent.futures import ThreadPoolExecutor
@@ -36,6 +36,7 @@ from flask_login import current_user
 from app.utils.db_utils import engine_run_query, timed_query
 from app.utils.dynamic_constants import getPlex
 from app.utils.permissions import get_permission
+from app.routes.operation.shift_handoffs_repository import get_shift_handoffs
 
 
 operation_production_bp = Blueprint('operation_production', __name__)
@@ -48,6 +49,33 @@ def route_auth():
     
     if not get_permission('GENERAL').can():
         return abort(403)
+
+
+@operation_production_bp.route('/op/producao/apontamentos-por-turno', methods=['GET'])
+def shift_handoffs():
+    selected_date = request.args.get('data') or (datetime.now().date() - timedelta(days=1)).isoformat()
+
+    try:
+        parsed_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        if parsed_date.isoformat() != selected_date:
+            raise ValueError('Data inválida')
+    except ValueError:
+        abort(400, 'Informe uma data válida no formato AAAA-MM-DD.')
+
+    shifts = {'Turno 1': [], 'Turno 2': [], 'Turno 3': []}
+    for row in get_shift_handoffs(parsed_date):
+        shift = row['turno_que_deixou']
+        if shift in shifts:
+            shifts[shift].append(row)
+
+    for rows in shifts.values():
+        rows.sort(key=lambda row: row['workcenter'])
+
+    return render_template(
+        'operation.prod/shift_handoffs.html',
+        selected_date=selected_date,
+        shifts=shifts,
+    )
     
 
 def _GET_PROD_DATA(group_by_workcenter, payload):

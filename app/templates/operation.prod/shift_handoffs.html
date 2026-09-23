@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Apontamentos deixados por turno | Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/shift_handoffs.css') }}">
+</head>
+<body>
+    <main class="shift-handoffs">
+        <a class="shift-handoffs__back" href="/">← Voltar ao início</a>
+        <h1>Apontamentos deixados por turno</h1>
+
+        <form class="shift-handoffs__filter" method="get">
+            <label for="data">Data de referência</label>
+            <input id="data" name="data" type="date" value="{{ selected_date }}" required>
+            <button type="submit">Consultar</button>
+        </form>
+
+        <div class="shift-handoffs__grid">
+            {% for shift, rows in shifts.items() %}
+            <section class="shift-handoffs__card" aria-labelledby="shift-title-{{ loop.index }}">
+                <h2 id="shift-title-{{ loop.index }}">{{ shift }}</h2>
+                <table>
+                    <thead>
+                        <tr><th scope="col">Centro de trabalho</th><th scope="col">Apontamentos</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td>{{ row.workcenter }}</td>
+                            <td class="shift-handoffs__quantity">{{ row.apontamentos_deixados }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="2" class="shift-handoffs__empty">Nenhum apontamento encontrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+            {% endfor %}
+        </div>
+        <p class="shift-handoffs__note">Registros com turno a confirmar não são exibidos.</p>
+    </main>
+</body>
+</html>
