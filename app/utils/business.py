@@ -237,7 +237,7 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
     return event
 
 
-def _get_status_reason_time_stops(received_data):
+def _get_current_status_stops(received_data):
     workcenters = getPlex('workcenters')[[
         'Workcenter_Key', 'Workcenter_Code', 'Name', 'Workcenter_Group'
     ]].copy()
@@ -277,31 +277,15 @@ def _get_status_reason_time_stops(received_data):
         ])
 
     reason_expression = (
-        "COALESCE(NULLIF(LTRIM(RTRIM(T1.wc_reason)), ''), 'Sem Justificativa')"
+        "COALESCE(NULLIF(LTRIM(RTRIM(T1.WcReason)), ''), 'Sem Justificativa')"
     )
     status_expression = """CASE
-        WHEN NULLIF(LTRIM(RTRIM(T1.wc_stauts)), '') IS NULL THEN 'Sem Categoria'
-        WHEN LTRIM(RTRIM(T1.wc_stauts)) IN ('Manutenção Parada', 'Manutenção Produtiva') THEN 'Manutenção'
-        ELSE LTRIM(RTRIM(T1.wc_stauts))
+        WHEN NULLIF(LTRIM(RTRIM(T1.WcStatus)), '') IS NULL THEN 'Sem Categoria'
+        WHEN LTRIM(RTRIM(T1.WcStatus)) IN ('Manutenção Parada', 'Manutenção Produtiva') THEN 'Manutenção'
+        ELSE LTRIM(RTRIM(T1.WcStatus))
     END"""
-    shift_expression = """CASE T1.wc_shift
-        WHEN 'Turno 1' THEN 'Primeiro'
-        WHEN 'Turno 2' THEN 'Segundo'
-        WHEN 'Turno 3' THEN 'Terceiro'
-        ELSE T1.wc_shift
-    END"""
-    duration_end_expression = (
-        "DATEADD(SECOND, T1.wc_status_reason_time, T1.record_time)"
-    )
-    end_expression = f"""CASE
-        WHEN T1.NextReasonTime IS NOT NULL
-            AND (
-                {duration_end_expression} IS NULL
-                OR T1.NextReasonTime < {duration_end_expression}
-            )
-        THEN T1.NextReasonTime
-        ELSE COALESCE({duration_end_expression}, GETDATE())
-    END"""
+    shift_expression = "T1.CurrentShift"
+    end_expression = "COALESCE(T1.StatusEnd, GETDATE())"
 
     params = {
         'start_date': received_data['start_date'],
@@ -314,10 +298,10 @@ def _get_status_reason_time_stops(received_data):
         target_workcenter_rows.append(f'(CAST(:{parameter_name} AS VARCHAR(50)))')
 
     conditions = [
-        "NULLIF(LTRIM(RTRIM(T1.workcenter)), '') IS NOT NULL",
+        "NULLIF(LTRIM(RTRIM(T1.Workcenter)), '') IS NOT NULL",
         """(
-            NULLIF(LTRIM(RTRIM(T1.wc_reason)), '') IS NOT NULL
-            OR COALESCE(NULLIF(LTRIM(RTRIM(T1.wc_stauts)), ''), 'Produção') <> 'Produção'
+            NULLIF(LTRIM(RTRIM(T1.WcReason)), '') IS NOT NULL
+            OR COALESCE(NULLIF(LTRIM(RTRIM(T1.WcStatus)), ''), 'Produção') <> 'Produção'
         )""",
         f'{end_expression} > :start_date'
     ]
@@ -346,59 +330,12 @@ def _get_status_reason_time_stops(received_data):
         WITH TargetWorkcenters AS (
             SELECT Workcenter_Code
             FROM (VALUES {', '.join(target_workcenter_rows)}) AS Target(Workcenter_Code)
-        ),
-        PeriodRows AS (
-            SELECT
-                T1.id
-                , T1.workcenter
-                , T1.wc_shift
-                , T1.wc_stauts
-                , T1.wc_reason
-                , T1.wc_status_reason_time
-                , T1.record_time
-            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T1
-            JOIN TargetWorkcenters Target
-                ON Target.Workcenter_Code = T1.workcenter
-            WHERE T1.record_time >= :start_date
-                AND T1.record_time < :end_date
-        ),
-        PreviousRows AS (
-            SELECT Previous.*
-            FROM TargetWorkcenters Target
-            CROSS APPLY (
-                SELECT TOP 1
-                    T1.id
-                    , T1.workcenter
-                    , T1.wc_shift
-                    , T1.wc_stauts
-                    , T1.wc_reason
-                    , T1.wc_status_reason_time
-                    , T1.record_time
-                FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Status_Reason_Time] T1
-                WHERE T1.workcenter = Target.Workcenter_Code
-                    AND T1.record_time < :start_date
-                ORDER BY T1.record_time DESC, T1.id DESC
-            ) Previous
-        ),
-        CandidateRows AS (
-            SELECT * FROM PreviousRows
-            UNION ALL
-            SELECT * FROM PeriodRows
-        ),
-        PreparedRows AS (
-            SELECT
-                CandidateRows.*
-                , LEAD(record_time) OVER (
-                    PARTITION BY workcenter
-                    ORDER BY record_time, id
-                ) AS NextReasonTime
-            FROM CandidateRows
         )
 
         SELECT
-            T1.id AS Log_Key
-            , T1.workcenter AS Workcenter_Code
-            , T1.record_time AS Source_Log_Date
+            T1.ID AS Log_Key
+            , T1.Workcenter AS Workcenter_Code
+            , T1.StatusBegin AS Source_Log_Date
             , Bounds.Log_Start AS Log_Date
             , Bounds.Log_End AS End_Date
             , ROUND(DATEDIFF(SECOND, Bounds.Log_Start, Bounds.Log_End) / 60.0, 2) AS Log_Minutes
@@ -408,13 +345,16 @@ def _get_status_reason_time_stops(received_data):
             , 1 AS Plex
             , {reason_expression} AS Event
 
-        FROM PreparedRows T1
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status] T1
+
+        JOIN TargetWorkcenters Target
+            ON Target.Workcenter_Code = T1.Workcenter
 
         CROSS APPLY (
             SELECT
                 CASE
-                    WHEN T1.record_time < :start_date THEN CAST(:start_date AS DATETIME2)
-                    ELSE T1.record_time
+                    WHEN T1.StatusBegin < :start_date THEN CAST(:start_date AS DATETIME2)
+                    ELSE T1.StatusBegin
                 END AS Log_Start
                 , CASE
                     WHEN {end_expression} > :end_date
@@ -424,6 +364,7 @@ def _get_status_reason_time_stops(received_data):
         ) Bounds
 
         WHERE {' AND '.join(conditions)}
+            AND T1.StatusBegin < :end_date
             AND Bounds.Log_End > Bounds.Log_Start
     """
 
@@ -458,7 +399,7 @@ def _get_status_reason_time_stops(received_data):
 
 def getStopsData(
     received_data,
-    use_status_reason_time=False,
+    use_current_status=False,
     apply_approved_changes=False
 ):
     """
@@ -475,7 +416,7 @@ def getStopsData(
             m_group: LISTA DE Workcenter_Event_Group/CATEGORIA
 
         3. CONTROLE DA FONTE PLEX:
-            use_status_reason_time: usa Mach_2_Status_Reason_Time no lugar da procedure legada
+            use_current_status: usa Mach_2_Current_Status no lugar da procedure legada
             apply_approved_changes: sobrepõe alterações aprovadas pelo Log_Key original
 
         LÓGICAS DE NEGOCIO: 
@@ -486,8 +427,8 @@ def getStopsData(
     shift_filter = {"1": 'primeiro', "2": 'segundo', "3": 'terceiro', 'Extra': None}
     received_data["shift_plex"] = [shift_filter[shift] for shift in received_data["shift"] if shift_filter[shift] is not None]
 
-    if use_status_reason_time:
-        event = _get_status_reason_time_stops(received_data)
+    if use_current_status:
+        event = _get_current_status_stops(received_data)
     else:
         events_join = getPlex('events')
         events_join.loc[len(events_join)] = [1, 'Sem Justificativa', 'Sem Categoria', 1, "0"]
@@ -564,7 +505,7 @@ def getStopsData(
         f"T3.CATEGORIA IN {format_tuple(received_data['m_group'])}" if received_data['m_group'] else "T3.CATEGORIA = 'aaa'"
     ] if received_data.get('w_group') else []
 
-    if received_data.get('m_event') and not use_status_reason_time and not apply_approved_changes:
+    if received_data.get('m_event') and not use_current_status and not apply_approved_changes:
         filters.append(f"T3.COD_PARADA IN {format_tuple(received_data['m_event'])}")
 
     conditions = []
@@ -577,7 +518,7 @@ def getStopsData(
     workcenter_condition = f"({ ' OR '.join(conditions) })" if conditions else "(1=1)"
 
     filter_string = "AND " + " AND ".join(filters) if filters else ""
-    mic_event_description = ", T3.DESC_PARADA AS Event" if use_status_reason_time else ""
+    mic_event_description = ", T3.DESC_PARADA AS Event" if use_current_status else ""
 
     mic_period_end = f"""CASE
         WHEN T2.CT_PLEX_DATA < '{received_data['end_date']}'
@@ -585,7 +526,7 @@ def getStopsData(
         ELSE '{received_data['end_date']}'
     END"""
 
-    if use_status_reason_time:
+    if use_current_status:
         mic_log_start = f"""CASE
             WHEN T1.tStart < '{received_data['start_date']}'
             THEN CAST('{received_data['start_date']}' AS DATETIME)
@@ -656,13 +597,13 @@ def getStopsData(
 
     mic_event = engine_run_query(query, 'ftm')
 
-    if use_status_reason_time and received_data.get('m_event'):
+    if use_current_status and received_data.get('m_event'):
         mic_event = mic_event[mic_event['Event'].isin(received_data['m_event'])]
 
     data = pd.concat([event, mic_event])
     data['Code'] = data['Code'].astype(str)
 
-    if use_status_reason_time:
+    if use_current_status:
         return data
 
     data = pd.merge(left=data, right=events_join, left_on='Code', right_on='Code').drop(columns=['Workcenter_Event_Key', 'Workcenter_Event_Group', 'Active']).rename(columns={"Description": "Event"})
