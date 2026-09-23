@@ -71,10 +71,19 @@ def shift_handoffs():
     for rows in shifts.values():
         rows.sort(key=lambda row: row['workcenter'])
 
+    day = parsed_date.strftime('%d/%m/%Y')
+    next_day = (parsed_date + timedelta(days=1)).strftime('%d/%m/%Y')
+    shift_periods = {
+        'Turno 1': f'{day} 07:12 – {day} 17:00',
+        'Turno 2': f'{day} 17:00 – {next_day} 02:12',
+        'Turno 3': f'{next_day} 02:12 – {next_day} 07:12',
+    }
+
     return render_template(
         'operation.prod/shift_handoffs.html',
         selected_date=selected_date,
         shifts=shifts,
+        shift_periods=shift_periods,
     )
     
 

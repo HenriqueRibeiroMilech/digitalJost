@@ -21,7 +21,10 @@
         <div class="shift-handoffs__grid">
             {% for shift, rows in shifts.items() %}
             <section class="shift-handoffs__card" aria-labelledby="shift-title-{{ loop.index }}">
-                <h2 id="shift-title-{{ loop.index }}">{{ shift }}</h2>
+                <h2 id="shift-title-{{ loop.index }}">
+                    <span>{{ shift }}</span>
+                    <small class="shift-handoffs__period">Previsto: {{ shift_periods[shift] }}</small>
+                </h2>
                 <table>
                     <thead>
                         <tr><th scope="col">Centro de trabalho</th><th scope="col">Apontamentos</th></tr>

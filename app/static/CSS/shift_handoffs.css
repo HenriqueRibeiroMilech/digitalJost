@@ -57,12 +57,18 @@ body {
 }
 
 .shift-handoffs__card h2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
     margin: 0;
     padding: 14px 16px;
     background: #153a8a;
     color: #fff;
     font-size: 1.2rem;
 }
+
+.shift-handoffs__period { font-size: .8rem; font-weight: normal; }
 
 .shift-handoffs__card table { width: 100%; border-collapse: collapse; }
 .shift-handoffs__card th,
