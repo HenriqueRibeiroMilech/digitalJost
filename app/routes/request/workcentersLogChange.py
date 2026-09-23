@@ -82,23 +82,63 @@ def _current_user_is_admin():
     return admin_value in {'1', 'true', 'yes'} or get_permission('SYSADMIN').can()
 
 
-def _is_transformation_digital_motive(code, events):
+def _normalize_catalog_id(value):
+    if pd.isna(value):
+        return None
+
+    try:
+        return str(int(float(value)))
+    except (TypeError, ValueError):
+        return str(value).strip()
+
+
+def _get_plex_event(events, code=None, event_key=None):
+    normalized_event_key = _normalize_catalog_id(event_key)
+    if normalized_event_key is not None:
+        matching_events = events[
+            events['Workcenter_Event_Key']
+            .apply(_normalize_catalog_id)
+            .eq(normalized_event_key)
+        ]
+    else:
+        normalized_code = _normalize_catalog_id(code)
+        matching_events = events[
+            events['Code'].apply(_normalize_catalog_id).eq(normalized_code)
+        ]
+
+    if len(matching_events) != 1:
+        raise _CurrentStatusMatchError(
+            'MOTIVO DA PARADA NAO FOI IDENTIFICADO DE FORMA UNICA.'
+        )
+
+    return matching_events.iloc[0]
+
+
+def _is_transformation_digital_motive(code, events, event_key=None):
     code = int(code)
-    event = events[events['Code'].astype(str) == str(code)]
+    try:
+        event = _get_plex_event(events, code, event_key)
+    except _CurrentStatusMatchError:
+        event = None
 
     return (
         code in _TRANSFORMATION_DIGITAL_MOTIVE_CODES
         or (
-            not event.empty
-            and str(event.iloc[0]['Workcenter_Event_Group']).strip() == 'Programada'
+            event is not None
+            and str(event['Workcenter_Event_Group']).strip() == 'Programada'
         )
     )
 
 
-def _get_problem_area_id(code, events, transformation_digital_area_id):
+def _get_problem_area_id(
+    code,
+    events,
+    transformation_digital_area_id,
+    event_key=None
+):
     code = int(code)
 
-    if _is_transformation_digital_motive(code, events):
+    if _is_transformation_digital_motive(code, events, event_key):
         return transformation_digital_area_id
 
     problem_area = _PROBLEM_CATEGORY[_PROBLEM_CATEGORY['Code'] == code]
@@ -130,14 +170,47 @@ def _get_area_approver(
     return area_approvers
 
 
-def _get_plex_event(events, code):
-    event = events[events['Code'].astype(str) == str(int(code))]
-    if event.empty:
-        raise _CurrentStatusMatchError(
-            'MOTIVO DA PARADA NAO ENCONTRADO NO CATALOGO DO PLEX.'
+def _add_motive_descriptions(table, events):
+    table = table.copy()
+    event_by_key = {
+        _normalize_catalog_id(row.Workcenter_Event_Key): row.Description
+        for row in events[['Workcenter_Event_Key', 'Description']]
+        .itertuples(index=False)
+    }
+    descriptions_by_code = {}
+    for row in events[['Code', 'Description']].itertuples(index=False):
+        if pd.isna(row.Description):
+            continue
+        code = _normalize_catalog_id(row.Code)
+        descriptions_by_code.setdefault(code, set()).add(str(row.Description))
+    descriptions_by_code = {
+        code: next(iter(descriptions))
+        for code, descriptions in descriptions_by_code.items()
+        if len(descriptions) == 1
+    }
+
+    def get_description(row, code_column, event_key_column):
+        event_key = _normalize_catalog_id(row.get(event_key_column))
+        if event_key is not None and event_key in event_by_key:
+            return event_by_key[event_key]
+
+        code = _normalize_catalog_id(row.get(code_column))
+        return descriptions_by_code.get(
+            code,
+            'Motivo com código duplicado; identificação pendente'
         )
 
-    return event.iloc[0]
+    table['motiveDesc1'] = table.apply(
+        get_description,
+        axis=1,
+        args=('motive1', 'motive1EventKey')
+    )
+    table['motiveDesc2'] = table.apply(
+        get_description,
+        axis=1,
+        args=('motive2', 'motive2EventKey')
+    )
+    return table
 
 
 def _find_current_status_stop(check_request, events):
@@ -156,8 +229,16 @@ def _find_current_status_stop(check_request, events):
             'CENTRO DE TRABALHO NAO ENCONTRADO PARA A PARADA DO PLEX.'
         )
 
-    old_motive = _get_plex_event(events, check_request['motive1'])
-    new_motive = _get_plex_event(events, check_request['motive2'])
+    old_motive = _get_plex_event(
+        events,
+        check_request['motive1'],
+        check_request.get('motive1EventKey')
+    )
+    new_motive = _get_plex_event(
+        events,
+        check_request['motive2'],
+        check_request.get('motive2EventKey')
+    )
     start_date = pd.to_datetime(check_request['startDate'])
     end_date = pd.to_datetime(check_request['endDate'])
 
@@ -340,6 +421,7 @@ def stopChanges_main():
                                 , FORMAT(DATEADD(MINUTE, Log_Hours * 60.0, Log_Date), 'dd/MM/yyyy HH:mm:ss') AS End_Date
                                 , CAST(ROUND(Log_Hours * 60, 0) AS INT) AS Log_Minutes
                                 , Code
+                                , MotiveEventKey
                                 , CASE Shift
                                     WHEN 'Primeiro' THEN 1
                                     WHEN 'Segundo' THEN 2
@@ -356,6 +438,7 @@ def stopChanges_main():
                                     , T2.Name AS Workcenter_Name
                                     , T2.Workcenter_Code
                                     , T3.Code AS Code
+                                    , T1.Workcenter_Event_Key AS MotiveEventKey
                                     , T5.Shift_Group AS Shift
                                     , T1.Log_Key
 
@@ -388,6 +471,7 @@ def stopChanges_main():
                                 , FORMAT(tEnd, 'dd/MM/yyyy HH:mm:ss') AS End_Date
                                 , DATEDIFF(MINUTE, tStart, tEnd) AS Log_Minutes
                                 , CAST(SUBSTRING(TRIM(sEndVal), 0, 4) AS INT) AS Code
+                                , NULL AS MotiveEventKey
                                 , CASE sShift
                                     WHEN 'TURNO 1' THEN 1
                                     WHEN 'TURNO 2' THEN 2
@@ -416,7 +500,7 @@ def stopChanges_main():
                 if payload.get('Plex'):
                     approved_motive = pd.read_sql(
                         text("""
-                            SELECT TOP 1 motive2
+                            SELECT TOP 1 motive2, motive2EventKey
                             FROM JDT_REQUEST_STOPCHANGES
                             WHERE eventId = :event_id
                                 AND plex = 1
@@ -432,6 +516,10 @@ def stopChanges_main():
 
                     if not approved_motive.empty:
                         check_request['Code'] = approved_motive.iloc[0]['motive2']
+                        if pd.notna(approved_motive.iloc[0]['motive2EventKey']):
+                            check_request['MotiveEventKey'] = (
+                                approved_motive.iloc[0]['motive2EventKey']
+                            )
 
                 query = f"""SELECT 
                             T1.userId
@@ -459,15 +547,35 @@ def stopChanges_main():
                 )
 
                 events = getPlex('events')
+                active_events = events[events['Active'] == 1]
+                try:
+                    new_motive = _get_plex_event(
+                        active_events,
+                        event_key=payload.get('newMotiveEventKey')
+                    )
+                except _CurrentStatusMatchError as error:
+                    return str(error), 400
+
+                new_motive_code = _normalize_catalog_id(new_motive['Code'])
+                new_motive_event_key = int(float(
+                    new_motive['Workcenter_Event_Key']
+                ))
+                old_motive_event_key = (
+                    int(float(check_request['MotiveEventKey']))
+                    if pd.notna(check_request.get('MotiveEventKey'))
+                    else None
+                )
                 problemAreaOld = _get_problem_area_id(
                     check_request['Code'],
                     events,
-                    transformation_digital_area_id
+                    transformation_digital_area_id,
+                    old_motive_event_key
                 )
                 problemAreaNew = _get_problem_area_id(
-                    payload['newMotive'],
+                    new_motive_code,
                     events,
-                    transformation_digital_area_id
+                    transformation_digital_area_id,
+                    new_motive_event_key
                 )
 
                 if problemAreaOld is None or problemAreaNew is None:
@@ -493,21 +601,59 @@ def stopChanges_main():
                 query = f"""SELECT COALESCE(MAX(requestId) + 1, 1) AS newId FROM JDT_REQUEST_STOPCHANGES"""
                 newId = pd.read_sql(query, cnnx)['newId'][0]
 
-                query = f"""
-                            INSERT INTO JDT_REQUEST_STOPCHANGES VALUES (
-                                '{newId}'
-                                , '{current_user.id}'
-                                , '{approver1['userId'].iloc[0]}'
-                                , '{approver2['userId'].iloc[0]}'
-                                , GETDATE(), NULL, 0, 0, NULL, NULL
-                                , '{check_request['Code']}'
-                                , '{payload["newMotive"]}'
-                                , {payload['Plex']}
-                                , {payload['Log_Key']}
-                                , '{payload["requestText"]}'
-                                , NULL)
-                """
-                cnnx.execute(text(query))
+                cnnx.execute(text("""
+                    INSERT INTO JDT_REQUEST_STOPCHANGES (
+                        requestId,
+                        requesterId,
+                        approver1,
+                        approver2,
+                        openDate,
+                        finalDate,
+                        approverStatus1,
+                        approverStatus2,
+                        approverDate1,
+                        approverDate2,
+                        motive1,
+                        motive2,
+                        plex,
+                        eventId,
+                        requestText,
+                        deniedText,
+                        motive1EventKey,
+                        motive2EventKey
+                    ) VALUES (
+                        :request_id,
+                        :requester_id,
+                        :approver1,
+                        :approver2,
+                        GETDATE(),
+                        NULL,
+                        0,
+                        0,
+                        NULL,
+                        NULL,
+                        :motive1,
+                        :motive2,
+                        :plex,
+                        :event_id,
+                        :request_text,
+                        NULL,
+                        :motive1_event_key,
+                        :motive2_event_key
+                    )
+                """), {
+                    'request_id': int(newId),
+                    'requester_id': str(current_user.id),
+                    'approver1': str(approver1['userId'].iloc[0]),
+                    'approver2': str(approver2['userId'].iloc[0]),
+                    'motive1': _normalize_catalog_id(check_request['Code']),
+                    'motive2': new_motive_code,
+                    'plex': int(bool(payload['Plex'])),
+                    'event_id': int(float(payload['Log_Key'])),
+                    'request_text': payload['requestText'],
+                    'motive1_event_key': old_motive_event_key,
+                    'motive2_event_key': new_motive_event_key
+                })
             
                 if payload['Plex']:
 
@@ -577,9 +723,19 @@ def stopChanges_main():
                 sender=('Transformação Digital JOST', 'noreply.digitaljost@randon.com.br'),
                 recipients=recipient_emails)
             
-            def format_code_description(code):
-                row = getPlex('events')[getPlex('events')['Code'] == str(code)].iloc[0]
-                return f"{row['Code']}-{row['Description']}"
+            def format_event(event):
+                return f"{event['Code']}-{event['Description']}"
+
+            try:
+                motive_old_text = format_event(_get_plex_event(
+                    events,
+                    check_request['Code'],
+                    old_motive_event_key
+                ))
+            except _CurrentStatusMatchError:
+                motive_old_text = (
+                    f"{check_request['Code']}-Motivo com identificação pendente"
+                )
             
             msg.html = render_template('request.stopChanges/stopChanges_email_new_request.html'
                                         , requestId=newId
@@ -588,8 +744,8 @@ def stopChanges_main():
                                         , stopDate=check_request['Log_Date']
                                         , shift=check_request['Shift']
                                         , duration=check_request['Log_Minutes']
-                                        , motiveOld=format_code_description(check_request["Code"])
-                                        , motiveNew=format_code_description(payload["newMotive"])
+                                        , motiveOld=motive_old_text
+                                        , motiveNew=format_event(new_motive)
                                         , requestText=payload["requestText"])
             
             mail.send(msg)
@@ -656,6 +812,8 @@ def stopChanges_view():
                 , FORMAT(T1.openDate, 'dd/MM/yyyy') AS openDate
                 , T1.motive1
                 , T1.motive2
+                , T1.motive1EventKey
+                , T1.motive2EventKey
                 , T1.approverStatus1
                 , T1.approverStatus2
                 , T1.Plex
@@ -682,8 +840,7 @@ def stopChanges_view():
 
         table = engine_run_query(query, 'jdt')
 
-        table = pd.merge(left=table, right=getPlex('events')[['Code', 'Description']], left_on="motive1", right_on="Code").rename(columns={'Description' : 'motiveDesc1'})
-        table = pd.merge(left=table, right=getPlex('events')[['Code', 'Description']], left_on="motive2", right_on="Code").rename(columns={'Description' : 'motiveDesc2'})
+        table = _add_motive_descriptions(table, getPlex('events'))
         
         workcenters = getPlex('workcenters')
         workcenters['Workcenter_Key'] = workcenters['Workcenter_Key'].astype(str)
@@ -709,6 +866,8 @@ def stopChanges_status(requestId):
                     , FORMAT(T1.finalDate, 'dd/MM/yyyy HH:mm:ss') as finalDate
                     , T1.motive1
                     , T1.motive2
+                    , T1.motive1EventKey
+                    , T1.motive2EventKey
                     , T1.approverStatus1
                     , T1.approverStatus2
                     , T1.eventId
@@ -760,8 +919,7 @@ def stopChanges_status(requestId):
         stop_data = pd.merge(left=stop_data, right=getPlex('workcenters')[['Workcenter_Key', 'Name', 'Workcenter_Code']], left_on='workcenter', right_on='Workcenter_Key')
         stop_data['workcenter'] = stop_data['Workcenter_Code'] + ' - ' + stop_data['Name']
     
-    data = pd.merge(left=data, right=getPlex('events')[['Code', 'Description']], left_on="motive1", right_on="Code").rename(columns={'Description' : 'motiveDesc1'})
-    data = pd.merge(left=data, right=getPlex('events')[['Code', 'Description']], left_on="motive2", right_on="Code").rename(columns={'Description' : 'motiveDesc2'})
+    data = _add_motive_descriptions(data, getPlex('events'))
 
     back = request.args.get('origin', 'solicitacoes')
 
@@ -795,6 +953,8 @@ def stopChanges_manage():
                         , FORMAT(T1.openDate, 'dd/MM/yyyy') AS openDate
                         , T1.motive1
                         , T1.motive2
+                        , T1.motive1EventKey
+                        , T1.motive2EventKey
                         , T1.approverStatus1
                         , T1.approverStatus2
                         , T1.Plex
@@ -821,8 +981,7 @@ def stopChanges_manage():
         table = engine_run_query(query, 'jdt') 
 
         events = getPlex('events')
-        table = pd.merge(left=table, right=events[['Code', 'Description']], left_on="motive1", right_on="Code").rename(columns={'Description' : 'motiveDesc1'})
-        table = pd.merge(left=table, right=events[['Code', 'Description']], left_on="motive2", right_on="Code").rename(columns={'Description' : 'motiveDesc2'})
+        table = _add_motive_descriptions(table, events)
         
         workcenters = getPlex('workcenters')
         workcenters['Workcenter_Key'] = workcenters['Workcenter_Key'].astype(str)
@@ -836,28 +995,32 @@ def stopChanges_manage():
         )
 
         transformation_digital_table = table
-        if is_admin:
-            transformation_digital_codes = set(
-                pd.to_numeric(
-                    events.loc[
-                        events['Workcenter_Event_Group'].astype(str).str.strip() == 'Programada',
-                        'Code'
-                    ],
-                    errors='coerce'
-                ).dropna().astype(int)
-            ) | _TRANSFORMATION_DIGITAL_MOTIVE_CODES
-
-            motive1 = pd.to_numeric(table['motive1'], errors='coerce')
-            motive2 = pd.to_numeric(table['motive2'], errors='coerce')
+        if is_admin and not table.empty:
+            motive1_is_transformation_digital = table.apply(
+                lambda row: _is_transformation_digital_motive(
+                    row['motive1'],
+                    events,
+                    row['motive1EventKey']
+                ),
+                axis=1
+            )
+            motive2_is_transformation_digital = table.apply(
+                lambda row: _is_transformation_digital_motive(
+                    row['motive2'],
+                    events,
+                    row['motive2EventKey']
+                ),
+                axis=1
+            )
             status1 = pd.to_numeric(table['approverStatus1'], errors='coerce')
             status2 = pd.to_numeric(table['approverStatus2'], errors='coerce')
             transformation_digital_table = table[
                 (
-                    motive1.isin(transformation_digital_codes)
+                    motive1_is_transformation_digital
                     & status1.eq(0)
                 )
                 | (
-                    motive2.isin(transformation_digital_codes)
+                    motive2_is_transformation_digital
                     & status2.eq(0)
                 )
             ]
@@ -877,6 +1040,7 @@ def stopChanges_manage():
                         approver1, approverStatus1,
                         approver2, approverStatus2,
                         motive1, motive2,
+                        motive1EventKey, motive2EventKey,
                         requestText, deniedText, finalDate, requesterId
                     
                     FROM JDT_REQUEST_STOPCHANGES WHERE requestId = {received_data['requestId']} ORDER BY openDate DESC"""
@@ -909,11 +1073,13 @@ def stopChanges_manage():
             transformation_digital_sides = {
                 1: _is_transformation_digital_motive(
                     check_request['motive1'][0],
-                    events
+                    events,
+                    check_request['motive1EventKey'][0]
                 ),
                 2: _is_transformation_digital_motive(
                     check_request['motive2'][0],
-                    events
+                    events,
+                    check_request['motive2EventKey'][0]
                 )
             }
 

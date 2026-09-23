@@ -361,7 +361,9 @@
                     <select id="newMotive">
                         <option disabled selected value="">Selecione uma opção</option>
                         {% for event in events %}
-                            <option value="{{ event.Code }}">{{event.Code}} - {{event.Description}}</option>
+                            <option value="{{ event.Workcenter_Event_Key }}">
+                                {{event.Code}} - {{event.Description}}
+                            </option>
                         {% endfor %}
                     </select>
     
@@ -383,10 +385,10 @@
 
         function requestChange(info) {
 
-            var newMotive = document.getElementById('newMotive').value
+            var newMotiveEventKey = document.getElementById('newMotive').value
             var requestText = document.getElementById('requestText').value
 
-            if (newMotive == '' || requestText == '') {
+            if (newMotiveEventKey == '' || requestText == '') {
                 alert("Você deve preencher todos os campos.")
                 return
             }
@@ -394,7 +396,7 @@
             const payload = {
                 Log_Key: info['Log_Key']
                 , Plex: info['Plex']
-                , newMotive: newMotive
+                , newMotiveEventKey: newMotiveEventKey
                 , requestText: requestText
             }
 
