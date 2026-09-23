@@ -70,6 +70,11 @@ _TRANSFORMATION_DIGITAL_PRIMARY_SHIFT = 0
 _TRANSFORMATION_DIGITAL_SECONDARY_SHIFT = 99
 # Sistema Indisponível também é responsabilidade da Transformação Digital.
 _TRANSFORMATION_DIGITAL_MOTIVE_CODES = {44}
+_CURRENT_STATUS_MATCH_TOLERANCE = timedelta(minutes=1)
+
+
+class _CurrentStatusMatchError(Exception):
+    pass
 
 
 def _current_user_is_admin():
@@ -123,6 +128,126 @@ def _get_area_approver(
         ]
 
     return area_approvers
+
+
+def _get_plex_event(events, code):
+    event = events[events['Code'].astype(str) == str(int(code))]
+    if event.empty:
+        raise _CurrentStatusMatchError(
+            'MOTIVO DA PARADA NAO ENCONTRADO NO CATALOGO DO PLEX.'
+        )
+
+    return event.iloc[0]
+
+
+def _find_current_status_stop(check_request, events):
+    workcenters = getPlex('workcenters')
+    workcenter_key = pd.to_numeric(
+        pd.Series([check_request['workcenter']]),
+        errors='coerce'
+    ).iloc[0]
+    matching_workcenters = workcenters[
+        pd.to_numeric(workcenters['Workcenter_Key'], errors='coerce')
+        .eq(workcenter_key)
+    ]
+
+    if matching_workcenters.empty:
+        raise _CurrentStatusMatchError(
+            'CENTRO DE TRABALHO NAO ENCONTRADO PARA A PARADA DO PLEX.'
+        )
+
+    old_motive = _get_plex_event(events, check_request['motive1'])
+    new_motive = _get_plex_event(events, check_request['motive2'])
+    start_date = pd.to_datetime(check_request['startDate'])
+    end_date = pd.to_datetime(check_request['endDate'])
+
+    if pd.isna(start_date) or pd.isna(end_date):
+        raise _CurrentStatusMatchError(
+            'PERIODO DA PARADA DO PLEX NAO FOI ENCONTRADO.'
+        )
+
+    query = """
+        SELECT
+            ID
+            , ABS(
+                DATEDIFF_BIG(MILLISECOND, :start_date, StatusBegin)
+            ) AS StartDifference
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+        WHERE Workcenter = :workcenter
+            AND CanRunProduction = 0
+            AND StatusBegin >= :minimum_start
+            AND StatusBegin <= :maximum_start
+            AND COALESCE(StatusEnd, GETDATE()) > :start_date
+            AND StatusBegin < :end_date
+            AND LTRIM(RTRIM(COALESCE(WcReason, ''))) IN (
+                :old_reason,
+                :new_reason
+            )
+        ORDER BY StartDifference, ID
+    """
+    params = {
+        'workcenter': str(matching_workcenters.iloc[0]['Workcenter_Code']),
+        'start_date': start_date.to_pydatetime(),
+        'end_date': end_date.to_pydatetime(),
+        'minimum_start': (
+            start_date - _CURRENT_STATUS_MATCH_TOLERANCE
+        ).to_pydatetime(),
+        'maximum_start': (
+            start_date + _CURRENT_STATUS_MATCH_TOLERANCE
+        ).to_pydatetime(),
+        'old_reason': str(old_motive['Description']).strip(),
+        'new_reason': str(new_motive['Description']).strip()
+    }
+    candidates = engine_run_query(query, 'plex', params)
+
+    if candidates.empty:
+        raise _CurrentStatusMatchError(
+            'PARADA CORRESPONDENTE NAO ENCONTRADA NO CURRENT STATUS.'
+        )
+
+    closest_difference = candidates['StartDifference'].min()
+    closest_candidates = candidates[
+        candidates['StartDifference'] == closest_difference
+    ]
+    if len(closest_candidates) != 1:
+        raise _CurrentStatusMatchError(
+            'MAIS DE UMA PARADA CORRESPONDENTE FOI ENCONTRADA NO CURRENT STATUS.'
+        )
+
+    return int(closest_candidates.iloc[0]['ID']), new_motive
+
+
+def _update_current_status_stop(current_status_id, new_motive):
+    new_status = str(new_motive['Workcenter_Event_Group']).strip()
+    if new_status in {'Manutenção Parada', 'Manutenção Produtiva'}:
+        new_status = 'Manutenção'
+
+    is_planned_stop = new_status == 'Programada'
+    query = """
+        UPDATE [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+        SET WcStatus = :status,
+            WcReason = :reason,
+            CanRunProduction = 0,
+            ProductionStatus = 0,
+            DowntimeStatus = :downtime_status,
+            PlannedProductionTime = :planned_production_time
+        WHERE ID = :current_status_id
+    """
+    params = {
+        'status': new_status,
+        'reason': str(new_motive['Description']).strip(),
+        'downtime_status': 0 if is_planned_stop else 1,
+        'planned_production_time': 0 if is_planned_stop else 1,
+        'current_status_id': current_status_id
+    }
+
+    engine = get_engine('plex')
+    with engine.begin() as cnnx:
+        result = cnnx.execute(text(query), params)
+        if result.rowcount != 1:
+            raise _CurrentStatusMatchError(
+                'NAO FOI POSSIVEL ATUALIZAR A PARADA NO CURRENT STATUS.'
+            )
 
 request_workcentersLogChange_bp = Blueprint('request_workcentersLogChange', __name__)
 
@@ -872,10 +997,10 @@ def stopChanges_manage():
                                         requestId = {received_data['requestId']}"""
                         cnnx.execute(text(query))
                 
-                cnnx.commit()
-                    
                 query = f"""SELECT 
-                                TOP(1) T1.*, T2.workcenter, T2.logMinutes / 60.0 AS logHours
+                                TOP(1) T1.*, T2.workcenter,
+                                T2.startDate, T2.endDate,
+                                T2.logMinutes / 60.0 AS logHours
                             FROM JDT_REQUEST_STOPCHANGES T1
                                 LEFT JOIN JDT_REQUEST_STOPCHANGES_PLEX T2 ON T1.eventId = T2.eventId
                             
@@ -884,19 +1009,22 @@ def stopChanges_manage():
                 check_request = check_request.iloc[0]
 
                 if not check_request['approverStatus1'] or not check_request['approverStatus2']:
+                    cnnx.commit()
                     return 'REQUEST APPROVED.', 200
-
-                query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
-                                finalDate = GETDATE() 
-                            WHERE 
-                                requestId = '{received_data['requestId']}'"""
-                cnnx.execute(text(query))
 
                 if check_request['plex']:
 
                     status_key = {'Mão de Obra': 10779, 'Método': 222, 'Manutenção' : 213 , 'Material' : 10781, 'Movimentação' : 10780, 'Programada' : 10778}
-                    
-                    newMotivePlex = getPlex('events')[check_request['motive2'] == getPlex('events')['Code']].iloc[0]
+                    events = getPlex('events')
+
+                    try:
+                        current_status_id, newMotivePlex = _find_current_status_stop(
+                            check_request,
+                            events
+                        )
+                    except _CurrentStatusMatchError as error:
+                        cnnx.rollback()
+                        return str(error), 409
 
                     payload = {
                         'inputs' : {
@@ -912,7 +1040,17 @@ def stopChanges_manage():
                     response = POST_WITH_AUTH("https://jost.on.plex.com/api/datasources/12272/execute", HTTPBasicAuth(MES_MAIN_USER, MES_MAIN_PASSWORD), payload)
 
                     if "errors" in response:
+                        cnnx.rollback()
                         return 'PLEX ERROR.', 400
+
+                    try:
+                        _update_current_status_stop(
+                            current_status_id,
+                            newMotivePlex
+                        )
+                    except _CurrentStatusMatchError as error:
+                        cnnx.rollback()
+                        return str(error), 409
 
                 else:
                     
@@ -921,6 +1059,11 @@ def stopChanges_manage():
                         query = f"""UPDATE [FTMETRICS_JOST].[dbo].OEEQEventHistory SET sEndVal = '{check_request['motive2']}' WHERE lOEEEventId = '{check_request['eventId'].astype(int)}'"""
                         cnnx2.execute(text(query))
 
+                query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET
+                                finalDate = GETDATE()
+                            WHERE
+                                requestId = '{received_data['requestId']}'"""
+                cnnx.execute(text(query))
                 cnnx.commit()
 
                 query = f"""SELECT companyEmail FROM JDT_USER_DETAILS WHERE id = '{check_request['requesterId']}'"""
