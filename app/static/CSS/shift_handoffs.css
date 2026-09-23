@@ -66,12 +66,11 @@ body {
 
 .shift-handoffs__card table { width: 100%; border-collapse: collapse; }
 .shift-handoffs__card th,
-.shift-handoffs__card td { padding: 12px 16px; border-bottom: 1px solid #e8edf4; text-align: left; }
+.shift-handoffs__card td { padding: 12px 16px; border-bottom: 1px solid #e8edf4; text-align: center; }
 .shift-handoffs__card th { background: #eef3fa; font-size: .9rem; }
 .shift-handoffs__card tr:last-child td { border-bottom: 0; }
-.shift-handoffs__quantity { text-align: right !important; font-weight: 600; }
+.shift-handoffs__quantity { font-weight: 600; }
 .shift-handoffs__empty { color: #67768a; }
-.shift-handoffs__note { margin-top: 18px; color: #67768a; font-size: .9rem; }
 
 @media (max-width: 800px) {
     .shift-handoffs__grid { grid-template-columns: 1fr; }
