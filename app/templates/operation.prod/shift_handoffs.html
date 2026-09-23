@@ -18,7 +18,7 @@
             <button type="submit">Consultar</button>
         </form>
 
-        <div class="shift-handoffs__grid{% if shifts|length == 1 %} shift-handoffs__grid--single{% endif %}">
+        <div class="shift-handoffs__grid">
             {% for shift, rows in shifts.items() %}
             <section class="shift-handoffs__card" aria-labelledby="shift-title-{{ loop.index }}">
                 <h2 id="shift-title-{{ loop.index }}">

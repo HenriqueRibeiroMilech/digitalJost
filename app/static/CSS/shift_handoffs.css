@@ -48,12 +48,6 @@ body {
     align-items: start;
 }
 
-.shift-handoffs__grid--single {
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 440px;
-    margin: 0 auto;
-}
-
 .shift-handoffs__card {
     overflow: hidden;
     border: 1px solid #dbe3ed;

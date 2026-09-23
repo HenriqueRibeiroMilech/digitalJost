@@ -85,7 +85,6 @@ def shift_handoffs():
     }
 
     if parsed_date.weekday() == 6:  # Domingo
-        shifts = {'Turno 3': shifts['Turno 3']}
         if SUNDAY_THIRD_SHIFT_START is None:
             shift_periods['Turno 3'] = f'Início a confirmar – {next_day} 07:12'
         else:
