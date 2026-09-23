@@ -39,6 +39,11 @@ from app.utils.permissions import get_permission
 from app.routes.operation.shift_handoffs_repository import get_shift_handoffs
 
 
+# Início do Turno 3 da data de referência domingo. Após confirmação,
+# use (0, 'HH:MM') para domingo ou (1, 'HH:MM') para segunda-feira.
+SUNDAY_THIRD_SHIFT_START = None
+
+
 operation_production_bp = Blueprint('operation_production', __name__)
 
 @operation_production_bp.before_request
@@ -78,6 +83,15 @@ def shift_handoffs():
         'Turno 2': f'{day} 17:00 – {next_day} 02:12',
         'Turno 3': f'{next_day} 02:12 – {next_day} 07:12',
     }
+
+    if parsed_date.weekday() == 6:  # Domingo
+        shifts = {'Turno 3': shifts['Turno 3']}
+        if SUNDAY_THIRD_SHIFT_START is None:
+            shift_periods['Turno 3'] = f'Início a confirmar – {next_day} 07:12'
+        else:
+            day_offset, start_time = SUNDAY_THIRD_SHIFT_START
+            start_day = (parsed_date + timedelta(days=day_offset)).strftime('%d/%m/%Y')
+            shift_periods['Turno 3'] = f'{start_day} {start_time} – {next_day} 07:12'
 
     return render_template(
         'operation.prod/shift_handoffs.html',
