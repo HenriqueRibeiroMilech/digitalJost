@@ -6,11 +6,16 @@
     <title>Apontamentos deixados por turno | Digital JOST</title>
     <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/shift_handoffs.css') }}">
+    <script src="{{ url_for('static', filename='js/operation.prod/shift_handoffs.js') }}" defer></script>
 </head>
 <body>
     <main class="shift-handoffs">
         <a class="shift-handoffs__back" href="/">← Voltar ao início</a>
-        <h1>Apontamentos deixados por turno</h1>
+        <div class="shift-handoffs__heading">
+            <h1>Apontamentos deixados por turno</h1>
+            <button class="shift-handoffs__tutorial-button" id="shift-handoffs-tutorial-open"
+                    type="button" aria-haspopup="dialog" aria-controls="shift-handoffs-tutorial">Tutorial</button>
+        </div>
 
         <form class="shift-handoffs__filter" method="get">
             <label for="data">Data de referência</label>
@@ -46,5 +51,20 @@
             {% endfor %}
         </div>
     </main>
+
+    <dialog class="shift-handoffs__dialog" id="shift-handoffs-tutorial" aria-labelledby="shift-handoffs-tutorial-title">
+        <h2 id="shift-handoffs-tutorial-title">Como funciona esta tela</h2>
+        <p>Selecione a data de referência e clique em <strong>Consultar</strong>. Ao abrir a página, a data de ontem já vem selecionada.</p>
+        <p>As três tabelas mostram os centros de trabalho por turno. <strong>Apontamentos</strong> é a soma dos contadores deixados no centro, não a quantidade de registros.</p>
+        <p>O período ao lado do turno indica o horário configurado para aquela data; não é o horário exato em que cada registro foi gravado. No domingo, o início do Turno 3 segue uma configuração própria.</p>
+        <p>Contadores zerados e jobs <code>n/a</code> não entram na consulta. Registros classificados como <strong>A confirmar</strong> também não são exibidos.</p>
+        <p>Se um turno não tiver resultados, aparece <strong>Nenhum apontamento encontrado.</strong> e o período fica oculto.</p>
+        <form method="dialog">
+            <button class="shift-handoffs__close-button" type="submit">Fechar</button>
+        </form>
+    </dialog>
+
+    <img class="shift-handoffs__logo" src="{{ url_for('static', filename='images/logo_td.png') }}"
+         alt="Logo da Transformação Digital">
 </body>
 </html>
