@@ -58,6 +58,39 @@ def _normalize_stop_status(value):
     return value
 
 
+def _get_stop_event_catalog():
+    events_by_key = {}
+    events_by_code = {}
+
+    for row in getPlex('events')[[
+        'Workcenter_Event_Key', 'Code', 'Description',
+        'Workcenter_Event_Group'
+    ]].itertuples(index=False):
+        event = {
+            'description': row.Description,
+            'status': _normalize_stop_status(row.Workcenter_Event_Group)
+        }
+        events_by_key[_normalize_identifier(row.Workcenter_Event_Key)] = event
+        events_by_code.setdefault(
+            _normalize_identifier(row.Code), []
+        ).append(event)
+
+    unique_events_by_code = {
+        code: code_events[0]
+        for code, code_events in events_by_code.items()
+        if len(code_events) == 1
+    }
+    return events_by_key, unique_events_by_code
+
+
+def _get_stop_event(events_by_key, events_by_code, code, event_key):
+    normalized_event_key = _normalize_identifier(event_key)
+    if normalized_event_key is not None:
+        return events_by_key.get(normalized_event_key)
+
+    return events_by_code.get(_normalize_identifier(code))
+
+
 def _apply_approved_stop_changes(event, workcenters, received_data):
     """Sobrepõe no relatório as revisões Plex concluídas pelo Digital JOST."""
     if event.empty:
@@ -68,6 +101,8 @@ def _apply_approved_stop_changes(event, workcenters, received_data):
             T1.requestId
             , T1.motive1
             , T1.motive2
+            , T1.motive1EventKey
+            , T1.motive2EventKey
             , T1.finalDate
             , T2.workcenter AS Workcenter_Key
             , T2.startDate
@@ -98,14 +133,7 @@ def _apply_approved_stop_changes(event, workcenters, received_data):
         for row in workcenters[['Workcenter_Key', 'Workcenter_Code']].itertuples(index=False)
     }
 
-    event_catalog = {}
-    for row in getPlex('events')[[
-        'Code', 'Description', 'Workcenter_Event_Group'
-    ]].itertuples(index=False):
-        event_catalog[_normalize_identifier(row.Code)] = {
-            'description': row.Description,
-            'status': _normalize_stop_status(row.Workcenter_Event_Group)
-        }
+    events_by_key, events_by_code = _get_stop_event_catalog()
 
     event = event.copy()
     event['_Source_Log_Date'] = pd.to_datetime(event['Source_Log_Date'])
@@ -113,8 +141,18 @@ def _apply_approved_stop_changes(event, workcenters, received_data):
     event['_Normalized_Event'] = event['Event'].apply(_normalize_stop_description)
 
     for change in approved_changes.itertuples(index=False):
-        old_event = event_catalog.get(_normalize_identifier(change.motive1))
-        new_event = event_catalog.get(_normalize_identifier(change.motive2))
+        old_event = _get_stop_event(
+            events_by_key,
+            events_by_code,
+            change.motive1,
+            change.motive1EventKey
+        )
+        new_event = _get_stop_event(
+            events_by_key,
+            events_by_code,
+            change.motive2,
+            change.motive2EventKey
+        )
         workcenter_code = workcenter_codes.get(
             _normalize_identifier(change.Workcenter_Key)
         )
@@ -181,6 +219,7 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
         SELECT
             T1.eventId
             , T1.motive2
+            , T1.motive2EventKey
         FROM JDT_REQUEST_STOPCHANGES T1
         JOIN JDT_REQUEST_STOPCHANGES_PLEX T2
             ON T2.eventId = T1.eventId
@@ -205,21 +244,19 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
     if approved_changes.empty:
         return event
 
-    event_catalog = {}
-    for row in getPlex('events')[[
-        'Code', 'Description', 'Workcenter_Event_Group'
-    ]].itertuples(index=False):
-        event_catalog[_normalize_identifier(row.Code)] = {
-            'description': row.Description,
-            'status': _normalize_stop_status(row.Workcenter_Event_Group)
-        }
+    events_by_key, events_by_code = _get_stop_event_catalog()
 
     event = event.copy()
     normalized_log_keys = event['Log_Key'].apply(_normalize_identifier)
     plex_rows = pd.to_numeric(event['Plex'], errors='coerce').eq(1)
 
     for change in approved_changes.itertuples(index=False):
-        new_event = event_catalog.get(_normalize_identifier(change.motive2))
+        new_event = _get_stop_event(
+            events_by_key,
+            events_by_code,
+            change.motive2,
+            change.motive2EventKey
+        )
         if not new_event:
             continue
 
