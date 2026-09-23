@@ -41,7 +41,7 @@ from app.routes.operation.shift_handoffs_repository import get_shift_handoffs
 
 # Início do Turno 3 da data de referência domingo. Após confirmação,
 # use (0, 'HH:MM') para domingo ou (1, 'HH:MM') para segunda-feira.
-SUNDAY_THIRD_SHIFT_START = (1, '02:12')
+SUNDAY_THIRD_SHIFT_START = (1, '00:00')
 
 
 operation_production_bp = Blueprint('operation_production', __name__)
