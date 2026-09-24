@@ -114,20 +114,44 @@ def _get_plex_event(events, code=None, event_key=None):
     return matching_events.iloc[0]
 
 
-def _is_transformation_digital_motive(code, events, event_key=None):
+def _is_transformation_digital_motive(
+    code,
+    events,
+    event_key=None,
+    assigned_approver=None,
+    transformation_digital_approvers=None
+):
     code = int(code)
+    if code in _TRANSFORMATION_DIGITAL_MOTIVE_CODES:
+        return True
+
     try:
         event = _get_plex_event(events, code, event_key)
     except _CurrentStatusMatchError:
-        event = None
-
-    return (
-        code in _TRANSFORMATION_DIGITAL_MOTIVE_CODES
-        or (
-            event is not None
-            and str(event['Workcenter_Event_Group']).strip() == 'Programada'
+        return (
+            transformation_digital_approvers is not None
+            and str(assigned_approver) in transformation_digital_approvers
         )
+
+    return str(event['Workcenter_Event_Group']).strip() == 'Programada'
+
+
+def _get_transformation_digital_approvers():
+    approvers = engine_run_query(
+        """
+            SELECT DISTINCT T1.userId
+            FROM JDT_USER_STOPCHANGES AS T1
+            JOIN JDT_GENERAL_AREA AS T2 ON T2.areaId = T1.areaId
+            WHERE T2.name = :area_name
+        """,
+        'jdt',
+        {'area_name': _TRANSFORMATION_DIGITAL_AREA_NAME}
     )
+
+    if approvers.empty:
+        return set()
+
+    return set(approvers['userId'].dropna().astype(str))
 
 
 def _get_problem_area_id(
@@ -950,6 +974,8 @@ def stopChanges_manage():
                     
                     SELECT 
                         T1.requestId
+                        , T1.approver1
+                        , T1.approver2
                         , FORMAT(T1.openDate, 'dd/MM/yyyy') AS openDate
                         , T1.motive1
                         , T1.motive2
@@ -996,11 +1022,16 @@ def stopChanges_manage():
 
         transformation_digital_table = table
         if is_admin and not table.empty:
+            transformation_digital_approvers = (
+                _get_transformation_digital_approvers()
+            )
             motive1_is_transformation_digital = table.apply(
                 lambda row: _is_transformation_digital_motive(
                     row['motive1'],
                     events,
-                    row['motive1EventKey']
+                    row['motive1EventKey'],
+                    row['approver1'],
+                    transformation_digital_approvers
                 ),
                 axis=1
             )
@@ -1008,7 +1039,9 @@ def stopChanges_manage():
                 lambda row: _is_transformation_digital_motive(
                     row['motive2'],
                     events,
-                    row['motive2EventKey']
+                    row['motive2EventKey'],
+                    row['approver2'],
+                    transformation_digital_approvers
                 ),
                 axis=1
             )
@@ -1070,16 +1103,23 @@ def stopChanges_manage():
         transformation_digital_sides = {1: False, 2: False}
         if is_admin and approval_scope == 'transformationDigital':
             events = getPlex('events')
+            transformation_digital_approvers = (
+                _get_transformation_digital_approvers()
+            )
             transformation_digital_sides = {
                 1: _is_transformation_digital_motive(
                     check_request['motive1'][0],
                     events,
-                    check_request['motive1EventKey'][0]
+                    check_request['motive1EventKey'][0],
+                    check_request['approver1'][0],
+                    transformation_digital_approvers
                 ),
                 2: _is_transformation_digital_motive(
                     check_request['motive2'][0],
                     events,
-                    check_request['motive2EventKey'][0]
+                    check_request['motive2EventKey'][0],
+                    check_request['approver2'][0],
+                    transformation_digital_approvers
                 )
             }
 
