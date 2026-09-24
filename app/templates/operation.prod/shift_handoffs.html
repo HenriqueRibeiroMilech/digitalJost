@@ -53,12 +53,15 @@
     </main>
 
     <dialog class="shift-handoffs__dialog" id="shift-handoffs-tutorial" aria-labelledby="shift-handoffs-tutorial-title">
-        <h2 id="shift-handoffs-tutorial-title">Como funciona esta tela</h2>
-        <p>Selecione a data de referência e clique em <strong>Consultar</strong>. Ao abrir a página, a data de ontem já vem selecionada.</p>
-        <p>As três tabelas mostram os centros de trabalho por turno. <strong>Apontamentos</strong> é a soma dos contadores deixados no centro, não a quantidade de registros.</p>
-        <p>O período ao lado do turno indica o horário configurado para aquela data; não é o horário exato em que cada registro foi gravado. No domingo, o início do Turno 3 segue uma configuração própria.</p>
-        <p>Contadores zerados e jobs <code>n/a</code> não entram na consulta. Registros classificados como <strong>A confirmar</strong> também não são exibidos.</p>
-        <p>Se um turno não tiver resultados, aparece <strong>Nenhum apontamento encontrado.</strong> e o período fica oculto.</p>
+        <h2 id="shift-handoffs-tutorial-title">Como pesquisar</h2>
+        <p>Escolha a data de referência e clique em <strong>Consultar</strong>. A tela já abre com a data de ontem selecionada.</p>
+        <p>Por exemplo, ao pesquisar <strong>22/09/2026</strong>, a consulta organiza os turnos assim:</p>
+        <ul>
+            <li><strong>Turno 1:</strong> começa e termina em 22/09, das 07:12 às 17:00.</li>
+            <li><strong>Turno 2:</strong> começa em 22/09 às 17:00 e termina em 23/09 às 02:12.</li>
+            <li><strong>Turno 3:</strong> começa em 23/09 às 02:12 e termina em 23/09 às 07:12.</li>
+        </ul>
+        <p>A tela é dividida por turno. Em cada tabela aparecem o centro de trabalho e a quantidade de apontamentos deixados por aquele turno ao fim do expediente.</p>
         <form method="dialog">
             <button class="shift-handoffs__close-button" type="submit">Fechar</button>
         </form>
