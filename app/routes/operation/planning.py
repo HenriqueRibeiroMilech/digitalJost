@@ -71,6 +71,52 @@ _MAP_AREA_SLIDES = {
 }
 
 
+def _infer_planning_event_codes(stopped_event):
+    """Recupera códigos só quando a descrição do motivo identifica um único evento."""
+    if stopped_event.empty:
+        return stopped_event['Event_Code'].fillna('').astype(str)
+
+    catalog = getPlex('events')[[
+        'Description', 'Workcenter_Event_Group', 'Code'
+    ]].dropna(subset=['Description', 'Code']).copy()
+
+    def normalize(value):
+        return ' '.join(str(value).strip().casefold().split()) if pd.notna(value) else ''
+
+    catalog['Code'] = (
+        catalog['Code'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
+    )
+    catalog = catalog[catalog['Code'] != '']
+    catalog['_event'] = catalog['Description'].apply(normalize)
+    catalog['_status'] = catalog['Workcenter_Event_Group'].replace({
+        'Manutenção Parada': 'Manutenção',
+        'Manutenção Produtiva': 'Manutenção'
+    }).apply(normalize)
+
+    def unique_codes(keys):
+        return catalog.groupby(keys)['Code'].agg(
+            lambda codes: codes.iloc[0] if codes.nunique() == 1 else None
+        )
+
+    by_event_and_status = unique_codes(['_event', '_status'])
+    by_event = unique_codes('_event')
+    codes = (
+        stopped_event['Event_Code'].fillna('').astype(str)
+        .str.strip().str.replace(r'\.0$', '', regex=True)
+    )
+
+    for index in stopped_event.index[codes.eq('')]:
+        event_name = normalize(stopped_event.at[index, 'Event'])
+        status_name = normalize(stopped_event.at[index, 'Status'])
+        code = by_event_and_status.get((event_name, status_name))
+        if code is None or pd.isna(code):
+            code = by_event.get(event_name)
+        if code is not None and pd.notna(code):
+            codes.at[index] = code
+
+    return codes
+
+
 # PAGINA PRINCIPAL DA APLICAÇÃO
 @operation_planning_bp.route('/op/plano', methods=['GET'])
 def planning_get():
@@ -294,18 +340,13 @@ def planning_area_post(areaId):
                     WHERE RowNum = 1;
                     """
         
-        plex_stopped_event_query = f"""EXEC('sproc329396_18311230_1306601(?, ?)'
-                , '{last_week_start_iso}'
-                , '{current_week_end_iso}'
-            ) AT [PLEX_DSN_JOST]"""
-
         stops_payload = {
             'start_date': last_week_start_iso,
             'end_date': current_week_end_exclusive_iso,
             'w_name_plex': [],
             'w_name_mic': [],
             'w_group': ['Montagem', 'Usinagem', 'Soldagem', 'Pré-Fabricação'],
-            'm_group': ['Manutenção'],
+            'm_group': [],
             'm_event': [],
             'shift': ['1', '2', '3']
         }
@@ -324,42 +365,6 @@ def planning_area_post(areaId):
                     AT [PLEX_DSN_JOST]
             """
 
-        mic_stopped_event_query = f"""
-            SELECT
-                T2.CT_PLEX AS Workcenter_Key
-                , T1.sDescription AS Workcenter_Name
-                , T2.GRUPO AS Workcenter_Group
-                , T1.tStart AS Log_Date
-                , T1.tEnd AS End_Date
-                , ROUND(T1.lSeconds / 60.0, 2) AS Log_Minutes
-                , T3.DESC_PARADA AS Event
-                , T3.COD_PARADA AS Event_Code
-                , T3.CATEGORIA AS Status
-
-            FROM
-                OEEQEventHistory AS T1
-            JOIN (
-                SELECT CT_PLEX, NOME_MAQUINA, GRUPO, CT_PLEX_DATA, CT_PLEX_NAME, FL_ATIVO
-                FROM CONFIG_TABLET
-            ) AS T2 ON T1.sDescription = T2.NOME_MAQUINA
-            JOIN (
-                SELECT DESC_PARADA, MOTIVO, CATEGORIA, COD_PARADA
-                FROM CADASTRO_PARADA
-            ) AS T3 ON LTRIM(T1.sEndVal) = T3.MOTIVO
-            WHERE 
-                    T1.tStart BETWEEN 
-                    '{last_week_start_iso.replace('T', ' :00.000')}' 
-                    AND CASE 
-                        WHEN T2.CT_PLEX_DATA < '{current_week_end_iso.replace('T', ' :00.000')}' 
-                        THEN T2.CT_PLEX_DATA 
-                        ELSE '{current_week_end_iso.replace('T', ' :00.000')}'
-                    END
-
-                AND T1.nShift in ('1', '2', '3')
-                
-                AND T3.CATEGORIA <> 'Programada'
-        """
-        
         mic_availability_query = f"""SELECT
                         
                         NULLIF(SUM(dAvailSec), 0) / 60.0 AS Availability
@@ -397,30 +402,27 @@ def planning_area_post(areaId):
 
 
         with ThreadPoolExecutor() as executor:
-            if areaId == 3:
-                # O intervalo é dividido por semana após a consulta para manter todos os gráficos consistentes.
-                stopped_event_future = executor.submit(
-                    getStopsData,
-                    stops_payload,
-                    use_current_status=True
-                )
-            else:
-                plex_stopped_event = executor.submit(engine_run_query, plex_stopped_event_query, 'jdt')
-                mic_stopped_event = executor.submit(engine_run_query, mic_stopped_event_query, 'ftm')
+            stopped_event_future = executor.submit(
+                getStopsData,
+                stops_payload,
+                use_current_status=True,
+                include_all_statuses=True
+            )
             actionPlan = executor.submit(engine_run_query, actionPlan_query, 'jdt')
             oldActionPlan = executor.submit(engine_run_query, oldActionPlan_query, 'jdt')
             goal = executor.submit(engine_run_query, goal_query, 'jdt')
             mic_availability = executor.submit(engine_run_query, mic_availability_query, 'ftm')
             plex_availability = executor.submit(engine_run_query, plex_availability_query, 'jdt')
 
-        if areaId == 3:
-            stopped_event = stopped_event_future.result()
-            stopped_event = stopped_event[
-                stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
-            ].rename(columns={'Code': 'Event_Code'})
-        else:
-            plex_stopped_event = plex_stopped_event.result()
-            mic_stopped_event = mic_stopped_event.result()
+        stopped_event = stopped_event_future.result()
+        stopped_event = stopped_event[
+            stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
+        ].rename(columns={'Code': 'Event_Code'}).reset_index(drop=True)
+        stopped_event['Status'] = stopped_event['Status'].replace({
+            'Manutenção Parada': 'Manutenção',
+            'Manutenção Produtiva': 'Manutenção'
+        })
+        stopped_event['Event_Code'] = _infer_planning_event_codes(stopped_event)
         actionPlan = actionPlan.result()
         oldActionPlan = oldActionPlan.result()
         goal = goal.result()
@@ -430,60 +432,47 @@ def planning_area_post(areaId):
 
         goal['presentationMotiveName'] = goal['presentationMotive'].map(_MAP_AREA_SLIDES)
 
-        if areaId != 3:
-            plex_stopped_event = pd.merge(plex_stopped_event, getPlex('workcenters')[['Workcenter_Key', 'Name', 'Workcenter_Group']], on='Workcenter_Key', how='left').rename(columns={'Name': 'Workcenter_Name'})
-            plex_stopped_event = pd.merge(plex_stopped_event, getPlex('events')[['Workcenter_Event_Key', 'Description', 'Workcenter_Event_Group', 'Code']], on='Workcenter_Event_Key', how='left').rename(columns={'Workcenter_Event_Group': 'Status', 'Code': 'Event_Code', 'Description': 'Event'})
+        stopped_event['Log_Date'] = pd.to_datetime(
+            stopped_event['Log_Date'],
+            format='%d/%m/%Y %H:%M:%S',
+            errors='coerce'
+        )
+        stopped_event['End_Date'] = pd.to_datetime(
+            stopped_event['End_Date'],
+            format='%d/%m/%Y %H:%M:%S',
+            errors='coerce'
+        )
 
-            # SOLUÇÃO SPI & JOST PARA DASHBOARD IMPACTO DE PARADAS NA DISPONIBILIDADE - DIA 05/02/2026 RESPONSAVEL: ARMESTRONG
-            # Histórico: se FTM retornar dados, junta com PLEX; senão usa só PLEX (ex.: a partir de 2026 ou quando CT_PLEX_DATA corta)
-            if mic_stopped_event is not None and len(mic_stopped_event) > 0:
-                stopped_event = pd.concat([plex_stopped_event, mic_stopped_event])
-            else:
-                stopped_event = plex_stopped_event.copy()
+        # Cada semana recebe somente os minutos que caem dentro dos seus limites.
+        weekly_segments = []
+        for _, stopped_row in stopped_event.iterrows():
+            segment_start = stopped_row['Log_Date']
+            event_end = stopped_row['End_Date']
 
-        if areaId == 3:
-            stopped_event['Log_Date'] = pd.to_datetime(
-                stopped_event['Log_Date'],
-                format='%d/%m/%Y %H:%M:%S',
-                errors='coerce'
-            )
-            stopped_event['End_Date'] = pd.to_datetime(
-                stopped_event['End_Date'],
-                format='%d/%m/%Y %H:%M:%S',
-                errors='coerce'
-            )
+            if pd.isna(segment_start) or pd.isna(event_end) or event_end <= segment_start:
+                continue
 
-            weekly_segments = []
-            for _, stopped_row in stopped_event.iterrows():
-                segment_start = stopped_row['Log_Date']
-                event_end = stopped_row['End_Date']
+            while segment_start < event_end:
+                next_week_start = (
+                    segment_start.normalize()
+                    + pd.Timedelta(days=7 - segment_start.weekday())
+                )
+                segment_end = min(event_end, next_week_start)
+                segment = stopped_row.copy()
+                segment['Log_Date'] = segment_start
+                segment['End_Date'] = segment_end
+                segment['Log_Minutes'] = round(
+                    (segment_end - segment_start).total_seconds() / 60.0,
+                    2
+                )
+                weekly_segments.append(segment)
+                segment_start = segment_end
 
-                if pd.isna(segment_start) or pd.isna(event_end) or event_end <= segment_start:
-                    continue
-
-                while segment_start < event_end:
-                    next_week_start = (
-                        segment_start.normalize()
-                        + pd.Timedelta(days=7 - segment_start.weekday())
-                    )
-                    segment_end = min(event_end, next_week_start)
-                    segment = stopped_row.copy()
-                    segment['Log_Date'] = segment_start
-                    segment['End_Date'] = segment_end
-                    segment['Log_Minutes'] = round(
-                        (segment_end - segment_start).total_seconds() / 60.0,
-                        2
-                    )
-                    weekly_segments.append(segment)
-                    segment_start = segment_end
-
-            if weekly_segments:
-                stopped_event = pd.DataFrame(weekly_segments, columns=stopped_event.columns)
-            else:
-                stopped_event = stopped_event.iloc[0:0].copy()
+        if weekly_segments:
+            stopped_event = pd.DataFrame(weekly_segments, columns=stopped_event.columns)
         else:
-            stopped_event['Log_Date'] = pd.to_datetime(stopped_event['Log_Date'], errors='coerce')
-        # DATA no formato YYYY/WW (semana com 2 dígitos) para bater com Time_Group da SP PLEX (evita merge vazio a partir de 2026/só PLEX)
+            stopped_event = stopped_event.iloc[0:0].copy()
+        # DATA usa ano e semana ISO para todos os segmentos de parada.
         _week = stopped_event['Log_Date'].dt.isocalendar().week.astype(str).str.zfill(2)
         stopped_event['DATA'] = stopped_event['Log_Date'].dt.isocalendar().year.astype(str) + '/' + _week
 

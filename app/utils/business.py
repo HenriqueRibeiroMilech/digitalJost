@@ -415,7 +415,8 @@ def _get_current_status_stops(received_data):
 def getStopsData(
     received_data,
     use_current_status=False,
-    apply_approved_changes=False
+    apply_approved_changes=False,
+    include_all_statuses=False
 ):
     """
         DADOS DE PAYLOAD:
@@ -433,6 +434,8 @@ def getStopsData(
         3. CONTROLE DA FONTE PLEX:
             use_current_status: usa Mach_2_Current_Status no lugar da procedure legada
             apply_approved_changes: sobrepõe alterações aprovadas pelo Log_Key original
+            include_all_statuses: inclui todas as categorias FTM não programadas
+                quando m_group está vazio
 
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
@@ -517,7 +520,10 @@ def getStopsData(
     filters = [
         f"T1.nShift IN {format_tuple(received_data['shift'])}" if received_data['shift'] else "T1.nShift = -2",
         f"T2.GRUPO IN {format_tuple(received_data['w_group'])}" if received_data['w_group'] else "T2.GRUPO = 'aaa'",
-        f"T3.CATEGORIA IN {format_tuple(received_data['m_group'])}" if received_data['m_group'] else "T3.CATEGORIA = 'aaa'"
+        f"T3.CATEGORIA IN {format_tuple(received_data['m_group'])}"
+        if received_data['m_group'] else (
+            "T3.CATEGORIA <> 'Programada'" if include_all_statuses else "T3.CATEGORIA = 'aaa'"
+        )
     ] if received_data.get('w_group') else []
 
     if received_data.get('m_event') and not use_current_status and not apply_approved_changes:
