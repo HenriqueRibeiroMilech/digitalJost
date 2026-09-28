@@ -373,7 +373,17 @@ def stopChanges_home():
 
     query = f"""
     SELECT 
-        SUM(CASE WHEN (approver1 = '{current_user.id}' AND approverStatus1 = 0) OR (approver2 = '{current_user.id}' AND approverStatus2 = 0) THEN 1 ELSE 0 END) AS s0,
+        SUM(
+            CASE
+                WHEN finalDate IS NULL
+                    AND (
+                        (approver1 = '{current_user.id}' AND approverStatus1 = 0)
+                        OR (approver2 = '{current_user.id}' AND approverStatus2 = 0)
+                    )
+                THEN 1
+                ELSE 0
+            END
+        ) AS s0,
         SUM(CASE WHEN (approver1 = '{current_user.id}' AND approverStatus1 = 1) OR (approver2 = '{current_user.id}' AND approverStatus2 = 1) THEN 1 ELSE 0 END) AS s1,
         SUM(CASE WHEN (approver1 = '{current_user.id}' AND approverStatus1 = 2) OR (approver2 = '{current_user.id}' AND approverStatus2 = 2) THEN 1 ELSE 0 END) AS s2,
         SUM(CASE WHEN requesterId = '{current_user.id}' THEN 1 ELSE 0 END) AS r0
@@ -422,7 +432,11 @@ def stopChanges_main():
                         LEFT JOIN JDT_USER_DETAILS AS T2 ON T1.approver1 = T2.id
                         LEFT JOIN JDT_USER_DETAILS AS T3 ON T1.approver2 = T3.id
 
-                        WHERE T1.approverStatus1 = 0 OR T1.approverStatus2 = 0"""
+                        WHERE T1.finalDate IS NULL
+                            AND (
+                                T1.approverStatus1 = 0
+                                OR T1.approverStatus2 = 0
+                            )"""
             table = engine_run_query(query, 'jdt')
 
             data = pd.merge(left=data, right=table, left_on='Log_Key', right_on='eventId', how='left')
