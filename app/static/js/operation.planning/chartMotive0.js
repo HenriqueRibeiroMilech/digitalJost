@@ -12,13 +12,7 @@ function chart1() {
     document.getElementById('stopped2').innerText = `${received_data.area.totals0.count} paradas`
 
     document.getElementById('stopped3').style.display = 'flex'
-    document.getElementById('stopped3').innerText = `${parseInt(received_data.area.totals0.goal - received_data.area.totals0.sum)} minutos`
-    
-    if (parseFloat(received_data.area.totals0.goal - received_data.area.totals0.sum) < 0) {
-        document.getElementById('stopped3').style.backgroundColor = '#A52A2A'
-    } else {
-        document.getElementById('stopped3').style.backgroundColor = 'green'
-    }
+    showPlannedGoal(received_data.area.totals0);
 
     createBarChart(received_data.area.barchart1, 'Top 5 Centros de Trabalho Parados', 'chart1');
     createBarChart(received_data.area.barchart2, 'Top 5 Paradas por Motivo', 'chart2');
@@ -38,13 +32,7 @@ function chart2() {
 
     document.getElementById('stopped1').innerText = `${parseInt(received_data.area.totals1.sum)} minutos parados`
     document.getElementById('stopped2').innerText = `${received_data.area.totals1.count} paradas`
-    document.getElementById('stopped3').innerText = `${parseInt(received_data.area.totals1.goal - received_data.area.totals1.sum)} minutos`
-
-    if (parseFloat(received_data.area.totals1.goal - received_data.area.totals1.sum) < 0) {
-        document.getElementById('stopped3').style.backgroundColor = '#A52A2A'
-    } else {
-        document.getElementById('stopped3').style.backgroundColor = 'green'
-    }
+    showPlannedGoal(received_data.area.totals1);
 
     createBarChart(received_data.area.barchart4, 'Top 5 Centros de Trabalho Parados', 'chart4');
     createBarChart(received_data.area.barchart5, 'Top 5 Paradas por Motivo', 'chart5');
@@ -65,13 +53,7 @@ function chart3() {
 
     document.getElementById('stopped1').innerText = `${parseInt(received_data.area.totals2.sum)} minutos parados`
     document.getElementById('stopped2').innerText = `${received_data.area.totals2.count} paradas`
-    document.getElementById('stopped3').innerText = `${parseInt(received_data.area.totals2.goal - received_data.area.totals2.sum)} minutos`
-
-    if (parseFloat(received_data.area.totals2.goal - received_data.area.totals2.sum) < 0) {
-        document.getElementById('stopped3').style.backgroundColor = '#A52A2A'
-    } else {
-        document.getElementById('stopped3').style.backgroundColor = 'green'
-    }
+    showPlannedGoal(received_data.area.totals2);
 
     createBarChart(received_data.area.barchart7, 'Top 5 Centros de Trabalho Parados', 'chart7');
     createBarChart(received_data.area.barchart8, 'Top 5 Paradas por Motivo', 'chart8');
@@ -97,13 +79,7 @@ function chart4() {
 
     document.getElementById('stopped1').innerText = `${parseInt(received_data.area.totals3.sum)} minutos parados`
     document.getElementById('stopped2').innerText = `${received_data.area.totals3.count} paradas`
-    document.getElementById('stopped3').innerText = `${parseInt(received_data.area.totals3.goal - received_data.area.totals3.sum)} minutos`
-
-    if (parseFloat(received_data.area.totals3.goal - received_data.area.totals3.sum) < 0) {
-        document.getElementById('stopped3').style.backgroundColor = '#A52A2A'
-    } else {
-        document.getElementById('stopped3').style.backgroundColor = 'green'
-    }
+    showPlannedGoal(received_data.area.totals3);
 
     createBarChart(received_data.area.barchart10, 'Top 5 Centros de Trabalho Parados', 'chart10');
     createBarChart(received_data.area.barchart11, 'Top 5 Paradas por Motivo', 'chart11');

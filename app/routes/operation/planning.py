@@ -30,9 +30,8 @@ AREA FABRIL:
 import json
 import os
 import calendar
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
-import numpy as np
 import pandas as pd
 
 from sqlalchemy import text
@@ -45,6 +44,10 @@ from app.utils.business import getStopsData
 from app.utils.db_utils import engine_run_query, get_engine
 from app.utils.dynamic_constants import getPlex
 from app.utils.permissions import get_permission
+from app.utils.planning_availability import (
+    get_planned_availability, get_weekly_planned_availability, get_planning_stops,
+    summarize_weekly_availability, summarize_monthly_availability, json_records
+)
 from app.config import mail
 
 
@@ -68,6 +71,15 @@ _MAP_AREA_SLIDES = {
     3: 'Manutenção',
     4: 'Método (Qualidade)',
     5: 'Método (Processos)'
+}
+
+_STOP_AREAS = {
+    '3': 'Método (Qualidade)', '4': 'Método (Qualidade)',
+    '19': 'Método (Qualidade)', '42': 'Método (Qualidade)',
+    '44': 'Método (Processos)', '65': 'Método (Qualidade)',
+    '20': 'Método (Processos)', '31': 'Método (Processos)',
+    '32': 'Método (Processos)', '37': 'Método (Processos)',
+    '43': 'Método (Processos)', '100': 'Método (Processos)'
 }
 
 
@@ -117,6 +129,17 @@ def _infer_planning_event_codes(stopped_event):
     return codes
 
 
+def _classify_planning_stops(stops):
+    stops = stops.rename(columns={'Code': 'Event_Code'}).reset_index(drop=True)
+    stops['Status'] = stops['Status'].replace({
+        'Manutenção Parada': 'Manutenção',
+        'Manutenção Produtiva': 'Manutenção'
+    })
+    stops['Event_Code'] = _infer_planning_event_codes(stops)
+    stops['Status'] = stops['Event_Code'].map(_STOP_AREAS).fillna(stops['Status'])
+    return stops
+
+
 # PAGINA PRINCIPAL DA APLICAÇÃO
 @operation_planning_bp.route('/op/plano', methods=['GET'])
 def planning_get():
@@ -137,7 +160,7 @@ def planning_area_get(areaId):
 
     return render_template(f'operation.planning/planning_area{areaId}.html'
                            , areaId=areaId, areaName=areaName, areaList=areaList
-                           , year=now.year, week=now.isocalendar()[1])
+                           , year=now.isocalendar()[0], week=now.isocalendar()[1])
 
 @operation_planning_bp.route('/op/plano/area/<int:areaId>', methods=['POST'])
 def planning_area_post(areaId):
@@ -147,6 +170,7 @@ def planning_area_post(areaId):
         filter_week = int(request.args.get('week', 1))
         if filter_year <= 0 or filter_week <= 0:
             raise ValueError("Ano ou semana inválidos.")
+        selected_week_start = datetime.fromisocalendar(filter_year, filter_week, 1)
     except (ValueError, KeyError):
             return {"error": "Parâmetros inválidos. Forneça 'year' e 'week' válidos."}, 400
 
@@ -155,47 +179,11 @@ def planning_area_post(areaId):
 
     if request.args['type'] == 'graph':
 
-        def get_last_week_of_year(year):
-            # Encontra o último dia do ano
-            last_day = date(year, 12, 31)
-            # Garante que a data está na última semana ISO do ano
-            while last_day.isocalendar()[0] != year:
-                last_day -= timedelta(days=1)
-            return last_day.isocalendar()[1]
-
-        # Função para obter a semana anterior
-        def get_previous_week(year, week):
-            if week > 1:
-                return year, week - 1
-            else:
-                last_week = get_last_week_of_year(year - 1)
-                return year - 1, last_week
-
-        # Função para converter ano/semana para datas de início e fim
-        def get_week_start_and_end(year, week):
-            start_of_week = datetime.strptime(f"{year}-W{week}-1", "%G-W%V-%u")
-            end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59)
-            return start_of_week, end_of_week
-
-        # Formata datetime para ISO 8601
-        def format_to_iso_with_timezone(date):
-            return datetime.fromisoformat(str(date)).strftime('%Y-%m-%d %H:%M:%S')
-
-        # Calcula as semanas
-        prev_year, prev_week = get_previous_week(filter_year, filter_week)
-        prev_prev_year, prev_prev_week = get_previous_week(prev_year, prev_week)
-        prev_prev_prev_year, prev_prev_prev_week = get_previous_week(prev_prev_year, prev_prev_week)
-
-        # Obtém datas de início e fim das semanas
-        last_week_start, _ = get_week_start_and_end(prev_prev_prev_year, prev_prev_prev_week)
-        current_week_start, current_week_end = get_week_start_and_end(filter_year, filter_week)
-
-        # Ajusta para UTC-3 e formata
-        last_week_start_iso = format_to_iso_with_timezone(last_week_start)
-        current_week_end_iso = format_to_iso_with_timezone(current_week_end)
-        current_week_end_exclusive_iso = format_to_iso_with_timezone(
-            current_week_start + timedelta(days=7)
-        )
+        last_week_start = selected_week_start - timedelta(weeks=3)
+        # Um único corte para as duas fontes evita diferenças em status abertos.
+        window_end = min(selected_week_start + timedelta(days=7), datetime.now())
+        last_week_start_iso = last_week_start.strftime('%Y-%m-%d %H:%M:%S')
+        current_week_end_exclusive_iso = window_end.strftime('%Y-%m-%d %H:%M:%S')
 
 
         actionPlan_query = f"""
@@ -351,83 +339,26 @@ def planning_area_post(areaId):
             'shift': ['1', '2', '3']
         }
 
-        plex_availability_query = f"""
-            EXEC ('sproc329396_18311230_1264675(?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                        '{last_week_start_iso}'
-                        , '{current_week_end_iso}'
-                        , '[]'
-                        , '[]'
-                        , '["Primeiro", "Segundo", "Terceiro"]'
-                        , 1
-                        , 1
-                        , 0
-                        , 0)
-                    AT [PLEX_DSN_JOST]
-            """
-
-        mic_availability_query = f"""SELECT
-                        
-                        NULLIF(SUM(dAvailSec), 0) / 60.0 AS Availability
-                        , T2.GRUPO AS Workcenter_Group
-                        , CONCAT(
-                            YEAR(DATEADD(DAY, 26 - DATEPART(ISO_WEEK, tStartTime), tStartTime))
-                            , '/'
-                            , RIGHT('0' + CAST(DATEPART(ISO_WEEK, tStartTime) AS VARCHAR(2)), 2)
-                        ) AS DATA
-                        
-                        FROM OEEQWorkCellDetail T1
-                        JOIN CONFIG_TABLET T2 ON T1.sDescription = T2.NOME_MAQUINA
-
-                        WHERE 
-
-                            T1.tStartTime BETWEEN 
-                            '{last_week_start_iso.replace('T', ' :00.000')}' 
-                            AND CASE 
-                                WHEN T2.CT_PLEX_DATA < '{current_week_end_iso.replace('T', ' :00.000')}' 
-                                THEN T2.CT_PLEX_DATA 
-                                ELSE '{current_week_end_iso.replace('T', ' :00.000')}'
-                            END
-
-                        AND T1.nShift in ('1', '2', '3')
-
-                        GROUP BY
-                            CONCAT(
-                                YEAR(DATEADD(DAY, 26 - DATEPART(ISO_WEEK, tStartTime), tStartTime))
-                                , '/'
-                                , RIGHT('0' + CAST(DATEPART(ISO_WEEK, tStartTime) AS VARCHAR(2)), 2)
-                            )
-                            , T2.GRUPO
-                        
-                        ORDER BY MAX(YEAR(tStartTime)) ASC, MAX(MONTH(tStartTime)) ASC"""
-
-
         with ThreadPoolExecutor() as executor:
             stopped_event_future = executor.submit(
-                getStopsData,
-                stops_payload,
-                use_current_status=True,
-                include_all_statuses=True
+                get_planning_stops, stops_payload
             )
             actionPlan = executor.submit(engine_run_query, actionPlan_query, 'jdt')
             oldActionPlan = executor.submit(engine_run_query, oldActionPlan_query, 'jdt')
             goal = executor.submit(engine_run_query, goal_query, 'jdt')
-            mic_availability = executor.submit(engine_run_query, mic_availability_query, 'ftm')
-            plex_availability = executor.submit(engine_run_query, plex_availability_query, 'jdt')
+            availability_future = executor.submit(
+                get_weekly_planned_availability,
+                last_week_start_iso, current_week_end_exclusive_iso
+            )
 
         stopped_event = stopped_event_future.result()
-        stopped_event = stopped_event[
+        stopped_event = _classify_planning_stops(stopped_event[
             stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
-        ].rename(columns={'Code': 'Event_Code'}).reset_index(drop=True)
-        stopped_event['Status'] = stopped_event['Status'].replace({
-            'Manutenção Parada': 'Manutenção',
-            'Manutenção Produtiva': 'Manutenção'
-        })
-        stopped_event['Event_Code'] = _infer_planning_event_codes(stopped_event)
+        ])
         actionPlan = actionPlan.result()
         oldActionPlan = oldActionPlan.result()
         goal = goal.result()
-        mic_availability = mic_availability.result()
-        plex_availability = plex_availability.result()
+        availability = availability_future.result()
 
 
         goal['presentationMotiveName'] = goal['presentationMotive'].map(_MAP_AREA_SLIDES)
@@ -465,89 +396,26 @@ def planning_area_post(areaId):
                     (segment_end - segment_start).total_seconds() / 60.0,
                     2
                 )
+                segment['Planned_Log_Minutes'] = (
+                    (segment_end - segment_start).total_seconds() / 60.0
+                    if stopped_row['In_Planned_Time'] else 0.0
+                )
                 weekly_segments.append(segment)
                 segment_start = segment_end
 
         if weekly_segments:
-            stopped_event = pd.DataFrame(weekly_segments, columns=stopped_event.columns)
+            stopped_event = pd.DataFrame(weekly_segments)
         else:
             stopped_event = stopped_event.iloc[0:0].copy()
+            stopped_event['Planned_Log_Minutes'] = pd.Series(dtype=float)
         # DATA usa ano e semana ISO para todos os segmentos de parada.
         _week = stopped_event['Log_Date'].dt.isocalendar().week.astype(str).str.zfill(2)
         stopped_event['DATA'] = stopped_event['Log_Date'].dt.isocalendar().year.astype(str) + '/' + _week
 
 
-        stopsFromAreas = {
-                    '3': 'Método (Qualidade)'
-                    , '4': 'Método (Qualidade)'
-                    , '19': 'Método (Qualidade)'
-
-                    , '20': 'Método (Processos)'
-                    , '31': 'Método (Processos)'
-                    , '32': 'Método (Processos)'
-
-                    , '37': 'Método (Processos)'
-                    
-                    , '42': 'Método (Qualidade)'
-
-                    , '43': 'Método (Processos)'
-                    , '44': 'Método (Processos)'
-                    , '65': 'Método (Qualidade)'
-                    , '100': 'Método (Processos)'
-        }
-        
-        stopped_event['Status'] = stopped_event['Event_Code'].astype(str).map(stopsFromAreas).fillna(stopped_event['Status'])
-
-        stopped_event_grouped = (
-            stopped_event.groupby(['Workcenter_Name', 'Event_Code', 'DATA', 'Status'], as_index=False)
-            .agg(
-                Log_Minutes_Sum=('Log_Minutes', 'sum'),  # Soma dos minutos
-                Log_Minutes_Count=('Log_Minutes', 'count'),  # Soma dos minutos
-                Workcenter_Group=('Workcenter_Group', 'first')  # Grupo correspondente
-            )
+        result_df = summarize_weekly_availability(
+            stopped_event, availability, _MAP_AREA_SLIDES.values()
         )
-
-
-        plex_availability = plex_availability.rename(columns={'Time_Group': 'DATA', 'TotalAvail': 'Availability'})
-        plex_availability['Availability'] = plex_availability['Availability'] * 60.0
-        # Normalizar DATA para YYYY/WW (2 dígitos) para merge com paradas a partir de 2026/só PLEX
-        _parts = plex_availability['DATA'].astype(str).str.split('/', n=1, expand=True)
-        plex_availability['DATA'] = _parts[0] + '/' + pd.to_numeric(_parts[1], errors='coerce').fillna(0).astype(int).astype(str).str.zfill(2)
-
-        # SOLUÇÃO SPI & JOST (fallback): se FTM retornar dados, junta com PLEX; senão usa só PLEX - DIA 05/02/2026 RESPONSAVEL: ARMESTRONG
-        if mic_availability is not None and len(mic_availability) > 0:
-            availability = pd.merge(
-                mic_availability,
-                plex_availability,
-                on=['Workcenter_Group', 'DATA'],
-                how='outer',
-                suffixes=('_mic', '_plex')
-            )
-            availability['Availability_mic'] = availability['Availability_mic'].fillna(0)
-            availability['Availability_plex'] = availability['Availability_plex'].fillna(0)
-            availability['Availability'] = (availability['Availability_mic'] + availability['Availability_plex'])
-        else:
-            availability = plex_availability[['Workcenter_Group', 'DATA', 'Availability']].copy()
-        # Garantir DATA em YYYY/WW (2 dígitos) quando FTM entrou no merge
-        _ap = availability['DATA'].astype(str).str.split('/', n=1, expand=True)
-        availability['DATA'] = _ap[0] + '/' + pd.to_numeric(_ap[1], errors='coerce').fillna(0).astype(int).astype(str).str.zfill(2)
-
-        # Mesclar os DataFrames usando 'Workcenter_Group' e 'DATA' como chaves
-        merged_data = pd.merge(stopped_event_grouped, availability[['Workcenter_Group', 'DATA', 'Availability']], on=['Workcenter_Group', 'DATA'], how='inner')
-
-        # Calcular a porcentagem de parada em relação à disponibilidade
-        merged_data['Log_Minutes_Percentage'] = merged_data['Log_Minutes_Sum'] / merged_data['Availability'] * 100.0
-
-        result_df = merged_data.groupby(['Workcenter_Group', 'DATA', 'Status']).agg({'Log_Minutes_Percentage': 'sum', 'Log_Minutes_Sum' : 'sum', 'Log_Minutes_Count': 'sum'}).reset_index().rename(columns={'DATA': 'WEEK', 'Status': 'MS'})
-        
-        # SOLUÇÃO SPI & JOST PARA DASHBOARD IMPACTO DE PARADAS NA DISPONIBILIDADE - DIA 04/02/2026 RESPONSAVEL: ARMESTRONG & VANDERSON 
-        # result_df[['Year', 'Week']] = result_df['WEEK'].str.split('/', expand=True).astype(int)//versão antiga
-        
-        split = result_df['WEEK'].str.split('/', expand=True)
-        result_df['Year'] = pd.to_numeric(split.get(0, pd.Series(0)), errors='coerce').fillna(0).astype(int)
-        result_df['Week'] = pd.to_numeric(split.get(1, pd.Series(0)), errors='coerce').fillna(0).astype(int)
-        result_df = result_df.sort_values(by=['Year', 'Week']).drop(columns=['Year', 'Week'])
-        result_df = result_df.reset_index(drop=True)
 
         filtered_stopped_event = stopped_event[
             (stopped_event['DATA'] == week_key)
@@ -586,21 +454,30 @@ def planning_area_post(areaId):
             sum_value = filtered_motive["Log_Minutes_Sum"].sum()
             count_value = filtered_motive["Log_Minutes_Count"].sum()
 
-            goal_value = (
-                goal[(goal["presentationMotive"] == areaId) & (goal["presentationArea"] == idx)]["goal"].iloc[0]
-                * filtered_results[filtered_results["Workcenter_Group"] == wc]["Log_Minutes_Sum"].sum()
-                / filtered_results[filtered_results["Workcenter_Group"] == wc]["Log_Minutes_Percentage"].sum()
-            )
+            current_result = filtered_results[filtered_results['Workcenter_Group'] == wc]
+            goal_percent = goal[
+                (goal['presentationMotive'] == areaId) & (goal['presentationArea'] == idx)
+            ]['goal']
+            goal_value = None
+            planned_sum = float(current_result['Log_Minutes_Sum'].sum())
+            if (
+                not current_result.empty and current_result['BaseValid'].all()
+                and not goal_percent.empty and pd.notna(goal_percent.iloc[0])
+            ):
+                goal_value = float(
+                    goal_percent.iloc[0] * current_result['PlannedMinutes'].iloc[0] / 100.0
+                )
 
             return {
                 f"totals{idx}": {
                     "sum": str(sum_value),
                     "count": str(count_value),
-                    "goal": str(goal_value)
+                    "goal": goal_value,
+                    "planned_sum": planned_sum
                 },
                 f"barchart{idx * 3 + 1}": filtered_wc.nlargest(5, "Log_Minutes_Sum").to_dict(orient="records"),
                 f"barchart{idx * 3 + 2}": filtered_motive.nlargest(5, "Log_Minutes_Sum").to_dict(orient="records"),
-                f"barchart{idx * 3 + 3}": filtered_area.to_dict(orient="records"),
+                f"barchart{idx * 3 + 3}": json_records(filtered_area),
             }
 
         graphs = {}
@@ -620,10 +497,10 @@ def planning_area_post(areaId):
                 },
                 
                 "general": {
-                    "0": result_df[result_df['Workcenter_Group'] == 'Montagem'].to_dict(orient='records'),
-                    "1": result_df[result_df['Workcenter_Group'] == 'Usinagem'].to_dict(orient='records'),
-                    "2": result_df[result_df['Workcenter_Group'] == 'Soldagem'].to_dict(orient='records'),
-                    "3": result_df[result_df['Workcenter_Group'] == 'Pré-Fabricação'].to_dict(orient='records')
+                    "0": json_records(result_df[result_df['Workcenter_Group'] == 'Montagem']),
+                    "1": json_records(result_df[result_df['Workcenter_Group'] == 'Usinagem']),
+                    "2": json_records(result_df[result_df['Workcenter_Group'] == 'Soldagem']),
+                    "3": json_records(result_df[result_df['Workcenter_Group'] == 'Pré-Fabricação'])
                 },
 
                 "area": graphs, 
@@ -677,7 +554,7 @@ def planning_area_post(areaId):
 
         def get_month_range(filter_year, filter_week):
             # Obter a segunda-feira da semana fornecida
-            monday = datetime.strptime(f'{filter_year}-W{int(filter_week) - 1}-1', "%Y-W%W-%w")
+            monday = datetime.fromisocalendar(filter_year, filter_week, 1)
             # Primeiro dia do mês da segunda-feira
             first_day = datetime(monday.year, monday.month, 1)
 
@@ -692,157 +569,46 @@ def planning_area_post(areaId):
             else:
                 last_day = end_of_week
 
-            return monday.month, first_day.strftime("%Y-%m-%d") + " 00:00:00", last_day.strftime("%Y-%m-%d") + " 23:59:59"
+            end_exclusive = min(last_day + timedelta(days=1), datetime.now())
+            return (
+                monday.month, first_day.strftime('%Y-%m-%d %H:%M:%S'),
+                end_exclusive.strftime('%Y-%m-%d %H:%M:%S')
+            )
 
-        target_month, first_day, last_day = get_month_range(filter_year, filter_week)
-
-        workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
+        target_month, first_day, end_exclusive = get_month_range(filter_year, filter_week)
 
         payload = {
             'start_date': first_day
-            , 'end_date': last_day
+            , 'end_date': end_exclusive
             , 'w_group': ['Montagem', 'Pré-Fabricação', 'Soldagem', 'Usinagem']
-            , 'm_group': ['Manutenção']
+            , 'm_group': []
             , 'shift': ['1', '2', '3']
         }
 
         availability_diagnostic_enabled = areaId == 3 and request.args.get('diagnostic') == '1'
-        mic_avail_sum = 'SUM(dAvailSec)' if availability_diagnostic_enabled else 'NULLIF(SUM(dAvailSec), 0)'
-        mic_having = '' if availability_diagnostic_enabled else 'HAVING SUM(dAvailSec) > 0'
-
-        availability_mic_query = f"""
-            SELECT
-                {mic_avail_sum} / 60.0 / 60.0 AS TotalAvail
-                , SUM(dRunSec) / 60.0 AS TotalRun
-                , T1.sDescription AS Workcenter_Name
-                , T2.GRUPO AS Workcenter_Group
-            FROM OEEQWorkCellDetail T1
-            JOIN CONFIG_TABLET T2 ON T1.sDescription = T2.NOME_MAQUINA
-            WHERE
-                T1.tStartTime BETWEEN :start_date
-                AND CASE
-                    WHEN T2.CT_PLEX_DATA < :end_date
-                    THEN T2.CT_PLEX_DATA
-                    ELSE :end_date
-                END
-                AND T1.nShift in ('1', '2', '3')
-            GROUP BY T1.sDescription, T2.GRUPO
-            {mic_having}
-        """
-
-        availability_plex_query = f"""
-            EXEC ('sproc329396_18311230_1264675(?, ?, ?, ?, ?, ?, ?, ?, ?)'
-                , :start_date
-                , :end_date
-                , '[]'
-                , '[]'
-                , '[]'
-                , 5
-                , 1
-                , 1
-                , 0)
-            AT [PLEX_DSN_JOST]
-        """
 
         with ThreadPoolExecutor() as executor:
-            availability_mic = executor.submit(engine_run_query, availability_mic_query, 'ftm', {'start_date': payload['start_date'], 'end_date': payload['end_date']})
-            availability_plex = executor.submit(engine_run_query, availability_plex_query, 'plex', {'start_date': payload['start_date'], 'end_date': payload['end_date']})
-            maintenance_events = executor.submit(getStopsData, payload)
+            availability_future = executor.submit(get_planned_availability, first_day, end_exclusive)
+            maintenance_future = executor.submit(get_planning_stops, payload, include_legacy=False)
 
-        availability_mic = availability_mic.result()
-        availability_plex = availability_plex.result()
-        maintenance_events = maintenance_events.result()
-
-        if availability_diagnostic_enabled:
-            # Expõe no JSON os valores brutos sem incluí-los no indicador mensal.
-            zero_availability = []
-            for source, source_data in (('Plex', availability_plex), ('FTM', availability_mic)):
-                if source_data is None:
-                    continue
-                for row in source_data.loc[~(source_data['TotalAvail'] > 0)].to_dict('records'):
-                    zero_availability.append({
-                        'Source': source,
-                        'Workcenter_Name': row['Workcenter_Name'],
-                        'Workcenter_Group': row['Workcenter_Group'],
-                        'TotalAvail': None if pd.isna(row['TotalAvail']) else float(row['TotalAvail']),
-                        'TotalRun': None if pd.isna(row['TotalRun']) else float(row['TotalRun'])
-                    })
-
-        availability_plex = availability_plex[availability_plex['TotalAvail'] > 0]
-        if availability_mic is not None:
-            availability_mic = availability_mic[availability_mic['TotalAvail'] > 0]
-        # SOLUÇÃO SPI & JOST (fallback manutenção): se FTM retornar dados, junta com PLEX; senão usa só PLEX - DIA 05/02/2026 RESPONSAVEL: ARMESTRONG
-        if availability_mic is not None and len(availability_mic) > 0:
-            availability = pd.concat([availability_plex[['TotalRun', 'TotalAvail', 'Workcenter_Name', 'Workcenter_Group', 'Time_Group']], availability_mic])
-        else:
-            availability = availability_plex[['TotalRun', 'TotalAvail', 'Workcenter_Name', 'Workcenter_Group', 'Time_Group']].copy()
-
-        maintenance_events['Log_Date'] = pd.to_datetime(maintenance_events['Log_Date'], format='%d/%m/%Y %H:%M:%S')
-
-        events = maintenance_events.groupby(['Workcenter_Name', 'Workcenter_Group'], as_index=False).agg(
-            Log_Minutes_Sum=('Log_Minutes', 'sum'),
-            Log_Minutes_Count=('Log_Minutes', 'count')
+        maintenance_stops = _classify_planning_stops(maintenance_future.result())
+        maintenance_stops = maintenance_stops[maintenance_stops['Status'].eq('Manutenção')]
+        merged_data, overall = summarize_monthly_availability(
+            maintenance_stops, availability_future.result()
         )
-        merged_data = pd.merge(events, availability, on=['Workcenter_Name', 'Workcenter_Group'], how='outer')
-
-        merged_data['Log_Minutes_Sum'] = merged_data['Log_Minutes_Sum'].fillna(0)
-        merged_data['Log_Minutes_Count'] = merged_data['Log_Minutes_Count'].fillna(0)
-
-        merged_data['MTTR'] = np.where(
-            merged_data['Log_Minutes_Count'] > 0,
-            merged_data['Log_Minutes_Sum'] / merged_data['Log_Minutes_Count'],
-            0
-        )
-
-        merged_data['MTBF'] = np.where(
-            merged_data['Log_Minutes_Count'] > 0,
-            (merged_data['TotalAvail'] * 60.0 - merged_data['Log_Minutes_Sum']) / merged_data['Log_Minutes_Count'],
-            1
-        )
-
-        denominator = merged_data['MTBF'] + merged_data['MTTR']
-        merged_data['CALC'] = np.where(
-            denominator > 0,
-            merged_data['MTBF'] / denominator,
-            1
-        )
-
-        Log_Minutes_Sum_Total = float(merged_data['Log_Minutes_Sum'].sum())
-        Log_Minutes_Count_Total = float(merged_data['Log_Minutes_Count'].sum())
-        Availability_Total = float(merged_data['TotalAvail'].sum()  * 60.0)
-
-        # MTTR: Média de tempo para reparar
-        if Log_Minutes_Count_Total > 0:
-            MTTR = float(Log_Minutes_Sum_Total / Log_Minutes_Count_Total)
-        else:
-            MTTR = 0.0
-
-        # MTBF: Média de tempo entre falhas
-        if Log_Minutes_Count_Total > 0:
-            MTBF = float((Availability_Total - Log_Minutes_Sum_Total) / Log_Minutes_Count_Total)
-        else:
-            MTBF = 1.0  # Como fallback padrão
-
-        # CALC: Disponibilidade (MTBF / (MTBF + MTTR))
-        denominator = MTBF + MTTR
-        if denominator > 0:
-            CALC = float(MTBF / denominator)
-        else:
-            CALC = 1.0  # Fallback para 100% disponível
-
-        merged_data = merged_data.drop(columns=['Time_Group'])
 
         data = {
             'month': target_month,
-            'extra': merged_data.sort_values(by="CALC", ascending=False).to_dict(orient='records'),
-            'overall': str(CALC)
+            'extra': json_records(merged_data),
+            'overall': overall
         }
 
         if availability_diagnostic_enabled:
             data['availability_zero_diagnostic'] = {
                 'start_date': first_day,
-                'end_date': last_day,
-                'rows': zero_availability
+                'end_date': end_exclusive,
+                'source': 'TD_OEE_CalcularDisponibilidadePorCentro',
+                'rows': json_records(merged_data[merged_data['CALC'].isna()])
             }
 
         return jsonify(data)

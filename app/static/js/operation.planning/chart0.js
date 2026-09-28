@@ -32,7 +32,8 @@ function chart0() {
         const quantitiesByMS = {};
 
         areaData.forEach(entry => {
-            entry.Log_Minutes_Percentage = parseFloat(entry.Log_Minutes_Percentage.toFixed(2));
+            entry.Log_Minutes_Percentage = Number.isFinite(entry.Log_Minutes_Percentage)
+                ? Number(entry.Log_Minutes_Percentage.toFixed(2)) : null;
         });
         
         areaData.forEach(entry => {
@@ -52,10 +53,15 @@ function chart0() {
 
 
         const msColoridos = current_area;
+        const missingWeeks = new Set(areaData.filter(
+            entry => entry.Log_Minutes_Percentage === null
+        ).map(entry => entry.WEEK));
+        if (!areaData.length) missingWeeks.add('período consultado');
 
         weeks.sort((a, b) => (a === 'meta' ? -1 : a - b)).forEach(week => {
             let totalHeight = 0;
             if (week !== 'meta') {
+                if (missingWeeks.has(week)) return;
                 for (const [ms, meta] of Object.entries(metaValues)) {
                     const quantity = quantitiesByMS[week] ? (quantitiesByMS[week][ms] || 0) : 0;
 
@@ -123,6 +129,7 @@ function chart0() {
         });
 
         const totalPerWeek = weeks.map(week => {
+            if (missingWeeks.has(week)) return {week, total: null};
             const total = Object.values(quantitiesByMS[week] || {}).reduce((acc, curr) => acc + (Number(curr) || 0), 0).toFixed(2);
             return { week, total };
         });
@@ -140,7 +147,7 @@ function chart0() {
                 color: 'black', 
                 width: 2 
             },
-            text: totalPerWeek.map(w => `${w.total}%`),
+            text: totalPerWeek.map(w => w.total === null ? '' : `${w.total}%`),
             textposition: 'top center',
             textfont: {
                 size: 12,
@@ -149,14 +156,22 @@ function chart0() {
             }
         };
         traces.push(scatterTrace);
+        const maxTotal = Math.max(1, ...totalPerWeek.filter(
+            item => item.total !== null
+        ).map(item => Number(item.total)));
 
         const layout = {
             title: `${areasNames[area]}`,
             barmode: 'stack',
             showlegend: false,
-            margin: {l: 30, r: 20, t:60, b: 30},
+            annotations: missingWeeks.size ? [{
+                text: `Sem base planejada: ${[...missingWeeks].join(', ')}`,
+                xref: 'paper', yref: 'paper', x: 0.5, y: -0.22,
+                showarrow: false
+            }] : [],
+            margin: {l: 30, r: 20, t:60, b: missingWeeks.size ? 70 : 30},
             yaxis: {
-                range: [0, 45]
+                range: [0, Math.max(45, maxTotal * 1.2)]
             }                
         };
         

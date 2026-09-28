@@ -14,20 +14,21 @@ function showSlide(index) {
 }
 
 function nextSlide() {
-    if (currentSlide < totalSlides - 1 && gettingData == false) {
+    if (planningDataAvailable && currentSlide < totalSlides - 1 && gettingData == false) {
         currentSlide++;
         showSlide(currentSlide);
     }
 }
 
 function prevSlide() {
-    if (currentSlide > 0 && gettingData == false) {
+    if (planningDataAvailable && currentSlide > 0 && gettingData == false) {
         currentSlide--;
         showSlide(currentSlide);
     }
 }
 
 function showData() {
+    if (!planningDataAvailable) return;
     window[`chart${currentSlide}`]()
 }
 

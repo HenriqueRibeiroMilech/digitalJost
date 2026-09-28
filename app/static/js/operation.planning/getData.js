@@ -1,4 +1,5 @@
 let gettingData = false
+let planningDataAvailable = false;
 
 function submitWeek(areaId) {
 
@@ -9,6 +10,7 @@ function submitWeek(areaId) {
     }
 
     gettingData = true;
+    planningDataAvailable = false;
     document.getElementById('getDataButton').disabled = true;
     document.getElementById('prevBtn').disabled = true;
     document.getElementById('nextBtn').disabled = true;
@@ -34,7 +36,10 @@ function submitWeek(areaId) {
         const url = `/op/plano/area/${areaId}?type=graph&year=${year}&week=${week}`;
 
         fetch(url, { method: 'POST' })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Falha ao consultar indicadores.');
+                return response.json();
+            })
             .then(data => {
 
                 if (areaId == "2") {
@@ -61,7 +66,6 @@ function submitWeek(areaId) {
 
                     received_data.totals.count = parseFloat(received_data.totals.count) + parseFloat(data.totals.count)
                     received_data.totals.sum = parseFloat(received_data.totals.sum) + parseFloat(data.totals.sum)
-                    received_data.totals.goal = parseFloat(received_data.totals.goal) + parseFloat(data.totals.goal)
 
                     received_data.actionPlan.push(...data.actionPlan)
                     received_data.oldActionPlan.push(...data.oldActionPlan)
@@ -74,6 +78,7 @@ function submitWeek(areaId) {
                     Object.assign(received_data, data);
                 }
 
+                planningDataAvailable = true;
                 currentSlide = 0
                 showSlide(currentSlide);
 
@@ -84,6 +89,11 @@ function submitWeek(areaId) {
             })
             .catch(error => {
                 console.error('Error:', error);
+                gettingData = false;
+                planningDataAvailable = false;
+                document.getElementById('getDataButton').disabled = false;
+                // A navegação permanece bloqueada para não exibir gráficos antigos.
+                chartsContainer.textContent = 'Não foi possível consultar os indicadores. Tente pesquisar novamente.';
             });
     } else {
         alert("Por favor, preencha ambos os campos.");

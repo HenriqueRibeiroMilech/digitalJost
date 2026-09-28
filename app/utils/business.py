@@ -416,7 +416,8 @@ def getStopsData(
     received_data,
     use_current_status=False,
     apply_approved_changes=False,
-    include_all_statuses=False
+    include_all_statuses=False,
+    include_legacy=True
 ):
     """
         DADOS DE PAYLOAD:
@@ -436,6 +437,7 @@ def getStopsData(
             apply_approved_changes: sobrepõe alterações aprovadas pelo Log_Key original
             include_all_statuses: inclui todas as categorias FTM não programadas
                 quando m_group está vazio
+            include_legacy: combina histórico FTM; False usa somente a fonte TD
 
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
@@ -447,6 +449,8 @@ def getStopsData(
 
     if use_current_status:
         event = _get_current_status_stops(received_data)
+        if not include_legacy:
+            return event
     else:
         events_join = getPlex('events')
         events_join.loc[len(events_join)] = [1, 'Sem Justificativa', 'Sem Categoria', 1, "0"]
