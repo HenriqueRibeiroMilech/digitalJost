@@ -20,7 +20,9 @@ Nenhuma procedure é criada ou alterada pelo código desta mudança.
 Os rankings e os botões de total de paradas continuam contabilizando as paradas
 totais, inclusive o histórico FTM. O percentual e a tabela mensal não combinam
 essas paradas históricas com um denominador TD: dependem do histórico disponível
-na fonte Mach2. Sem base positiva, exibem “Sem base”, não 0% ou 100%.
+na fonte Mach2. Sem base positiva, os percentuais exibem “Sem base”, não 0% ou
+100%. Na tabela mensal, centros sem tempo planejado positivo ficam ocultos;
+continuam no JSON e no diagnóstico. Disponibilidade válida de 0% continua visível.
 
 As janelas são `[início, fim)`, com fim exclusivo. Os gráficos cobrem quatro
 semanas ISO, de segunda-feira a segunda-feira. A tabela mensal cobre do início
@@ -28,6 +30,17 @@ do mês da segunda-feira selecionada até o fim da semana, limitado ao fim desse
 mês. Ambos param no momento da consulta quando o período ainda está em andamento.
 As duas fontes usam os turnos 1, 2 e 3; a chamada da procedure de disponibilidade
 aceita também seus aliases `Primeiro`, `Segundo` e `Terceiro`.
+
+Exceção restrita ao P04: status com `CurrentShift` vazio, somente espaços ou
+`NULL` entram quando `PlannedProductionTime = 1`. A consulta de disponibilidade
+captura o resultado da procedure em uma variável de tabela local e complementa
+os minutos desses status na mesma chamada ao banco, sem alterar a procedure ou
+persistir dados. Não há duplicidade com os turnos 1, 2 e 3. Para as paradas,
+o backend solicita também candidatos “A confirmar”, mas mantém somente os IDs
+planejados do P04 cujo turno original é realmente vazio ou `NULL`. Outros turnos
+desconhecidos, `No Shift` e `Extra` não passam a ser aceitos por essa exceção.
+O mesmo critério vale para os gráficos semanais e a disponibilidade mensal,
+mantendo as revisões de categoria aprovadas e sem inventar um turno.
 
 ## Conferência manual em ambiente autorizado
 
@@ -39,6 +52,8 @@ agente. A comparação abaixo deve ser feita pelo responsável no ambiente autor
    apenas para instalar esta alteração.
 2. No mesmo período, centro e turnos, comparar `PlannedMinutes` do JSON com
    `Disponibilidade_Tempo_Planejado` retornado pela procedure TD.
+   Para o P04, somar também os minutos planejados sem turno, recortados na mesma
+   janela; não comparar somente com a procedure filtrada por turnos 1, 2 e 3.
 3. Comparar as paradas da categoria dentro do período planejado, considerando
    as revisões aprovadas. O total bruto do histórico pode ser maior, por incluir
    paradas fora do planejamento. Não usar `Disponibilidade_Tempo_Parado` geral
@@ -56,14 +71,27 @@ Exemplos sintéticos esperados (minutos):
 | 600 | 0 | 100% |
 | 600 | 150 | 75% |
 | 600 | 600 | 0% |
-| 0 | 0 | Sem base |
-| Sem histórico | 0 | Sem base |
+| 0 | 0 | Sem base; oculto na tabela |
+| Sem histórico | 0 | Sem base; oculto na tabela |
 | 600 | 700 | Sem base: inconsistência, sem limitar artificialmente a 0% |
 
 Produção zero, sozinha, não determina disponibilidade de manutenção zero.
-Centro sem tempo planejado permanece na tabela. Centros sem associação válida
-às quatro áreas no cadastro Plex precisam de conferência do cadastro; esta
+Centro sem tempo planejado permanece no diagnóstico, mas fica oculto na tabela.
+Inconsistências em centros com base positiva continuam visíveis como “Sem base”.
+Centros sem associação válida às quatro áreas no cadastro Plex precisam de
+conferência do cadastro; esta
 mudança não inventa associações nem altera o cadastro.
+
+Conferir também em ambiente autorizado:
+
+- P04 com turno vazio ou `NULL` e planejamento positivo aparece com a base
+  recuperada; sua disponibilidade usa somente a categoria de manutenção, não a
+  disponibilidade geral retornada pela procedure.
+- P04 com registros em turno conhecido e sem turno soma os dois conjuntos uma
+  única vez. Status sem turno que não são planejados continuam fora da exceção.
+- E01, E03, L03, L05, M09, R01 e S18 ficam ocultos enquanto não tiverem base
+  positiva; se houver base válida em outro período, reaparecem automaticamente.
+- C04 com disponibilidade de manutenção de 0% permanece visível.
 
 ## Arquivos desta alteração
 

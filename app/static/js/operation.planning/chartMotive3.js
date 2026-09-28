@@ -99,6 +99,10 @@ function chart5() {
 
         received_data.availability.forEach(info => {
 
+            // Oculta ausência de base, mas mantém disponibilidade válida de 0%.
+            // Inconsistências com base positiva continuam visíveis como "Sem base".
+            if (!Number.isFinite(info.PlannedMinutes) || info.PlannedMinutes <= 0) return;
+
             // Determina a qual div o dado pertence 
             const targetDivId = `infoTableBody${Object.entries(areasNames).find(([key, value]) => value == info.Workcenter_Group)?.[0]}`; 
             const targetDiv = document.getElementById(targetDivId);

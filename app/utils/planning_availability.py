@@ -12,6 +12,7 @@ from app.utils.dynamic_constants import getPlex
 WORKCENTER_GROUPS = ('Montagem', 'Usinagem', 'Soldagem', 'Pré-Fabricação')
 # A procedure de disponibilidade compara CurrentShift sem normalizar os nomes.
 PLANNING_SHIFTS = 'Primeiro,Turno 1,Segundo,Turno 2,Terceiro,Turno 3'
+_UNASSIGNED_SHIFT_WORKCENTER = 'P04'
 _MINUTE_TOLERANCE = 0.000001  # Somente diferenças de ponto flutuante.
 
 
@@ -38,16 +39,70 @@ def get_planned_availability(start_date, end_date):
         return workcenters
 
     data = engine_run_query("""
+        SET NOCOUNT ON;
+        DECLARE @agora DATETIME = GETDATE();
+        DECLARE @availability TABLE (
+            Workcenter NVARCHAR(50),
+            Disponibilidade FLOAT,
+            Disponibilidade_Tempo_Produzindo FLOAT,
+            Disponibilidade_Tempo_Planejado FLOAT,
+            Disponibilidade_Tempo_Parado FLOAT
+        );
+
+        INSERT INTO @availability
         EXEC [JOST_INTEGRATION_PRD].[dbo].[TD_OEE_CalcularDisponibilidadePorCentro]
             @data_inicio = :start_date,
             @data_fim = :end_date,
             @workcenter_list = :workcenter_list,
-            @shift_list = :shift_list
+            @shift_list = :shift_list;
+
+        -- Complementa somente o P04 planejado sem turno, sem alterar a proc.
+        -- Os registros abaixo não estão nos turnos já contabilizados pela proc.
+        ;WITH SemTurno AS (
+            SELECT
+                Workcenter,
+                ProductionStatus,
+                DATEDIFF(
+                    SECOND,
+                    CASE WHEN StatusBegin < :start_date
+                        THEN :start_date ELSE StatusBegin END,
+                    CASE WHEN ISNULL(StatusEnd, @agora) > :end_date
+                        THEN :end_date ELSE ISNULL(StatusEnd, @agora) END
+                ) / 60.0 AS Minutos
+            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+            WHERE Workcenter = :unassigned_workcenter
+                AND Workcenter IN (
+                    SELECT TRIM(value) FROM STRING_SPLIT(:workcenter_list, ',')
+                )
+                AND NULLIF(LTRIM(RTRIM(CurrentShift)), N'') IS NULL
+                AND PlannedProductionTime = 1
+                AND StatusBegin < :end_date
+                AND (StatusEnd > :start_date
+                    OR (StatusEnd IS NULL AND @agora > :start_date))
+        ), TotaisSemTurno AS (
+            SELECT
+                Workcenter,
+                SUM(Minutos) AS PlannedMinutes,
+                SUM(CASE WHEN ProductionStatus = 1 THEN Minutos ELSE 0 END)
+                    AS RunMinutes
+            FROM SemTurno
+            WHERE Minutos > 0
+            GROUP BY Workcenter
+        )
+        SELECT
+            COALESCE(A.Workcenter, S.Workcenter) AS Workcenter,
+            ISNULL(A.Disponibilidade_Tempo_Produzindo, 0)
+                + ISNULL(S.RunMinutes, 0) AS Disponibilidade_Tempo_Produzindo,
+            ISNULL(A.Disponibilidade_Tempo_Planejado, 0)
+                + ISNULL(S.PlannedMinutes, 0) AS Disponibilidade_Tempo_Planejado
+        FROM @availability AS A
+        FULL OUTER JOIN TotaisSemTurno AS S ON S.Workcenter = A.Workcenter;
     """, 'plex', {
         'start_date': start_date,
         'end_date': end_date,
         'workcenter_list': ','.join(workcenters['Workcenter_Code']),
-        'shift_list': PLANNING_SHIFTS
+        'shift_list': PLANNING_SHIFTS,
+        'unassigned_workcenter': _UNASSIGNED_SHIFT_WORKCENTER
     }).rename(columns={
         'Workcenter': 'Workcenter_Code',
         'Disponibilidade_Tempo_Planejado': 'PlannedMinutes',
@@ -98,11 +153,17 @@ def get_planning_stops(payload, include_legacy=True):
 
     stops = getStopsData(
         payload, use_current_status=True, include_all_statuses=True,
-        include_legacy=include_legacy
+        include_legacy=include_legacy, include_unassigned_shift=True
     ).reset_index(drop=True)
     if 'Workcenter_Code' not in stops:
         stops['Workcenter_Code'] = pd.NA
     stops['Workcenter_Code'] = stops['Workcenter_Code'].astype('string').str.strip()
+    # A procedure agrupa qualquer turno desconhecido em "A confirmar".
+    # Só o P04 pode usar essa exceção, e ainda conferimos o turno original abaixo.
+    stops = stops[
+        ~stops['Shift'].eq('A confirmar')
+        | stops['Workcenter_Code'].eq(_UNASSIGNED_SHIFT_WORKCENTER)
+    ].copy()
     td_rows = pd.to_numeric(stops['Plex'], errors='coerce').eq(1)
     target_codes = stops.loc[td_rows, 'Workcenter_Code'].dropna().drop_duplicates()
     if target_codes.empty:
@@ -111,7 +172,10 @@ def get_planning_stops(payload, include_legacy=True):
     # A TD_OEE_ObterParadas não retorna PlannedProductionTime. Conferimos o
     # mesmo ID de status, sem alterar a procedure nem inferir pela categoria.
     planned_ids = engine_run_query("""
-        SELECT ID
+        SELECT ID,
+            CASE WHEN Workcenter = :unassigned_workcenter
+                AND NULLIF(LTRIM(RTRIM(CurrentShift)), N'') IS NULL
+                THEN 1 ELSE 0 END AS UnassignedShift
         FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
         WHERE PlannedProductionTime = 1
             AND CanRunProduction = 0
@@ -123,8 +187,17 @@ def get_planning_stops(payload, include_legacy=True):
     """, 'plex', {
         'start_date': payload['start_date'],
         'end_date': payload['end_date'],
-        'workcenter_list': ','.join(target_codes)
+        'workcenter_list': ','.join(target_codes),
+        'unassigned_workcenter': _UNASSIGNED_SHIFT_WORKCENTER
     })
+    unassigned_ids = pd.to_numeric(
+        planned_ids.loc[planned_ids['UnassignedShift'].eq(1), 'ID'], errors='coerce'
+    ).dropna()
+    stops = stops[
+        ~stops['Shift'].eq('A confirmar')
+        | (td_rows & pd.to_numeric(stops['Log_Key'], errors='coerce').isin(unassigned_ids))
+    ].copy()
+    td_rows = pd.to_numeric(stops['Plex'], errors='coerce').eq(1)
     stops['In_Planned_Time'] = (
         td_rows
         & pd.to_numeric(stops['Log_Key'], errors='coerce').isin(

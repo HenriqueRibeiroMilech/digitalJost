@@ -274,7 +274,7 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
     return event
 
 
-def _get_current_status_stops(received_data):
+def _get_current_status_stops(received_data, include_unassigned_shift=False):
     workcenters = getPlex('workcenters')[[
         'Workcenter_Key', 'Workcenter_Code', 'Name', 'Workcenter_Group'
     ]].copy()
@@ -329,6 +329,8 @@ def _get_current_status_stops(received_data):
         for shift in received_data.get('shift', [])
         if shift in selected_shifts
     ]
+    if include_unassigned_shift and shift_values:
+        shift_values.append('A confirmar')
     params['shift_list'] = ','.join(shift_values) or None
 
     query = """
@@ -417,7 +419,8 @@ def getStopsData(
     use_current_status=False,
     apply_approved_changes=False,
     include_all_statuses=False,
-    include_legacy=True
+    include_legacy=True,
+    include_unassigned_shift=False
 ):
     """
         DADOS DE PAYLOAD:
@@ -438,6 +441,8 @@ def getStopsData(
             include_all_statuses: inclui todas as categorias FTM não programadas
                 quando m_group está vazio
             include_legacy: combina histórico FTM; False usa somente a fonte TD
+            include_unassigned_shift: inclui candidatos "A confirmar" da fonte TD;
+                o chamador deve conferir o turno original antes de contabilizar
 
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
@@ -448,7 +453,9 @@ def getStopsData(
     received_data["shift_plex"] = [shift_filter[shift] for shift in received_data["shift"] if shift_filter[shift] is not None]
 
     if use_current_status:
-        event = _get_current_status_stops(received_data)
+        event = _get_current_status_stops(
+            received_data, include_unassigned_shift=include_unassigned_shift
+        )
         if not include_legacy:
             return event
     else:

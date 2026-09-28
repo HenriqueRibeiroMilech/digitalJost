@@ -354,6 +354,10 @@ def planning_area_post(areaId):
         stopped_event = stopped_event_future.result()
         stopped_event = _classify_planning_stops(stopped_event[
             stopped_event['Shift'].isin(['Primeiro', 'Segundo', 'Terceiro'])
+            | (
+                stopped_event['Shift'].eq('A confirmar')
+                & stopped_event['In_Planned_Time'].eq(True)
+            )
         ])
         actionPlan = actionPlan.result()
         oldActionPlan = oldActionPlan.result()
