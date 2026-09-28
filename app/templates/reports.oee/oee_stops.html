@@ -398,7 +398,7 @@
                 <div class="dropdown-content" id="w_name">
                     <label><input oninput="toggleExclusiveFilter('group3')" type="checkbox" id="sel_group3">Selecionar todos</label>
                     {% for workcenter in workcenters %}
-                    <label><input type="checkbox" name="group3" value="{{ workcenter.Workcenter_Key }}">{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}</label>
+                    <label><input type="checkbox" name="group3" value="{{ workcenter.Workcenter_Key }}" data-workcenter-code="{{ workcenter.Workcenter_Code }}">{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}</label>
                     {% endfor %}
                 </div>
             </div>
@@ -1029,6 +1029,9 @@
 
             const w_group = Array.from(document.querySelectorAll(`input[name='group2']:checked`)).map(checkbox => checkbox.value);
 
+            const w_codes = Array.from(document.querySelectorAll(`input[name='group3']:checked`))
+                .map(checkbox => checkbox.dataset.workcenterCode)
+
             const w_name_plex = Array.from(document.querySelectorAll(`input[name='group3']:checked`))
                 .filter(checkbox => checkbox.value != '1')
                 .map(checkbox => checkbox.value)
@@ -1045,6 +1048,7 @@
 
                 w_group: w_group,
 
+                w_codes: w_codes,
                 w_name_plex: w_name_plex,
                 w_name_mic: w_name_mic,
 

@@ -192,10 +192,8 @@ def _SIGNAL_DATA(payload):
     return data
 
         
-# DASHBOARD - PARADAS
-@reports_oee_bp.route('/oee/paradas', methods=["GET"])
-def oee_stops_get():
-
+def _get_stops_workcenters():
+    """Cadastro de centros exibidos no filtro, incluindo o histórico FTM."""
     query = f"""SELECT 
                     GRUPO AS Workcenter_Group
                     , LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code
@@ -204,8 +202,44 @@ def oee_stops_get():
                 FROM CONFIG_TABLET WHERE CT_PLEX IS NULL"""
     mic_workcenters = engine_run_query(query, 'ftm')
 
-    mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
+    mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']].copy()
+    mes_workcenters['Workcenter_Code'] = mes_workcenters['Workcenter_Code'].astype(str).str.strip()
+    mic_workcenters['Workcenter_Code'] = mic_workcenters['Workcenter_Code'].astype(str).str.strip()
     workcenters = pd.concat([mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])], mic_workcenters])
+    return workcenters.drop_duplicates(subset=['Workcenter_Code'])
+
+
+def _get_stops_data(payload):
+    """Resolve os centros por código para a tela e para o Excel."""
+    workcenters = _get_stops_workcenters()
+    payload = payload.copy()
+
+    if 'w_codes' in payload:
+        selected_codes = {str(code).strip() for code in payload['w_codes']}
+        if selected_codes:
+            workcenters = workcenters[workcenters['Workcenter_Code'].isin(selected_codes)]
+    elif payload.get('w_name_plex') or payload.get('w_name_mic'):
+        # Compatibilidade com páginas abertas antes da atualização do filtro.
+        selected_keys = {str(key) for key in payload.get('w_name_plex', [])}
+        legacy_codes = {name.split('-', 1)[0].strip() for name in payload.get('w_name_mic', [])}
+        workcenters = workcenters[
+            workcenters['Workcenter_Key'].astype(str).isin(selected_keys)
+            | workcenters['Workcenter_Code'].isin(legacy_codes)
+        ]
+
+    if payload.get('w_group'):
+        workcenters = workcenters[workcenters['Workcenter_Group'].isin(payload['w_group'])]
+
+    payload['w_codes'] = workcenters['Workcenter_Code'].drop_duplicates().tolist()
+    return getStopsData(
+        payload, use_current_status=True, current_status_workcenters=workcenters
+    )
+
+
+# DASHBOARD - PARADAS
+@reports_oee_bp.route('/oee/paradas', methods=["GET"])
+def oee_stops_get():
+    workcenters = _get_stops_workcenters()
 
     events_query = """
         SELECT DISTINCT
@@ -255,7 +289,7 @@ def oee_stops_post():
     payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
     payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-    event = getStopsData(payload, use_current_status=True)
+    event = _get_stops_data(payload)
     table1 = event[['Workcenter_Name', 'Workcenter_Group', 'Log_Date', 'End_Date', 'Log_Minutes', 'Event', 'Status']]
 
     if table1.shape[0] > 5000:
@@ -426,7 +460,7 @@ def oee_stops_excel():
     payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
     payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-    data = getStopsData(payload, use_current_status=True)[['Workcenter_Name', 'Workcenter_Group', 'Status', 'Event', 'Log_Minutes', 'Shift', 'Log_Date', 'End_Date']]
+    data = _get_stops_data(payload)[['Workcenter_Name', 'Workcenter_Group', 'Status', 'Event', 'Log_Minutes', 'Shift', 'Log_Date', 'End_Date']]
     data = data.rename(columns={'Workcenter_Name': 'Centro de Trabalho', 'Shift': 'Turno', 'Event': 'Parada', 'Status': 'Ms', 'Log_Date': 'Hora de Início', 'Workcenter_Group': 'Área', 'Log_Minutes': 'Duração em Minutos', 'End_Date' : 'Data Fim'})
     data.to_excel(excel_filename, index=False, header=True)
 

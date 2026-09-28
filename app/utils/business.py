@@ -274,14 +274,30 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
     return event
 
 
-def _get_current_status_stops(received_data, include_unassigned_shift=False):
-    workcenters = getPlex('workcenters')[[
+def _get_current_status_stops(
+    received_data, include_unassigned_shift=False, current_status_workcenters=None
+):
+    plex_workcenters = getPlex('workcenters')[[
         'Workcenter_Key', 'Workcenter_Code', 'Name', 'Workcenter_Group'
     ]].copy()
+    if current_status_workcenters is None:
+        workcenters = plex_workcenters
+    else:
+        # Nome e área seguem o filtro; revisões aprovadas usam a chave Plex real.
+        plex_workcenters['Workcenter_Code'] = plex_workcenters['Workcenter_Code'].astype(str).str.strip()
+        workcenters = current_status_workcenters.drop(columns=['Workcenter_Key']).merge(
+            plex_workcenters[['Workcenter_Code', 'Workcenter_Key']].drop_duplicates('Workcenter_Code'),
+            how='left', on='Workcenter_Code'
+        )
 
     scoped_workcenters = workcenters.copy()
 
-    if received_data.get('w_name_plex'):
+    if 'w_codes' in received_data:
+        selected_codes = {str(code).strip() for code in received_data['w_codes']}
+        scoped_workcenters = scoped_workcenters[
+            scoped_workcenters['Workcenter_Code'].isin(selected_codes)
+        ]
+    elif received_data.get('w_name_plex'):
         selected_keys = {str(value) for value in received_data['w_name_plex']}
         scoped_workcenters = scoped_workcenters[
             scoped_workcenters['Workcenter_Key'].astype(str).isin(selected_keys)
@@ -352,6 +368,8 @@ def _get_current_status_stops(received_data, include_unassigned_shift=False):
         'turno': 'Shift',
         'minutos_parados': 'Log_Minutes'
     })
+    if current_status_workcenters is not None:
+        event['Workcenter_Code'] = event['Workcenter_Code'].astype(str).str.strip()
 
     start_date = pd.to_datetime(received_data['start_date'])
     end_date = pd.to_datetime(received_data['end_date'])
@@ -414,13 +432,47 @@ def _get_current_status_stops(received_data, include_unassigned_shift=False):
     return event
 
 
+def _limit_legacy_stops_to_td(mic_event, workcenters):
+    """Preserva o FTM somente antes do primeiro status TD de cada centro."""
+    if mic_event.empty or workcenters.empty:
+        return mic_event.drop(columns=['_Legacy_Log_Date', '_Legacy_End_Date'], errors='ignore')
+
+    starts = _run_query_with_deadlock_retry("""
+        SELECT LTRIM(RTRIM(Workcenter)) AS Workcenter_Code, MIN(StatusBegin) AS TD_Start
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+        WHERE Workcenter IN (
+            SELECT TRIM(value) FROM STRING_SPLIT(:workcenter_list, ',')
+        )
+        GROUP BY LTRIM(RTRIM(Workcenter))
+    """, 'plex', {
+        'workcenter_list': ','.join(workcenters['Workcenter_Code'].drop_duplicates())
+    })
+    td_starts = starts.set_index('Workcenter_Code')['TD_Start']
+    legacy_codes = mic_event['Workcenter_Name'].str.split('-', n=1).str[0].str.strip()
+    cutoff = pd.to_datetime(legacy_codes.map(td_starts))
+    log_start = pd.to_datetime(mic_event['_Legacy_Log_Date'])
+    log_end = pd.to_datetime(mic_event['_Legacy_End_Date'])
+    clipped = cutoff.notna() & log_end.gt(cutoff)
+    log_end = log_end.where(~clipped, cutoff)
+
+    mic_event = mic_event.copy()
+    mic_event.loc[clipped, 'End_Date'] = log_end[clipped].dt.strftime('%d/%m/%Y %H:%M:%S')
+    mic_event.loc[clipped, 'Log_Minutes'] = (
+        (log_end[clipped].dt.floor('s') - log_start[clipped].dt.floor('s'))
+        .dt.total_seconds().div(60).round(2)
+    )
+    mic_event = mic_event[log_end.gt(log_start)]
+    return mic_event.drop(columns=['_Legacy_Log_Date', '_Legacy_End_Date'])
+
+
 def getStopsData(
     received_data,
     use_current_status=False,
     apply_approved_changes=False,
     include_all_statuses=False,
     include_legacy=True,
-    include_unassigned_shift=False
+    include_unassigned_shift=False,
+    current_status_workcenters=None
 ):
     """
         DADOS DE PAYLOAD:
@@ -432,6 +484,7 @@ def getStopsData(
         2. OPCIONAIS:
             w_name_plex: LISTA DE Workcenter_Key
             w_name_mic: LISTA DE NOME_MAQUINA
+            w_codes: LISTA DE Workcenter_Code para a fonte TD
             w_group: LISTA DE Workcenter_Group/GRUPO
             m_group: LISTA DE Workcenter_Event_Group/CATEGORIA
 
@@ -443,6 +496,8 @@ def getStopsData(
             include_legacy: combina histórico FTM; False usa somente a fonte TD
             include_unassigned_shift: inclui candidatos "A confirmar" da fonte TD;
                 o chamador deve conferir o turno original antes de contabilizar
+            current_status_workcenters: cadastro da tela para consulta TD por código;
+                limita o histórico FTM ao início da fonte TD de cada centro
 
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
@@ -454,9 +509,12 @@ def getStopsData(
 
     if use_current_status:
         event = _get_current_status_stops(
-            received_data, include_unassigned_shift=include_unassigned_shift
+            received_data, include_unassigned_shift=include_unassigned_shift,
+            current_status_workcenters=current_status_workcenters
         )
-        if not include_legacy:
+        if not include_legacy or (
+            current_status_workcenters is not None and current_status_workcenters.empty
+        ):
             return event
     else:
         events_join = getPlex('events')
@@ -587,6 +645,11 @@ def getStopsData(
             AND {mic_period_end}
         """
 
+    mic_source_dates = (
+        f", {mic_log_start} AS _Legacy_Log_Date, {mic_log_end} AS _Legacy_End_Date"
+        if use_current_status and current_status_workcenters is not None else ""
+    )
+
     query = f"""
         SELECT
             T1.lOEEEventId AS Log_Key
@@ -596,6 +659,7 @@ def getStopsData(
             , FORMAT({mic_log_start}, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
             , FORMAT({mic_log_end}, 'dd/MM/yyyy HH:mm:ss') AS End_Date
             , {mic_log_minutes} AS Log_Minutes
+            {mic_source_dates}
             , T3.COD_PARADA AS Code
             , T3.CATEGORIA AS Status
             {mic_event_description}
@@ -628,6 +692,9 @@ def getStopsData(
     """
 
     mic_event = engine_run_query(query, 'ftm')
+
+    if use_current_status and current_status_workcenters is not None:
+        mic_event = _limit_legacy_stops_to_td(mic_event, current_status_workcenters)
 
     if use_current_status and received_data.get('m_event'):
         mic_event = mic_event[mic_event['Event'].isin(received_data['m_event'])]
