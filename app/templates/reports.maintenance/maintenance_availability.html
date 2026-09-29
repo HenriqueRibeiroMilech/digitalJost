@@ -414,7 +414,7 @@
                             <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 1)">Centro de Trabalho</th>
                             <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 2)">Tempo Parado (Min.)</th>
                             <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 3)">Quantidade de Parada</th>
-                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 4)">Tempo Disponivel (Min.)</th>
+                            <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 4)">Tempo Planejado (Min.)</th>
                             <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 5)">MTBF</th>
                             <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 6)">MTTR</th>
                             <th style='background-color: #007bff;color: white;' onclick="sortTable('data-table1', 7)">Disponibilidade</th>
@@ -579,6 +579,22 @@
 
         const workcenters = ({{workcenters | tojson}})
         const events = ({{events | tojson}})
+        const preloadFilters = {{ preload_filters | tojson }};
+        let lastSuccessfulFilters = null;
+
+        function formatNumber(value) {
+            return Number.isFinite(value) ? (Number.isInteger(value) ? String(value) : value.toFixed(2)) : '—';
+        }
+
+        function formatAvailability(value) {
+            return Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : 'Sem base';
+        }
+
+        function availabilityColor(value) {
+            if (!Number.isFinite(value)) return '#D9D9D9';
+            if (value * 100 >= 98) return '#00B050';
+            return value * 100 >= 97 ? '#FFC000' : '#FF5050';
+        }
 
         const sortDirections = {
             'data-table1': [true, true, true, true, true, true, true, true],
@@ -619,14 +635,9 @@
             document.getElementById(`sel_group2`).checked = true
             toggleExclusiveFilter('group2')
 
-            const params = new URLSearchParams(window.location.search);
-
-            if (params.get('preload') == '5') {
-
-                const { first_day, last_day } = getWeekRange(params.get('year'), params.get('week'));
-
-                document.getElementById('start_date').value = first_day + ' 00:00';
-                document.getElementById('end_date').value = last_day + ' 23:59';
+            if (preloadFilters) {
+                document.getElementById('start_date').value = preloadFilters.start_date;
+                document.getElementById('end_date').value = preloadFilters.end_date;
                 document.getElementById('group').value = '5';
                 update()
 
@@ -660,13 +671,13 @@
 
                 var trace = {
                     x: data.map(item => item.group),  // Eixo X com os workcenter_names
-                    y: data.map(item => item.CALC * 100.0), // Eixo Y com log_minutes_count
+                    y: data.map(item => Number.isFinite(item.CALC) ? item.CALC * 100.0 : null),
                     name: x_legend,  // Nome da série
                     type: 'bar',
                     marker: {
                         color: 'blue'
                     },
-                    text: data.map(item => `${Number.isInteger(item.CALC) ? item.CALC * 100.0 : (item.CALC * 100.0).toFixed(2)}%`),
+                    text: data.map(item => formatAvailability(item.CALC)),
                     textfont: {
                                     size: 12,
                                     family: 'Arial Black, sans-serif',
@@ -686,6 +697,10 @@
                         tickangle: -45,
                         automargin: true
                     },
+                    annotations: data.some(item => !Number.isFinite(item.CALC)) ? [{
+                        text: `Sem base: ${data.filter(item => !Number.isFinite(item.CALC)).map(item => item.group).join(', ')}`,
+                        xref: 'paper', yref: 'paper', x: 0, y: 1.12, showarrow: false
+                    }] : [],
                     legend: {
                         itemclick: false,
                         itemdoubleclick: false,
@@ -811,13 +826,15 @@
                         group: group,
                         Log_Minutes_Sum: 0,
                         Log_Minutes_Count: 0,
-                        TotalAvail: 0
+                        TotalAvail: 0,
+                        BaseValid: true
                     };
                 }
 
                 grouped[group].Log_Minutes_Sum += info.Log_Minutes_Sum || 0;
                 grouped[group].Log_Minutes_Count += info.Log_Minutes_Count || 0;
                 grouped[group].TotalAvail += info.TotalAvail || 0;
+                grouped[group].BaseValid = grouped[group].BaseValid && Number.isFinite(info.CALC);
             });
 
             graphData = Object.values(grouped);
@@ -825,17 +842,6 @@
             graphAgg['data'] = calcAvaibility(graphData)
 
             graphAgg['data'] = graphAgg['data'].sort((a, b) => {
-                if (graphAgg['group'] === '0') {
-                    const parseDate = (val) => {
-                        const [day, month] = val.split('/').map(Number);
-                        return new Date(2025, month - 1, day);
-                    };
-
-                    const dateA = parseDate(a.group || '01/01');
-                    const dateB = parseDate(b.group || '01/01');
-                    return dateA - dateB;
-                }
-
                 // Fallback para os outros casos
                 const groupA = a.group || '';
                 const groupB = b.group || '';
@@ -860,10 +866,11 @@
                 const logSum = sum.Log_Minutes_Sum;
                 const totalAvailMinutes = sum.TotalAvail * 60;
 
-                const MTTR = count > 0 ? logSum / count : 0;
-                const MTBF = count > 0 ? (totalAvailMinutes - logSum) / count : 1;
-                const denominator = MTTR + MTBF;
-                const CALC = denominator > 0 ? MTBF / denominator : 1;
+                const valid = sum.BaseValid !== false && Number.isFinite(totalAvailMinutes)
+                    && totalAvailMinutes > 0 && logSum <= totalAvailMinutes + 0.000001;
+                const MTTR = valid && count > 0 ? logSum / count : null;
+                const MTBF = valid && count > 0 ? (totalAvailMinutes - logSum) / count : null;
+                const CALC = valid ? 1 - logSum / totalAvailMinutes : null;
 
                 result.push({
                     group: sum.group,
@@ -899,16 +906,10 @@
                         row.appendChild(cell);
 
                         cell = document.createElement('td');
-                        cell.textContent = `${Number.isInteger(info.CALC) ? info.CALC * 100.0 : (info.CALC * 100.0).toFixed(2)}%`;
+                        cell.textContent = formatAvailability(info.CALC);
+                        cell.title = info.Availability_Status || '';
                         cell.style.fontWeight = 'bold';
-
-                        if ((info.CALC * 100.0).toFixed(2) >= 98) {
-                            cell.style.backgroundColor = '#00B050'
-                        } else if ((info.CALC * 100.0).toFixed(2) >= 97) {
-                            cell.style.backgroundColor = '#FFC000'
-                        } else {
-                            cell.style.backgroundColor = '#FF5050'
-                        }
+                        cell.style.backgroundColor = availabilityColor(info.CALC);
 
                         row.appendChild(cell);
                 
@@ -933,7 +934,7 @@
                 
                         // Cálculo formatado
                         cell = document.createElement('td');
-                        cell.textContent = Number.isInteger(info.Log_Minutes_Sum) ? info.Log_Minutes_Sum : info.Log_Minutes_Sum.toFixed(2);
+                        cell.textContent = formatNumber(info.Log_Minutes_Sum);
                         cell.style.fontWeight = 'bold';
                         row.appendChild(cell);
 
@@ -945,41 +946,27 @@
 
                         cell = document.createElement('td');
 
-                        let rawValue = parseFloat(info.TotalAvail) * 60.0;
-                        let rounded = Math.round(rawValue * 100.0) / 100.0;
-                        let formatted = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
-
-                        cell.textContent = formatted
+                        cell.textContent = formatNumber(Number.isFinite(info.TotalAvail) ? info.TotalAvail * 60.0 : null)
                         cell.style.fontWeight = 'bold';
                         row.appendChild(cell);
 
                         cell = document.createElement('td');
                         
-                        cell.textContent = info.MTBF.toFixed(2).toString().includes('.00') ? parseInt(info.MTBF) : info.MTBF.toFixed(2)
+                        cell.textContent = formatNumber(info.MTBF)
                         cell.style.fontWeight = 'bold';
                         row.appendChild(cell);
 
                         cell = document.createElement('td');
 
-                        rawValue = parseFloat(info.MTTR);
-                        rounded = Math.round(rawValue * 100.0) / 100.0;
-                        formatted = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
-
-                        cell.textContent = formatted;
+                        cell.textContent = formatNumber(info.MTTR);
                         cell.style.fontWeight = 'bold';
                         row.appendChild(cell);
 
                         cell = document.createElement('td');
-                        cell.textContent = `${Number.isInteger(info.CALC) ? info.CALC * 100.0 : (info.CALC * 100.0).toFixed(2)}%`;
+                        cell.textContent = formatAvailability(info.CALC);
+                        cell.title = info.Availability_Status || '';
                         cell.style.fontWeight = 'bold';
-
-                        if ((info.CALC * 100.0).toFixed(2) >= 98) {
-                            cell.style.backgroundColor = '#00B050'
-                        } else if ((info.CALC * 100.0).toFixed(2) >= 97) {
-                            cell.style.backgroundColor = '#FFC000'
-                        } else {
-                            cell.style.backgroundColor = '#FF5050'
-                        }
+                        cell.style.backgroundColor = availabilityColor(info.CALC);
 
                         row.appendChild(cell);
                 
@@ -1005,13 +992,15 @@
                         group: group,
                         Log_Minutes_Sum: 0,
                         Log_Minutes_Count: 0,
-                        TotalAvail: 0
+                        TotalAvail: 0,
+                        BaseValid: true
                     };
                 }
 
                 grouped[group].Log_Minutes_Sum += parseFloat(info.Log_Minutes_Sum) || 0;
                 grouped[group].Log_Minutes_Count += parseFloat(info.Log_Minutes_Count) || 0;
                 grouped[group].TotalAvail += parseFloat(info.TotalAvail) || 0;
+                grouped[group].BaseValid = grouped[group].BaseValid && Number.isFinite(info.CALC);
             });
 
             const aggAvaibilityList = calcAvaibility(grouped)
@@ -1019,26 +1008,26 @@
         
             document.getElementsByName('agg-type').forEach(
                 element => {
-                    element.innerHTML = groupMap[document.getElementById('group').value];
+                    element.textContent = groupMap[lastSuccessfulFilters.time_group];
                 }
             );
             document.getElementById('bullet-extra1').innerHTML = `${data.workcenters.length} linhas`;
-            document.getElementById('bullet-extra2').innerHTML = data.overall.Log_Minutes_Sum ? data.overall.Log_Minutes_Sum.toFixed(2) : '0.00';
-            document.getElementById('bullet-extra3').innerHTML = data.overall.Log_Minutes_Count ? data.overall.Log_Minutes_Count.toFixed(2) : '0.00';
-            document.getElementById('bullet-extra4').innerHTML = data.overall.Availability ? data.overall.Availability.toFixed(2) : '0.00';
-            document.getElementById('bullet-extra5').innerHTML = Number.isInteger(data.overall.MTBF) ? data.overall.MTBF: data.overall.MTBF.toFixed(2);
-            document.getElementById('bullet-extra6').innerHTML = Number.isInteger(data.overall.MTTR) ? data.overall.MTBF : data.overall.MTTR.toFixed(2);
-            document.getElementById('bullet-extra7').innerHTML = `${Number.isInteger(data.overall.CALC) ? data.overall.CALC * 100 : (data.overall.CALC * 100.0).toFixed(2)}%`;
+            document.getElementById('bullet-extra2').textContent = formatNumber(data.overall.Log_Minutes_Sum);
+            document.getElementById('bullet-extra3').textContent = formatNumber(data.overall.Log_Minutes_Count);
+            document.getElementById('bullet-extra4').textContent = formatNumber(data.overall.Availability);
+            document.getElementById('bullet-extra5').textContent = formatNumber(data.overall.MTBF);
+            document.getElementById('bullet-extra6').textContent = formatNumber(data.overall.MTTR);
+            document.getElementById('bullet-extra7').textContent = formatAvailability(data.overall.CALC);
 
             document.getElementById('bullet-extra8').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Montagem').length} linhas`;
             document.getElementById('bullet-extra9').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Usinagem').length} linhas`;
             document.getElementById('bullet-extra10').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Soldagem').length} linhas`;
             document.getElementById('bullet-extra11').innerHTML = `${data.workcenters.filter(info => info.Workcenter_Group == 'Pré-Fabricação').length} linhas`;
             
-            document.getElementById('overall2').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Montagem')?.CALC ?? 1) * 100).toFixed(2)}%`
-            document.getElementById('overall3').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Usinagem')?.CALC ?? 1) * 100).toFixed(2)}%`
-            document.getElementById('overall4').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Soldagem')?.CALC ?? 1) * 100).toFixed(2)}%`
-            document.getElementById('overall5').innerHTML = `${((aggAvaibilityList.find(info => info.group === 'Pré-Fabricação')?.CALC ?? 1) * 100).toFixed(2)}%`
+            document.getElementById('overall2').textContent = formatAvailability(aggAvaibilityList.find(info => info.group === 'Montagem')?.CALC);
+            document.getElementById('overall3').textContent = formatAvailability(aggAvaibilityList.find(info => info.group === 'Usinagem')?.CALC);
+            document.getElementById('overall4').textContent = formatAvailability(aggAvaibilityList.find(info => info.group === 'Soldagem')?.CALC);
+            document.getElementById('overall5').textContent = formatAvailability(aggAvaibilityList.find(info => info.group === 'Pré-Fabricação')?.CALC);
 
         }
 
@@ -1056,28 +1045,14 @@
                 const cellB = b.cells[columnIndex].innerText;
 
                 if (columnIndex == 0) {
-                    if (graphAgg['group'] === '0') {
-                        const parseDate = (val) => {
-                            const [day, month] = val.split('/').map(Number);
-                            return new Date(2025, month - 1, day);
-                        };
-
-                        const dateA = parseDate(cellA || '01/01');
-                        const dateB = parseDate(cellB || '01/01');
-
-                        return isAscending ? dateA - dateB : dateB - dateA;
-                    } else {
-                        return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
-                    }
-                } else if (['data-table1'].includes(tableId)&& columnIndex > 1) {
-
-                    const minutesA = parseFloat(cellA);
-                    const minutesB = parseFloat(cellB);
-                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
-                } else if ('data-table1' != tableId && columnIndex == 3) {
-                    const minutesA = parseFloat(cellA);
-                    const minutesB = parseFloat(cellB);
-                    return isAscending ? minutesA - minutesB : minutesB - minutesA;
+                    return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                } else if ((tableId === 'data-table1' && columnIndex > 1)
+                    || (tableId !== 'data-table1' && columnIndex === 2)) {
+                    const numberA = parseFloat(cellA);
+                    const numberB = parseFloat(cellB);
+                    if (!Number.isFinite(numberA)) return Number.isFinite(numberB) ? 1 : 0;
+                    if (!Number.isFinite(numberB)) return -1;
+                    return isAscending ? numberA - numberB : numberB - numberA;
                 } else {
                     return isAscending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
                 }
@@ -1107,6 +1082,10 @@
         function update() {
             
             document.getElementById('searchButton').disabled = true;
+            data = {};
+            lastSuccessfulFilters = null;
+            document.querySelectorAll('[id^="bullet-extra"]').forEach(element => element.textContent = 'Consultando...');
+            ['overall2', 'overall3', 'overall4', 'overall5'].forEach(id => document.getElementById(id).textContent = 'Consultando...');
 
             document.querySelector('#data-table1 tbody').innerHTML = ''
 
@@ -1125,31 +1104,37 @@
             showLoaders()
 
             if (xhr && xhr.readyState !== XMLHttpRequest.UNSENT) {
+                xhr.onreadystatechange = null;
                 xhr.abort();
             }
+            xhr = new XMLHttpRequest();
 
             const data_to_send = getFilters()
 
             xhr.open("POST", "/manutencao/disponibilidade?type=dash", true);
             xhr.setRequestHeader("Content-type","application/json");
             xhr.onreadystatechange = function () {
-
-                if (xhr.readyState === 4 && xhr.status === 200) {
-
-                    document.getElementById('searchButton').disabled = false;
-
-                    data = {}
-                    
-                    data['workcenters'] = JSON.parse(xhr.responseText)['workcenters']
-                    data['overall'] = JSON.parse(xhr.responseText)['overall']
-
-
-                    hideLoaders()
-                    insertTableData()
-
-                    document.getElementById('chart-agg-type-container').style.display = 'block'
-
-                    updateGraph()
+                if (xhr.readyState !== 4) return;
+                document.getElementById('searchButton').disabled = false;
+                hideLoaders();
+                try {
+                    if (xhr.status !== 200) {
+                        let message = 'Não foi possível consultar a disponibilidade.';
+                        if (xhr.status === 400) message = JSON.parse(xhr.responseText).error || message;
+                        throw new Error(message);
+                    }
+                    data = JSON.parse(xhr.responseText);
+                    lastSuccessfulFilters = data_to_send;
+                    graphAgg.group = data_to_send.time_group;
+                    insertTableData();
+                    document.getElementById('chart-agg-type-container').style.display = 'block';
+                    updateGraph();
+                } catch (error) {
+                    data = {};
+                    lastSuccessfulFilters = null;
+                    document.querySelectorAll('[id^="bullet-extra"]').forEach(element => element.textContent = '—');
+                    ['overall2', 'overall3', 'overall4', 'overall5'].forEach(id => document.getElementById(id).textContent = 'Sem base');
+                    alert(error.message);
                 }
             }
             
@@ -1163,7 +1148,6 @@
         function getFilters() {
 
             const time_group = document.getElementById("group").value;
-            graphAgg['group'] = time_group
 
             const shift = Array.from(document.querySelectorAll("button[name='shift']")).filter(button => button.value != '').map(button => button.value);
             const start_date = document.getElementById("start_date").value;
@@ -1235,7 +1219,7 @@
 
             document.getElementById('downloadButton').disabled = true;
 
-            const data_to_send = getFilters()
+            const data_to_send = lastSuccessfulFilters;
 
             fetch("/manutencao/disponibilidade?type=excel", {
                 method: "POST",
@@ -1261,7 +1245,7 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
             })
-            .catch(error => console.error('Erro:', error))
+            .catch(error => alert('Não foi possível gerar o Excel.'))
             .finally(() => {
                 document.getElementById('downloadButton').disabled = false;
             });
@@ -1311,30 +1295,6 @@
 
 
 
-        function getWeekRange(year, week) {
-            // Primeiro dia do ano
-            const firstJan = new Date(year, 0, 1);
-            const daysOffset = (week - 1) * 7;
-
-            const tempDate = new Date(firstJan.getTime() + daysOffset * 24 * 60 * 60 * 1000);
-
-            // Ajustar para a segunda-feira
-            const day = tempDate.getDay(); // 0 (domingo) a 6 (sábado)
-            const diffToMonday = (day === 0 ? -6 : 1) - day; // ajustar para segunda
-            const monday = new Date(tempDate);
-            monday.setDate(tempDate.getDate() + diffToMonday);
-
-            const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
-
-            // Formato YYYY-MM-DD
-            const format = (d) => d.toISOString().split('T')[0];
-
-            return {
-                first_day: format(monday),
-                last_day: format(sunday)
-            };
-        }
     </script>
 </body>
 </html>

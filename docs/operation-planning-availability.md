@@ -115,3 +115,70 @@ Frontend, todos em `app/static/js/operation.planning/`:
 
 Documentação: `docs/operation-planning-availability.md` (novo).
 Não há alteração em templates, dependências, procedures ou cadastro.
+
+## Relatório detalhado de manutenção
+
+`/manutencao/disponibilidade` passa a compartilhar as fontes, a classificação
+das paradas e a fórmula de manutenção do Operation Meeting. O relatório deixa
+de consultar a procedure Plex antiga, `OEEQWorkCellDetail` e `CONFIG_TABLET` para
+esse indicador. Não há fallback para a base antiga quando falta histórico TD.
+
+O link com `preload=5&year=2026&week=39` seleciona o acumulado mensal usado pela
+tabela do OP Meeting: de 01/09/2026 00:00 até 28/09/2026 00:00, exclusivo.
+O campo final da tela mostra 27/09/2026 23:59: o último minuto selecionado é
+inclusivo e o backend acrescenta um minuto para consultar a janela exclusiva.
+Períodos em andamento continuam limitados ao momento da consulta.
+
+Os filtros de centros, áreas e turnos valem tanto para os minutos planejados
+quanto para as paradas. A exceção de planejamento sem turno do P04 só entra
+quando os três turnos estão selecionados; não é atribuída a um turno específico.
+Todos os motivos selecionados incluem a manutenção classificada pela mesma
+regra do OP Meeting, inclusive motivos sem código identificável. Uma seleção
+parcial de motivos considera somente seus códigos após as revisões aprovadas.
+
+Os agrupadores Dia, Semana ISO, Mês e Ano recortam os status em cada período;
+uma parada que cruza a meia-noite não fica inteira no dia em que começou.
+O denominador agrupado é obtido em uma única consulta parametrizada à mesma
+`Mach_2_Current_Status`, com os mesmos indicadores e filtros da fonte TD,
+sem executar uma procedure para cada dia. Os dias incluem o ano no rótulo.
+O agrupador Livre e o resumo geral usam a procedure TD compartilhada.
+
+A quantidade de paradas por agrupador conta os status que sobrepõem aquele
+período. Um status contínuo pode aparecer em vários dias; o resumo geral conta
+esse status apenas uma vez na janela completa. Por isso, somar as quantidades
+diárias não equivale necessariamente à quantidade geral. Os tempos são
+recortados, não duplicados. MTBF e MTTR sem ocorrências ficam sem valor.
+
+Centros/períodos sem planejamento e sem paradas planejadas ficam ocultos.
+Disponibilidade válida de 0% permanece visível. Inconsistências com paradas
+planejadas e base ausente ou insuficiente aparecem como “Sem base”, sem
+inventar 100%. A exportação usa os filtros da última consulta bem-sucedida,
+inclui a situação da base e deixa indicadores indefinidos em branco.
+
+### Conferência após implantação
+
+Somente o responsável, no ambiente autorizado:
+
+1. Abrir o link acima e comparar com a disponibilidade mensal do OP Meeting
+   na semana 39, com os quatro grupos, todos os centros, motivos e turnos e o
+   agrupador Livre. Conferir o período, cada centro e o geral ponderado.
+2. Conferir C04 com 0%, P04 com a base sem turno recuperada e os centros sem
+   planejamento ocultos. Selecionar apenas um turno e conferir que a exceção
+   sem turno do P04 fica fora, tanto do denominador quanto das paradas.
+3. Comparar os agrupadores, uma semana que cruza ano, uma parada que cruza
+   dia/mês e um status aberto. Conferir soma dos minutos, não soma das
+   quantidades de ocorrências por dia.
+4. Conferir filtros parciais de motivos, centros e áreas, consulta sem
+   resultados, tratamento de falha e nova pesquisa. Conferir também o Excel,
+   inclusive campos sem valor e a coluna de situação da base.
+
+Arquivos desta integração do relatório detalhado:
+
+- `app/utils/maintenance_availability.py` (novo serviço do relatório).
+- `app/utils/planning_availability.py` (regras e período compartilhados).
+- `app/routes/operation/planning.py` (usa a classificação e o período compartilhados).
+- `app/routes/reports/maintenance.py` (consulta e exportação do relatório).
+- `app/templates/reports.maintenance/maintenance_availability.html` (filtros e exibição).
+- `docs/operation-planning-availability.md` (esta documentação).
+
+Nenhuma procedure, dependência ou objeto persistente do banco foi alterado.

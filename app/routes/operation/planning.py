@@ -29,7 +29,6 @@ AREA FABRIL:
 
 import json
 import os
-import calendar
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
@@ -46,7 +45,8 @@ from app.utils.dynamic_constants import getPlex
 from app.utils.permissions import get_permission
 from app.utils.planning_availability import (
     get_planned_availability, get_weekly_planned_availability, get_planning_stops,
-    summarize_weekly_availability, summarize_monthly_availability, json_records
+    summarize_weekly_availability, summarize_monthly_availability, json_records,
+    classify_planning_stops as _classify_planning_stops, get_planning_month_range
 )
 from app.config import mail
 
@@ -73,71 +73,6 @@ _MAP_AREA_SLIDES = {
     5: 'Método (Processos)'
 }
 
-_STOP_AREAS = {
-    '3': 'Método (Qualidade)', '4': 'Método (Qualidade)',
-    '19': 'Método (Qualidade)', '42': 'Método (Qualidade)',
-    '44': 'Método (Processos)', '65': 'Método (Qualidade)',
-    '20': 'Método (Processos)', '31': 'Método (Processos)',
-    '32': 'Método (Processos)', '37': 'Método (Processos)',
-    '43': 'Método (Processos)', '100': 'Método (Processos)'
-}
-
-
-def _infer_planning_event_codes(stopped_event):
-    """Recupera códigos só quando a descrição do motivo identifica um único evento."""
-    if stopped_event.empty:
-        return stopped_event['Event_Code'].fillna('').astype(str)
-
-    catalog = getPlex('events')[[
-        'Description', 'Workcenter_Event_Group', 'Code'
-    ]].dropna(subset=['Description', 'Code']).copy()
-
-    def normalize(value):
-        return ' '.join(str(value).strip().casefold().split()) if pd.notna(value) else ''
-
-    catalog['Code'] = (
-        catalog['Code'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
-    )
-    catalog = catalog[catalog['Code'] != '']
-    catalog['_event'] = catalog['Description'].apply(normalize)
-    catalog['_status'] = catalog['Workcenter_Event_Group'].replace({
-        'Manutenção Parada': 'Manutenção',
-        'Manutenção Produtiva': 'Manutenção'
-    }).apply(normalize)
-
-    def unique_codes(keys):
-        return catalog.groupby(keys)['Code'].agg(
-            lambda codes: codes.iloc[0] if codes.nunique() == 1 else None
-        )
-
-    by_event_and_status = unique_codes(['_event', '_status'])
-    by_event = unique_codes('_event')
-    codes = (
-        stopped_event['Event_Code'].fillna('').astype(str)
-        .str.strip().str.replace(r'\.0$', '', regex=True)
-    )
-
-    for index in stopped_event.index[codes.eq('')]:
-        event_name = normalize(stopped_event.at[index, 'Event'])
-        status_name = normalize(stopped_event.at[index, 'Status'])
-        code = by_event_and_status.get((event_name, status_name))
-        if code is None or pd.isna(code):
-            code = by_event.get(event_name)
-        if code is not None and pd.notna(code):
-            codes.at[index] = code
-
-    return codes
-
-
-def _classify_planning_stops(stops):
-    stops = stops.rename(columns={'Code': 'Event_Code'}).reset_index(drop=True)
-    stops['Status'] = stops['Status'].replace({
-        'Manutenção Parada': 'Manutenção',
-        'Manutenção Produtiva': 'Manutenção'
-    })
-    stops['Event_Code'] = _infer_planning_event_codes(stops)
-    stops['Status'] = stops['Event_Code'].map(_STOP_AREAS).fillna(stops['Status'])
-    return stops
 
 
 # PAGINA PRINCIPAL DA APLICAÇÃO
@@ -556,30 +491,7 @@ def planning_area_post(areaId):
 
     else:
 
-        def get_month_range(filter_year, filter_week):
-            # Obter a segunda-feira da semana fornecida
-            monday = datetime.fromisocalendar(filter_year, filter_week, 1)
-            # Primeiro dia do mês da segunda-feira
-            first_day = datetime(monday.year, monday.month, 1)
-
-            # Último dia da semana atual (domingo)
-            end_of_week = monday + timedelta(days=6)
-            # Último dia do mês da segunda-feira
-            last_day_of_month = datetime(monday.year, monday.month, calendar.monthrange(monday.year, monday.month)[1])
-
-            # Se o último dia da semana está no próximo mês, pega o último dia do mês
-            if end_of_week.month != monday.month:
-                last_day = last_day_of_month
-            else:
-                last_day = end_of_week
-
-            end_exclusive = min(last_day + timedelta(days=1), datetime.now())
-            return (
-                monday.month, first_day.strftime('%Y-%m-%d %H:%M:%S'),
-                end_exclusive.strftime('%Y-%m-%d %H:%M:%S')
-            )
-
-        target_month, first_day, end_exclusive = get_month_range(filter_year, filter_week)
+        target_month, first_day, end_exclusive = get_planning_month_range(filter_year, filter_week)
 
         payload = {
             'start_date': first_day

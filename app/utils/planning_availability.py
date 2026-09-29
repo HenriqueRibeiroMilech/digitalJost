@@ -1,6 +1,7 @@
 """Fontes e cálculos de disponibilidade do Operation Meeting, em minutos."""
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 
 import pandas as pd
 
@@ -16,7 +17,85 @@ _UNASSIGNED_SHIFT_WORKCENTER = 'P04'
 _MINUTE_TOLERANCE = 0.000001  # Somente diferenças de ponto flutuante.
 
 
-def get_planned_availability(start_date, end_date):
+def get_planning_month_range(year, week):
+    monday = datetime.fromisocalendar(year, week, 1)
+    first_day = monday.replace(day=1)
+    next_month = (pd.Timestamp(first_day) + pd.offsets.MonthBegin(1)).to_pydatetime()
+    end = min(monday + timedelta(days=7), next_month, datetime.now())
+    return monday.month, first_day.strftime('%Y-%m-%d %H:%M:%S'), end.strftime('%Y-%m-%d %H:%M:%S')
+
+
+_STOP_AREAS = {
+    '3': 'Método (Qualidade)', '4': 'Método (Qualidade)',
+    '19': 'Método (Qualidade)', '42': 'Método (Qualidade)',
+    '44': 'Método (Processos)', '65': 'Método (Qualidade)',
+    '20': 'Método (Processos)', '31': 'Método (Processos)',
+    '32': 'Método (Processos)', '37': 'Método (Processos)',
+    '43': 'Método (Processos)', '100': 'Método (Processos)'
+}
+
+
+def _infer_planning_event_codes(stopped_event):
+    """Recupera códigos só quando a descrição do motivo identifica um único evento."""
+    if stopped_event.empty:
+        return stopped_event['Event_Code'].fillna('').astype(str)
+
+    catalog = getPlex('events')[[
+        'Description', 'Workcenter_Event_Group', 'Code'
+    ]].dropna(subset=['Description', 'Code']).copy()
+
+    def normalize(value):
+        return ' '.join(str(value).strip().casefold().split()) if pd.notna(value) else ''
+
+    catalog['Code'] = (
+        catalog['Code'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
+    )
+    catalog = catalog[catalog['Code'] != '']
+    catalog['_event'] = catalog['Description'].apply(normalize)
+    catalog['_status'] = catalog['Workcenter_Event_Group'].replace({
+        'Manutenção Parada': 'Manutenção',
+        'Manutenção Produtiva': 'Manutenção'
+    }).apply(normalize)
+
+    def unique_codes(keys):
+        return catalog.groupby(keys)['Code'].agg(
+            lambda codes: codes.iloc[0] if codes.nunique() == 1 else None
+        )
+
+    by_event_and_status = unique_codes(['_event', '_status'])
+    by_event = unique_codes('_event')
+    codes = (
+        stopped_event['Event_Code'].fillna('').astype(str)
+        .str.strip().str.replace(r'\.0$', '', regex=True)
+    )
+
+    for index in stopped_event.index[codes.eq('')]:
+        event_name = normalize(stopped_event.at[index, 'Event'])
+        status_name = normalize(stopped_event.at[index, 'Status'])
+        code = by_event_and_status.get((event_name, status_name))
+        if code is None or pd.isna(code):
+            code = by_event.get(event_name)
+        if code is not None and pd.notna(code):
+            codes.at[index] = code
+
+    return codes
+
+
+def classify_planning_stops(stops):
+    stops = stops.rename(columns={'Code': 'Event_Code'}).reset_index(drop=True)
+    stops['Status'] = stops['Status'].replace({
+        'Manutenção Parada': 'Manutenção',
+        'Manutenção Produtiva': 'Manutenção'
+    })
+    stops['Event_Code'] = _infer_planning_event_codes(stops)
+    stops['Status'] = stops['Event_Code'].map(_STOP_AREAS).fillna(stops['Status'])
+    return stops
+
+
+def get_planned_availability(
+    start_date, end_date, workcenter_codes=None, groups=None, shift_list=None,
+    include_unassigned_shift=True
+):
     workcenters = getPlex('workcenters')[[
         'Workcenter_Code', 'Name', 'Workcenter_Group'
     ]].copy()
@@ -24,6 +103,10 @@ def get_planned_availability(start_date, end_date):
         workcenters['Workcenter_Group'].isin(WORKCENTER_GROUPS)
     ].dropna(subset=['Workcenter_Code']).drop_duplicates()
     workcenters['Workcenter_Code'] = workcenters['Workcenter_Code'].astype(str).str.strip()
+    if workcenter_codes is not None:
+        workcenters = workcenters[workcenters['Workcenter_Code'].isin(workcenter_codes)]
+    if groups is not None:
+        workcenters = workcenters[workcenters['Workcenter_Group'].isin(groups)]
     workcenters['Workcenter_Name'] = (
         workcenters['Workcenter_Code']
         + workcenters['Name'].fillna('').apply(lambda name: f'-{name}' if name else '')
@@ -71,6 +154,7 @@ def get_planned_availability(start_date, end_date):
                 ) / 60.0 AS Minutos
             FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
             WHERE Workcenter = :unassigned_workcenter
+                AND :include_unassigned_shift = 1
                 AND Workcenter IN (
                     SELECT TRIM(value) FROM STRING_SPLIT(:workcenter_list, ',')
                 )
@@ -101,7 +185,8 @@ def get_planned_availability(start_date, end_date):
         'start_date': start_date,
         'end_date': end_date,
         'workcenter_list': ','.join(workcenters['Workcenter_Code']),
-        'shift_list': PLANNING_SHIFTS,
+        'shift_list': PLANNING_SHIFTS if shift_list is None else shift_list,
+        'include_unassigned_shift': int(include_unassigned_shift),
         'unassigned_workcenter': _UNASSIGNED_SHIFT_WORKCENTER
     }).rename(columns={
         'Workcenter': 'Workcenter_Code',
@@ -142,7 +227,7 @@ def get_weekly_planned_availability(start_date, end_date):
         return pd.concat(list(executor.map(fetch_week, periods)), ignore_index=True)
 
 
-def get_planning_stops(payload, include_legacy=True):
+def get_planning_stops(payload, include_legacy=True, include_unassigned_shift=True):
     """Mantém rankings históricos; identifica quais paradas têm base planejada TD."""
     if pd.Timestamp(payload['start_date']) >= pd.Timestamp(payload['end_date']):
         return pd.DataFrame(columns=[
@@ -153,7 +238,7 @@ def get_planning_stops(payload, include_legacy=True):
 
     stops = getStopsData(
         payload, use_current_status=True, include_all_statuses=True,
-        include_legacy=include_legacy, include_unassigned_shift=True
+        include_legacy=include_legacy, include_unassigned_shift=include_unassigned_shift
     ).reset_index(drop=True)
     if 'Workcenter_Code' not in stops:
         stops['Workcenter_Code'] = pd.NA

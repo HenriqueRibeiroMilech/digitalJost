@@ -10,12 +10,11 @@ from requests import Session
 from requests.auth import HTTPBasicAuth
 from datetime import time
 
-from concurrent.futures import ThreadPoolExecutor
-
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user
 
-from app.utils.business import getStopsData
+from app.utils.maintenance_availability import get_maintenance_availability_data, maintenance_event_catalog
+from app.utils.planning_availability import WORKCENTER_GROUPS, get_planning_month_range
 from app.utils.db_utils import engine_run_query
 from app.utils.dynamic_constants import getPlex
 from app.utils.permissions import get_permission
@@ -287,190 +286,7 @@ def _GET_SHIFT(row):
 
 # FUNÇÃO PARA PEGAR OS DADOS DE DISPONIBILIDADE E MTTR/MTBF
 def _GET_MAINTENANCE_AVAILABILITY_DATA(payload):
-
-    payload['m_group'] = ["Manutenção"]
-
-    mic_group_time_map = {
-        '0': "FORMAT(tStartTime, 'dd/MM')",
-        '1': "CONCAT(YEAR(tStartTime), '/', RIGHT('0' + CAST(DATEPART(WEEK, tStartTime) AS VARCHAR), 2))",
-        '2': "CONCAT(YEAR(tStartTime), '/', RIGHT('0' + CAST(MONTH(tStartTime) AS VARCHAR), 2))",
-        '3': "CAST(YEAR(tStartTime) AS VARCHAR)",
-        '5': "NULL"
-    }
-
-    group_by_clause = f"T1.sDescription, T2.GRUPO"
-    if payload['time_group'] != '5':
-        group_by_clause += f", {mic_group_time_map[payload['time_group']]}"
-
-    where_mic_w_count = ', '.join([f':w_mic_val{i}' for i in range(len(payload['w_name_mic']))]) if payload['w_name_mic'] else ':w_mic_val0'
-    if payload['w_name_mic']:
-        where_mic_w_values = {f'w_mic_val{i}': v for i, v in enumerate(payload['w_name_mic'])}
-    else:
-        where_mic_w_values = {'w_mic_val0': 'aaa'}
-
-    where_plex_w_count = ', '.join([f':w_plex_val{i}' for i in range(len(payload['w_name_plex']))]) if payload['w_name_plex'] else ':w_plex_val0'
-    if payload['w_name_plex']:
-        where_plex_w_values = {f'w_plex_val{i}': v for i, v in enumerate(payload['w_name_plex'])}
-    else:
-        where_plex_w_values = {'w_plex_val0': 1}
-
-    where_group_count = ', '.join([f':w_group_val{i}' for i in range(len(payload['w_group']))]) if payload['w_group'] else ':w_group_val0'
-    if payload['w_group']:
-        where_group_values = {f'w_group_val{i}': v for i, v in enumerate(payload['w_group'])}
-    else:
-        where_group_values = {'w_group_val0': 'aaa'}
-
-    where_mic_params = {
-        'start_date': payload['start_date']
-        , 'end_date': payload['end_date']
-        , **where_mic_w_values
-        , **where_plex_w_values
-        , **where_group_values
-    }
-
-    availability_mic_query = f"""
-        
-        SELECT
-        
-            NULLIF(SUM(dAvailSec), 0) / 60.0 / 60.0 AS TotalAvail
-            , SUM(dRunSec) / 60.0 AS TotalRun
-
-            , T1.sDescription AS Workcenter_Name
-            , T2.GRUPO AS Workcenter_Group
-            , {mic_group_time_map[payload['time_group']]} AS Time_Group
-        
-        FROM OEEQWorkCellDetail T1
-        JOIN CONFIG_TABLET T2 ON T1.sDescription = T2.NOME_MAQUINA
-
-        WHERE 
-
-            T1.tStartTime BETWEEN
-            :start_date
-            AND CASE 
-                WHEN T2.CT_PLEX_DATA < :end_date
-                THEN T2.CT_PLEX_DATA 
-                ELSE :end_date
-            END
-
-            AND (T1.sDescription IN ({where_mic_w_count}) OR T2.CT_PLEX IN ({where_plex_w_count}))
-            AND T2.GRUPO IN ({where_group_count})
-            AND T1.nShift in ('1', '2', '3')
-
-        GROUP BY {group_by_clause}"""
-    
-    where_plex_w_proc = json.dumps(payload['w_name_plex'], ensure_ascii=False)
-    where_group_proc = json.dumps(payload['w_group'], ensure_ascii=False)
-    where_plex_shift_pc = json.dumps(['Primeiro', 'Segundo', 'Terceiro'], ensure_ascii=False)
-
-    where_plex_params_proc = {
-        'start_date': payload['start_date']
-        , 'end_date': payload['end_date']
-        , 'plex_w': where_plex_w_proc
-        , 'plex_g': where_group_proc
-        , 'plex_s': where_plex_shift_pc
-        , 'group': payload.get('time_group')
-    }
-
-    availability_plex_query = f"""
-            EXEC ('sproc329396_18311230_1264675(?, ?, ?, ?, ?, ?, ?, ?, ?)'
-                            , :start_date
-                            , :end_date
-                            , :plex_w
-                            , :plex_g
-                            , :plex_s
-                            , :group
-                            , 1
-                            , 1
-                            , 0)
-                        AT [PLEX_DSN_JOST]
-                """
-    print(availability_plex_query)
-    print(where_plex_params_proc)
-    with ThreadPoolExecutor() as executor:
-        availability_mic = executor.submit(engine_run_query, availability_mic_query, 'ftm', where_mic_params)
-        availability_plex = executor.submit(engine_run_query, availability_plex_query, 'plex', where_plex_params_proc)
-        maintenance_events = executor.submit(getStopsData, payload)
-
-    availability_mic = availability_mic.result()
-    availability_plex = availability_plex.result()
-    maintenance_events = maintenance_events.result()
-
-    availability = pd.concat([availability_plex[['TotalRun', 'TotalAvail', 'Workcenter_Name', 'Workcenter_Group', 'Time_Group']], availability_mic])
-
-    maintenance_events['Log_Date'] = pd.to_datetime(maintenance_events['Log_Date'], format='%d/%m/%Y %H:%M:%S')
-
-    if payload['time_group'] == '0':
-        maintenance_events['Time_Group'] = maintenance_events['Log_Date'].dt.strftime('%d/%m')
-    elif payload['time_group'] == '1':
-        maintenance_events['Time_Group'] = maintenance_events['Log_Date'].dt.year.astype(str) + '/' + maintenance_events['Log_Date'].dt.isocalendar().week.astype(str).str.zfill(2)
-    elif payload['time_group'] == '2':
-        maintenance_events['Time_Group'] = maintenance_events['Log_Date'].dt.year.astype(str) + '/' + maintenance_events['Log_Date'].dt.month.astype(str).str.zfill(2)
-    elif payload['time_group'] == '3':
-        maintenance_events['Time_Group'] = maintenance_events['Log_Date'].dt.year.astype(str)
-
-    if payload['time_group'] != '5':
-        events = maintenance_events.groupby(['Workcenter_Name', 'Workcenter_Group', 'Time_Group'], as_index=False).agg(
-            Log_Minutes_Sum=('Log_Minutes', 'sum'),
-            Log_Minutes_Count=('Log_Minutes', 'count')
-        )
-        merged_data = pd.merge(events, availability, on=['Workcenter_Name', 'Workcenter_Group', 'Time_Group'], how='outer')
-
-    else: 
-        events = maintenance_events.groupby(['Workcenter_Name', 'Workcenter_Group'], as_index=False).agg(
-            Log_Minutes_Sum=('Log_Minutes', 'sum'),
-            Log_Minutes_Count=('Log_Minutes', 'count')
-        )
-        merged_data = pd.merge(events, availability, on=['Workcenter_Name', 'Workcenter_Group'], how='outer')
-
-
-
-    merged_data['Log_Minutes_Sum'] = merged_data['Log_Minutes_Sum'].fillna(0)
-    merged_data['Log_Minutes_Count'] = merged_data['Log_Minutes_Count'].fillna(0)
-
-    merged_data['MTTR'] = np.where(
-        merged_data['Log_Minutes_Count'] > 0,
-        merged_data['Log_Minutes_Sum'] / merged_data['Log_Minutes_Count'],
-        0
-    )
-
-    merged_data['MTBF'] = np.where(
-        merged_data['Log_Minutes_Count'] > 0,
-        (merged_data['TotalAvail'] * 60.0 - merged_data['Log_Minutes_Sum']) / merged_data['Log_Minutes_Count'],
-        1
-    )
-
-    denominator = merged_data['MTBF'] + merged_data['MTTR']
-    merged_data['CALC'] = np.where(
-        denominator > 0,
-        merged_data['MTBF'] / denominator,
-        1
-    )
-
-    Log_Minutes_Sum_Total = float(merged_data['Log_Minutes_Sum'].sum())
-    Log_Minutes_Count_Total = float(merged_data['Log_Minutes_Count'].sum())
-    Availability_Total = float(merged_data['TotalAvail'].sum()  * 60.0)
-
-    # MTTR: Média de tempo para reparar
-    if Log_Minutes_Count_Total > 0:
-        MTTR = float(Log_Minutes_Sum_Total / Log_Minutes_Count_Total)
-    else:
-        MTTR = 0.0
-
-    # MTBF: Média de tempo entre falhas
-    if Log_Minutes_Count_Total > 0:
-        MTBF = float((Availability_Total - Log_Minutes_Sum_Total) / Log_Minutes_Count_Total)
-    else:
-        MTBF = 1.0  # Como fallback padrão
-
-    # CALC: Disponibilidade (MTBF / (MTBF + MTTR))
-    denominator = MTBF + MTTR
-    if denominator > 0:
-        CALC = float(MTBF / denominator)
-    else:
-        CALC = 1.0  # Fallback para 100% disponível
-
-
-    return merged_data, MTTR, MTBF, CALC, Log_Minutes_Sum_Total, Log_Minutes_Count_Total, Availability_Total
+    return get_maintenance_availability_data(payload)
 
 
 # PAGINA PARA CONSULTA DE NOTAS - APP DA FÁBRICA
@@ -604,51 +420,48 @@ def maintenance_notes_post():
 # PAGINA PARA VISUALIZAR OS GRÁFICOS DE MTBF E MTTR
 @reports_maintenance_bp.route('/manutencao/disponibilidade', methods=['GET'])
 def maintenance_availability_get():
-
-    query = f"""SELECT 
-                    GRUPO AS Workcenter_Group
-                    , LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code
-                    , SUBSTRING(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) + 1, LEN(NOME_MAQUINA)) AS Name
-                    , 1 AS Workcenter_Key
-                FROM CONFIG_TABLET WHERE CT_PLEX IS NULL"""
-    mic_workcenters = engine_run_query(query, 'ftm')
-
-    mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
-    workcenters = pd.concat([mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])], mic_workcenters])
-
-    events = getPlex('events')
-    events = events[(~events['Code'].isna()) & (events['Workcenter_Event_Group'] == 'Manutenção')].reset_index(drop=True)
-    events['Code'] = events['Code'].astype(int)
+    workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']].copy()
+    workcenters = workcenters[workcenters['Workcenter_Group'].isin(WORKCENTER_GROUPS)]
+    events = maintenance_event_catalog()
+    preload_filters = None
+    if request.args.get('preload') == '5':
+        try:
+            _, start, end = get_planning_month_range(
+                int(request.args['year']), int(request.args['week'])
+            )
+        except (KeyError, TypeError, ValueError):
+            return jsonify({'error': 'Informe ano e semana ISO válidos.'}), 400
+        preload_filters = {
+            'start_date': start[:16].replace(' ', 'T'),
+            'end_date': (pd.Timestamp(end).ceil('min') - pd.Timedelta(minutes=1)).strftime('%Y-%m-%dT%H:%M')
+        }
 
     return render_template(
         'reports.maintenance/maintenance_availability.html'
         , events=events.sort_values(by='Code').to_dict(orient='records')
         , workcenters=workcenters.sort_values(by="Workcenter_Code").to_dict(orient="records")
+        , preload_filters=preload_filters
     )
 
 @reports_maintenance_bp.route('/manutencao/disponibilidade', methods=['POST'])
 def maintenance_availability_post():
 
-    payload = request.get_json()
-    payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
-    payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
-
-    merged_data, MTTR, MTBF, CALC, Log_Minutes_Sum_Total, Log_Minutes_Count_Total, Availability_Total = _GET_MAINTENANCE_AVAILABILITY_DATA(payload)
+    try:
+        result = _GET_MAINTENANCE_AVAILABILITY_DATA(request.get_json(silent=True))
+    except ValueError as error:
+        return jsonify({'error': str(error)}), 400
 
     if request.args.get('type') == 'dash':
         
-        return jsonify({   
-                'workcenters': merged_data.sort_values(by="CALC", ascending=False).to_dict(orient='records'),
-                'overall': {
-                    'MTTR': MTTR,
-                    'MTBF': MTBF,
-                    'CALC': CALC,
-                    'Log_Minutes_Sum': Log_Minutes_Sum_Total,
-                    'Log_Minutes_Count': Log_Minutes_Count_Total,
-                    'Availability': Availability_Total
-                }})
+        return jsonify(result)
     
     else:
+
+        merged_data = pd.DataFrame(result['workcenters'], columns=[
+            'Time_Group', 'Workcenter_Name', 'Workcenter_Group', 'Log_Minutes_Sum',
+            'Log_Minutes_Count', 'TotalRun', 'TotalAvail', 'MTBF', 'MTTR', 'CALC',
+            'Availability_Status'
+        ])
 
         merged_data['TotalRun'] = merged_data['TotalRun'] * 60
         merged_data['TotalAvail'] = merged_data['TotalAvail'] * 60
@@ -661,20 +474,21 @@ def maintenance_availability_post():
             'Log_Minutes_Sum': 'Tempo Parado (Min.)',
             'Log_Minutes_Count': 'Quantidade de Parada',
             'TotalRun': 'Tempo em Produção (Min.)',
-            'TotalAvail': 'Tempo Disponível (Min.)',
+            'TotalAvail': 'Tempo Planejado (Min.)',
             'MTBF': 'MTBF',
             'MTTR': 'MTTR',
-            'CALC': 'Disponibilidade'
+            'CALC': 'Disponibilidade',
+            'Availability_Status': 'Situação da Base'
         })
 
         # 2. Criar dicionário com dados do resumo
         overall = {
-            'MTTR': MTTR,
-            'MTBF': MTBF,
-            'Disponibilidade': CALC,
-            'Tempo Parado (Min.)': Log_Minutes_Sum_Total,
-            'Quantidade de Parada': Log_Minutes_Count_Total,
-            'Tempo Disponível (Min.)': Availability_Total
+            'MTTR': result['overall']['MTTR'],
+            'MTBF': result['overall']['MTBF'],
+            'Disponibilidade': result['overall']['CALC'],
+            'Tempo Parado (Min.)': result['overall']['Log_Minutes_Sum'],
+            'Quantidade de Parada': result['overall']['Log_Minutes_Count'],
+            'Tempo Planejado (Min.)': result['overall']['Availability']
         }
         overall_df = pd.DataFrame(list(overall.items()), columns=["Métrica", "Valor"])
 
@@ -685,7 +499,7 @@ def maintenance_availability_post():
         ws1 = wb.active
         ws1.title = "Workcenters"
 
-        for row in dataframe_to_rows(merged_data, index=False, header=True):
+        for row in dataframe_to_rows(merged_data.astype(object).where(merged_data.notna(), None), index=False, header=True):
             ws1.append(row)
 
         # Ajustar largura das colunas da aba Workcenters
@@ -696,7 +510,7 @@ def maintenance_availability_post():
 
         # Aba 2: Resumo Geral
         ws2 = wb.create_sheet("Resumo Geral")
-        for row in dataframe_to_rows(overall_df, index=False, header=True):
+        for row in dataframe_to_rows(overall_df.astype(object).where(overall_df.notna(), None), index=False, header=True):
             ws2.append(row)
 
         # Ajustar largura das colunas da aba Resumo Geral
