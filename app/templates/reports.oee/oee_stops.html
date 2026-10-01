@@ -719,7 +719,8 @@
                         marker: {
                             color: 'orange'
                         },
-                        text: data.map(item => item.Log_Minutes_Sum),
+                        text: data.map(item => Number(item.Log_Minutes_Sum).toFixed(0)),
+                        hovertemplate: '%{x}<br>%{text} minutos<extra></extra>',
                         textfont: {
                                         size: 12,
                                         family: 'Arial Black, sans-serif',
@@ -733,13 +734,14 @@
                 } else {
                     var trace3 = {
                         x: data.map(item => item.Month),  // Mesmo eixo X (agrupado)
-                        y: data.map(item => parseFloat(item.Log_Minutes).toFixed(2)),  // Eixo Y com log_minutes_sum
+                        y: data.map(item => item.Log_Minutes),  // Eixo Y com log_minutes_sum
                         name: 'Minutos Parados',  // Nome da série
                         type: 'bar',
                         marker: {
                             color: 'orange'
                         },
-                        text: data.map(item => parseFloat(item.Log_Minutes).toFixed(2)),
+                        text: data.map(item => Number(item.Log_Minutes).toFixed(0)),
+                        hovertemplate: '%{x}<br>%{text} minutos<extra></extra>',
                         textfont: {
                                         size: 12,
                                         family: 'Arial Black, sans-serif',
@@ -760,6 +762,9 @@
                     xaxis: {
                         tickangle: -45,
                         automargin: true
+                    },
+                    yaxis: {
+                        tickformat: '.0f'
                     },
                     legend: {
                         itemclick: false,
