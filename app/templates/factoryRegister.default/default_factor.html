@@ -292,8 +292,8 @@
     
 
     <script>
-        const tableData = JSON.parse('{{data|tojson}}');
-        const workcenters = JSON.parse('{{workcenters|tojson}}');
+        const tableData = {{data|tojson}};
+        const workcenters = {{workcenters|tojson}};
         const admin = '{{admin}}'
 
         // FUNÇÕES PARA MANIPULAÇÃO DA TABELA
@@ -409,7 +409,7 @@
                     const option = document.createElement('option');
                     option.value = info.Workcenter_Code;
                     option.textContent = info.Name;
-                    selectElement.appendChild(option);
+                    selectElement.replaceChildren(option);
 
 
                     document.getElementById('workcenter').value = info.Workcenter_Code
@@ -555,7 +555,7 @@
                 if (response.ok) {
                     closeModal('modalRequest');
 
-                    const index = tableData.findIndex(item => item.workcenter == info.workcenter && item.part_no == info.material);
+                    const index = tableData.findIndex(item => item.workcenter == info.workcenter && item.part_no == info.part_no);
                     if (index !== -1) {
                         tableData.splice(index, 1);
                         populateTable(tableData);
