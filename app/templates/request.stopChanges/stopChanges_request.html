@@ -284,11 +284,11 @@
                     <option disabled value="">Selecione uma opção</option>
                     {% for workcenter in workcenters %}
                         {% if workcenter.Workcenter_Key != 1 %}
-                            <option value="{{ workcenter.Workcenter_Key }}" data-source="plex">
+                            <option value="{{ workcenter.Workcenter_Key }}" data-source="plex" data-workcenter-code="{{ workcenter.Workcenter_Code }}">
                                 {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
                             </option>
                         {% else %}
-                            <option value="{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}" data-source="ftm">
+                            <option value="{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}" data-source="ftm" data-workcenter-code="{{ workcenter.Workcenter_Code }}">
                                 {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
                             </option>
                         {% endif %}
@@ -452,6 +452,7 @@
             showLoading() 
 
             const workCenterSelect = document.getElementById('workCenter');
+            payload['w_codes'] = [workCenterSelect.selectedOptions[0].dataset.workcenterCode];
             payload['w_name_plex'] = workCenterSelect.selectedOptions[0].dataset.source === 'plex'
                 ? [workCenterSelect.value] : [];
 

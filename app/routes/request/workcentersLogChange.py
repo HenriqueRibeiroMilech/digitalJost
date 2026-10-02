@@ -483,8 +483,15 @@ def _get_matching_plex_log(status_row, events):
 
 def _get_request_stops(payload):
     workcenters = get_stops_workcenters()
+    selected_workcenter_codes = {
+        str(code).strip() for code in (payload.get('w_codes') or [])
+    }
     selected_plex = payload.get('w_name_plex') or []
-    if selected_plex:
+    if selected_workcenter_codes:
+        workcenters = workcenters[
+            workcenters['Workcenter_Code'].isin(selected_workcenter_codes)
+        ]
+    elif selected_plex:
         workcenters = workcenters[
             workcenters['Workcenter_Key'].apply(_normalize_catalog_id)
             == _normalize_catalog_id(selected_plex[0])
@@ -532,8 +539,9 @@ def _get_request_stops(payload):
         lambda value: 'td' if int(value) == 1 else 'ftm'
     )
 
+    catalog_events = getPlex('events')
     catalog_codes = {}
-    for event in getPlex('events')[['Code', 'Description']].itertuples(index=False):
+    for event in catalog_events[['Code', 'Description']].itertuples(index=False):
         description = _normalize_stop_reason(event.Description)
         catalog_codes.setdefault(description, set()).add(
             _normalize_catalog_id(event.Code)
@@ -582,8 +590,19 @@ def _get_request_stops(payload):
         _normalize_catalog_id(code) for code in (payload.get('m_event') or [])
     }
     if selected_codes:
+        selected_descriptions = {
+            _normalize_stop_reason(event.Description)
+            for event in catalog_events[['Code', 'Description']]
+            .itertuples(index=False)
+            if _normalize_catalog_id(event.Code) in selected_codes
+        }
         data = data[
             data['Code'].apply(_normalize_catalog_id).isin(selected_codes)
+            | (
+                data['Source'].eq('td')
+                & data['Event'].apply(_normalize_stop_reason)
+                .isin(selected_descriptions)
+            )
         ]
     return data
 
