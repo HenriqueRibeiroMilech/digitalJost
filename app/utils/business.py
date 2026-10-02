@@ -58,6 +58,30 @@ def _normalize_stop_status(value):
     return value
 
 
+def get_stops_workcenters():
+    """Centros da fonte TD e centros que existem somente no histórico FTM."""
+    mic_workcenters = engine_run_query("""
+        SELECT GRUPO AS Workcenter_Group,
+               LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code,
+               SUBSTRING(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) + 1, LEN(NOME_MAQUINA)) AS Name,
+               1 AS Workcenter_Key
+        FROM CONFIG_TABLET
+        WHERE CT_PLEX IS NULL
+    """, 'ftm')
+    plex_workcenters = getPlex('workcenters')[[
+        'Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key'
+    ]].copy()
+    plex_workcenters['Workcenter_Code'] = plex_workcenters['Workcenter_Code'].astype(str).str.strip()
+    mic_workcenters['Workcenter_Code'] = mic_workcenters['Workcenter_Code'].astype(str).str.strip()
+    workcenters = pd.concat([
+        plex_workcenters[
+            ~plex_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])
+        ],
+        mic_workcenters
+    ])
+    return workcenters.drop_duplicates(subset=['Workcenter_Code'])
+
+
 def _get_stop_event_catalog():
     events_by_key = {}
     events_by_code = {}
@@ -109,8 +133,11 @@ def _apply_approved_stop_changes(event, workcenters, received_data):
             , T2.endDate
         FROM JDT_REQUEST_STOPCHANGES T1
         JOIN JDT_REQUEST_STOPCHANGES_PLEX T2
-            ON T2.eventId = T1.eventId
+            ON T2.eventId = COALESCE(T1.plexLogKey, T1.eventId)
         WHERE T1.plex = 1
+            AND (T1.stopSource IS NULL OR T1.stopSource IN ('plex', 'td'))
+            AND (T1.stopSource IS NULL OR T1.stopSource <> 'td'
+                 OR T1.plexLogKey IS NOT NULL)
             AND T1.approverStatus1 = 1
             AND T1.approverStatus2 = 1
             AND T1.finalDate IS NOT NULL
@@ -217,13 +244,16 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
 
     query = """
         SELECT
-            T1.eventId
+            COALESCE(T1.plexLogKey, T1.eventId) AS eventId
             , T1.motive2
             , T1.motive2EventKey
         FROM JDT_REQUEST_STOPCHANGES T1
         JOIN JDT_REQUEST_STOPCHANGES_PLEX T2
-            ON T2.eventId = T1.eventId
+            ON T2.eventId = COALESCE(T1.plexLogKey, T1.eventId)
         WHERE T1.plex = 1
+            AND (T1.stopSource IS NULL OR T1.stopSource IN ('plex', 'td'))
+            AND (T1.stopSource IS NULL OR T1.stopSource <> 'td'
+                 OR T1.plexLogKey IS NOT NULL)
             AND T1.approverStatus1 = 1
             AND T1.approverStatus2 = 1
             AND T1.finalDate IS NOT NULL

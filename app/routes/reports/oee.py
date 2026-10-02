@@ -5,7 +5,7 @@ from datetime import timedelta, datetime
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user
 
-from app.utils.business import getStopsData
+from app.utils.business import getStopsData, get_stops_workcenters
 from app.utils.db_utils import engine_run_query
 from app.utils.dynamic_constants import getPlex
 from app.utils.permissions import get_permission
@@ -194,19 +194,7 @@ def _SIGNAL_DATA(payload):
         
 def _get_stops_workcenters():
     """Cadastro de centros exibidos no filtro, incluindo o histórico FTM."""
-    query = f"""SELECT 
-                    GRUPO AS Workcenter_Group
-                    , LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code
-                    , SUBSTRING(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) + 1, LEN(NOME_MAQUINA)) AS Name
-                    , 1 AS Workcenter_Key
-                FROM CONFIG_TABLET WHERE CT_PLEX IS NULL"""
-    mic_workcenters = engine_run_query(query, 'ftm')
-
-    mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']].copy()
-    mes_workcenters['Workcenter_Code'] = mes_workcenters['Workcenter_Code'].astype(str).str.strip()
-    mic_workcenters['Workcenter_Code'] = mic_workcenters['Workcenter_Code'].astype(str).str.strip()
-    workcenters = pd.concat([mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])], mic_workcenters])
-    return workcenters.drop_duplicates(subset=['Workcenter_Code'])
+    return get_stops_workcenters()
 
 
 def _get_stops_data(payload):

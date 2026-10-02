@@ -284,11 +284,11 @@
                     <option disabled value="">Selecione uma opção</option>
                     {% for workcenter in workcenters %}
                         {% if workcenter.Workcenter_Key != 1 %}
-                            <option value="{{ workcenter.Workcenter_Key }}">
+                            <option value="{{ workcenter.Workcenter_Key }}" data-source="plex">
                                 {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
                             </option>
                         {% else %}
-                            <option value="{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}">
+                            <option value="{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}" data-source="ftm">
                                 {{ workcenter.Workcenter_Code }} - {{ workcenter.Name }}
                             </option>
                         {% endif %}
@@ -297,9 +297,9 @@
             </div>
 
             <div class="form-group">
-            <label for="motive">Motivo Atual</label>
+                <label for="motive">Motivo Atual</label>
                 <select id="motive">
-                    <option disabled value="">Selecione uma opção</option>
+                    <option value="">Todos os motivos</option>
                     {% for event in events %}
                         <option value="{{event.Code}}">{{event.Code}} - {{event.Description}}</option>
                     {% endfor %}
@@ -395,7 +395,7 @@
 
             const payload = {
                 Log_Key: info['Log_Key']
-                , Plex: info['Plex']
+                , Source: info['Source']
                 , newMotiveEventKey: newMotiveEventKey
                 , requestText: requestText
             }
@@ -409,20 +409,22 @@
                 },
                 body: JSON.stringify(payload)
             })
-            .then(response => {
-                if (response.status === 403) {
-
-                    alert('Já existe uma solicitação em andamento para este evento!');
-                    throw new Error('403 - Forbidden');
+            .then(async response => {
+                const message = await response.text();
+                if (!response.ok) {
+                    throw new Error(response.status === 403
+                        ? 'Já existe uma solicitação em andamento para este evento!'
+                        : message);
                 }
-                return response.text();
-            })            
+                return message;
+            })
             .then(text => {
                 const id = text.split(' ')[2];  // Extrai apenas o número do ID (assumindo 'NEW ID <numero>')
                 window.location.href = `/oee/paradas/alterar/solicitacoes/${id}?origin=solicitar`;
             })
             .catch(error => {
                 console.error('Error:', error);
+                alert(error.message);
             })
             .finally(() => {
                 hideLoading();
@@ -434,22 +436,24 @@
             
             const payload = {
                 shift : ['1', '2', '3', 'Extra']
-                , m_event: [document.getElementById('motive').value]
+                , m_event: document.getElementById('motive').value
+                    ? [document.getElementById('motive').value] : []
                 , w_name_mic: [document.getElementById('workCenter').value]
                 , start_date: document.getElementById('initDate').value
                 , end_date: document.getElementById('endDate').value
             }
 
-            for (const field in payload) {
-                if (payload[field] == "") {
-                    alert("Você deve preencher todos os campos.")
-                    return
-                }
+            if (!document.getElementById('workCenter').value
+                || !payload.start_date || !payload.end_date) {
+                alert("Selecione o centro de trabalho e o período.")
+                return
             }
             
             showLoading() 
 
-            payload['w_name_plex'] = Number.isInteger(parseInt(document.getElementById('workCenter').value)) ? [parseInt(document.getElementById('workCenter').value)] : []
+            const workCenterSelect = document.getElementById('workCenter');
+            payload['w_name_plex'] = workCenterSelect.selectedOptions[0].dataset.source === 'plex'
+                ? [workCenterSelect.value] : [];
 
 
             fetch('/oee/paradas/alterar/solicitar?type=search', {
@@ -459,7 +463,12 @@
                 },
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json())  // Convert the response to JSON
+            .then(async response => {
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+                return response.json();
+            })
             .then(data => {
 
                 const tableBody = document.getElementById('stopTable');
@@ -528,6 +537,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
+                alert('Não foi possível buscar as paradas.');
             }).finally(() => {
                 hideLoading()
             });
@@ -538,10 +548,11 @@
 
         function openModal(info) {
 
-            document.getElementById('selectedEvent').innerHTML = `<strong>Parada atual: ${info['Code']} - ${info['Event']}</strong>`
-            document.getElementById('selectedWorkcenter').innerHTML = '<strong>Centro de Trabalho: </strong>' + info['Workcenter_Name']
-            document.getElementById('selectedDate').innerHTML = '<strong>Data de início: </strong>' + info['Log_Date']
-            document.getElementById('selectedDuration').innerHTML = `<strong>Duração: </strong>${info['Log_Minutes']} min`
+            const currentCode = info['Code'] ? `${info['Code']} - ` : '';
+            document.getElementById('selectedEvent').textContent = `Parada atual: ${currentCode}${info['Event']}`
+            document.getElementById('selectedWorkcenter').textContent = 'Centro de Trabalho: ' + info['Workcenter_Name']
+            document.getElementById('selectedDate').textContent = 'Data de início: ' + info['Log_Date']
+            document.getElementById('selectedDuration').textContent = `Duração: ${info['Log_Minutes']} min`
             document.getElementById('modalRequest').style.display = 'flex';
             document.getElementById('requestButton').onclick = () => requestChange(info)
 
