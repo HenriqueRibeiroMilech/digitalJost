@@ -68,56 +68,25 @@ def _filter_active_emails(cnnx, emails: List[str]) -> List[str]:
         return list(dict.fromkeys(emails))
 
 
-def get_active_approver_emails_for_deviation_sector(cnnx, deviation_id: str, approver_sector: str) -> List[str]:
-    """
-    Retorna e-mails dos aprovadores ATIVOS vinculados ao SETOR (e opcionalmente à UNIDADE) do desvio.
-    1) Tenta via VIEW JDT_VIEW_REQUEST_DEV_APPROVERS (mais simples).
-    2) Caso falhe/ausente, tenta via JOIN direto (ajustar nomes conforme o seu schema).
-    """
-    emails: List[str] = []
-
-    # (A) Usando VIEW de aprovadores
-    try:
-        df = pd.read_sql(
-            """
-            SELECT U.companyEmail
-            FROM JDT_VIEW_REQUEST_DEV_APPROVERS A
-            JOIN JDT_USER_DETAILS U       ON U.companyEmail = A.companyEmail
-            JOIN JDT_REQUEST_DEV     D    ON D.deviationId  = ?
-            WHERE A.sector = ?
-              AND ISNULL(U.active, 1) = 1
-              -- Se a VIEW tiver coluna de unidade e você quiser filtrar pela mesma unidade do desvio, descomente:
-              -- AND (A.unit IS NULL OR A.unit = D.unit)
-            """,
-            cnnx, params=[deviation_id, approver_sector]
-        )
-        if not df.empty:
-            emails = df['companyEmail'].dropna().astype(str).tolist()
-    except Exception:
-        emails = []
-
-    # (B) Fallback por JOINs diretos (ajuste o nome da tabela de aprovadores se for diferente no seu schema)
-    if not emails:
-        try:
-            df = pd.read_sql(
-                """
-                SELECT U.companyEmail
-                FROM JDT_REQUEST_DEV D
-                JOIN JDT_REQUEST_DEV_SECTORS S    ON S.id = D.sectorId
-                JOIN JDT_REQUEST_DEV_APPROVERS A  ON A.sectorId = S.id          -- ajuste se necessário
-                JOIN JDT_USER_DETAILS U           ON U.id = A.userId
-                WHERE D.deviationId = ?
-                  AND S.sector = ?
-                  AND ISNULL(U.active, 1) = 1
-                """,
-                cnnx, params=[deviation_id, approver_sector]
-            )
-            if not df.empty:
-                emails = df['companyEmail'].dropna().astype(str).tolist()
-        except Exception:
-            emails = []
-
-    return [e for e in dict.fromkeys(emails) if e]
+def get_active_approver_emails_for_deviation_sector(cnnx, deviation_id: str, sector_id: int) -> List[str]:
+    """Retorna os e-mails dos aprovadores ativos de um setor pendente do desvio."""
+    df = pd.read_sql(
+        """
+        SELECT DISTINCT U.companyEmail
+        FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+        JOIN JDT_REQUEST_DEV_APPROVERS A
+          ON A.sectorId = C.sectorId AND A.active = 1
+        JOIN JDT_USER_DETAILS U
+          ON U.id = A.userId
+        WHERE C.deviationId = ?
+          AND C.sectorId = ?
+          AND C.status = 0
+          AND ISNULL(U.active, 1) = 1
+          AND NULLIF(LTRIM(RTRIM(U.companyEmail)), '') IS NOT NULL
+        """,
+        cnnx, params=[deviation_id, sector_id]
+    )
+    return df['companyEmail'].dropna().astype(str).tolist()
 
 
 # ====================== Helpers de gestores (AJUSTADOS p/ ATIVOS) ======================
@@ -488,27 +457,47 @@ def default(logger):
         )
 
     def send_email_scheduled(row):
-        """
-        Lembrete aos APROVADORES do setor do desvio (apenas ATIVOS e pertinentes).
-        """
-        approver_sector = str(row.get('approverSector') or row.get('sector') or '')
-        user_mail = get_active_approver_emails_for_deviation_sector(
-            cnnx,
-            str(row['deviationId']),
-            approver_sector
-        )
+        """Envia o lembrete aos aprovadores ativos de um setor pendente."""
+        deviation_id = str(row['deviationId'])
+        sector_id = int(row['sectorId'])
+        try:
+            user_mail = get_active_approver_emails_for_deviation_sector(
+                cnnx, deviation_id, sector_id
+            )
+        except Exception as e:
+            logger.error(
+                "Falha ao consultar aprovadores do desvio %s, setor %s: %s",
+                deviation_id, sector_id, type(e).__name__
+            )
+            return
+
         if not user_mail:
+            logger.warning(
+                "Nenhum aprovador ativo para o desvio %s, setor %s.",
+                deviation_id, sector_id
+            )
             return
 
         template = env.get_template('request.processDeviation/dev_email_scheduled.html')
-        msg_html = template.render(id=base_dev(row['deviationId']), solicitante=row.get('name', ''))
+        requester_name = row.get('name')
+        msg_html = template.render(
+            id=base_dev(deviation_id),
+            solicitante=requester_name if pd.notna(requester_name) else ''
+        )
 
-        send_email_with_attachment(
-            subject=f"Desvio de processo - Nº {row['deviationId']}",
+        email_sent = send_email_with_attachment(
+            subject=f"Desvio de processo - Nº {deviation_id}",
             body=msg_html,
-            to=user_mail,  # já filtrado
+            to=user_mail,
             sender_name='Transformação Digital JOST',
             sender_email='noreply.digitaljost@randon.com.br'
+        )
+        log = logger.info if email_sent else logger.error
+        log(
+            "Lembrete do desvio %s, setor %s: rotina de envio %s para %s aprovador(es).",
+            deviation_id, sector_id,
+            "concluída" if email_sent else "falhou",
+            len(user_mail)
         )
 
     # ------------- Relógio de referência ------------------
@@ -570,21 +559,36 @@ def default(logger):
         df_manage[mask_valid_date & mask_over_48h & mask_status_zero] \
             .apply(lambda r: approvers_automatic_refusal(r, digital_id), axis=1)
 
-        # lembrete aos aprovadores (somente após 4h para evitar spam básico)
-        mask_over_4h = (now - df_manage['openDate']) >= pd.Timedelta(hours=4)
+    # Lembretes seguem os setores pendentes registrados no desvio, não a VIEW MANAGE.
+    try:
+        df_pending = pd.read_sql(
+            """
+            SELECT D.deviationId, D.openDate, C.sectorId, U.name
+            FROM JDT_REQUEST_DEV D
+            JOIN JDT_REQUEST_DEV_CONFIG_STATUS C
+              ON C.deviationId = D.deviationId
+            LEFT JOIN JDT_USER_DETAILS U
+              ON U.id = D.userId
+            WHERE D.status = 0 AND C.status = 0
+            """,
+            cnnx
+        )
+    except Exception as e:
+        logger.error("Falha ao ler setores pendentes de desvio: %s", type(e).__name__)
+        df_pending = pd.DataFrame()
 
-        mask_under_48h = df_manage['openDate'].apply(lambda d: business_hours_between(d, now) < 48)
-
-        # só para quem está sem 'approverName' e ainda pendente
-        mask_no_approver_name = df_manage.get('approverName').isna() if 'approverName' in df_manage.columns else mask_status_zero
-
-        df_manage[
-            mask_valid_date
-            & mask_over_4h
-            & mask_under_48h
-            & mask_status_zero
-            & mask_no_approver_name
-        ].apply(send_email_scheduled, axis=1)
+    if not df_pending.empty:
+        df_pending['openDate'] = pd.to_datetime(
+            df_pending['openDate'], errors='coerce', dayfirst=True
+        )
+        mask_valid_date = df_pending['openDate'].notna()
+        mask_over_4h = (now - df_pending['openDate']) >= pd.Timedelta(hours=4)
+        mask_under_48h = df_pending['openDate'].apply(
+            lambda d: business_hours_between(d, now) < 48
+        )
+        df_pending[mask_valid_date & mask_over_4h & mask_under_48h].apply(
+            send_email_scheduled, axis=1
+        )
 
     # ------------- Atualizações por desvio (tabela principal) -------------
     try:
