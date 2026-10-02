@@ -472,7 +472,8 @@ def getStopsData(
     include_all_statuses=False,
     include_legacy=True,
     include_unassigned_shift=False,
-    current_status_workcenters=None
+    current_status_workcenters=None,
+    unique_event_codes=False
 ):
     """
         DADOS DE PAYLOAD:
@@ -498,6 +499,8 @@ def getStopsData(
                 o chamador deve conferir o turno original antes de contabilizar
             current_status_workcenters: cadastro da tela para consulta TD por código;
                 limita o histórico FTM ao início da fonte TD de cada centro
+            unique_event_codes: evita multiplicar paradas quando o catálogo Plex
+                contém mais de um motivo com o mesmo código
 
         LÓGICAS DE NEGOCIO: 
         1. Caso não seja enviado w_group. Os opcionais w_group, m_group e shift_plex ficarão vazios.
@@ -519,6 +522,13 @@ def getStopsData(
     else:
         events_join = getPlex('events')
         events_join.loc[len(events_join)] = [1, 'Sem Justificativa', 'Sem Categoria', 1, "0"]
+        if unique_event_codes:
+            descriptions_per_code = events_join.groupby('Code')['Description'].nunique(dropna=False)
+            ambiguous_codes = descriptions_per_code[descriptions_per_code > 1].index
+            events_join = events_join.drop_duplicates(subset=['Code']).copy()
+            events_join.loc[
+                events_join['Code'].isin(ambiguous_codes), 'Description'
+            ] = 'Motivo com código duplicado; identificação pendente'
 
         workcenter_filter = ''
         if received_data.get('w_name_plex'):

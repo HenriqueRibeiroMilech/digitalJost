@@ -415,7 +415,11 @@ def stopChanges_main():
             payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
             payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-            data = getStopsData(payload, apply_approved_changes=True)
+            data = getStopsData(
+                payload,
+                apply_approved_changes=True,
+                unique_event_codes=True
+            )
 
             query = f"""SELECT 
 
