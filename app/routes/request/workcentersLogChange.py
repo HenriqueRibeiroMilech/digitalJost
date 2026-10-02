@@ -4,7 +4,7 @@ from requests.auth import HTTPBasicAuth
 import pandas as pd
 
 from flask_mail import Message
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -622,35 +622,37 @@ def route_auth():
 # PÁGINA DE ROTAS
 @request_workcentersLogChange_bp.route('/oee/paradas/alterar', methods=['GET'])
 def stopChanges_home():
+    return render_template('request.stopChanges/stopChanges_main.html')
 
-    query = f"""
+
+@request_workcentersLogChange_bp.route('/oee/paradas/alterar/resumo', methods=['GET'])
+def stopChanges_summary():
+
+    query = """
     SELECT 
-        SUM(
+        COALESCE(SUM(
             CASE
                 WHEN finalDate IS NULL
                     AND (
-                        (approver1 = '{current_user.id}' AND approverStatus1 = 0)
-                        OR (approver2 = '{current_user.id}' AND approverStatus2 = 0)
+                        (approver1 = :user_id AND approverStatus1 = 0)
+                        OR (approver2 = :user_id AND approverStatus2 = 0)
                     )
                 THEN 1
                 ELSE 0
             END
-        ) AS s0,
-        SUM(CASE WHEN (approver1 = '{current_user.id}' AND approverStatus1 = 1) OR (approver2 = '{current_user.id}' AND approverStatus2 = 1) THEN 1 ELSE 0 END) AS s1,
-        SUM(CASE WHEN (approver1 = '{current_user.id}' AND approverStatus1 = 2) OR (approver2 = '{current_user.id}' AND approverStatus2 = 2) THEN 1 ELSE 0 END) AS s2,
-        SUM(CASE WHEN requesterId = '{current_user.id}' THEN 1 ELSE 0 END) AS r0
+        ), 0) AS s0,
+        COALESCE(SUM(CASE WHEN (approver1 = :user_id AND approverStatus1 = 1) OR (approver2 = :user_id AND approverStatus2 = 1) THEN 1 ELSE 0 END), 0) AS s1,
+        COALESCE(SUM(CASE WHEN (approver1 = :user_id AND approverStatus1 = 2) OR (approver2 = :user_id AND approverStatus2 = 2) THEN 1 ELSE 0 END), 0) AS s2,
+        COALESCE(SUM(CASE WHEN requesterId = :user_id THEN 1 ELSE 0 END), 0) AS r0
 
-    FROM JDT_REQUEST_STOPCHANGES;
+    FROM JDT_REQUEST_STOPCHANGES
+    WHERE approver1 = :user_id OR approver2 = :user_id
+        OR requesterId = :user_id;
     """
 
-    results = engine_run_query(query, 'jdt')
-
-    status0 = results['s0'][0]
-    status1 = results['s1'][0]
-    status2 = results['s2'][0]
-    requests = results['r0'][0]
-
-    return render_template('request.stopChanges/stopChanges_main.html', status0=status0, status1=status1, status2=status2, requests=requests)
+    results = engine_run_query(query, 'jdt', {'user_id': str(current_user.id)})
+    counts = results.iloc[0]
+    return jsonify({key: int(counts[key]) for key in ('s0', 's1', 's2', 'r0')})
 
 
 # MÉTODO PARA CONSULTAR AS PARADAS E SOLICITAR UMA ALTERAÇÃO DE PARADA

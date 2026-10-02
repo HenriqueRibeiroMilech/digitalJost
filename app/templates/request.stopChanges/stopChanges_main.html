@@ -127,11 +127,40 @@
 
     <div class="container" style="align-items: left;">
         <h2><strong>Status das Alterações</strong></h2>
-        <h2>Existem <strong>{{status0}}</strong> solicitações pendentes de sua aprovação</h2>
-        <h2>Você já aprovou <strong>{{status1}}</strong> solicitações</h2>
-        <h2>Você já reprovou <strong>{{status2}}</strong> solicitações</h2><br>
+        <h2>Existem <strong id="pendingCount">…</strong> solicitações pendentes de sua aprovação</h2>
+        <h2>Você já aprovou <strong id="approvedCount">…</strong> solicitações</h2>
+        <h2>Você já reprovou <strong id="deniedCount">…</strong> solicitações</h2><br>
 
-        <h2>Você já solicitou <strong>{{requests}}</strong> alterações de parada</h2>
+        <h2>Você já solicitou <strong id="requestedCount">…</strong> alterações de parada</h2>
     </div>
+    <script>
+        const countTargets = {
+            s0: document.getElementById('pendingCount'),
+            s1: document.getElementById('approvedCount'),
+            s2: document.getElementById('deniedCount'),
+            r0: document.getElementById('requestedCount')
+        };
+        const countController = new AbortController();
+        const countTimeout = setTimeout(() => countController.abort(), 10000);
+
+        fetch('{{ url_for("request_workcentersLogChange.stopChanges_summary") }}', {
+            signal: countController.signal
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Falha ao carregar os contadores');
+                return response.json();
+            })
+            .then(counts => {
+                Object.entries(countTargets).forEach(([key, target]) => {
+                    target.textContent = counts[key];
+                });
+            })
+            .catch(() => {
+                Object.values(countTargets).forEach(target => {
+                    target.textContent = '—';
+                });
+            })
+            .finally(() => clearTimeout(countTimeout));
+    </script>
 </body>
 </html>
