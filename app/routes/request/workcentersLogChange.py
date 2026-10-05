@@ -4,11 +4,11 @@ from requests.auth import HTTPBasicAuth
 import pandas as pd
 
 from flask_mail import Message
-from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import text
 
-from app.utils.business import getStopsData, get_stops_workcenters
+from app.utils.business import getStopsData
 from app.utils.constants import MES_MAIN_PASSWORD, MES_MAIN_USER
 from app.utils.data_utils import POST_WITH_AUTH
 from app.utils.db_utils import engine_run_query, get_engine
@@ -90,19 +90,6 @@ def _normalize_catalog_id(value):
         return str(int(float(value)))
     except (TypeError, ValueError):
         return str(value).strip()
-
-
-def _normalize_stop_reason(value):
-    if pd.isna(value):
-        return ''
-    return ' '.join(str(value).strip().casefold().split())
-
-
-def _normalize_stop_group(value):
-    group = _normalize_stop_reason(value)
-    return 'manutenção' if group in {
-        'manutenção parada', 'manutenção produtiva'
-    } else group
 
 
 def _get_plex_event(events, code=None, event_key=None):
@@ -247,11 +234,6 @@ def _add_motive_descriptions(table, events):
         axis=1,
         args=('motive2', 'motive2EventKey')
     )
-    if {'stopSource', 'currentStatusReason'}.issubset(table.columns):
-        td_rows = table['stopSource'].eq('td')
-        table.loc[td_rows, 'motiveDesc1'] = table.loc[
-            td_rows, 'currentStatusReason'
-        ]
     return table
 
 
@@ -340,7 +322,7 @@ def _find_current_status_stop(check_request, events):
     return int(closest_candidates.iloc[0]['ID']), new_motive
 
 
-def _update_current_status_stop(current_status_id, new_motive, expected_status=None):
+def _update_current_status_stop(current_status_id, new_motive):
     new_status = str(new_motive['Workcenter_Event_Group']).strip()
     if new_status in {'Manutenção Parada', 'Manutenção Produtiva'}:
         new_status = 'Manutenção'
@@ -363,18 +345,6 @@ def _update_current_status_stop(current_status_id, new_motive, expected_status=N
         'planned_production_time': 0 if is_planned_stop else 1,
         'current_status_id': current_status_id
     }
-    if expected_status is not None:
-        query += """
-            AND Workcenter = :expected_workcenter
-            AND StatusBegin = :expected_start
-            AND LTRIM(RTRIM(COALESCE(WcReason, ''))) = :expected_reason
-            AND CanRunProduction = 0
-        """
-        params.update({
-            'expected_workcenter': expected_status['currentStatusWorkcenter'],
-            'expected_start': expected_status['currentStatusStart'],
-            'expected_reason': str(expected_status['currentStatusReason']).strip()
-        })
 
     engine = get_engine('plex')
     with engine.begin() as cnnx:
@@ -383,228 +353,6 @@ def _update_current_status_stop(current_status_id, new_motive, expected_status=N
             raise _CurrentStatusMatchError(
                 'NAO FOI POSSIVEL ATUALIZAR A PARADA NO CURRENT STATUS.'
             )
-
-
-def _get_current_status_event(event_id):
-    rows = engine_run_query("""
-        SELECT ID, Workcenter, StatusBegin, StatusEnd, WcReason, WcStatus,
-               CurrentShift
-        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
-        WHERE ID = :event_id AND CanRunProduction = 0
-    """, 'plex', {'event_id': event_id})
-    if len(rows) != 1:
-        raise _CurrentStatusMatchError('PARADA NAO ENCONTRADA NO CURRENT STATUS.')
-    return rows.iloc[0]
-
-
-def _get_current_status_motive(status_row, events):
-    reason = _normalize_stop_reason(status_row['WcReason'])
-    status = _normalize_stop_group(status_row['WcStatus'])
-    matching = events[
-        events['Description'].apply(_normalize_stop_reason) == reason
-    ]
-    if status:
-        matching = matching[
-            matching['Workcenter_Event_Group'].apply(_normalize_stop_group)
-            == status
-        ]
-    if len(matching) != 1:
-        raise _CurrentStatusMatchError(
-            'MOTIVO ATUAL DO CURRENT STATUS NAO FOI IDENTIFICADO DE FORMA UNICA.'
-        )
-    return matching.iloc[0]
-
-
-def _get_matching_plex_log(status_row, events):
-    workcenters = getPlex('workcenters')
-    matching_workcenters = workcenters[
-        workcenters['Workcenter_Code'].astype(str).str.strip()
-        == str(status_row['Workcenter']).strip()
-    ]
-    if matching_workcenters.empty:
-        return None
-    if len(matching_workcenters) != 1:
-        raise _CurrentStatusMatchError(
-            'CENTRO DE TRABALHO NAO FOI IDENTIFICADO DE FORMA UNICA NO PLEX.'
-        )
-
-    plex_start = pd.to_datetime(status_row['StatusBegin']) + timedelta(hours=1)
-    rows = engine_run_query("""
-        DECLARE @workcenter_key BIGINT = :workcenter_key;
-        DECLARE @minimum_start DATETIME = :minimum_start;
-        DECLARE @maximum_start DATETIME = :maximum_start;
-        EXEC('
-            SELECT Log_Key, Workcenter_Key, Log_Date, Log_Hours,
-                   Workcenter_Event_Key
-            FROM Part_v_Workcenter_Log
-            WHERE Workcenter_Key = ?
-              AND Log_Date BETWEEN ? AND ?
-        ', @workcenter_key, @minimum_start, @maximum_start) AT [PLEX_DSN_JOST]
-    """, 'plex', {
-        'workcenter_key': int(matching_workcenters.iloc[0]['Workcenter_Key']),
-        'minimum_start': (
-            plex_start - _CURRENT_STATUS_MATCH_TOLERANCE
-        ).to_pydatetime(),
-        'maximum_start': (
-            plex_start + _CURRENT_STATUS_MATCH_TOLERANCE
-        ).to_pydatetime()
-    })
-    if rows.empty:
-        return None
-
-    reason = _normalize_stop_reason(status_row['WcReason'])
-    event_descriptions = {
-        _normalize_catalog_id(row.Workcenter_Event_Key):
-            _normalize_stop_reason(row.Description)
-        for row in events[['Workcenter_Event_Key', 'Description']]
-        .itertuples(index=False)
-    }
-    matching = rows[
-        rows['Workcenter_Event_Key'].apply(_normalize_catalog_id)
-        .map(event_descriptions).eq(reason)
-    ]
-    if len(matching) != 1:
-        raise _CurrentStatusMatchError(
-            'REGISTRO PLEX CORRESPONDENTE NAO FOI IDENTIFICADO DE FORMA UNICA.'
-        )
-    plex_log = matching.iloc[0]
-    if pd.notna(status_row['StatusEnd']):
-        status_minutes = (
-            pd.to_datetime(status_row['StatusEnd'])
-            - pd.to_datetime(status_row['StatusBegin'])
-        ).total_seconds() / 60
-        plex_minutes = float(plex_log['Log_Hours']) * 60
-        if abs(status_minutes - plex_minutes) > 2:
-            raise _CurrentStatusMatchError(
-                'DURACAO DA PARADA DIFERE DO REGISTRO PLEX CORRESPONDENTE.'
-            )
-    return plex_log
-
-
-def _get_request_stops(payload):
-    workcenters = get_stops_workcenters()
-    selected_workcenter_codes = {
-        str(code).strip() for code in (payload.get('w_codes') or [])
-    }
-    selected_plex = payload.get('w_name_plex') or []
-    if selected_workcenter_codes:
-        workcenters = workcenters[
-            workcenters['Workcenter_Code'].isin(selected_workcenter_codes)
-        ]
-    elif selected_plex:
-        workcenters = workcenters[
-            workcenters['Workcenter_Key'].apply(_normalize_catalog_id)
-            == _normalize_catalog_id(selected_plex[0])
-        ]
-    else:
-        selected_name = (payload.get('w_name_mic') or [''])[0]
-        workcenters = workcenters[
-            workcenters['Workcenter_Code'].astype(str) + '-'
-            + workcenters['Name'].astype(str) == selected_name
-        ]
-    if workcenters.empty:
-        return pd.DataFrame(columns=[
-            'Log_Key', 'Source', 'Log_Date', 'End_Date', 'Log_Minutes',
-            'Code', 'Event', 'Workcenter_Name', 'Workcenter_Key', 'Plex'
-        ])
-
-    source_payload = {
-        key: value.copy() if isinstance(value, list) else value
-        for key, value in payload.items()
-    }
-    legacy_workcenter = (
-        workcenters['Workcenter_Key'].apply(_normalize_catalog_id) == '1'
-    )
-    source_payload['w_codes'] = workcenters['Workcenter_Code'].tolist()
-    source_payload['w_name_plex'] = workcenters.loc[
-        ~legacy_workcenter, 'Workcenter_Key'
-    ].tolist()
-    source_payload['w_name_mic'] = (
-        workcenters.loc[legacy_workcenter, 'Workcenter_Code']
-        + '-'
-        + workcenters.loc[legacy_workcenter, 'Name']
-    ).tolist()
-    source_payload['m_event'] = []
-
-    current_payload = {
-        key: value.copy() if isinstance(value, list) else value
-        for key, value in source_payload.items()
-    }
-    current = getStopsData(
-        current_payload,
-        use_current_status=True,
-        current_status_workcenters=workcenters
-    )
-    current['Source'] = current['Plex'].apply(
-        lambda value: 'td' if int(value) == 1 else 'ftm'
-    )
-
-    catalog_events = getPlex('events')
-    catalog_codes = {}
-    for event in catalog_events[['Code', 'Description']].itertuples(index=False):
-        description = _normalize_stop_reason(event.Description)
-        catalog_codes.setdefault(description, set()).add(
-            _normalize_catalog_id(event.Code)
-        )
-    unique_codes = {
-        description: next(iter(codes))
-        for description, codes in catalog_codes.items()
-        if len(codes) == 1
-    }
-    td_rows = current['Source'] == 'td'
-    current.loc[td_rows, 'Code'] = (
-        current.loc[td_rows, 'Event'].apply(_normalize_stop_reason)
-        .map(unique_codes).fillna('')
-    )
-
-    legacy_payload = {
-        key: value.copy() if isinstance(value, list) else value
-        for key, value in source_payload.items()
-    }
-    legacy = getStopsData(
-        legacy_payload,
-        apply_approved_changes=True,
-        unique_event_codes=True
-    )
-    legacy = legacy[pd.to_numeric(legacy['Plex'], errors='coerce').eq(1)].copy()
-    legacy['Source'] = 'plex'
-
-    td_stops = current[td_rows]
-    if not td_stops.empty and not legacy.empty:
-        td_dates = pd.to_datetime(td_stops['Log_Date'], dayfirst=True)
-        keep_legacy = []
-        for row in legacy.itertuples(index=False):
-            legacy_date = pd.to_datetime(row.Log_Date, dayfirst=True)
-            matching = td_stops[
-                td_stops['Workcenter_Key'].apply(_normalize_catalog_id)
-                == _normalize_catalog_id(row.Workcenter_Key)
-            ]
-            offsets = (td_dates.loc[matching.index] - legacy_date).abs()
-            keep_legacy.append(
-                not offsets.le(_CURRENT_STATUS_MATCH_TOLERANCE).any()
-            )
-        legacy = legacy.loc[keep_legacy]
-
-    data = pd.concat([current, legacy], ignore_index=True, sort=False)
-    selected_codes = {
-        _normalize_catalog_id(code) for code in (payload.get('m_event') or [])
-    }
-    if selected_codes:
-        selected_descriptions = {
-            _normalize_stop_reason(event.Description)
-            for event in catalog_events[['Code', 'Description']]
-            .itertuples(index=False)
-            if _normalize_catalog_id(event.Code) in selected_codes
-        }
-        data = data[
-            data['Code'].apply(_normalize_catalog_id).isin(selected_codes)
-            | (
-                data['Source'].eq('td')
-                & data['Event'].apply(_normalize_stop_reason)
-                .isin(selected_descriptions)
-            )
-        ]
-    return data
 
 request_workcentersLogChange_bp = Blueprint('request_workcentersLogChange', __name__)
 
@@ -622,37 +370,35 @@ def route_auth():
 # PÁGINA DE ROTAS
 @request_workcentersLogChange_bp.route('/oee/paradas/alterar', methods=['GET'])
 def stopChanges_home():
-    return render_template('request.stopChanges/stopChanges_main.html')
 
-
-@request_workcentersLogChange_bp.route('/oee/paradas/alterar/resumo', methods=['GET'])
-def stopChanges_summary():
-
-    query = """
+    query = f"""
     SELECT 
-        COALESCE(SUM(
+        SUM(
             CASE
                 WHEN finalDate IS NULL
                     AND (
-                        (approver1 = :user_id AND approverStatus1 = 0)
-                        OR (approver2 = :user_id AND approverStatus2 = 0)
+                        (approver1 = '{current_user.id}' AND approverStatus1 = 0)
+                        OR (approver2 = '{current_user.id}' AND approverStatus2 = 0)
                     )
                 THEN 1
                 ELSE 0
             END
-        ), 0) AS s0,
-        COALESCE(SUM(CASE WHEN (approver1 = :user_id AND approverStatus1 = 1) OR (approver2 = :user_id AND approverStatus2 = 1) THEN 1 ELSE 0 END), 0) AS s1,
-        COALESCE(SUM(CASE WHEN (approver1 = :user_id AND approverStatus1 = 2) OR (approver2 = :user_id AND approverStatus2 = 2) THEN 1 ELSE 0 END), 0) AS s2,
-        COALESCE(SUM(CASE WHEN requesterId = :user_id THEN 1 ELSE 0 END), 0) AS r0
+        ) AS s0,
+        SUM(CASE WHEN (approver1 = '{current_user.id}' AND approverStatus1 = 1) OR (approver2 = '{current_user.id}' AND approverStatus2 = 1) THEN 1 ELSE 0 END) AS s1,
+        SUM(CASE WHEN (approver1 = '{current_user.id}' AND approverStatus1 = 2) OR (approver2 = '{current_user.id}' AND approverStatus2 = 2) THEN 1 ELSE 0 END) AS s2,
+        SUM(CASE WHEN requesterId = '{current_user.id}' THEN 1 ELSE 0 END) AS r0
 
-    FROM JDT_REQUEST_STOPCHANGES
-    WHERE approver1 = :user_id OR approver2 = :user_id
-        OR requesterId = :user_id;
+    FROM JDT_REQUEST_STOPCHANGES;
     """
 
-    results = engine_run_query(query, 'jdt', {'user_id': str(current_user.id)})
-    counts = results.iloc[0]
-    return jsonify({key: int(counts[key]) for key in ('s0', 's1', 's2', 'r0')})
+    results = engine_run_query(query, 'jdt')
+
+    status0 = results['s0'][0]
+    status1 = results['s1'][0]
+    status2 = results['s2'][0]
+    requests = results['r0'][0]
+
+    return render_template('request.stopChanges/stopChanges_main.html', status0=status0, status1=status1, status2=status2, requests=requests)
 
 
 # MÉTODO PARA CONSULTAR AS PARADAS E SOLICITAR UMA ALTERAÇÃO DE PARADA
@@ -669,17 +415,15 @@ def stopChanges_main():
             payload['start_date'] = payload['start_date'].replace('T', ' ') + ':00'
             payload['end_date'] = payload['end_date'].replace('T', ' ') + ':00'
 
-            data = _get_request_stops(payload)
+            data = getStopsData(
+                payload,
+                apply_approved_changes=True,
+                unique_event_codes=True
+            )
 
             query = f"""SELECT 
 
                             T1.eventId
-                            , CASE
-                                WHEN T1.stopSource = 'td' THEN 'td'
-                                WHEN T1.plex = 1 THEN 'plex'
-                                ELSE 'ftm'
-                              END AS Source
-                            , T1.plexLogKey
                             , T2.name as approver1
                             , T3.name as approver2
                             , T1.approverStatus1
@@ -699,86 +443,15 @@ def stopChanges_main():
                             )"""
             table = engine_run_query(query, 'jdt')
 
-            linked = table[
-                table['Source'].eq('td') & table['plexLogKey'].notna()
-            ].copy()
-            linked['Source'] = 'plex'
-            linked['eventId'] = linked['plexLogKey']
-            table = pd.concat([table, linked], ignore_index=True)
-            table = table.drop_duplicates(subset=['Source', 'eventId'])
-            data = pd.merge(
-                left=data, right=table,
-                left_on=['Source', 'Log_Key'], right_on=['Source', 'eventId'],
-                how='left'
-            )
+            data = pd.merge(left=data, right=table, left_on='Log_Key', right_on='eventId', how='left')
 
             return data.to_json(orient='records')
         
         else:
             
             payload = request.get_json()
-            source = payload.get('Source')
-            if source is None:
-                source = 'plex' if payload.get('Plex') else 'ftm'
-            if source not in {'td', 'plex', 'ftm'}:
-                return 'ORIGEM DA PARADA INVALIDA.', 400
-            try:
-                event_id = int(payload['Log_Key'])
-                if event_id <= 0:
-                    raise ValueError
-            except (TypeError, ValueError, KeyError):
-                return 'IDENTIFICADOR DA PARADA INVALIDO.', 400
 
-            status_row = None
-            plex_log = None
-            if source == 'td':
-                try:
-                    status_row = _get_current_status_event(event_id)
-                    events = getPlex('events')
-                    plex_log = _get_matching_plex_log(status_row, events)
-                    old_motive = (
-                        _get_plex_event(
-                            events,
-                            event_key=plex_log['Workcenter_Event_Key']
-                        ) if plex_log is not None
-                        else _get_current_status_motive(status_row, events)
-                    )
-                except (TypeError, ValueError, KeyError):
-                    return 'IDENTIFICADOR DA PARADA INVALIDO.', 400
-                except _CurrentStatusMatchError as error:
-                    return str(error), 409
-
-                start_date = pd.to_datetime(status_row['StatusBegin'])
-                end_date = pd.to_datetime(status_row['StatusEnd'])
-                if pd.isna(end_date):
-                    end_date = pd.Timestamp.now()
-                if end_date <= start_date:
-                    return 'PERIODO DA PARADA INVALIDO.', 409
-                shift_name = (
-                    str(status_row['CurrentShift']).strip().upper()
-                    if pd.notna(status_row['CurrentShift']) else ''
-                )
-                shift = {
-                    'PRIMEIRO': 1, 'TURNO 1': 1,
-                    'SEGUNDO': 2, 'TURNO 2': 2,
-                    'TERCEIRO': 3, 'TURNO 3': 3
-                }.get(shift_name)
-                if shift is None:
-                    return 'TURNO DA PARADA NAO IDENTIFICADO.', 409
-                check_request = pd.Series({
-                    'Workcenter_Name': str(status_row['Workcenter']),
-                    'Workcenter_Key': (
-                        plex_log['Workcenter_Key'] if plex_log is not None else None
-                    ),
-                    'Log_Date': start_date.strftime('%d/%m/%Y %H:%M:%S'),
-                    'End_Date': end_date.strftime('%d/%m/%Y %H:%M:%S'),
-                    'Log_Minutes': round((end_date - start_date).total_seconds() / 60, 2),
-                    'Code': old_motive['Code'],
-                    'MotiveEventKey': old_motive['Workcenter_Event_Key'],
-                    'Shift': shift
-                })
-
-            if source == 'plex':
+            if payload.get('Plex'):
                 
                 query = f"""
 
@@ -819,23 +492,18 @@ def stopChanges_main():
                                     JOIN Common_v_Shift T5 ON T1.Shift_Key = T5.Shift_Key
 
                                 WHERE
-                                    T1.Log_Key = {event_id}
+                                    T1.Log_Key = {payload['Log_Key']}
                                 ') EH
                             
                             WHERE NOT EXISTS (
                                 SELECT 1 
                                 FROM JDT_REQUEST_STOPCHANGES JDT 
-                                WHERE (
-                                    (JDT.eventId = EH.Log_Key
-                                        AND (JDT.stopSource IS NULL OR JDT.stopSource = 'plex'))
-                                    OR (JDT.stopSource = 'td'
-                                        AND JDT.plexLogKey = EH.Log_Key)
-                                )
+                                WHERE JDT.eventId = EH.Log_Key
                                     AND JDT.finalDate IS NULL
                             );
                 """ 
 
-            elif source == 'ftm':
+            else:  
 
                 query = f"""
 
@@ -853,53 +521,31 @@ def stopChanges_main():
                                 END AS Shift
 
                             FROM FTMETRICS_JOST.dbo.OEEQEventHistory EH
-                            WHERE lOEEEventId = {event_id}
+                            WHERE lOEEEventId = {payload['Log_Key']}
                             AND NOT EXISTS (
                                 SELECT 1 
                                 FROM JDT_REQUEST_STOPCHANGES JDT 
                                 WHERE JDT.eventId = EH.lOEEEventId
-                                    AND (JDT.stopSource IS NULL OR JDT.stopSource = 'ftm')
                                     AND JDT.finalDate IS NULL
                             );
                 """
             
             engine = get_engine('jdt')
             with engine.connect() as cnnx:
-                if source == 'td':
-                    pending = pd.read_sql(text("""
-                        SELECT TOP 1 requestId
-                        FROM JDT_REQUEST_STOPCHANGES
-                        WHERE finalDate IS NULL AND (
-                            (stopSource = 'td' AND eventId = :event_id)
-                            OR (plexLogKey = :plex_log_key AND :plex_log_key IS NOT NULL)
-                            OR (
-                                (stopSource IS NULL OR stopSource = 'plex')
-                                AND plex = 1 AND eventId = :plex_log_key
-                                AND :plex_log_key IS NOT NULL
-                            )
-                        )
-                    """), cnnx, params={
-                        'event_id': event_id,
-                        'plex_log_key': (
-                            int(plex_log['Log_Key']) if plex_log is not None else None
-                        )
-                    })
-                    if not pending.empty:
-                        return 'A REQUEST ALREADY EXISTS WITHIN THIS EVENT.', 403
-                else:
-                    check_request = pd.read_sql(query, cnnx)
-                    if check_request.empty:
-                        return 'A REQUEST ALREADY EXISTS WITHIN THIS EVENT.', 403
-                    check_request = check_request.iloc[0]
+                check_request = pd.read_sql(query, cnnx)
 
-                if source == 'plex':
+                if check_request.empty:
+                    return 'A REQUEST ALREADY EXISTS WITHIN THIS EVENT.', 403                        
+                
+                check_request = check_request.iloc[0]
+
+                if payload.get('Plex'):
                     approved_motive = pd.read_sql(
                         text("""
                             SELECT TOP 1 motive2, motive2EventKey
                             FROM JDT_REQUEST_STOPCHANGES
                             WHERE eventId = :event_id
                                 AND plex = 1
-                                AND (stopSource IS NULL OR stopSource = 'plex')
                                 AND approverStatus1 = 1
                                 AND approverStatus2 = 1
                                 AND finalDate IS NOT NULL
@@ -907,7 +553,7 @@ def stopChanges_main():
                             ORDER BY finalDate DESC, requestId DESC
                         """),
                         cnnx,
-                        params={"event_id": event_id}
+                        params={"event_id": payload['Log_Key']}
                     )
 
                     if not approved_motive.empty:
@@ -961,21 +607,18 @@ def stopChanges_main():
                     if pd.notna(check_request.get('MotiveEventKey'))
                     else None
                 )
-                try:
-                    problemAreaOld = _get_problem_area_id(
-                        check_request['Code'],
-                        events,
-                        transformation_digital_area_id,
-                        old_motive_event_key
-                    )
-                    problemAreaNew = _get_problem_area_id(
-                        new_motive_code,
-                        events,
-                        transformation_digital_area_id,
-                        new_motive_event_key
-                    )
-                except (TypeError, ValueError):
-                    return 'AREA RESPONSAVEL PELO MOTIVO NAO CONFIGURADA.', 409
+                problemAreaOld = _get_problem_area_id(
+                    check_request['Code'],
+                    events,
+                    transformation_digital_area_id,
+                    old_motive_event_key
+                )
+                problemAreaNew = _get_problem_area_id(
+                    new_motive_code,
+                    events,
+                    transformation_digital_area_id,
+                    new_motive_event_key
+                )
 
                 if problemAreaOld is None or problemAreaNew is None:
                     return 'AREA RESPONSAVEL PELO MOTIVO NAO CONFIGURADA.', 409
@@ -1019,14 +662,7 @@ def stopChanges_main():
                         requestText,
                         deniedText,
                         motive1EventKey,
-                        motive2EventKey,
-                        stopSource,
-                        plexLogKey,
-                        currentStatusWorkcenter,
-                        currentStatusStart,
-                        currentStatusEnd,
-                        currentStatusMinutes,
-                        currentStatusReason
+                        motive2EventKey
                     ) VALUES (
                         :request_id,
                         :requester_id,
@@ -1045,14 +681,7 @@ def stopChanges_main():
                         :request_text,
                         NULL,
                         :motive1_event_key,
-                        :motive2_event_key,
-                        :stop_source,
-                        :plex_log_key,
-                        :current_status_workcenter,
-                        :current_status_start,
-                        :current_status_end,
-                        :current_status_minutes,
-                        :current_status_reason
+                        :motive2_event_key
                     )
                 """), {
                     'request_id': int(newId),
@@ -1061,62 +690,21 @@ def stopChanges_main():
                     'approver2': str(approver2['userId'].iloc[0]),
                     'motive1': _normalize_catalog_id(check_request['Code']),
                     'motive2': new_motive_code,
-                    'plex': int(source != 'ftm'),
-                    'event_id': event_id,
+                    'plex': int(bool(payload['Plex'])),
+                    'event_id': int(float(payload['Log_Key'])),
                     'request_text': payload['requestText'],
                     'motive1_event_key': old_motive_event_key,
-                    'motive2_event_key': new_motive_event_key,
-                    'stop_source': source,
-                    'plex_log_key': (
-                        int(plex_log['Log_Key']) if plex_log is not None else None
-                    ),
-                    'current_status_workcenter': (
-                        str(status_row['Workcenter']) if status_row is not None else None
-                    ),
-                    'current_status_start': (
-                        pd.to_datetime(status_row['StatusBegin']).to_pydatetime()
-                        if status_row is not None else None
-                    ),
-                    'current_status_end': (
-                        pd.to_datetime(status_row['StatusEnd']).to_pydatetime()
-                        if status_row is not None
-                        and pd.notna(status_row['StatusEnd']) else None
-                    ),
-                    'current_status_minutes': (
-                        check_request['Log_Minutes'] if status_row is not None else None
-                    ),
-                    'current_status_reason': (
-                        str(status_row['WcReason']) if status_row is not None else None
-                    )
+                    'motive2_event_key': new_motive_event_key
                 })
             
-                if source == 'plex' or (source == 'td' and plex_log is not None):
+                if payload['Plex']:
 
                     try:
-                        plex_event_id = (
-                            int(plex_log['Log_Key']) if plex_log is not None
-                            else event_id
-                        )
-                        plex_workcenter = (
-                            int(plex_log['Workcenter_Key']) if plex_log is not None
-                            else int(check_request['Workcenter_Key'])
-                        )
-                        plex_log_date = (
-                            pd.to_datetime(plex_log['Log_Date']) - timedelta(hours=1)
-                            if plex_log is not None
-                            else pd.to_datetime(
-                                check_request['Log_Date'], format='%d/%m/%Y %H:%M:%S'
-                            )
-                        )
-                        plex_log_minutes = (
-                            float(plex_log['Log_Hours']) * 60
-                            if plex_log is not None else check_request['Log_Minutes']
-                        )
                         query = f"""
                                 IF NOT EXISTS (
                                     SELECT 1
                                     FROM JDT_REQUEST_STOPCHANGES_PLEX
-                                    WHERE eventId = :plex_event_id
+                                    WHERE eventId = {payload['Log_Key']}
                                 )
                                 BEGIN
                                     INSERT INTO JDT_REQUEST_STOPCHANGES_PLEX (
@@ -1126,23 +714,15 @@ def stopChanges_main():
                                         , endDate
                                         , logMinutes
                                     ) VALUES (
-                                        :plex_event_id
-                                        , :plex_workcenter
-                                        , :plex_log_date
-                                        , :plex_end_date
-                                        , :plex_log_minutes
+                                        {payload['Log_Key']}
+                                        , {check_request['Workcenter_Key']}
+                                        , '{pd.to_datetime(check_request['Log_Date'], format='%d/%m/%Y %H:%M:%S')}'
+                                        , '{pd.to_datetime(check_request['End_Date'], format='%d/%m/%Y %H:%M:%S')}'
+                                        , {check_request['Log_Minutes']}
                                     )
                                 END
                         """
-                        cnnx.execute(text(query), {
-                            'plex_event_id': plex_event_id,
-                            'plex_workcenter': plex_workcenter,
-                            'plex_log_date': plex_log_date.to_pydatetime(),
-                            'plex_end_date': (
-                                plex_log_date + timedelta(minutes=plex_log_minutes)
-                            ).to_pydatetime(),
-                            'plex_log_minutes': plex_log_minutes
-                        })
+                        cnnx.execute(text(query))
                     except Exception as e:
                         # SQLAlchemy IntegrityError is sqlalchemy.exc.IntegrityError
                         if isinstance(e, IntegrityError):
@@ -1215,7 +795,16 @@ def stopChanges_main():
             return f'NEW ID {str(newId)}'                        
     
     else:
-        workcenters = get_stops_workcenters()
+
+        query = f"""SELECT 
+                        GRUPO AS Workcenter_Group
+                        , LEFT(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) - 1) AS Workcenter_Code
+                        , SUBSTRING(NOME_MAQUINA, CHARINDEX('-', NOME_MAQUINA) + 1, LEN(NOME_MAQUINA)) AS Name
+                        , 1 AS Workcenter_Key
+                    FROM CONFIG_TABLET WHERE CT_PLEX IS NULL"""
+        mic_workcenters = engine_run_query(query, 'ftm')
+        mes_workcenters = getPlex('workcenters')[['Workcenter_Group', 'Workcenter_Code', 'Name', 'Workcenter_Key']]
+        workcenters = pd.concat([mes_workcenters[~mes_workcenters['Workcenter_Code'].isin(mic_workcenters['Workcenter_Code'])], mic_workcenters])
         
         data = pd.DataFrame(columns=["sDescription", "tStart", "tEnd", "sEndVal", "dDuration"])
         if current_user.id not in _USER_FILTERS.keys():
@@ -1270,22 +859,18 @@ def stopChanges_view():
                 , T1.approverStatus1
                 , T1.approverStatus2
                 , T1.Plex
-                , T1.stopSource
-                , T1.currentStatusReason
-                , COALESCE(T1.currentStatusWorkcenter, CAST(T2.workcenter AS varchar), T3.sDescription) AS Workcenter_Name
-                , FORMAT(COALESCE(T1.currentStatusStart, T2.endDate, T3.tStart), 'dd/MM/yyyy') AS tStart
-                , COALESCE(T1.currentStatusMinutes, T2.logMinutes, T3.lSeconds / 60) AS dDuration
+                , COALESCE(CAST(T2.workcenter AS varchar), T3.sDescription) AS Workcenter_Name
+                , FORMAT(COALESCE(T2.endDate, T3.tStart), 'dd/MM/yyyy') AS tStart
+                , COALESCE(T2.logMinutes, T3.lSeconds / 60) AS dDuration
                 , T4.name
             FROM 
                 JDT_REQUEST_STOPCHANGES AS T1
 
                 LEFT JOIN JDT_REQUEST_STOPCHANGES_PLEX AS T2 
-                    ON T1.PLEX = 1 AND (T1.stopSource IS NULL OR T1.stopSource = 'plex')
-                    AND T1.eventId = T2.eventId
+                    ON T1.PLEX = 1 AND T1.eventId = T2.eventId
 
                 LEFT JOIN FTMETRICS_JOST.dbo.OEEQEventHistory AS T3 
-                    ON T1.PLEX = 0 AND (T1.stopSource IS NULL OR T1.stopSource = 'ftm')
-                    AND T1.eventId = T3.lOEEEventId
+                    ON T1.PLEX = 0 AND T1.eventId = T3.lOEEEventId
 
                 JOIN JDT_USER_DETAILS AS T4 ON T1.requesterId = T4.id
             
@@ -1306,9 +891,8 @@ def stopChanges_view():
             lambda row: f"{row['Workcenter_Code']} - {row['Name']}", axis=1
         ).to_dict()
         
-        plex_rows = table['Plex'].eq(1) & table['stopSource'].ne('td')
-        table.loc[plex_rows, 'Workcenter_Name'] = (
-            table.loc[plex_rows, 'Workcenter_Name'].map(map_dict)
+        table.loc[table['Plex'] == 1, 'Workcenter_Name'] = (
+            table.loc[table['Plex'] == 1, 'Workcenter_Name'].map(map_dict)
         )
 
         return table.to_json(orient='records')
@@ -1333,11 +917,6 @@ def stopChanges_status(requestId):
                     , T1.deniedText
                     , T1.requestText
                     , T1.plex
-                    , T1.stopSource
-                    , T1.currentStatusWorkcenter
-                    , T1.currentStatusStart
-                    , T1.currentStatusMinutes
-                    , T1.currentStatusReason
                     , T2.name as requesterName
                     , T3.name as approver1
                     , GA1.name as approverArea1
@@ -1358,15 +937,7 @@ def stopChanges_status(requestId):
 
     data['eventId'] = data['eventId'].astype(int).astype(str)
 
-    if data['stopSource'][0] == 'td':
-        stop_data = pd.DataFrame([{
-            'startDate': pd.to_datetime(
-                data['currentStatusStart'][0]
-            ).strftime('%d/%m/%Y %H:%M:%S'),
-            'workcenter': data['currentStatusWorkcenter'][0],
-            'logMinutes': data['currentStatusMinutes'][0]
-        }])
-    elif data['plex'][0]:
+    if data['plex'][0]:
         query = f"""
                     SELECT 
                         FORMAT(startDate, 'dd/MM/yyyy HH:mm:ss') AS startDate
@@ -1384,10 +955,9 @@ def stopChanges_status(requestId):
                     FROM [FTMETRICS_JOST].[dbo].[OEEQEventHistory] WHERE lOEEEventId = {data['eventId'][0]}
                 """
 
-    if data['stopSource'][0] != 'td':
-        stop_data = engine_run_query(query, 'jdt')
+    stop_data = engine_run_query(query, 'jdt')
 
-    if data['stopSource'][0] != 'td' and data['plex'][0]:
+    if data['plex'][0]:
         stop_data = pd.merge(left=stop_data, right=getPlex('workcenters')[['Workcenter_Key', 'Name', 'Workcenter_Code']], left_on='workcenter', right_on='Workcenter_Key')
         stop_data['workcenter'] = stop_data['Workcenter_Code'] + ' - ' + stop_data['Name']
     
@@ -1432,23 +1002,19 @@ def stopChanges_manage():
                         , T1.approverStatus1
                         , T1.approverStatus2
                         , T1.Plex
-                        , T1.stopSource
-                        , T1.currentStatusReason
                         , T1.requestText
-                        , COALESCE(T1.currentStatusWorkcenter, CAST(T2.workcenter AS varchar), T3.sDescription) AS Workcenter_Name
-                        , FORMAT(COALESCE(T1.currentStatusStart, T2.endDate, T3.tStart), 'dd/MM/yyyy') AS tStart
-                        , COALESCE(T1.currentStatusMinutes, T2.logMinutes, T3.lSeconds / 60) AS dDuration
+                        , COALESCE(CAST(T2.workcenter AS varchar), T3.sDescription) AS Workcenter_Name
+                        , FORMAT(COALESCE(T2.endDate, T3.tStart), 'dd/MM/yyyy') AS tStart
+                        , COALESCE(T2.logMinutes, T3.lSeconds / 60) AS dDuration
                         , T4.name
                     FROM 
                         JDT_REQUEST_STOPCHANGES AS T1
 
                         LEFT JOIN JDT_REQUEST_STOPCHANGES_PLEX AS T2 
-                            ON T1.PLEX = 1 AND (T1.stopSource IS NULL OR T1.stopSource = 'plex')
-                            AND T1.eventId = T2.eventId
+                            ON T1.PLEX = 1 AND T1.eventId = T2.eventId
 
                         LEFT JOIN FTMETRICS_JOST.dbo.OEEQEventHistory AS T3 
-                            ON T1.PLEX = 0 AND (T1.stopSource IS NULL OR T1.stopSource = 'ftm')
-                            AND T1.eventId = T3.lOEEEventId
+                            ON T1.PLEX = 0 AND T1.eventId = T3.lOEEEventId
 
                         JOIN JDT_USER_DETAILS AS T4 ON T1.requesterId = T4.id
                     
@@ -1468,9 +1034,8 @@ def stopChanges_manage():
             lambda row: f"{row['Workcenter_Code']} - {row['Name']}", axis=1
         ).to_dict()
 
-        plex_rows = table['Plex'].eq(1) & table['stopSource'].ne('td')
-        table.loc[plex_rows, 'Workcenter_Name'] = (
-            table.loc[plex_rows, 'Workcenter_Name'].map(map_dict)
+        table.loc[table['Plex'] == 1, 'Workcenter_Name'] = (
+            table.loc[table['Plex'] == 1, 'Workcenter_Name'].map(map_dict)
         )
 
         transformation_digital_table = table
@@ -1661,11 +1226,7 @@ def stopChanges_manage():
                                 T2.startDate, T2.endDate,
                                 T2.logMinutes / 60.0 AS logHours
                             FROM JDT_REQUEST_STOPCHANGES T1
-                                LEFT JOIN JDT_REQUEST_STOPCHANGES_PLEX T2
-                                    ON T2.eventId = CASE
-                                        WHEN T1.stopSource = 'td' THEN T1.plexLogKey
-                                        ELSE T1.eventId
-                                    END
+                                LEFT JOIN JDT_REQUEST_STOPCHANGES_PLEX T2 ON T1.eventId = T2.eventId
                             
                             WHERE requestId = {received_data['requestId']}"""
                 check_request = pd.read_sql(query, cnnx)
@@ -1677,81 +1238,39 @@ def stopChanges_manage():
 
                 if check_request['plex']:
 
-                    status_key = {
-                        'Mão de Obra': 10779, 'Método': 222,
-                        'Manutenção': 213, 'Manutenção Parada': 213,
-                        'Manutenção Produtiva': 213, 'Material': 10781,
-                        'Movimentação': 10780, 'Programada': 10778
-                    }
+                    status_key = {'Mão de Obra': 10779, 'Método': 222, 'Manutenção' : 213 , 'Material' : 10781, 'Movimentação' : 10780, 'Programada' : 10778}
                     events = getPlex('events')
-                    td_source = check_request['stopSource'] == 'td'
-                    linked_plex = not td_source or pd.notna(check_request['plexLogKey'])
 
                     try:
-                        if td_source:
-                            current = _get_current_status_event(
-                                int(check_request['eventId'])
-                            )
-                            if (
-                                str(current['Workcenter']).strip()
-                                != str(check_request['currentStatusWorkcenter']).strip()
-                                or pd.to_datetime(current['StatusBegin'])
-                                != pd.to_datetime(check_request['currentStatusStart'])
-                                or str(current['WcReason']).strip()
-                                != str(check_request['currentStatusReason']).strip()
-                            ):
-                                raise _CurrentStatusMatchError(
-                                    'PARADA NO CURRENT STATUS FOI ALTERADA APOS A SOLICITACAO.'
-                                )
-                        if linked_plex:
-                            current_status_id, newMotivePlex = _find_current_status_stop(
-                                check_request,
-                                events
-                            )
-                            if td_source and current_status_id != int(check_request['eventId']):
-                                raise _CurrentStatusMatchError(
-                                    'REGISTRO PLEX CORRESPONDE A OUTRA PARADA.'
-                                )
-                        else:
-                            current_status_id = int(check_request['eventId'])
-                            newMotivePlex = _get_plex_event(
-                                events,
-                                event_key=check_request['motive2EventKey']
-                            )
+                        current_status_id, newMotivePlex = _find_current_status_stop(
+                            check_request,
+                            events
+                        )
                     except _CurrentStatusMatchError as error:
                         cnnx.rollback()
                         return str(error), 409
 
-                    if linked_plex:
-                        if newMotivePlex['Workcenter_Event_Group'] not in status_key:
-                            cnnx.rollback()
-                            return 'CATEGORIA DO NOVO MOTIVO NAO CONFIGURADA NO PLEX.', 409
-                        plex_event_id = (
-                            int(check_request['plexLogKey']) if td_source
-                            else int(check_request['eventId'])
-                        )
-                        payload = {
-                            'inputs' : {
-                                'Log_Key': str(plex_event_id)
-                                , 'Workcenter_Event_Key' : f"{newMotivePlex['Workcenter_Event_Key']}"
-                                , 'Workcenter_Key' : f"{check_request['workcenter']}"
-                                , 'Workcenter_Status_Key' : f"{status_key[newMotivePlex['Workcenter_Event_Group']]}"
-                                , 'Log_Hours': check_request['logHours']
-                                , 'Reviewed': 1
-                            }
+                    payload = {
+                        'inputs' : {
+                            'Log_Key': f"{check_request['eventId'].astype(int)}"
+                            , 'Workcenter_Event_Key' : f"{newMotivePlex['Workcenter_Event_Key']}"
+                            , 'Workcenter_Key' : f"{check_request['workcenter']}"
+                            , 'Workcenter_Status_Key' : f"{status_key[newMotivePlex['Workcenter_Event_Group']]}"
+                            , 'Log_Hours': check_request['logHours']
+                            , 'Reviewed': 1
                         }
+                    }
 
-                        response = POST_WITH_AUTH("https://jost.on.plex.com/api/datasources/12272/execute", HTTPBasicAuth(MES_MAIN_USER, MES_MAIN_PASSWORD), payload)
+                    response = POST_WITH_AUTH("https://jost.on.plex.com/api/datasources/12272/execute", HTTPBasicAuth(MES_MAIN_USER, MES_MAIN_PASSWORD), payload)
 
-                        if "errors" in response:
-                            cnnx.rollback()
-                            return 'PLEX ERROR.', 400
+                    if "errors" in response:
+                        cnnx.rollback()
+                        return 'PLEX ERROR.', 400
 
                     try:
                         _update_current_status_stop(
                             current_status_id,
-                            newMotivePlex,
-                            expected_status=check_request if td_source else None
+                            newMotivePlex
                         )
                     except _CurrentStatusMatchError as error:
                         cnnx.rollback()

@@ -165,14 +165,6 @@ O utilitário `app/utils/db_utils.py` expõe quatro engines:
 - `plex` — dados do Plex e linked server;
 - `trace_qr` — rastreabilidade de montagem.
 
-O fluxo de alteração de paradas identifica registros do Current Status, Plex e
-FTM pela origem. Antes de disponibilizar esse fluxo em um ambiente autorizado,
-aplique manualmente a migração
-[`database/migrations/20261002_stopchange_current_status_source.sql`](database/migrations/20261002_stopchange_current_status_source.sql)
-no banco JDT. O vínculo entre Current Status e Plex usa centro, início, motivo
-e duração; correspondências ambíguas são recusadas. Não execute a migração
-durante a inspeção local.
-
 O sistema também se integra com Active Directory, SMTP, SAP SOAP, Oracle, Microsoft Graph/Teams, Power BI e sistemas legados via iframe.
 
 ## Serviços automáticos
