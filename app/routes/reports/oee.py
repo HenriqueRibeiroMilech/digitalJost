@@ -5,7 +5,7 @@ from datetime import timedelta, datetime
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user
 
-from app.utils.business import getStopsData
+from app.utils.business import get_stops_with_plex_history
 from app.utils.db_utils import engine_run_query
 from app.utils.dynamic_constants import getPlex
 from app.utils.permissions import get_permission
@@ -231,9 +231,7 @@ def _get_stops_data(payload):
         workcenters = workcenters[workcenters['Workcenter_Group'].isin(payload['w_group'])]
 
     payload['w_codes'] = workcenters['Workcenter_Code'].drop_duplicates().tolist()
-    return getStopsData(
-        payload, use_current_status=True, current_status_workcenters=workcenters
-    )
+    return get_stops_with_plex_history(payload, workcenters)
 
 
 # DASHBOARD - PARADAS
@@ -255,6 +253,14 @@ def oee_stops_get():
             )
     """
     events = engine_run_query(events_query, 'plex')
+    events = pd.concat([
+        events,
+        getPlex('events')[['Description']],
+        pd.DataFrame({'Description': [
+            'Sem Justificativa',
+            'Motivo com código duplicado; identificação pendente'
+        ]})
+    ], ignore_index=True).dropna().drop_duplicates(subset=['Description'])
 
     preload = {}
     if 'preload' in request.args:

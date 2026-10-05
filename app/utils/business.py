@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 
 import pandas as pd
 from sqlalchemy.exc import DBAPIError
@@ -274,6 +275,32 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
     return event
 
 
+def _finish_legacy_plex_stops(data, events_join, received_data, apply_approved_changes):
+    data['Code'] = data['Code'].astype(str)
+    data = pd.merge(
+        left=data, right=events_join, left_on='Code', right_on='Code'
+    ).drop(columns=['Workcenter_Event_Key', 'Workcenter_Event_Group', 'Active']).rename(
+        columns={'Description': 'Event'}
+    )
+
+    if apply_approved_changes:
+        data = _apply_approved_stop_changes_by_event_id(data, received_data)
+
+        if received_data.get('m_group'):
+            data = data[data['Status'].isin(received_data['m_group'])]
+
+        if received_data.get('m_event'):
+            selected_codes = {
+                _normalize_identifier(code)
+                for code in received_data['m_event']
+            }
+            data = data[
+                data['Code'].apply(_normalize_identifier).isin(selected_codes)
+            ]
+
+    return data
+
+
 def _get_current_status_stops(
     received_data, include_unassigned_shift=False, current_status_workcenters=None
 ):
@@ -494,7 +521,8 @@ def getStopsData(
             apply_approved_changes: sobrepõe alterações aprovadas pelo Log_Key original
             include_all_statuses: inclui todas as categorias FTM não programadas
                 quando m_group está vazio
-            include_legacy: combina histórico FTM; False usa somente a fonte TD
+            include_legacy: combina histórico FTM; False usa somente a fonte
+                selecionada (TD ou Plex legado)
             include_unassigned_shift: inclui candidatos "A confirmar" da fonte TD;
                 o chamador deve conferir o turno original antes de contabilizar
             current_status_workcenters: cadastro da tela para consulta TD por código;
@@ -566,17 +594,37 @@ def getStopsData(
             pd.to_datetime(received_data['end_date']) + pd.Timedelta(hours=1)
         ).strftime('%Y-%m-%d %H:%M:%S')
 
-        query = f"""EXEC('sproc329396_18311230_1268435(?, ?, ?, ?, ?, ?, ?)'
-                        , '{plex_start_date}'
-                        , '{plex_end_date}'
-                        , '{workcenter_filter}'
-                        , '{workcenter_group}'
-                        , '{workcenter_event_group}'
-                        , '{shift_group}'
-                        , '{code}'
-                    ) AT [PLEX_DSN_JOST]"""
-
-        event = engine_run_query(query, 'plex')
+        if include_legacy:
+            # Preserva a chamada usada pelos demais módulos.
+            query = f"""EXEC('sproc329396_18311230_1268435(?, ?, ?, ?, ?, ?, ?)'
+                            , '{plex_start_date}'
+                            , '{plex_end_date}'
+                            , '{workcenter_filter}'
+                            , '{workcenter_group}'
+                            , '{workcenter_event_group}'
+                            , '{shift_group}'
+                            , '{code}'
+                        ) AT [PLEX_DSN_JOST]"""
+            event = engine_run_query(query, 'plex')
+        else:
+            query = """EXEC('sproc329396_18311230_1268435(?, ?, ?, ?, ?, ?, ?)'
+                            , :plex_start_date
+                            , :plex_end_date
+                            , :workcenter_filter
+                            , :workcenter_group
+                            , :workcenter_event_group
+                            , :shift_group
+                            , :code
+                        ) AT [PLEX_DSN_JOST]"""
+            event = engine_run_query(query, 'plex', {
+                'plex_start_date': plex_start_date,
+                'plex_end_date': plex_end_date,
+                'workcenter_filter': workcenter_filter,
+                'workcenter_group': workcenter_group,
+                'workcenter_event_group': workcenter_event_group,
+                'shift_group': shift_group,
+                'code': code
+            })
 
         # AJUSTE DE FUSO HORÁRIO DO RESULTADO DO PLEX
         # ATUALMENTE CONFIGURADO PARA -1 HORA.
@@ -586,6 +634,11 @@ def getStopsData(
 
             event['Log_Date'] = event['Log_Date'].dt.strftime('%d/%m/%Y %H:%M:%S')
             event['End_Date'] = event['End_Date'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
+        if not include_legacy:
+            return _finish_legacy_plex_stops(
+                event, events_join, received_data, apply_approved_changes
+            )
 
     def format_tuple(data):
         return f"('{data[0]}')" if len(data) == 1 else tuple(data)
@@ -710,28 +763,128 @@ def getStopsData(
         mic_event = mic_event[mic_event['Event'].isin(received_data['m_event'])]
 
     data = pd.concat([event, mic_event])
-    data['Code'] = data['Code'].astype(str)
-
     if use_current_status:
+        data['Code'] = data['Code'].astype(str)
         return data
 
-    data = pd.merge(left=data, right=events_join, left_on='Code', right_on='Code').drop(columns=['Workcenter_Event_Key', 'Workcenter_Event_Group', 'Active']).rename(columns={"Description": "Event"})
+    return _finish_legacy_plex_stops(
+        data, events_join, received_data, apply_approved_changes
+    )
 
-    if apply_approved_changes:
-        data = _apply_approved_stop_changes_by_event_id(data, received_data)
 
-        if received_data.get('m_group'):
-            data = data[data['Status'].isin(received_data['m_group'])]
+def get_stops_with_plex_history(received_data, workcenters):
+    """Combina TD/FTM com Plex somente antes do primeiro status TD por centro."""
+    stops = getStopsData(
+        deepcopy(received_data), use_current_status=True,
+        current_status_workcenters=workcenters
+    )
 
-        if received_data.get('m_event'):
-            selected_codes = {
-                _normalize_identifier(code)
-                for code in received_data['m_event']
-            }
-            data = data[
-                data['Code'].apply(_normalize_identifier).isin(selected_codes)
-            ]
+    # A cobertura antiga do S18 ainda não foi conferida.
+    plex_workcenters = getPlex('workcenters')[
+        ['Workcenter_Key', 'Workcenter_Code']
+    ].copy()
+    plex_workcenters['Workcenter_Code'] = (
+        plex_workcenters['Workcenter_Code'].astype(str).str.strip()
+    )
+    plex_workcenters = plex_workcenters[
+        plex_workcenters['Workcenter_Code'].isin(received_data['w_codes'])
+        & plex_workcenters['Workcenter_Code'].ne('S18')
+        & plex_workcenters['Workcenter_Key'].notna()
+    ].drop_duplicates(subset=['Workcenter_Code'])
+    if plex_workcenters.empty:
+        return stops
 
-    return data
+    td_starts = engine_run_query("""
+        SELECT LTRIM(RTRIM(Workcenter)) AS Workcenter_Code,
+               MIN(StatusBegin) AS TD_Start
+        FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+        WHERE Workcenter IN (
+            SELECT TRIM(value) FROM STRING_SPLIT(:workcenter_list, ',')
+        )
+        GROUP BY LTRIM(RTRIM(Workcenter))
+    """, 'plex', {
+        'workcenter_list': ','.join(plex_workcenters['Workcenter_Code'])
+    })
+    target = plex_workcenters.merge(td_starts, on='Workcenter_Code')
+    target['TD_Start'] = pd.to_datetime(target['TD_Start'])
+    start = pd.to_datetime(received_data['start_date'])
+    end = pd.to_datetime(received_data['end_date'])
+    target = target[target['TD_Start'].gt(start)]
+    if target.empty:
+        return stops
+
+    # A procedure Plex antiga recebe datas até segundos. Um segundo adicional
+    # permite buscar o evento da fronteira; o recorte exato é feito abaixo.
+    plex_end = min(end, target['TD_Start'].max() + pd.Timedelta(seconds=1))
+    if plex_end <= start:
+        return stops
+
+    historical_payload = deepcopy(received_data)
+    historical_payload.update({
+        'end_date': plex_end.strftime('%Y-%m-%d %H:%M:%S'),
+        'w_name_plex': target['Workcenter_Key'].astype(str).tolist(),
+        'w_name_mic': [],
+        'w_group': [],
+        'm_group': [],
+        'm_event': [],
+        'shift': []
+    })
+    historical = getStopsData(
+        historical_payload, include_legacy=False,
+        apply_approved_changes=True, unique_event_codes=True
+    )
+    if historical.empty:
+        return stops
+
+    target['Workcenter_Key'] = target['Workcenter_Key'].apply(_normalize_identifier)
+    historical['Workcenter_Key'] = historical['Workcenter_Key'].apply(
+        _normalize_identifier
+    )
+    historical = historical.merge(
+        target[['Workcenter_Key', 'Workcenter_Code', 'TD_Start']],
+        on='Workcenter_Key', how='inner'
+    )
+    if historical.empty:
+        return stops
+
+    log_start = pd.to_datetime(historical['Log_Date'], format='%d/%m/%Y %H:%M:%S')
+    log_end = pd.to_datetime(
+        historical['End_Date'], format='%d/%m/%Y %H:%M:%S', errors='coerce'
+    )
+    td_start = historical['TD_Start']
+    log_start = log_start.clip(lower=start)
+    log_end = log_end.fillna(td_start)
+    log_end = log_end.where(log_end.le(td_start), td_start).clip(upper=end)
+    historical = historical[log_end.gt(log_start)].copy()
+    if historical.empty:
+        return stops
+
+    historical['Log_Date'] = log_start.loc[historical.index].dt.strftime(
+        '%d/%m/%Y %H:%M:%S'
+    )
+    historical['End_Date'] = log_end.loc[historical.index].dt.strftime(
+        '%d/%m/%Y %H:%M:%S'
+    )
+    historical['Log_Minutes'] = (
+        (log_end.loc[historical.index] - log_start.loc[historical.index])
+        .dt.total_seconds().div(60).round(2)
+    )
+    historical['Status'] = historical['Status'].apply(_normalize_stop_status)
+
+    if received_data.get('m_group'):
+        historical = historical[historical['Status'].isin(received_data['m_group'])]
+    if received_data.get('m_event'):
+        historical = historical[historical['Event'].isin(received_data['m_event'])]
+    if received_data.get('shift'):
+        shift_names = {
+            '1': 'Primeiro', '2': 'Segundo', '3': 'Terceiro', 'Extra': 'Extra'
+        }
+        selected_shifts = [
+            shift_names[shift] for shift in received_data['shift']
+            if shift in shift_names
+        ]
+        historical = historical[historical['Shift'].isin(selected_shifts)]
+
+    return pd.concat([stops, historical], ignore_index=True, sort=False)
 
 # V3
