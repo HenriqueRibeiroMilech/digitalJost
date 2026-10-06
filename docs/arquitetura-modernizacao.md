@@ -8,9 +8,9 @@
 
 A arquitetura principal será um **monólito modular organizado em fatias verticais, com complexidade progressiva e uma pequena camada de plataforma**. Flask permanece no backend, enquanto o frontend novo usa Vue 3, Tailwind CSS 4 e Volt sobre o PrimeVue em modo unstyled. Contratos de API explícitos e recursos compartilhados reduzem as tarefas repetitivas. A modernização deve facilitar a criação de funcionalidades e permitir que as existentes sejam migradas por partes, preservando suas regras e os processos industriais atendidos pelo sistema.
 
-A primeira entrega funcional será a nova home em Vue. Ela será construída como parte permanente do Digital JOST e ficará disponível inicialmente por uma URL própria, enquanto a home atual permanece oficial. Essa entrega pode anteceder a criação de um banco separado porque não terá gravações, mudanças de schema nem consultas adicionais: o frontend começa com dados simulados e depois consome apenas a identidade e um catálogo de acessos versionado no backend.
+A primeira entrega funcional será a tela de **Eventos**, início do futuro módulo de chamada. Ela terá uma listagem em cards e um formulário para cadastrar nome e descrição, disponível inicialmente em `/app/eventos`, enquanto a home atual permanece oficial. O frontend começa com dados simulados; a API real e o cadastro persistente dependem de ambiente isolado, pois essa entrega introduz gravações e um objeto de banco próprio. O passo a passo está em [Guia da primeira feature: Eventos](guia-primeira-feature-eventos.md).
 
-Hoje, conforme informado pelo responsável, o desenvolvimento usa o banco de produção. Isso continua sendo um risco prioritário. O isolamento completo de desenvolvimento e homologação deve ocorrer antes das primeiras funcionalidades que gravem dados. A execução local do backend também depende de remover ou controlar os efeitos externos da inicialização; desenvolver primeiro a home não autoriza usar produção como ambiente de teste.
+Hoje, conforme informado pelo responsável, o desenvolvimento usa o banco de produção. Isso continua sendo um risco prioritário. O isolamento completo de desenvolvimento e homologação deve ocorrer antes das primeiras funcionalidades que gravem dados. A execução local do backend também depende de remover ou controlar os efeitos externos da inicialização; desenvolver primeiro a interface de eventos não autoriza usar produção como ambiente de teste.
 
 Este documento consolida a direção discutida, as ferramentas recomendadas, as regras de organização e o roteiro de adoção. As escolhas de ferramentas ainda precisam ser confirmadas em um piloto isolado. A proposta não autoriza execução do sistema, alterações de banco, publicação ou acesso a serviços corporativos.
 
@@ -27,12 +27,13 @@ Este documento consolida a direção discutida, as ferramentas recomendadas, as 
 - [9 Ambientes isolados](#9-ambientes-isolados)
 - [10 Jobs e integrações](#10-jobs-e-integrações)
 - [11 Frontend Vue e convivência com Jinja](#11-frontend-vue-e-convivência-com-jinja)
+- [11.2 Componentes recomendados e comandos de download](#112-componentes-recomendados-para-as-próximas-features)
 - [12 Recursos prontos e geração de funcionalidades](#12-recursos-prontos-e-geração-de-funcionalidades)
 - [13 Desenvolvimento e verificação](#13-desenvolvimento-e-verificação)
 - [14 Migração progressiva](#14-migração-progressiva)
 - [15 Decisões pendentes e riscos de adoção](#15-decisões-pendentes-e-riscos-de-adoção)
 - [16 Referências técnicas](#16-referências-técnicas)
-- [17 Guia para iniciar a arquitetura com a nova home](#17-guia-para-iniciar-a-arquitetura-com-a-nova-home)
+- [17 Guia para iniciar a arquitetura com eventos](#17-guia-para-iniciar-a-arquitetura-com-eventos)
 
 ## 1 Objetivos e critérios de sucesso
 
@@ -70,7 +71,7 @@ O levantamento estático examinou a estrutura e os registros em `main.py`, a ini
 | `app/routes/request/laboratory.py` possui 3.368 linhas e `processDeviation.py` possui 3.724 no estado examinado. | Separar HTTP, regras, consultas, arquivos e notificações nos módulos mais complexos. |
 | `app/routes/demandManagement/` e `app/routes/demandRequests/` já separam rotas, serviços, repositório e domínio. | Aproveitar essa experiência como ponto de partida, sem copiar suas limitações. |
 | JavaScript aparece em templates, includes Jinja e arquivos estáticos; parte da interface é montada manualmente com HTML em strings. | Migrar a interação para componentes Vue e explicitar os contratos com o backend. |
-| `app/templates/home.html` apresenta oito setores fixos e seus agrupamentos atuais. | Usar esses oito setores como escopo inicial da nova home, sem acrescentar uma consulta organizacional nesta entrega. |
+| `app/templates/home.html` apresenta oito setores fixos e seus agrupamentos atuais. | Preservar a navegação existente; uma futura modernização da home pode usar esse recorte, sem ampliar o escopo da primeira tela de eventos. |
 | `app/config.py` chama `db.create_all()` na criação do app. | Desacoplar a inicialização da evolução do schema. |
 | `dynamic_constants.py` e `azure_utils.py` instanciam gerenciadores que iniciam threads durante o import. | Eliminar efeitos externos implícitos e tornar integrações configuráveis. |
 | Jobs de laboratório, desvios e demandas operam sobre dados usados pelas telas. | Incluir jobs no levantamento e na migração das regras de cada domínio. |
@@ -230,9 +231,9 @@ create_app(config_name)
     → devolver a aplicação
 ```
 
-O registro atual dos blueprints legados em `main.py` permanece como está durante o primeiro piloto. Movê-lo integralmente para uma função `register_legacy()` produziria uma alteração ampla sem benefício necessário para a home. A migração futura pode trazer esse registro para a composição da factory por etapas, depois de mapear imports e efeitos externos.
+O registro atual dos blueprints legados em `main.py` permanece como está durante o primeiro piloto. Movê-lo integralmente para uma função `register_legacy()` produziria uma alteração ampla sem benefício necessário para a tela de eventos. A migração futura pode trazer esse registro para a composição da factory por etapas, depois de mapear imports e efeitos externos.
 
-`main.py` permanece na raiz de `DigitalJost/`, ao lado de `app/`, `frontend/` e `web.config`, preservando o ponto de entrada esperado pelo IIS. Com a migração progressiva, ele pode se tornar um arquivo fino que apenas obtém a aplicação da factory, mas essa simplificação só deve acontecer depois que o registro dos blueprints legados for transferido e validado por partes. A criação da nova home não move nem renomeia esse arquivo.
+`main.py` permanece na raiz de `DigitalJost/`, ao lado de `app/`, `frontend/` e `web.config`, preservando o ponto de entrada esperado pelo IIS. Com a migração progressiva, ele pode se tornar um arquivo fino que apenas obtém a aplicação da factory, mas essa simplificação só deve acontecer depois que o registro dos blueprints legados for transferido e validado por partes. A criação da tela de eventos não move nem renomeia esse arquivo.
 
 A lista dos módulos modernos deve ser explícita e revisável. Acrescentar uma feature significa criar sua pasta e adicioná-la nesse registro, sem espalhar novos imports e chamadas por vários arquivos.
 
@@ -310,6 +311,20 @@ Usar ORM em cadastros e entidades controladas pelo Digital JOST quando reduzir a
 Pandas permanece útil para análise, transformação tabular e exportação. A obtenção de um registro ou uma atualização simples não precisa passar obrigatoriamente por um DataFrame.
 
 O modelo ORM e o contrato da API têm responsabilidades diferentes. Campos como autor, área efetiva, permissões e metadados de auditoria devem ser definidos pelo servidor. A entrada do cliente não pode escolher livremente colunas a alterar.
+
+#### 7.1.1 Procedures e processamento no banco
+
+Para consultas complexas em fontes corporativas, como o Jost Integration PRD, preferir processamento relacional no banco e procedures parametrizadas quando houver benefício de encapsulamento, reutilização ou controle de acesso. Aplicar filtros, joins, agrupamentos, cálculos sobre conjuntos e paginação no SQL, retornando para o Python somente as colunas e os registros necessários ao caso de uso. Evitar carregar dados brutos em pandas apenas para reproduzir operações que a consulta pode resolver diretamente.
+
+O repositório encapsula a chamada à procedure, fornece parâmetros e mapeia o resultado. Os serviços continuam responsáveis pela autorização por registro, coordenação do caso de uso, limites de transação e integrações. Schemas definem o contrato público da API; o resultado da procedure não deve ser exposto automaticamente ao frontend.
+
+Cálculos de negócio sobre conjuntos podem ser implementados em SQL, mantendo um responsável explícito no módulo e uma única definição da regra. Políticas de aprovação, transições de estado e decisões de notificação permanecem nos serviços ou no domínio da feature. API, páginas legadas e jobs devem reutilizar a mesma operação, evitando duplicação entre SQL e Python.
+
+Procedures de consulta devem ser somente de leitura, sem gravações ou efeitos externos ocultos. Documentar seus parâmetros, colunas retornadas, tipos e comportamento para resultados vazios. Usar parâmetros também no SQL interno; SQL dinâmico exige parametrização de valores e listas permitidas para identificadores.
+
+Manter os scripts de criação e alteração versionados e revisados, com implantação explícita coordenada com o responsável pelo banco corporativo. Preservar compatibilidade com os consumidores existentes e disponibilizar os objetos necessários no ambiente isolado. A aplicação não cria ou altera procedures durante sua inicialização.
+
+Consultas simples podem permanecer como SQL parametrizado no repositório. Uma procedure não garante desempenho melhor por si só; índices, plano de execução e volume de dados precisam ser avaliados em ambiente autorizado.
 
 ### 7.2 Transações e concorrência
 
@@ -459,6 +474,115 @@ As APIs devem retornar erros JSON previsíveis. Um redirect silencioso para uma 
 
 JavaScript existente dentro de templates pode depender de Jinja. Sua migração exige identificar os valores dinâmicos e convertê-los em contratos ou configuração explícita, sem simples movimentação de arquivos.
 
+### 11.2 Componentes recomendados para as próximas features
+
+**Conferência estática em 5 de outubro de 2026:** os componentes abaixo estão disponíveis na base **PrimeVue 4.5.5** adotada pelo projeto. Os nomes de import, os componentes auxiliares de abas e os serviços de Toast e confirmação foram conferidos no [manifesto oficial da tag 4.5.5](https://github.com/primefaces/primevue/blob/4.5.5/packages/primevue/package.json). Essa base usa [licença MIT](https://github.com/primefaces/primevue/blob/4.5.5/LICENSE.md), permitindo uso comercial sem compra de licença ou chave de ativação, preservando os avisos de copyright e licença exigidos.
+
+A recomendação parte dos padrões encontrados nas telas atuais: filtros de responsáveis, tipos e status em Demandas; tabelas no planejamento; prazos, quantidades, anexos e históricos no laboratório e nos desvios. A biblioteca fornece os controles; as features continuam definindo os campos, o contrato e o comportamento de cada tela.
+
+| Componente | Uso recomendado no Digital JOST | Base disponível em 4.5.5 |
+| --- | --- | --- |
+| [DataTable](https://volt.primevue.org/datatable/) + `Column` | Listagens de solicitações, equipamentos, usuários e planos de ação. | `primevue/datatable` e `primevue/column`. |
+| [Select](https://volt.primevue.org/select/) e [MultiSelect](https://volt.primevue.org/multiselect/) | Filtros e campos de setor, responsável, status e tipo; uma ou várias opções. | `primevue/select` e `primevue/multiselect`. |
+| [AutoComplete](https://volt.primevue.org/autocomplete/) | Busca de usuários, materiais e equipamentos em listas grandes. | `primevue/autocomplete`. |
+| [DatePicker](https://volt.primevue.org/datepicker/) | Prazos, períodos de consulta e agendamentos. | `primevue/datepicker`. |
+| [Tag](https://volt.primevue.org/tag/) e [Badge](https://volt.primevue.org/badge/) | Status com texto e cor consistente; contadores de itens. | `primevue/tag` e `primevue/badge`. |
+| [Toast](https://volt.primevue.org/toast/) | Confirmações breves depois de salvar ou atualizar. | `primevue/toast`, `primevue/toastservice` e `primevue/usetoast`. |
+| [ConfirmDialog](https://volt.primevue.org/confirmdialog/) | Confirmação de cancelamento, exclusão e outras ações que a exijam. | `primevue/confirmdialog`, `primevue/confirmationservice` e `primevue/useconfirm`. |
+| [Tabs](https://volt.primevue.org/tabs/) | Separar detalhes, anexos e histórico de um registro. | `primevue/tabs`, `tablist`, `tab`, `tabpanels` e `tabpanel`. |
+| [Drawer](https://volt.primevue.org/drawer/) | Detalhes em painel lateral quando fizer sentido manter a listagem visível. | `primevue/drawer`. |
+| [InputNumber](https://volt.primevue.org/inputnumber/) | Quantidades e outros valores numéricos nos formulários. | `primevue/inputnumber`. |
+| [Timeline](https://volt.primevue.org/timeline/) e [ProgressBar](https://volt.primevue.org/progressbar/) | Histórico de solicitações e andamento de planos de ação. | `primevue/timeline` e `primevue/progressbar`. |
+| [Checkbox](https://volt.primevue.org/checkbox/) | Seleções e futura marcação de presença, depois de definir as regras da chamada. | `primevue/checkbox`. |
+| `FileUpload` do PrimeVue | Anexos de demandas, solicitações e desvios, com composição visual própria. | `primevue/fileupload`; sem wrapper no catálogo Volt consultado. |
+
+Priorizar `DataTable`, `Select`, `DatePicker`, `Tag` e `Toast` conforme as próximas telas precisarem. Os demais entram quando houver um caso de uso concreto. Eventos com apenas nome e descrição continua usando os componentes do guia: `Button`, `InputText`, `Card`, `Textarea`, `Dialog`, `Message`, `Skeleton` e `Paginator`, com cadastro em modal. Esta recomendação não amplia os campos da primeira feature.
+
+Em listagens grandes, a tabela deve consumir paginação, filtros e ordenação do servidor, preservando o processamento no SQL definido na seção 7.1.1. O componente não justifica baixar todos os registros para filtrá-los no navegador. Em seletores com muitos usuários ou materiais, definir busca e limites no contrato da API. Labels, datas em português, estados vazios e foco visível fazem parte da composição de cada tela.
+
+#### 11.2.1 Limite da conferência de compatibilidade
+
+A disponibilidade dos controles e imports foi confirmada na versão 4.5.5; [ToastService](https://github.com/primefaces/primevue/blob/4.5.5/packages/primevue/src/toastservice/ToastService.js), [ConfirmationService](https://github.com/primefaces/primevue/blob/4.5.5/packages/primevue/src/confirmationservice/ConfirmationService.js), o [valor controlado de Tabs](https://github.com/primefaces/primevue/blob/4.5.5/packages/primevue/src/tabs/BaseTabs.vue) e as opções de upload também foram conferidos no código dessa tag. O [Volt](https://volt.primevue.org/overview/) fornece wrappers locais sobre PrimeVue unstyled, com Tailwind 4 e Pass Through. Preservar PrimeVue `4.5.5`, PrimeIcons `7.0.0`, `tailwindcss-primeui` `0.6.1` e a CLI `volt-vue@0.0.0-alpha.4`, conforme a seção 17.4.
+
+**A versão da CLI não comprova uma revisão fixa dos arquivos baixados.** Por isso, a base PrimeVue é compatível com a seleção proposta, mas cada wrapper produzido pela CLI precisa de revisão textual antes de ser incorporado: imports, props, eventos, slots, chaves de Pass Through e classes da integração Tailwind devem corresponder às APIs 4.5.5. Não atualizar PrimeVue para acomodar um wrapper posterior. Usar uma revisão compatível ou adaptar o wrapper, registrando a origem, a revisão disponível e a licença em `frontend/src/volt/README.md` quando esses arquivos forem incorporados.
+
+A conferência foi feita pela documentação e pelo código-fonte público, sem baixar componentes, instalar pacotes ou executar o frontend. O funcionamento dos wrappers efetivamente incorporados ainda exige verificação em ambiente autorizado. Nenhum componente desta seleção exige um produto comercial adicional da família Prime para o uso da base MIT 4.5.5.
+
+#### 11.2.2 Como adicionar os componentes Volt
+
+Na futura etapa autorizada de dependências, abrir o terminal na raiz do repositório e entrar em `frontend`. Os comandos abaixo são referências individuais: executar somente os correspondentes à feature em implementação, após conferir os arquivos existentes. Não baixar o catálogo inteiro nem sobrescrever `Button`, `InputText`, `utils.ts` ou componentes já personalizados.
+
+```powershell
+Set-Location frontend
+
+npx volt-vue@0.0.0-alpha.4 add DataTable
+npx volt-vue@0.0.0-alpha.4 add Select
+npx volt-vue@0.0.0-alpha.4 add MultiSelect
+npx volt-vue@0.0.0-alpha.4 add AutoComplete
+npx volt-vue@0.0.0-alpha.4 add DatePicker
+npx volt-vue@0.0.0-alpha.4 add Tag
+npx volt-vue@0.0.0-alpha.4 add Badge
+npx volt-vue@0.0.0-alpha.4 add Toast
+npx volt-vue@0.0.0-alpha.4 add ConfirmDialog
+npx volt-vue@0.0.0-alpha.4 add Drawer
+npx volt-vue@0.0.0-alpha.4 add InputNumber
+npx volt-vue@0.0.0-alpha.4 add Timeline
+npx volt-vue@0.0.0-alpha.4 add ProgressBar
+npx volt-vue@0.0.0-alpha.4 add Checkbox
+```
+
+`Tabs` é uma composição de cinco componentes. Quando uma tela precisar de abas, adicionar os arquivos ainda ausentes:
+
+```powershell
+npx volt-vue@0.0.0-alpha.4 add Tabs
+npx volt-vue@0.0.0-alpha.4 add TabList
+npx volt-vue@0.0.0-alpha.4 add Tab
+npx volt-vue@0.0.0-alpha.4 add TabPanels
+npx volt-vue@0.0.0-alpha.4 add TabPanel
+```
+
+A sintaxe `add` vem das páginas oficiais vinculadas na tabela; a [documentação de Tabs](https://volt.primevue.org/tabs/) explicita os cinco componentes. Os arquivos devem ficar em `frontend/src/volt/`. Ler os imports de cada arquivo para identificar auxiliares realmente necessários, como botões, campos, ícones, `Chip` ou `Checkbox`; adicionar somente os ausentes, com a mesma CLI fixada. Não é necessário instalar um pacote npm separado para cada controle PrimeVue, pois a base 4.5.5 já está declarada no projeto.
+
+Para tabelas, `Column` é importado diretamente do PrimeVue, conforme a [documentação de DataTable](https://volt.primevue.org/datatable/):
+
+```ts
+import DataTable from '@/volt/DataTable.vue'
+import Column from 'primevue/column'
+```
+
+Depois do download, revisar como texto os arquivos novos e o diff de `frontend/package.json`, `frontend/package-lock.json` e `frontend/src/volt/`. Conferir que as versões aprovadas foram preservadas, que não entraram dependências comerciais e que os avisos de licença dos arquivos copiados foram mantidos. A instalação da CLI não deve ser usada como atualização automática da base.
+
+#### 11.2.3 Composição de Toast e confirmação
+
+Quando essas funções forem usadas, registrar seus serviços uma única vez no bootstrap existente, antes de `app.mount`. Estes trechos complementam `frontend/src/main.ts`; não substituem a criação de `app`, o registro do PrimeVue unstyled, o roteador ou o Vue Query:
+
+```ts
+import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
+
+// Depois de criar app e antes de app.mount:
+app.use(ToastService)
+app.use(ConfirmationService)
+```
+
+Montar uma instância de `<Toast />` e de `<ConfirmDialog />` na raiz visual compartilhada, importando-as de `@/volt/Toast.vue` e `@/volt/ConfirmDialog.vue`. Registrar e montar somente o recurso adotado; não repetir essas instâncias em cada página. Nas features, usar `useToast` de `primevue/usetoast` e `useConfirm` de `primevue/useconfirm`. Essa composição está descrita nas referências oficiais de [Toast](https://volt.primevue.org/toast/) e [ConfirmDialog](https://volt.primevue.org/confirmdialog/).
+
+Confirmar uma ação no navegador não substitui autorização no backend. O Toast comunica resultados breves; erros de formulário permanecem junto dos campos com `Message`. Status exibido com `Tag` mantém texto explícito, além da cor. Configurar os textos acessíveis e labels em português, incluindo fechar, confirmar e cancelar.
+
+#### 11.2.4 Anexos com FileUpload do PrimeVue
+
+`FileUpload` está incluído no PrimeVue 4.5.5, mas não aparece como wrapper no catálogo Volt consultado. Portanto, não usar `npx volt-vue add FileUpload` nem instalar outra biblioteca para obter esse controle. Quando uma feature precisar de anexos, importar a base já disponível:
+
+```ts
+import FileUpload from 'primevue/fileupload'
+```
+
+Compor o controle em modo unstyled com Pass Through e os tokens do Digital JOST. Se a convenção de anexos tiver reuso comprovado, concentrar a apresentação em um componente como `shared/components/AppFileUpload.vue`. O código da tag 4.5.5 oferece `customUpload`, `auto`, `accept`, `multiple`, `maxFileSize` e `fileLimit`, conforme [BaseFileUpload dessa versão](https://github.com/primefaces/primevue/blob/4.5.5/packages/primevue/src/fileupload/BaseFileUpload.vue).
+
+Preferir `customUpload` para encaminhar a operação pelo cliente HTTP da aplicação, com sessão, CSRF e o contrato de anexos da feature. Quando o contrato usar multipart, adaptar o cliente para aceitar `FormData` sem impor `Content-Type: application/json`; o navegador define o delimitador multipart. Limites e tipos aceitos na interface também devem ser validados pelo servidor; autorização, armazenamento e download continuam nas camadas do backend. Eventos não recebe anexos nesta primeira entrega.
+
+Os comandos e trechos desta seção são orientações para implementação futura. Não foram executados e continuam sujeitos à autorização específica prevista no `AGENTS.md`.
+
 ## 12 Recursos prontos e geração de funcionalidades
 
 | Recurso da base | O que a feature define | O que é reaproveitado |
@@ -541,11 +665,11 @@ Migrar uma fatia significa simplificar responsabilidades e remover duplicação.
 | Etapa | Entrega | Critério de passagem |
 | --- | --- | --- |
 | 1 | Mapeamento e base mínima segura. | Home, acessos, autenticação, inicialização e publicação atual compreendidos; nenhum comando dinâmico necessário para concluir o desenho. |
-| 2 | Nova home em Vue com dados simulados. | Navegação por OP Meeting e os oito setores atuais, componentes e estados da interface funcionam sem depender do banco de produção. |
-| 3 | API de leitura e integração com Flask. | Identidade, catálogo versionado, autorização, contratos, erros e assets integrados sem criar consultas, tabelas ou operações de negócio mutáveis. |
-| 4 | Piloto controlado no IIS. | Home antiga preservada; nova URL validada para o grupo piloto, com ativação e retorno documentados. |
-| 5 | Desenvolvimento e homologação isolados. | Banco, arquivos, identidade e integrações separados; inicialização sem efeitos externos inesperados. |
-| 6 | Cadastro simples de referência. | Fluxo completo de escrita com Vue e API, autorização, CSRF, persistência e verificações no ambiente isolado. |
+| 2 | Tela de eventos em Vue com dados simulados. | Cards, formulário de nome e descrição, estados da interface e padrão visual funcionam sem depender do banco de produção. |
+| 3 | Desenvolvimento e homologação isolados. | Banco, arquivos, identidade e integrações separados; inicialização sem efeitos externos inesperados, antes da API real e da primeira escrita. |
+| 4 | Cadastro de eventos e integração com Flask. | GET e POST com contratos, autorização, CSRF, persistência, transação e metadados de criação verificados no ambiente isolado. |
+| 5 | Piloto controlado no IIS. | Home atual preservada; `/app/eventos` e sua API protegidas para o grupo piloto, com ativação e retorno documentados. |
+| 6 | Segundo cadastro de referência. | Reuso dos padrões de eventos avaliado sem criar abstrações antes de haver outro consumidor. |
 | 7 | Fluxo com regras mais complexas. | Aprovação, transação, anexos ou mudança de status demonstram que a estrutura permanece clara. |
 | 8 | Consolidação da plataforma. | Recursos extraídos das entregas têm consumidores e responsabilidades comprovados. |
 | 9 | Gerador e catálogo de desenvolvimento. | Nova feature pode ser iniciada sem copiar código de módulos antigos nem gerar camadas vazias. |
@@ -620,408 +744,123 @@ As referências abaixo apoiam as escolhas propostas. A disponibilidade de uma ca
 
 **Limite desta consolidação:** o sistema não foi executado; a validação foi somente estática. A arquitetura proposta ainda precisa de confirmação de infraestrutura e de avaliação prática nos pilotos autorizados.
 
-## 17 Guia para iniciar a arquitetura com a nova home
+## 17 Guia para iniciar a arquitetura com eventos
 
-A nova home será a primeira funcionalidade real da modernização. Ela deve ser construída para permanecer no Digital JOST e, depois de aprovada, poderá se tornar a entrada oficial. Durante a implantação inicial, a home atual continua sendo a entrada padrão e a nova versão fica disponível em uma URL própria para avaliação controlada.
+**Direção atualizada em 5 de outubro de 2026:** a primeira feature passa a ser Eventos, início do futuro módulo de chamada. A preparação do frontend até a antiga seção 17.4, parte Frontend, foi informada como concluída pelo responsável. Essa base será aproveitada; a nova home fica para uma entrega posterior.
 
-Esta é a primeira fatia da arquitetura nova, construída com intenção de permanência e validada inicialmente como piloto. Ela avalia o fluxo de desenvolvimento, Vue, Tailwind, Volt sobre PrimeVue unstyled, os contratos da API e a publicação no IIS. A interface não deve parecer descartável nem depender de dados fictícios em produção. O uso de dados simulados existe apenas para permitir o desenvolvimento do frontend antes do isolamento completo do banco.
+O tutorial completo está em [Guia da primeira feature: Eventos](guia-primeira-feature-eventos.md). Esta seção registra o roteiro arquitetural e os critérios de passagem. O guia ensina a montar cada parte, explica os arquivos e apresenta exemplos para implementar, sem executar o sistema ou alterar bancos nesta tarefa.
 
 ### 17.1 Resultado esperado
 
-Ao terminar esta primeira entrega, o projeto deve possuir:
+- Tela `/app/eventos` em Vue 3 e TypeScript, com todos os eventos acessíveis ao usuário apresentados em cards por páginas.
+- Botão `Novo evento` e formulário com apenas nome e descrição.
+- Nome e descrição exibidos como texto, com validação no frontend e no backend.
+- `GET /api/v1/events` e `POST /api/v1/events`, protegidos por sessão, permissões e configuração de disponibilidade.
+- Persistência no banco da aplicação definido para o ambiente, com identificador estável e metadados de criação preenchidos pelo servidor.
+- Padrão visual inicial com tokens, shell, cabeçalho, cards, formulários e estados acessíveis, reutilizável nas próximas features.
+- Assets Vite entregues no mesmo domínio pelo Flask/IIS, mantendo a home atual e as URLs legadas.
 
-- Uma nova home responsiva em Vue 3 e TypeScript.
-- Navegação organizada por `OP Meeting` e pelos oito setores apresentados na home atual: Engenharia da Qualidade, Engenharia de Processos, Excelência Operacional, Logística, Manutenção, Produção, Segurança e Transformação Digital.
-- Catálogo de módulos filtrado no backend conforme a identidade e as permissões reais do usuário.
-- Busca por setor, sistema ou funcionalidade.
-- Factory capaz de inicializar os recursos modernos e um registro explícito para módulos novos.
-- Cliente HTTP compartilhado e tratamento uniforme dos erros da API.
-- Componentes visuais e padrões de API que possam ser reutilizados nas próximas features.
-- Assets compilados pelo Vite e servidos pelo mesmo IIS da aplicação, sem processo Node em produção.
-- Uma URL inicial própria, preferencialmente `/app/`, protegida por configuração e grupo piloto.
-- Home antiga, rota `/` e destino atual após o login preservados.
-- Procedimento documentado de ativação, validação e retorno.
+Não fazem parte desta versão: chamada, presença, participantes, datas do evento, anexos, edição, exclusão, notificações, dashboards ou jobs. O identificador criado agora permitirá relacionar essas informações ao evento no futuro, quando suas regras forem definidas.
 
-Esta etapa não cria tabelas, migrations, endpoints de escrita, notificações ou jobs. Também não depende de indicadores operacionais, relatórios ou consultas pesadas.
+### 17.2 Organização da tela
 
-### 17.2 Como a home será organizada
+O módulo terá o nome técnico `events` e o título visível `Eventos`. O futuro fluxo de chamada será construído a partir desses eventos; não é necessário implementar uma entidade de presença ou uma rota de detalhe vazia nesta entrega.
 
-A navegação deve refletir a forma como as pessoas encontram o trabalho no Digital JOST. O primeiro nível apresenta:
+A página contém cabeçalho, título e descrição curta, ação principal, grade de cards e navegação entre páginas. Cada card exibe nome e descrição. O formulário abre em um modal com `Dialog` do Volt. Ao salvar com sucesso, o modal fecha, a listagem é renovada e a confirmação aparece na página. Em falha, o modal permanece aberto com o texto digitado; durante o envio, bloquear cancelamento e fechamento.
 
-1. **OP Meeting:** acessos e ferramentas ligados à rotina da reunião operacional.
-2. **Setores:** uma área para cada um dos oito setores já apresentados na home atual.
+Os estados necessários são: carregamento, lista vazia, erro de listagem, envio em andamento, erro de validação, erro de criação, acesso negado e sessão expirada. Em falha de criação, preservar o texto digitado.
 
-Os oito setores devem aparecer na nova home. Dentro de cada área, aparecem apenas funcionalidades ativas, com nome, descrição curta, ícone padronizado e link real. Quando um setor não tiver módulos disponíveis para o usuário, a interface apresenta um estado vazio claro em vez de remover o setor da navegação. Cópias históricas, módulos desativados, templates ausentes ou URLs sem destino confirmado não entram no catálogo de funcionalidades.
+### 17.3 Etapa 0 — revisar o ponto de partida
 
-O catálogo inicial será versionado em `app/modules/home/catalog.py` com identificadores estáveis:
+Ler estaticamente `AGENTS.md`, `README.md`, `main.py`, `app/config.py`, `web.config` e os arquivos atuais de `frontend/`. Mapear identidade, permissões, CSRF e os efeitos externos da inicialização. Confirmar que os prefixos `/app/eventos` e `/api/v1/events` estão disponíveis e definir o banco próprio do cadastro, sem presumir acesso de escrita a fontes corporativas de integração.
 
-| Identificador | Nome exibido |
-| --- | --- |
-| `engenharia-qualidade` | Engenharia da Qualidade |
-| `engenharia-processos` | Engenharia de Processos |
-| `excelencia-operacional` | Excelência Operacional |
-| `logistica` | Logística |
-| `manutencao` | Manutenção |
-| `producao` | Produção |
-| `seguranca` | Segurança |
-| `transformacao-digital` | Transformação Digital |
+O guia registra o estado encontrado no repositório. Uma dependência declarada em `requirements.txt` ou `package.json` não comprova instalação nem integração funcional.
 
-`app/templates/home.html` é a referência para esse recorte, e `main.py` continua sendo a fonte de verdade para confirmar quais funcionalidades internas estão ativas. Outros nomes encontrados em telas específicas não ampliam automaticamente o escopo desta primeira home. A inclusão futura de um novo setor será uma alteração explícita e revisável no catálogo.
+### 17.4 Etapa 1 — aproveitar as ferramentas preparadas
 
-A estrutura visual inicial deve conter:
+#### Parte 1 — Frontend já preparado
 
-- Cabeçalho com identidade do Digital JOST e informações mínimas do usuário.
-- Destaque para OP Meeting.
-- Grade ou lista de setores.
-- Cards de funcionalidades dentro de cada setor.
-- Busca que filtre os dados já carregados.
-- Estados de carregamento, ausência de acessos, falha de API e sessão expirada.
-- Navegação por teclado, foco visível e adaptação para celular.
-- Link claro para retornar à home atual.
+Aproveitar o projeto Vue existente, o alias `@`, Vue Router, TanStack Vue Query, Tailwind CSS 4 e os componentes Volt `Button` e `InputText`. Não repetir a criação de `frontend/` nem gerar novamente os componentes existentes.
 
-Favoritos, acessos recentes, ordenação personalizada e edição administrativa do catálogo ficam fora da primeira entrega, pois exigiriam persistência e regras adicionais.
+Preservar a linha de base da família Prime:
 
-### 17.3 Etapa 0 — mapear antes de instalar
-
-Antes de alterar dependências ou criar pastas:
-
-1. Ler `AGENTS.md`, `README.md`, `main.py`, `app/config.py`, a rota e o template da home atual, o menu, os arquivos JavaScript relacionados e `web.config`.
-2. Registrar como o IIS inicia o Flask, serve arquivos estáticos e encaminha URLs hoje.
-3. Mapear os blueprints realmente registrados em `main.py` e os links ativos exibidos pela home atual.
-4. Registrar no catálogo os oito setores da home atual com os identificadores definidos na seção 17.2.
-5. Relacionar cada link ativo a OP Meeting ou a um desses setores, registrando título, descrição, URL, permissão e responsável.
-6. Mapear como a identidade, a área e as roles são obtidas. Tratar `current_user.admin` conforme seu tipo textual real.
-7. Identificar os efeitos transitivos da inicialização, incluindo `db.create_all()`, threads, tokens, logs e conexões externas.
-8. Confirmar as versões instaladas de Python e Node aceitas no ambiente de build e no servidor, sem atualizar dependências automaticamente.
-9. Verificar se `/app/`, `/api/v1/home` e o diretório planejado para assets não conflitam com rotas existentes.
-
-A saída desta etapa é uma tabela do catálogo e um diagrama curto do caminho navegador → IIS → Flask → Vue/API. Nenhuma funcionalidade deve ser inventada para preencher a interface.
-
-### 17.4 Etapa 1 — preparar ferramentas e dependências
-
-Os comandos abaixo representam o fluxo pretendido. Eles só podem ser executados durante a implementação com a autorização exigida pelo `AGENTS.md`, depois de confirmar versões e impacto no projeto.
-
-#### Frontend
-
-Usar uma versão LTS do Node compatível com a versão atual do `create-vue` e do Vite. Registrar a versão escolhida em `.nvmrc` ou mecanismo equivalente e em `package.json`.
-
-Criar o projeto oficial Vue:
-
-```powershell
-npm create vue@latest frontend
-```
-
-Selecionar inicialmente:
-
-| Opção | Escolha inicial |
-| --- | --- |
-| TypeScript | Sim |
-| JSX | Não |
-| Vue Router | Sim |
-| Pinia | Não; adicionar quando houver estado global real |
-| Vitest | Sim |
-| Teste de ponta a ponta | Playwright, quando começar a validação navegável |
-| ESLint | Sim |
-| Prettier | Sim |
-
-Instalar as dependências aprovadas e gerar um lockfile:
-
-```powershell
-Set-Location frontend
-npm install
-npm install tailwindcss @tailwindcss/vite
-npm install --save-exact primevue@4.5.5 primeicons@7.0.0 tailwindcss-primeui@0.6.1
-npm install tailwind-merge
-npm install @tanstack/vue-query
-npx volt-vue@0.0.0-alpha.4 add Button
-npx volt-vue@0.0.0-alpha.4 add InputText
-```
-
-As dependências da família Prime adotam uma linha de base fixa, sem intervalos com `^` ou `~`:
-
-| Dependência ou ferramenta | Versão aprovada | Regra |
+| Dependência ou ferramenta | Versão adotada | Regra |
 | --- | --- | --- |
-| `primevue` | `4.5.5` | Última linha adotada sob MIT; manter a versão exata. |
-| `primeicons` | `7.0.0` | Versão MIT compatível com a linha de base; manter a versão exata. |
-| `tailwindcss-primeui` | `0.6.1` | Versão MIT aprovada para a integração com Tailwind CSS 4; manter a versão exata. |
-| `volt-vue` | `0.0.0-alpha.4` | Usar somente como CLI com a versão explícita no comando. |
+| `primevue` | `4.5.5` | Versão exata. |
+| `primeicons` | `7.0.0` | Versão exata. |
+| `tailwindcss-primeui` | `0.6.1` | Versão exata, sem `^` ou `~`. |
+| `volt-vue` | `0.0.0-alpha.4` | CLI somente com versão explícita. |
 
-PrimeVue 5, PrimeIcons 8 e versões posteriores sujeitas à licença PrimeUI não entram nesta arquitetura sem uma nova decisão explícita de licenciamento. Não atualizar as dependências da família Prime automaticamente. Toda mudança nessa linha de base exige revisar a licença, a compatibilidade, o lockfile e os componentes Volt mantidos no repositório.
+O guia aponta a diferença observada em `tailwindcss-primeui`, declarado com `^` no estado examinado; a correção do manifesto e a atualização controlada do lockfile pertencem à futura implementação autorizada. Não atualizar para PrimeVue 5, PrimeIcons 8 ou dependências sujeitas à licença PrimeUI sem nova decisão explícita de licenciamento.
 
-O Tailwind deve usar o plugin oficial `@tailwindcss/vite`. O CSS principal importa `tailwindcss` e `tailwindcss-primeui`:
+Manter PrimeVue com `{ unstyled: true }`, os imports de `tailwindcss` e `tailwindcss-primeui` e PrimeIcons local. Não instalar `@primeuix/themes` ou adicionar todos os componentes Volt. O mapa `shared/icons/home.ts` existente pode permanecer; não é uma dependência da nova feature de eventos.
 
-```css
-@import "tailwindcss";
-@import "tailwindcss-primeui";
-```
+Para Eventos, adicionar sob demanda `Card`, `Textarea`, `Dialog`, `Message`, `Skeleton` e `Paginator`, além dos auxiliares realmente importados, como `SecondaryButton`. O [guia de Eventos, seção 2](guia-primeira-feature-eventos.md#2-aproveite-o-que-já-existe), apresenta os comandos com CLI fixada, a conferência de compatibilidade das APIs com PrimeVue 4.5.5 e a licença MIT dessa versão, que permite uso comercial sem compra de licença. Preservar os avisos exigidos e revisar os arquivos baixados: fixar a versão da CLI não garante uma revisão fixa dos wrappers Volt.
 
-O bootstrap do Vue configura o PrimeVue uma única vez com `{ unstyled: true }`. Os componentes Volt ficam em `frontend/src/volt/` e são adicionados somente quando usados, com `npx volt-vue@0.0.0-alpha.4 add <Componente>`. `Button` e `InputText` formam o ponto de partida da home; diálogo, drawer, tooltip, badge, avatar ou skeleton entram quando o desenho comprovar a necessidade. Não usar `add all` nem copiar antecipadamente o catálogo inteiro.
+As recomendações de componentes para as próximas features e seus comandos de download estão na [seção 11.2](#112-componentes-recomendados-para-as-próximas-features). Adicioná-los conforme o uso, mantendo o escopo inicial de Eventos.
 
-Antes de adicionar um componente Volt, confirmar que o componente base é exportado por `primevue@4.5.5`. Depois do comando, revisar o diff, os imports e qualquer alteração no `package.json` e no `package-lock.json`. O componente só permanece se usar APIs disponíveis nessa linha de base e não introduzir `@primeui/license-manager`, PrimeVue 5, PrimeIcons 8 ou outra dependência sujeita à licença PrimeUI. Registrar a versão de origem junto da alteração para que a compatibilidade possa ser conferida novamente.
+#### Parte 2 — Backend e pré-requisitos de execução
 
-O projeto não instala `@primeuix/themes`, pois a aparência será controlada por Tailwind, pelas variáveis do `tailwindcss-primeui` e pelos componentes Volt mantidos no repositório.
+APIFlask, Pydantic e Pydantic Settings já constam no `requirements.txt` examinado. Revisar a versão Python aceita pelo IIS, a factory e a compatibilidade com Flask-Login, Flask-Principal, handlers HTML e blueprints antigos antes de integrar as APIs novas.
 
-```ts
-import PrimeVue from 'primevue/config'
-import 'primeicons/primeicons.css'
+Instalações futuras usam exclusivamente a `.venv` do projeto e arquivos de dependências versionados. A criação do ambiente, instalação, testes, lint e builds continuam dependentes da autorização exigida pelo `AGENTS.md`; este roteiro não autoriza esses comandos.
 
-app.use(PrimeVue, {
-  unstyled: true,
-})
-```
+Diferentemente da proposta anterior da home, Eventos precisa de schema e escrita. Planejar a evolução versionada do banco no ambiente isolado, usando a ferramenta de migrations aprovada ou scripts SQL revisados com aplicação explícita. Não usar `db.create_all()` para implantar o cadastro.
 
-Confirmar também o alias `@` apontando para `frontend/src`, pois os componentes serão importados como `@/volt/Button.vue` e equivalentes.
+### 17.5 Etapa 2 — estabelecer a estrutura usada por eventos
 
-Criar o mapa inicial em `shared/icons/home.ts` sem montar nomes de classe dinamicamente:
+Criar `app/modules/events/` com `__init__.py`, `routes.py`, `schemas.py`, `services.py` e `repository.py`. O guia adota SQLAlchemy Core com SQL parametrizado para este cadastro pequeno; `models.py` entra se a implementação optar por ORM. Não manter duas implementações de persistência para a mesma operação.
 
-```ts
-export const homeIcons = {
-  home: 'pi pi-home',
-  search: 'pi pi-search',
-  settings: 'pi pi-cog',
-  maintenance: 'pi pi-wrench',
-} as const
+No frontend, criar `features/events/` com página, componentes, tipos e adaptadores real e simulado. Usar `app/` para shell e roteamento, `shared/styles/` para tokens e `shared/api/` para HTTP e erros. Aproveitar os arquivos já existentes sem reorganizar o legado.
 
-export type HomeIcon = keyof typeof homeIcons
-```
+Registrar módulos novos de forma explícita em `app/modules/__init__.py`. A factory compõe as dependências depois de carregar a configuração; imports apenas definem funções, classes e blueprints.
 
-O tipo consumido pela Home deve usar `HomeIcon`. O schema do backend valida o mesmo conjunto conceitual, e novos ícones entram por alteração explícita nos dois contratos.
+### 17.6 Etapa 3 — construir a interface simulada
 
-O TanStack Vue Query é justificado nesta entrega para controlar carregamento, cache, erro e renovação do endpoint da home. Pinia continua fora enquanto o estado puder permanecer na URL, na query ou dentro dos componentes.
+Seguir primeiro a parte visual do guia: tokens, shell, card, formulário e página. Usar eventos fictícios e criação em memória, com o mesmo contrato da API futura. Essa simulação perde os dados ao recarregar e fica limitada à configuração de desenvolvimento; não pode ser ativada pelo navegador em produção.
 
-#### Backend
+Usar o padrão visual proposto como base revisável do Digital JOST: azul do portal, superfícies claras, laranja como destaque, tipografia legível e controles com foco visível. O guia detalha medidas, cores, hierarquia e componentes. A identidade existente serve de referência; aprovação visual depende da revisão humana e das verificações autorizadas.
 
-Usar `pip` exclusivamente dentro da `.venv` criada na raiz do repositório. Adicionar `.venv/` ao `.gitignore`; o ambiente virtual não entra no Git. Antes da instalação, preservar `requirements.txt`, levantar a versão de Python aceita pelo IIS e registrar as novas dependências de produção com versões compatíveis e fixadas. Quando as ferramentas de desenvolvimento forem introduzidas, registrá-las em `requirements-dev.txt`, que pode incluir `-r requirements.txt` para reutilizar a base.
+### 17.7 Etapa 4 — isolar antes de persistir
 
-O fluxo pretendido no PowerShell é:
+Concluir ambiente próprio de desenvolvimento e homologação antes de executar o backend, consultar a API real ou cadastrar eventos. Controlar `db.create_all()`, threads iniciadas no import, token externo, logs, autenticação e jobs. Credenciais de desenvolvimento não devem acessar produção.
 
-```powershell
-Set-Location <raiz-do-repositorio>
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-```
+Revisar referências qualificadas entre bancos, procedures, views, triggers e caminhos. O cadastro pertence ao banco da aplicação definido para Eventos, não automaticamente ao Jost Integration PRD. Consultas corporativas futuras podem seguir a seção 7.1.1.
 
-Usar o executável da `.venv` diretamente evita instalar pacotes no Python global mesmo quando o ambiente não estiver ativado no terminal. A ativação com `.\.venv\Scripts\Activate.ps1` continua opcional para os comandos interativos seguintes.
+### 17.8 Etapa 5 — implementar contrato, persistência e API
 
-As dependências de produção propostas para a API nova são APIFlask, Pydantic e Pydantic Settings. Ruff e pytest ficam nas dependências de desenvolvimento. Os nomes acima devem ser acrescentados aos respectivos arquivos antes dos comandos de instalação; não usar instalações avulsas sem refletir a mudança nos arquivos versionados.
-
-APIFlask e Pydantic devem entrar primeiro por uma integração pequena e reversível. Antes de trocar a classe usada pela factory, verificar estaticamente o impacto sobre blueprints, Flask-Login, Flask-Principal, error handlers, redirects e páginas Jinja. Caso a integração exija uma mudança global na criação da aplicação, separar essa mudança e demonstrar como o comportamento antigo será preservado.
-
-Não instalar Alembic ou criar migrations apenas para a home, pois essa entrega não altera schema. As ferramentas de teste, lint e build podem ser configuradas, mas sua execução continua condicionada ao ambiente seguro e às autorizações do repositório.
-
-### 17.5 Etapa 2 — estabelecer a estrutura-base definitiva
-
-Criar a casa definitiva do código moderno, implementando somente os elementos usados pela home. Um diretório planejado para o futuro permanece representado na arquitetura deste documento, mas só deve ser criado fisicamente quando contiver documentação ou código real; o Git não preserva diretórios vazios e arquivos fictícios apenas criariam ruído.
-
-```text
-DigitalJost/
-├── main.py                         # entrada do IIS e registro do legado durante o piloto
-├── web.config
-├── requirements.txt
-├── requirements-dev.txt
-├── app/
-│   ├── modules/
-│   │   ├── __init__.py             # registro explícito dos módulos modernos
-│   │   └── home/
-│   │       ├── __init__.py
-│   │       ├── routes.py
-│   │       ├── schemas.py
-│   │       ├── services.py
-│   │       └── catalog.py
-│   └── platform/
-│       ├── __init__.py             # inicializa somente os recursos existentes
-│       ├── auth/
-│       ├── permissions/
-│       └── errors/
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── router/
-│   │   │   └── layouts/
-│   │   ├── volt/                   # componentes adicionados pelo CLI do Volt
-│   │   ├── features/
-│   │   │   └── home/
-│   │   │       ├── pages/
-│   │   │       ├── components/
-│   │   │       ├── __tests__/
-│   │   │       ├── api.ts
-│   │   │       └── types.ts
-│   │   └── shared/
-│   │       ├── api/
-│   │       │   ├── client.ts
-│   │       │   └── errors.ts
-│   │       ├── components/
-│   │       ├── icons/
-│   │       │   └── home.ts         # mapa de identificadores semânticos para PrimeIcons
-│   │       └── styles/
-│   │           ├── main.css
-│   │           └── tokens.css
-│   └── e2e/
-│       └── home.spec.ts
-└── tests/
-    └── backend/
-        └── modules/
-            └── home/               # somente testes reais da home
-```
-
-`catalog.py` descreve OP Meeting, os oito setores e suas funcionalidades ativas usando identificadores estáveis. `services.py` combina o catálogo com a identidade e as permissões. Não criar `repository.py` ou `models.py`, pois a home não possui persistência nem precisa consultar a lista de setores. Se for necessário acessar outro mecanismo legado, usar um adaptador explícito em vez de importar handlers antigos.
-
-Em `platform/`, implementar apenas o mínimo necessário para identidade, autorização e respostas de erro da nova API. Não mover o código atual inteiro para essas pastas nesta etapa.
-
-`app/modules/__init__.py` deve registrar a home de maneira explícita e será o ponto de inclusão das próximas features modernas. A factory chama esse registro depois de carregar a configuração e inicializar as extensões. `main.py` continua registrando os blueprints legados durante esta etapa; não mover todos esses imports como parte da home.
-
-No frontend, aplicar estas regras desde o início:
-
-```text
-configuração e bootstrap global → app/
-funcionalidade específica       → features/
-recurso usado por várias telas  → shared/
-```
-
-`shared/api/client.ts` executa as requisições e interpreta as respostas comuns. `shared/api/errors.ts` diferencia `401`, `403`, `404`, `500`, falha de rede e HTML inesperado. `features/home/api.ts` conhece somente o endpoint e os tipos da home. Essa separação já é justificada pela primeira entrega e passa a ser reutilizada pelas próximas features.
-
-As pastas de banco, migrations, auditoria, arquivos, notificações, integrações e jobs continuam com lugar definido na estrutura de referência, mas não recebem implementação ou arquivos de reserva nesta etapa. Elas serão materializadas quando um cadastro ou workflow comprovar o padrão necessário.
-
-### 17.6 Etapa 3 — construir primeiro com dados simulados
-
-O frontend deve conseguir evoluir sem conexão com o backend ou com o banco de produção. Criar um contrato de exemplo sem nomes, acessos ou dados reais de funcionários. A amostra deve conter os mesmos oito setores do catálogo versionado. A simulação deve ser ativada apenas por configuração de desenvolvimento incluída no build local e não pode ser ligada por query string ou parâmetro recebido do navegador.
-
-Construir nesta ordem:
-
-1. Tokens de cor, tipografia, espaçamento, borda, sombra e foco.
-2. `AppShell`, cabeçalho e navegação responsiva.
-3. Seção de OP Meeting.
-4. Grade dos oito setores e componentes de card, incluindo o estado sem ferramentas disponíveis.
-5. Busca local pelo catálogo carregado.
-6. Estados vazio, carregando, erro e sessão expirada.
-7. Página de rota não encontrada dentro do prefixo Vue.
-8. Testes dos componentes e da filtragem, quando sua execução estiver autorizada.
-
-Os componentes devem representar conceitos reais. Evitar um `AppDataTable` universal ou componentes que recebam dezenas de opções para atender casos ainda inexistentes.
-
-### 17.7 Etapa 4 — criar a API real da home
-
-Criar `GET /api/v1/home` com schema de saída explícito. A resposta conceitual deve ter este formato:
-
-```text
-HomeResponse
-├── user
-│   ├── displayName
-│   └── area
-├── opMeeting
-│   └── modules[]
-└── sectors[]
-    ├── id
-    ├── name
-    └── modules[]
-        ├── id
-        ├── title
-        ├── description
-        ├── icon
-        └── url
-```
-
-O backend deve:
-
-1. Resolver a identidade a partir da sessão autenticada no servidor.
-2. Carregar de `catalog.py` os oito setores e as associações de funcionalidades, sem consultar o banco.
-3. Manter os oito setores na resposta e filtrar apenas os módulos internos conforme as permissões do usuário.
-4. Associar funcionalidades aos identificadores estáveis do catálogo, evitando depender de variações textuais como `Engenharia de Processo` e `Engenharia de Processos`.
-5. Retornar somente os campos necessários à home.
-6. Usar identificadores semânticos de ícones presentes em uma lista permitida, como `maintenance` ou `settings`; não retornar HTML nem classes `pi` pelo backend.
-7. Validar que cada URL pertence ao próprio sistema e corresponde a uma rota ativa.
-8. Retornar erros JSON previsíveis para sessão ausente, acesso negado e falha inesperada.
-9. Não aceitar usuário, área, role, administrador ou permissões enviados pelo frontend.
-10. Não consultar indicadores ou dados operacionais para preencher a home.
-
-O catálogo filtrado controla apenas a navegação. Cada rota de destino continua responsável por autorizar seu próprio acesso. A ausência de módulos em um dos oito setores não elimina esse setor da resposta.
-
-### 17.8 Etapa 5 — integrar Vite, Flask e assets
-
-Durante desenvolvimento autorizado, o Vite pode servir os assets e encaminhar `/api/` para o Flask isolado. Em produção, o Vite gera arquivos estáticos; Node não deve permanecer executando no servidor.
-
-Configurar o build com nomes versionados e `manifest: true`. O Flask usa o manifesto do Vite para incluir os arquivos JavaScript e CSS corretos no template de entrada. O pacote publicado deve conter apenas os assets gerados e as dependências necessárias à aplicação.
-
-A integração deve preservar estes limites:
-
-- Vue vive sob `/app/`.
-- A API nova vive sob `/api/v1/`.
-- Assets possuem um prefixo próprio, como `/static/app/`.
-- O fallback da SPA atende somente URLs de `/app/`.
-- `/api/`, páginas antigas e arquivos inexistentes não podem ser convertidos silenciosamente na home Vue.
-- O HTML de entrada e o manifesto não devem receber cache longo; assets com hash podem receber cache longo.
-
-Preferir que o próprio Flask entregue o shell autenticado para `/app/` e para as subrotas conhecidas. Se o IIS precisar de URL Rewrite, criar uma regra limitada ao prefixo `/app/` depois de confirmar que o módulo existe. Não copiar uma regra global de SPA que capture todo o Digital JOST.
-
-### 17.9 Etapa 6 — ativação controlada
-
-Adicionar uma configuração explícita, desabilitada por padrão, como `NEW_HOME_ENABLED`. Acrescentar uma permissão ou lista de grupo piloto resolvida pelo servidor. A configuração apenas controla disponibilidade; ela não substitui autenticação e autorização.
-
-Na primeira publicação:
-
-1. Manter `/` e o destino atual após login apontando para a home antiga.
-2. Não incluir o link da nova home no menu geral para todos os usuários.
-3. Disponibilizar `/app/` somente ao grupo piloto autorizado.
-4. Exibir dentro da nova home um retorno claro para a versão atual.
-5. Registrar falhas técnicas sem armazenar dados desnecessários do usuário.
-6. Permitir desligar a nova entrada sem interromper as páginas antigas.
-
-Depois da aprovação funcional e técnica, uma entrega posterior pode tornar a nova home o destino padrão. A home antiga deve receber uma URL explícita antes dessa troca e permanecer disponível durante o período de transição definido pelo responsável.
-
-### 17.10 Etapa 7 — validar em camadas
-
-Cada camada possui verificações próprias e não deve ser marcada como concluída com evidência de outra camada.
-
-| Camada | Verificações principais |
+| Operação | Contrato |
 | --- | --- |
-| Estática | Estrutura, imports, rotas, contratos, permissões, referências do catálogo, diff e ausência de segredos. |
-| Frontend isolado | Layout, busca, estados, teclado, responsividade e tipos usando dados simulados. |
-| Backend isolado | Sessão, autorização, schemas, erros, ausência de efeitos externos e contrato consumido pelo Vue. |
-| Homologação | Integração real permitida, caminhos, cache, logs e comportamento próximo ao IIS de produção. |
-| IIS do Digital JOST | Autenticação Windows, `/app/`, recarga de subrotas, assets, MIME types, cache, permissões e convivência com URLs antigas. |
+| Listar | `GET /api/v1/events?page=1&per_page=12`, ordenação estável, limite máximo de 100 e retorno paginado. |
+| Criar | `POST /api/v1/events` com `name` e `description`; resposta `201` com `id`, `name` e `description`. |
+| Nome | Obrigatório; remover espaços nas extremidades; entre 3 e 120 caracteres. |
+| Descrição | Obrigatória; remover espaços nas extremidades; entre 1 e 2.000 caracteres. |
+| Permissões | `events.read` e `events.create`, mapeadas no servidor para os acessos existentes. |
 
-Para validar no IIS do Digital JOST, preparar uma publicação controlada e reversível. A autorização deve identificar o pacote, a configuração, o grupo piloto, a janela de implantação e o responsável pelo retorno. Verificar pelo menos:
+Esses limites são a proposta inicial do cadastro e precisam ser confirmados com o responsável na implementação. Nomes iguais são permitidos inicialmente; o identificador distingue os eventos.
 
-- Home antiga, login e menus continuam funcionando.
-- Usuário fora do piloto não acessa a nova home nem sua API.
-- OP Meeting e os oito setores do catálogo são exibidos; cada setor contém somente os módulos permitidos.
-- Links levam às rotas existentes corretas.
-- Recarregar `/app/` e suas subrotas não produz 404.
-- JavaScript, CSS, fontes e ícones carregam pelo mesmo domínio.
-- Respostas da API não são confundidas com redirects HTML de login.
-- Desligar a configuração remove a nova entrada sem afetar o legado.
-- Nenhuma nova escrita, migration, notificação ou consulta operacional foi introduzida.
+Rotas interpretam HTTP e contratos. O serviço autoriza, coordena a transação e fornece os metadados de criação. O repositório recebe a conexão e executa SQL parametrizado sem commit próprio. Aplicar CSRF ao POST, responder erros em JSON na API e preservar o comportamento das páginas Jinja.
 
-A presença da home no servidor comprova compatibilidade apenas com o escopo verificado. Ela não valida ainda a arquitetura de persistência, transações ou jobs.
+### 17.9 Etapa 6 — integrar frontend, Flask e IIS
 
-### 17.11 Etapa 8 — aprovar ou corrigir o padrão
+Trocar somente o adaptador de eventos simulado pelo real. Usar Vue Query para carregar páginas e invalidar a listagem depois do cadastro. Não enviar identidade, roles, área ou privilégios pelo formulário.
 
-Ao final da primeira fatia, classificar a arquitetura com evidências:
+Planejar o roteador Vue com base `/app/` e os assets de produção sob `/static/app/`, com manifesto compatível com os caminhos usados pelo Flask. O guia distingue a base do Vite no desenvolvimento (`/app/`) e no build (`/static/app/`), preservando a base de navegação. O fallback da SPA atende apenas rotas conhecidas de `/app/`; APIs, arquivos ausentes e URLs legadas preservam suas respostas próprias. Node não permanece executando no servidor de produção.
 
-| Situação | Significado |
-| --- | --- |
-| Implementado | Possui código real usado pela home, como registro de módulos, identidade, permissões, erros, cliente HTTP, estrutura Vue, tokens, roteamento e feature flag. |
-| Validado | Foi exercitado na camada declarada: frontend isolado, backend isolado, homologação ou IIS. Implementado não significa automaticamente validado. |
-| Lugar definido | A responsabilidade tem destino na estrutura de referência, mas ainda não possui implementação, como database, migrations, auditoria, arquivos, notificações, integrações e jobs. |
-| Padrão ainda não comprovado | Depende de uma feature posterior para confirmar o desenho, como transações, concorrência, outbox e autorização por registro. |
+### 17.10 Etapa 7 — validar e ativar de forma controlada
 
-Registrar também:
+Validar estrutura e contratos estaticamente. Com autorização específica, verificar frontend simulado, backend isolado, homologação e IIS separadamente. Incluir sessão, acesso negado, CSRF, limites dos campos, rollback, paginação, caracteres acentuados, prevenção de HTML injetado, clique repetido e retorno à home atual.
 
-- Quantidade e finalidade dos arquivos criados.
-- Código repetido que merece virar recurso compartilhado.
-- Abstrações que não reduziram trabalho e devem ser removidas.
-- Dificuldades de build, autenticação, API, Tailwind, Volt, PrimeVue unstyled e IIS.
-- Comportamentos que ficaram acoplados ao legado.
-- Resultado das verificações e riscos ainda pendentes.
-- Classificação `LEGACY`, `HYBRID` ou `MODERN` da nova home e dos módulos afetados.
+Adicionar `EVENTS_ENABLED`, desabilitado por padrão, e grupo piloto resolvido no servidor. Proteger o shell de eventos e sua API; desligar a configuração impede novas operações sem excluir registros já criados. A publicação requer pacote, janela, responsável e plano de retorno que considere schema e dados.
 
-A home só define o padrão das próximas features depois dessa revisão. O gerador de módulos continua adiado até existirem duas ou três funcionalidades modernas que confirmem a mesma estrutura.
+### 17.11 Etapa 8 — avaliar o padrão
 
-### 17.12 Próximo passo após a home
+Registrar o que foi implementado e o que foi validado em cada ambiente. Eventos deve demonstrar uma fatia completa de UI, contratos, autorização, CSRF, persistência e transação. A confirmação do padrão visual e da integração não comprova ainda workflows de chamada, concorrência de edição ou notificações.
 
-Com a nova home aprovada no IIS, a próxima prioridade é concluir o ambiente de desenvolvimento e homologação isolado. Somente depois disso iniciar um cadastro simples com operações de escrita. Esse cadastro validará CSRF, autorização por registro, SQLAlchemy, transações, migrations e auditoria sem usar o banco de produção como ambiente de desenvolvimento.
+Extrair recursos compartilhados quando houver fundamentos da plataforma ou consumidores reais. Adiar o gerador até duas ou três features confirmarem a organização; não criar abstrações e arquivos vazios para funcionalidades futuras.
 
-A sequência de longo prazo continua sendo: home nova → isolamento completo → cadastro simples → workflow real → consolidação da plataforma → gerador de features → migração contínua do legado.
+### 17.12 Próximas entregas
+
+Depois da aprovação de Eventos, escolher um segundo cadastro para conferir o reuso da base. O módulo de chamada evolui mediante definição de participantes, presença, permissões e regras de cada operação. A modernização da home permanece uma entrega posterior.
+
+A sequência passa a ser: interface de eventos simulada → isolamento completo → cadastro persistente de eventos → piloto no IIS → segunda feature e workflow real → consolidação da plataforma → gerador de features → migração contínua do legado.

@@ -7,6 +7,8 @@ Portal interno da JOST para operações industriais, solicitações, gestão, mo
 ## Documentação principal
 
 - [AGENTS.md](AGENTS.md) — regras obrigatórias de segurança, contexto arquitetural, roteiro de análise estática e fluxo remoto de Git.
+- [Arquitetura e modernização](docs/arquitetura-modernizacao.md) — decisões, organização e roteiro de adoção progressiva.
+- [Guia da primeira feature: Eventos](docs/guia-primeira-feature-eventos.md) — tutorial de cards e cadastro de nome e descrição na arquitetura nova.
 
 O próprio código é a fonte de verdade para detalhes funcionais. Comece por `main.py` e rastreie a rota, o template, o JavaScript, as tabelas e os jobs envolvidos.
 
