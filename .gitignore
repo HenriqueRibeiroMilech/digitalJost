@@ -6,6 +6,9 @@ __pycache__/
 .github
 .venv
 
+# Build local do Vue servido pelo Flask
+/app/static/app/
+
 
 *.log
 log/
