@@ -1,0 +1,58 @@
+@theme {
+  --font-sans: "Montserrat", "Segoe UI", sans-serif;
+  --color-dj-brand: #163a8a;
+  --color-dj-accent: #ef7b04;
+  --color-dj-canvas: #f4f6fa;
+  --color-dj-ink: #182337;
+  --color-dj-muted: #526078;
+  --color-dj-border: #d7dfea;
+  --color-dj-danger: #b42318;
+
+  --color-primary: #163a8a;
+  --color-primary-emphasis: #123174;
+  --color-primary-emphasis-alt: #0e285f;
+  --color-primary-contrast: #ffffff;
+  --color-primary-50: #eef3fc;
+  --color-primary-100: #dce6f8;
+  --color-primary-200: #b9cdee;
+  --color-primary-300: #92aee2;
+  --color-primary-400: #6688ca;
+  --color-primary-500: #4166b2;
+  --color-primary-600: #285099;
+  --color-primary-700: #163a8a;
+  --color-primary-800: #123174;
+  --color-primary-900: #0e285f;
+  --color-primary-950: #081937;
+
+  --color-surface-0: #ffffff;
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-200: #e2e8f0;
+  --color-surface-300: #cbd5e1;
+  --color-surface-400: #94a3b8;
+  --color-surface-500: #64748b;
+  --color-surface-600: #475569;
+  --color-surface-700: #334155;
+  --color-surface-800: #1e293b;
+  --color-surface-900: #0f172a;
+  --color-surface-950: #020617;
+}
+
+body {
+  margin: 0;
+  background: var(--color-dj-canvas);
+  color: var(--color-dj-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-dj-brand);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
