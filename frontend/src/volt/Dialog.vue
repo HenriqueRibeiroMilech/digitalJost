@@ -7,7 +7,7 @@
         }"
     >
         <template #closebutton="{ closeCallback }">
-            <SecondaryButton variant="text" rounded @click="closeCallback" autofocus>
+            <SecondaryButton variant="text" rounded aria-label="Fechar cadastro" @click="closeCallback" autofocus>
                 <template #icon>
                     <TimesIcon />
                 </template>
