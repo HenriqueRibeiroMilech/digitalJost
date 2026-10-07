@@ -10,9 +10,11 @@ import os
 import json
 from datetime import datetime, timedelta
 
+from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
-from flask import Flask, request, g
+from apiflask import APIFlask
+from flask import request, g
 from flask_login import current_user, LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_principal import Principal, RoleNeed, UserNeed, Identity, identity_loaded
@@ -36,6 +38,8 @@ class Config:
     Define variáveis de ambiente, banco de dados, email, sessão, etc.
     """
     SQLALCHEMY_DATABASE_URI = URL.create("mssql+pyodbc", query={"odbc_connect": CNNX_JDT})
+    EVENTS_ENABLED = os.getenv("EVENTS_ENABLED", "").lower() in ("1", "true", "yes")
+    EVENTS_DATABASE_URI = os.getenv("EVENTS_DATABASE_URI")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
@@ -71,7 +75,7 @@ def create_app():
         app (Flask): Instância configurada do Flask
     """
 
-    app = Flask(__name__)
+    app = APIFlask(__name__, json_errors=False)
     app.jinja_env.globals['user_has_role'] = user_has_role
 
     # DEFINIÇÃO DO DIRETÓRIO DE FUNCIONAMENTO DO CÓDIGO
@@ -232,6 +236,19 @@ def create_app():
 
     # REGISTRA OS HANDLERS DE ERRO
     register_error_handlers(app)
+
+    if app.config["EVENTS_ENABLED"]:
+        if not app.config["EVENTS_DATABASE_URI"]:
+            raise RuntimeError("EVENTS_DATABASE_URI é obrigatória quando Eventos está habilitado.")
+        from app.modules.events.routes import GeneralEventsPermissions
+        from app.modules.events.services import EventsService
+        app.extensions["events_service"] = EventsService(
+            create_engine(app.config["EVENTS_DATABASE_URI"], pool_pre_ping=True),
+            GeneralEventsPermissions(),
+        )
+
+    from app.modules import register_modules
+    register_modules(app)
 
     return app
 
