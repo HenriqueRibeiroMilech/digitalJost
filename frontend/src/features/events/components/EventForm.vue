@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import Button from '@/volt/Button.vue'
 import InputText from '@/volt/InputText.vue'
 import Message from '@/volt/Message.vue'
 import Textarea from '@/volt/Textarea.vue'
 import type { EventCreate } from '../types'
 
-const props = defineProps<{ busy: boolean; serverError: string }>()
+const props = defineProps<{
+  busy: boolean
+  serverError: string
+  fieldErrors: Record<keyof EventCreate, string>
+}>()
 const emit = defineEmits<{
   submit: [payload: EventCreate]
   cancel: []
@@ -14,6 +18,8 @@ const emit = defineEmits<{
 const fields = reactive({ name: '', description: '' })
 const errors = reactive({ name: '', description: '' })
 const formElement = ref<HTMLFormElement | null>(null)
+const nameError = computed(() => errors.name || props.fieldErrors.name)
+const descriptionError = computed(() => errors.description || props.fieldErrors.description)
 
 function submit() {
   if (props.busy) return
@@ -43,22 +49,22 @@ function submit() {
     <div class="mt-6">
       <label for="event-name" class="mb-2 block text-sm font-medium">Nome</label>
       <InputText id="event-name" v-model="fields.name" class="w-full"
-        autofocus required :maxlength="120" :invalid="Boolean(errors.name)" :disabled="busy"
-        :aria-invalid="Boolean(errors.name)"
-        :aria-describedby="errors.name ? 'event-name-error' : undefined" />
-      <Message v-if="errors.name" id="event-name-error" severity="error" variant="simple"
-        size="small" class="mt-2">{{ errors.name }}</Message>
+        autofocus required :maxlength="120" :invalid="Boolean(nameError)" :disabled="busy"
+        :aria-invalid="Boolean(nameError)"
+        :aria-describedby="nameError ? 'event-name-error' : undefined" />
+      <Message v-if="nameError" id="event-name-error" severity="error" variant="simple"
+        size="small" class="mt-2">{{ nameError }}</Message>
     </div>
 
     <div class="mt-4">
       <label for="event-description" class="mb-2 block text-sm font-medium">Descrição</label>
       <Textarea id="event-description" v-model="fields.description" :rows="4" auto-resize
-        required :maxlength="2000" :invalid="Boolean(errors.description)" :disabled="busy"
-        :aria-invalid="Boolean(errors.description)"
-        :aria-describedby="errors.description ? 'event-description-error' : undefined"
+        required :maxlength="2000" :invalid="Boolean(descriptionError)" :disabled="busy"
+        :aria-invalid="Boolean(descriptionError)"
+        :aria-describedby="descriptionError ? 'event-description-error' : undefined"
         class="w-full" />
-      <Message v-if="errors.description" id="event-description-error" severity="error"
-        variant="simple" size="small" class="mt-2">{{ errors.description }}</Message>
+      <Message v-if="descriptionError" id="event-description-error" severity="error"
+        variant="simple" size="small" class="mt-2">{{ descriptionError }}</Message>
     </div>
 
     <Message v-if="serverError" severity="error" class="mt-4">

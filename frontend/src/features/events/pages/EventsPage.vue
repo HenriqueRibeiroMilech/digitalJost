@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { ApiError } from '@/shared/api/client'
 import Button from '@/volt/Button.vue'
 import Dialog from '@/volt/Dialog.vue'
 import Message from '@/volt/Message.vue'
@@ -16,9 +17,10 @@ const perPage = 12
 const showForm = ref(false)
 const feedback = ref('')
 const submitError = ref('')
+const fieldErrors = ref({ name: '', description: '' })
 const newEventAction = ref<HTMLElement | null>(null)
 const queryClient = useQueryClient()
-const { data, isPending: loading, isError, refetch } = useQuery({
+const { data, isPending: loading, isError, error: listError, refetch } = useQuery({
   queryKey: ['events', page],
   queryFn: () => eventsApi.list(page.value, perPage),
   retry: false,
@@ -27,10 +29,20 @@ const { mutateAsync, isPending: saving } = useMutation({
   mutationFn: eventsApi.create,
   retry: false,
 })
+const listStatus = computed(() => listError.value instanceof ApiError ? listError.value.status : 0)
+
+function fieldMessage(detail: unknown, field: 'name' | 'description'): string {
+  if (typeof detail !== 'object' || detail === null) return ''
+  const json = (detail as Record<string, unknown>).json
+  if (typeof json !== 'object' || json === null) return ''
+  const messages = (json as Record<string, unknown>)[field]
+  return Array.isArray(messages) && typeof messages[0] === 'string' ? messages[0] : ''
+}
 
 function openForm() {
   feedback.value = ''
   submitError.value = ''
+  fieldErrors.value = { name: '', description: '' }
   showForm.value = true
 }
 
@@ -55,9 +67,17 @@ function changePage(event: { page: number }) {
 async function createEvent(payload: EventCreate) {
   if (saving.value) return
   submitError.value = ''
+  fieldErrors.value = { name: '', description: '' }
   try {
     await mutateAsync(payload)
   } catch (error) {
+    if (error instanceof ApiError && error.status === 422) {
+      fieldErrors.value = {
+        name: fieldMessage(error.detail, 'name'),
+        description: fieldMessage(error.detail, 'description'),
+      }
+      if (fieldErrors.value.name || fieldErrors.value.description) return
+    }
     submitError.value = error instanceof Error ? error.message : 'Não foi possível criar o evento.'
     return
   }
@@ -96,8 +116,16 @@ async function createEvent(payload: EventCreate) {
       </div>
     </div>
     <div v-else-if="isError">
-      <Message severity="error" class="mb-4">Não foi possível carregar os eventos.</Message>
-      <Button type="button" label="Tentar novamente" outlined @click="refetch()" />
+      <Message severity="error" class="mb-4">
+        {{ listStatus === 401 ? 'Sua sessão expirou. Acesse novamente o portal.'
+          : listStatus === 403 ? 'Você não tem permissão para ver os eventos.'
+          : listStatus === 404 ? 'Eventos não está disponível para seu acesso.'
+          : 'Não foi possível carregar os eventos.' }}
+      </Message>
+      <a v-if="[401, 403, 404].includes(listStatus)" href="/" class="text-primary underline">
+        Voltar ao portal
+      </a>
+      <Button v-else type="button" label="Tentar novamente" outlined @click="refetch()" />
     </div>
     <div v-else-if="data?.items.length === 0" class="rounded-xl border border-dj-border bg-white p-8">
       <h2 class="text-lg font-semibold">Nenhum evento cadastrado</h2>
@@ -119,6 +147,7 @@ async function createEvent(payload: EventCreate) {
       aria-describedby="event-form-help"
       @update:visible="updateDialogVisibility" @after-hide="restoreFocus">
       <EventForm v-if="showForm" :busy="saving" :server-error="submitError"
+        :field-errors="fieldErrors"
         @submit="createEvent" @cancel="closeForm" />
     </Dialog>
   </section>
