@@ -10,7 +10,6 @@ import os
 import json
 from datetime import datetime, timedelta
 
-from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
 from apiflask import APIFlask
@@ -39,7 +38,6 @@ class Config:
     """
     SQLALCHEMY_DATABASE_URI = URL.create("mssql+pyodbc", query={"odbc_connect": CNNX_JDT})
     EVENTS_ENABLED = os.getenv("EVENTS_ENABLED", "").lower() in ("1", "true", "yes")
-    EVENTS_DATABASE_URI = os.getenv("EVENTS_DATABASE_URI")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
@@ -218,6 +216,14 @@ def create_app():
         # CRIA O ACESSO À BASE DE DADOS
         db.create_all()
 
+        if app.config["EVENTS_ENABLED"]:
+            from app.modules.events.routes import GeneralEventsPermissions
+            from app.modules.events.services import EventsService
+            app.extensions["events_service"] = EventsService(
+                db.engine,
+                GeneralEventsPermissions(),
+            )
+
         # REGISTRA AS ROTAS "main" (PARA FUNÇÕES GERAIS) E "auth" (PARA FUNÇÕES DE AUTENTICAÇÃO COMO LOGIN E LOGOUT)
         app.register_blueprint(main)
         app.register_blueprint(auth)
@@ -236,16 +242,6 @@ def create_app():
 
     # REGISTRA OS HANDLERS DE ERRO
     register_error_handlers(app)
-
-    if app.config["EVENTS_ENABLED"]:
-        if not app.config["EVENTS_DATABASE_URI"]:
-            raise RuntimeError("EVENTS_DATABASE_URI é obrigatória quando Eventos está habilitado.")
-        from app.modules.events.routes import GeneralEventsPermissions
-        from app.modules.events.services import EventsService
-        app.extensions["events_service"] = EventsService(
-            create_engine(app.config["EVENTS_DATABASE_URI"], pool_pre_ping=True),
-            GeneralEventsPermissions(),
-        )
 
     from app.modules import register_modules
     register_modules(app)
