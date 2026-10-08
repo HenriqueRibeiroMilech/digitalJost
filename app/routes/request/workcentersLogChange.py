@@ -77,6 +77,13 @@ class _CurrentStatusMatchError(Exception):
     pass
 
 
+def _normalize_plex_status_group(value):
+    status = str(value).strip()
+    if status in {'Manutenção Parada', 'Manutenção Produtiva'}:
+        return 'Manutenção'
+    return status
+
+
 def _current_user_is_admin():
     admin_value = str(getattr(current_user, 'admin', '')).strip().lower()
     return admin_value in {'1', 'true', 'yes'} or get_permission('SYSADMIN').can()
@@ -323,9 +330,9 @@ def _find_current_status_stop(check_request, events):
 
 
 def _update_current_status_stop(current_status_id, new_motive):
-    new_status = str(new_motive['Workcenter_Event_Group']).strip()
-    if new_status in {'Manutenção Parada', 'Manutenção Produtiva'}:
-        new_status = 'Manutenção'
+    new_status = _normalize_plex_status_group(
+        new_motive['Workcenter_Event_Group']
+    )
 
     is_planned_stop = new_status == 'Programada'
     query = """
@@ -1106,13 +1113,15 @@ def stopChanges_manage():
         elif str(current_user.id) not in [str(check_request['approver1'][0]), str(check_request['approver2'][0])] and not is_admin:
             abort(403)
         
-        elif check_request['finalDate'][0] == 'None':
+        elif pd.notna(check_request['finalDate'][0]):
             return render_template('request.stopChanges/stopChanges_alert_end.html'), 403
         
-        elif not is_admin and str(check_request['approver1'][0]) == str(current_user.id) and check_request['approverStatus1'][0] != 0:
-            abort(403)
-
-        elif not is_admin and str(check_request['approver2'][0]) == str(current_user.id) and check_request['approverStatus2'][0] != 0:
+        elif not is_admin and not (
+            (str(check_request['approver1'][0]) == str(current_user.id)
+             and check_request['approverStatus1'][0] == 0)
+            or (str(check_request['approver2'][0]) == str(current_user.id)
+                and check_request['approverStatus2'][0] == 0)
+        ):
             abort(403)
 
         elif is_admin and approval_scope not in {'transformationDigital', 'admin'}:
@@ -1205,7 +1214,8 @@ def stopChanges_manage():
 
                 else:
 
-                    if userId == str(check_request['approver1'][0]):
+                    if (userId == str(check_request['approver1'][0])
+                            and check_request['approverStatus1'][0] == 0):
                         query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
                                         approverStatus1 = 1, 
                                         approverDate1 = GETDATE() 
@@ -1213,7 +1223,8 @@ def stopChanges_manage():
                                         requestId = {received_data['requestId']}"""
                         cnnx.execute(text(query))
 
-                    if userId == str(check_request['approver2'][0]):
+                    if (userId == str(check_request['approver2'][0])
+                            and check_request['approverStatus2'][0] == 0):
                         query = f"""UPDATE JDT_REQUEST_STOPCHANGES SET 
                                         approverStatus2 = 1, 
                                         approverDate2 = GETDATE() 
@@ -1234,7 +1245,7 @@ def stopChanges_manage():
 
                 if not check_request['approverStatus1'] or not check_request['approverStatus2']:
                     cnnx.commit()
-                    return 'REQUEST APPROVED.', 200
+                    return 'Aprovacao registrada. A solicitacao aguarda outra area.', 202
 
                 if check_request['plex']:
 
@@ -1250,12 +1261,19 @@ def stopChanges_manage():
                         cnnx.rollback()
                         return str(error), 409
 
+                    new_status_group = _normalize_plex_status_group(
+                        newMotivePlex['Workcenter_Event_Group']
+                    )
+                    if new_status_group not in status_key:
+                        cnnx.rollback()
+                        return 'GRUPO DO NOVO MOTIVO NAO SUPORTADO PELO PLEX.', 409
+
                     payload = {
                         'inputs' : {
                             'Log_Key': f"{check_request['eventId'].astype(int)}"
                             , 'Workcenter_Event_Key' : f"{newMotivePlex['Workcenter_Event_Key']}"
                             , 'Workcenter_Key' : f"{check_request['workcenter']}"
-                            , 'Workcenter_Status_Key' : f"{status_key[newMotivePlex['Workcenter_Event_Group']]}"
+                            , 'Workcenter_Status_Key' : f"{status_key[new_status_group]}"
                             , 'Log_Hours': check_request['logHours']
                             , 'Reviewed': 1
                         }

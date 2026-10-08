@@ -320,6 +320,7 @@
         const adminTableData = JSON.parse({{ adminTable | tojson }});
         let tableData = transformationDigitalTableData;
         let pendingScope = 'transformationDigital';
+        let sendingRequest = false;
 
         function changePendingScope(scope) {
             pendingScope = scope;
@@ -353,33 +354,50 @@
         }
 
 
-        function sendData(requestId, type) {
+        async function sendData(requestId, type) {
 
             if (type == 'denied' && document.getElementById('deniedText').value.length <= 5) {
                 alert('É necessário escrever um texto para recusar uma solicitação.')
                 return
             }
 
-            showLoading()
-            
-            fetch('/oee/paradas/alterar/pendencias', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    requestId: requestId,
-                    type: type,
-                    deniedText: document.getElementById('deniedText').value,
-                    scope: pendingScope
-                })
-            })
-            .then(response => {
+            if (sendingRequest) return;
+            sendingRequest = true;
+            showLoading();
+
+            try {
+                const response = await fetch('/oee/paradas/alterar/pendencias', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        requestId: requestId,
+                        type: type,
+                        deniedText: document.getElementById('deniedText').value,
+                        scope: pendingScope
+                    })
+                });
+                const message = (await response.text()).trim();
+
+                if (!response.ok) {
+                    const reason = message && !message.startsWith('<')
+                        ? message
+                        : `Erro HTTP ${response.status} ao processar a solicitação.`;
+                    throw new Error(reason);
+                }
+
+                if (response.status === 202) {
+                    alert(message);
+                }
                 window.location.reload()
-            })
-            .catch(error => {
+            } catch (error) {
+                alert(`Solicitação ${requestId}: ${error.message}`);
                 console.error('Error:', error);
-            });
+            } finally {
+                sendingRequest = false;
+                hideLoading();
+            }
         }
 
         function populateTable(data) {
