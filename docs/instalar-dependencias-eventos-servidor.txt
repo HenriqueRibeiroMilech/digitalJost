@@ -1,0 +1,1 @@
+"I:\IIS\Digital_Jost\.venv\Scripts\python.exe" -m pip --disable-pip-version-check install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-eventos" --only-binary=:all: "APIFlask==3.1.2" "pydantic==2.13.5" "Flask==3.1.1" "Werkzeug==3.1.3"
