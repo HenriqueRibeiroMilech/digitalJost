@@ -72,12 +72,12 @@
             <t><i class="far fa-list-alt"></i> Demandas</t>
             <a href="/demandas?area=Engenharia de Dev. de Fornecedores">Engenharia de Dev. de <br>Fornecedores</a>
             <a href="/demandas?area=Engenharia de Processo">Engenharia de Processo</a>
-            <a href="/demandas?area=Transformação Digital">Transformação Digital</a>
+            <!-- <a href="/demandas?area=Transformação Digital">Transformação Digital</a> -->
+            {% if can_manage_digital_demands %}
+                <a href="{{ url_for('demand_management.management_page', area='Transformação Digital', view='demands') }}">Transformação Digital</a>
+            {% endif %}
             <a href="/demandas?area=Manutenção">Manutenção</a>
             <a href="/demandas?area=SSMA">SSMA</a>
-            {% if can_manage_digital_demands %}
-                <a href="{{ url_for('demand_management.management_page', area='Transformação Digital', view='demands') }}">Gerenciador de Demandas</a>
-            {% endif %}
         </div>
 
         <div id="tdg_sidebar" class="sidebar">
