@@ -4,9 +4,9 @@
 
 Simplificar o desenvolvimento de novas funcionalidades e a revisão das existentes, separando o Python moderno em `backend/` e mantendo o código antigo em `app/` durante a transição. A migração deve preservar os fluxos operacionais do Digital JOST e acontecer em entregas pequenas, com critérios de passagem e retorno definidos.
 
-A proposta mantém inicialmente uma aplicação Flask/APIFlask no Windows/IIS, a autenticação e a sessão atuais, o frontend Vue em `frontend/` e um acesso compartilhado ao banco da Transformação Digital (TD).
+A proposta mantém inicialmente uma aplicação Flask/APIFlask no Windows/IIS, a autenticação e a sessão atuais, o frontend Vue em `frontend/` e um acesso ao banco da Transformação Digital (TD) compartilhado entre os módulos modernos.
 
-Este arquivo registra o plano discutido; não implementa a separação nem autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
+Este arquivo registra o plano discutido e as entregas implementadas nas seções 9 e 10; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
 
 ## 2. Decisões que orientam a implementação
 
@@ -17,7 +17,7 @@ Este arquivo registra o plano discutido; não implementa a separação nem autor
 | Frontend novo | Permanece em `frontend/`, com Vue. |
 | Aplicação em produção | Uma aplicação no IIS, registrando módulos antigos e modernos. |
 | Banco TD na primeira entrega | Transferir Eventos reutilizando `db.engine`, sem criar outro pool durante a mudança de localização. |
-| Banco TD como destino da arquitetura | Dar ao `backend/` configuração e um engine/pool próprios em uma entrega posterior, compartilhados por todos os módulos modernos e apontando inicialmente para o mesmo banco TD do legado. |
+| Banco TD na entrega 2 | Configuração e engine/pool próprios em `backend/`, compartilhados por todos os módulos modernos e apontando para o mesmo banco TD do legado. Implementado no código; verificação funcional pendente. |
 | Banco no desenvolvimento | Manter por enquanto o banco corporativo atualmente utilizado, por decisão do responsável. O isolamento fica como trabalho futuro, sem bloquear a separação do código. |
 | Autenticação | Reutilizar a identidade corporativa e a sessão atuais por uma ponte explícita. |
 | Eventos | Funcionalidade normal, registrada e composta na inicialização. O acesso é controlado pela sessão e pelas permissões existentes, sem chave específica de ativação. |
@@ -51,7 +51,7 @@ Um engine/pool gerencia as conexões necessárias ao banco TD. Todos os módulos
 Primeira entrega
     acesso atual ao TD → legado e Eventos em backend/
 
-Entrega posterior
+Entrega 2 (implementada no código)
     app/ → infraestrutura atual de acesso ──────┐
                                                ├── mesmo banco TD
     backend/ → engine/pool moderno compartilhado┘
@@ -61,9 +61,9 @@ Entrega posterior
 
 Cada funcionalidade continua tendo seu repositório, porque suas consultas e seus dados precisam de um responsável. Repositórios separados não significam conexões ou pools separados.
 
-O ponto de partida já permite esse começo: `EventsService` recebe um engine, e `app/config.py` fornece `db.engine`. O repositório de Eventos recebe a conexão; o serviço controla a transação de escrita com `engine.begin()`. A transferência preserva essa dependência, fornecida explicitamente ao bootstrap moderno.
+Na primeira entrega, `EventsService` recebeu o `db.engine` fornecido por `app/config.py`. Na entrega 2, a factory fornece apenas a configuração efetiva de destino do TD; `backend/bootstrap.py` cria o engine moderno pelo ponto central da plataforma e o injeta no serviço. O repositório continua recebendo a conexão e o serviço controla a transação de escrita com `engine.begin()`.
 
-O legado também contém outros mecanismos de acesso em `app/utils/db_utils.py`, além de acessos a FTM, Plex e Trace QR. Portanto, reutilizar `db.engine` inicialmente não significa que todo o sistema já tenha um único pool. Na entrega posterior, acrescentar o acesso moderno exige dimensionar o conjunto de pools existentes. As outras fontes de dados continuam distintas.
+O legado também contém outros mecanismos de acesso em `app/utils/db_utils.py`, além de acessos a FTM, Plex e Trace QR. Portanto, reutilizar `db.engine` inicialmente não significa que todo o sistema já tenha um único pool. A entrega 2 acrescenta um pool moderno limitado por padrão a cinco conexões por instância da aplicação; dimensionar o conjunto de pools e processos ainda exige verificação no ambiente autorizado. As outras fontes de dados continuam distintas.
 
 A duplicidade temporária é da infraestrutura de acesso, mantendo o mesmo banco e os mesmos dados. Ela permite revisar a base moderna sem alterar todos os consumidores antigos juntos. Os acessos antigos só serão retirados após a migração dos respectivos consumidores.
 
@@ -71,7 +71,7 @@ Não compartilhar uma conexão permanentemente aberta entre requisições, nem t
 
 ## 4. Estrutura inicial e direção de dependências
 
-A primeira entrega precisa apenas da estrutura utilizada por Eventos:
+A estrutura após a entrega 2 inclui o acesso geral ao TD utilizado por Eventos e pelos próximos módulos:
 
 ```text
 digitalJost/
@@ -80,6 +80,10 @@ digitalJost/
 ├── backend/
 │   ├── __init__.py
 │   ├── bootstrap.py              # composição e registro explícitos do moderno
+│   ├── config.py                 # configuração própria do pool; destino recebido
+│   ├── platform/
+│   │   ├── __init__.py
+│   │   └── database.py           # engine geral do TD e ciclo de vida
 │   └── modules/
 │       ├── __init__.py
 │       └── events/
@@ -91,7 +95,7 @@ digitalJost/
 └── frontend/                     # aplicação Vue existente
 ```
 
-Depois, conforme as responsabilidades forem extraídas, `backend/platform/` recebe mecanismos de identidade, CSRF, banco e entrega do shell Vue. `backend/compatibility/` concentra os adaptadores temporários do legado. Não criar essas pastas com arquivos vazios apenas para completar uma árvore.
+O banco já está em `backend/platform/`. Depois, conforme as responsabilidades forem extraídas, essa pasta recebe mecanismos de identidade, CSRF e entrega do shell Vue. `backend/compatibility/` concentrará os adaptadores temporários do legado. Não criar essas pastas com arquivos vazios apenas para completar uma árvore.
 
 Regras de dependência:
 
@@ -150,6 +154,8 @@ A primeira transferência deve preservar as bibliotecas e versões já utilizada
 6. Documentar o ciclo de vida do engine, a configuração utilizada e o retorno para a composição anterior.
 
 **Critério de passagem:** os módulos modernos têm um acesso geral próprio, com configuração explícita e pool dimensionado; o legado preserva seus acessos e os dois lados continuam no banco TD aprovado. Essa etapa não faz parte da primeira transferência de arquivos.
+
+**Situação da entrega 2:** implementada e revisada estaticamente, conforme a seção 10. O limite inicial está definido no código; sua adequação à carga e ao número de processos do IIS ainda não foi verificada. A implementação não significa aprovação da publicação nem conclusão da verificação funcional.
 
 ### Etapa 3 — organizar as pontes e a base compartilhada
 
@@ -277,7 +283,7 @@ Essa entrega estabelece a fronteira do Python moderno e preserva o funcionamento
 | Dependências temporárias | As rotas ainda usam a sessão atual e `app.utils.permissions`; a extração de adaptadores fica para a etapa correspondente. |
 | Banco | A primeira entrega mantém o engine atual e as mesmas operações em `DJ_EVENTS`. O acesso próprio do backend será implementado na etapa 2. |
 
-As referências Python ativas aos caminhos antigos foram atualizadas. Nenhum encaminhamento temporário foi necessário em `app/modules/`. Os guias e o registro de ambientes mantêm seus exemplos históricos; o fluxo atual é o descrito nesta seção.
+As referências Python ativas aos caminhos antigos foram atualizadas. Nenhum encaminhamento temporário foi necessário em `app/modules/`. Os guias e o registro de ambientes mantêm seus exemplos históricos. Esta seção registra a primeira entrega; a composição atual de banco está na seção 10.
 
 O bootstrap fornece o serviço em `app.extensions["events_service"]`, mantendo o contrato que as rotas já utilizam. O registro dos módulos antigos em `main.py`, os caminhos de template/assets, o frontend, as dependências, as permissões, o token de sessão CSRF e os limites de transação permanecem com seu desenho anterior.
 
@@ -290,3 +296,72 @@ Para retornar, restaurar o `app/config.py` e o pacote `app/modules/` da versão 
 A validação desta entrega inclui busca de referências, inspeção da composição, comparação textual dos seis arquivos transferidos com a versão anterior e revisão do diff. Não houve imports, execução, instalação, build, consulta ao banco ou publicação. O funcionamento no IIS ainda precisa ser confirmado pelo responsável no escopo autorizado.
 
 O sistema não foi executado; a validação foi somente estática. Este documento não comprova funcionamento no IIS, isolamento dos ambientes, persistência ou equivalência funcional do legado.
+
+## 10. Registro da entrega 2
+
+**Situação:** acesso geral próprio do backend ao TD implementado e conferido estaticamente. O banco corporativo aprovado é mantido. A verificação funcional, a capacidade do pool e a publicação no IIS permanecem pendentes de ambiente, janela e escopo autorizados.
+
+### Composição e responsabilidades
+
+```text
+app/config.py
+    ├── mantém Flask-SQLAlchemy e demais acessos antigos
+    └── fornece o destino efetivo do TD para BackendConfig
+            → backend/bootstrap.py
+                → backend/platform/database.py
+                    → engine/pool moderno único na aplicação
+                        → EventsService
+                        → próximos serviços modernos
+```
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `backend/config.py` | `BackendConfig` recebe o destino do TD explicitamente e lê as opções próprias de pool do ambiente durante a composição. |
+| `backend/platform/database.py` | `init_td_database(app, config)` cria o engine uma vez e o mantém em `app.extensions["backend_td_engine"]`. Uma segunda inicialização na mesma aplicação é recusada. |
+| `backend/bootstrap.py` | `init_backend(app, config=...)` obtém o engine central, fornece-o ao serviço e registra os módulos. |
+| `app/config.py` | Fornece `app.config["SQLALCHEMY_DATABASE_URI"]` ao backend; deixa de fornecer `db.engine` a Eventos. |
+
+A origem do destino e das credenciais ainda é a configuração atual da aplicação, por uma ponte explícita. Essa dependência temporária evita copiar segredos ou alterar o banco aprovado; a configuração do pool e a criação do engine já pertencem ao backend. `backend/config.py` e a plataforma de banco não importam `app/config.py`, constantes de credenciais ou engines antigos. O destino não aparece na representação textual de `BackendConfig`.
+
+Eventos continua sendo uma funcionalidade normal. Nenhuma configuração de banco é específica de Eventos. Para acrescentar outro módulo, seu serviço recebe o mesmo `td_engine` na composição; não se cria um engine dentro de suas rotas, serviço ou repositório.
+
+### Opções do pool moderno
+
+Todas as variáveis abaixo são opcionais e afetam somente o engine moderno. Sem defini-las, a configuração utiliza os padrões:
+
+| Variável de ambiente | Padrão | Significado |
+| --- | --- | --- |
+| `BACKEND_TD_POOL_SIZE` | `5` | Máximo de conexões mantidas pelo pool; inteiro positivo. |
+| `BACKEND_TD_MAX_OVERFLOW` | `0` | Conexões extras simultâneas; inteiro maior ou igual a zero. |
+| `BACKEND_TD_POOL_TIMEOUT` | `30` | Segundos de espera por uma conexão disponível; inteiro positivo. |
+| `BACKEND_TD_POOL_RECYCLE` | `1800` | Idade em segundos a partir da qual uma conexão é reciclada no próximo uso; inteiro positivo. |
+
+O limite de conexões simultâneas do `QueuePool` é `POOL_SIZE + MAX_OVERFLOW`. O padrão permite até cinco por instância da aplicação, criadas conforme o uso; não abre cinco conexões na inicialização. Com uma instância por processo, quatro processos poderiam acrescentar até vinte conexões aos pools antigos. O número real de processos e a capacidade total não foram confirmados. Esse limite se refere ao pool SQLAlchemy; o pooling interno do driver pyodbc não foi alterado. Referência: [configuração de pools do SQLAlchemy](https://docs.sqlalchemy.org/en/20/core/pooling.html#connection-pool-configuration).
+
+Valores inválidos impedem a composição da aplicação com uma mensagem que identifica a opção, sem reproduzir seu valor. Não são aceitas opções que liberem um pool ilimitado. Como legado e moderno ainda compartilham a aplicação, uma configuração moderna inválida também impede a inicialização do portal; conferir as variáveis antes da publicação. Com todas ausentes, os padrões são utilizados.
+
+`pool_pre_ping=True` permite verificar a conexão ao retirá-la do pool. `hide_parameters=True` oculta parâmetros SQL nas mensagens geradas pelo engine, mas não substitui cuidados com credenciais, URLs e logs da aplicação.
+
+### Ciclo de vida e transações
+
+Os módulos de configuração e banco definem classes e funções; não criam engines ao serem importados. A criação ocorre explicitamente no bootstrap e não faz consulta, migration ou `create_all()`. A conexão efetiva acontece quando o serviço utiliza `engine.connect()` ou `engine.begin()`, conforme o [contrato de `create_engine()`](https://docs.sqlalchemy.org/en/20/core/engines.html#sqlalchemy.create_engine).
+
+O engine permanece durante a vida da aplicação e não é descartado em cada request. As operações devolvem suas conexões ao pool ao sair dos contextos existentes. Na composição, registra-se `engine.dispose()` via `atexit` para liberar conexões ociosas no encerramento normal do processo; encerramentos forçados do IIS podem não executar esse callback. Esse mecanismo não controla o reinício do IIS e não fecha à força operações ainda em uso.
+
+As consultas, URLs, contratos, sessão, permissões e CSRF de Eventos permanecem como antes. A leitura continua em `engine.connect()` e a criação em `engine.begin()`, com commit ou rollback no limite da operação. Conexões dos engines antigo e moderno não formam uma transação conjunta. Quando uma operação exigir atomicidade, seus repositórios devem receber a mesma conexão/transação.
+
+O `db.create_all()` e os efeitos globais existentes da factory legada permanecem fora desta entrega. Separar o engine moderno não torna a inicialização completa da aplicação isolada dos recursos corporativos.
+
+### Publicação e retorno
+
+Preparar `backend/` completo, com `config.py` e `platform/`, e o `app/config.py` atualizado no mesmo pacote. As bibliotecas SQLAlchemy e pyodbc já são dependências existentes; esta entrega não altera `requirements.txt`. O frontend compatível, o shell, `main.py` e `web.config` mantêm os caminhos atuais. Não é necessário um novo build Vue nem definir variáveis para aceitar os padrões do pool.
+
+Seguir a janela e o procedimento manual da seção 6.1. Antes da liberação, o responsável precisa verificar no ambiente autorizado o destino efetivo do TD, os processos do IIS, a disponibilidade do driver, os fluxos de Eventos e do legado e a adequação do limite adicional. Gravações e verificações de rollback exigem escopo explícito. Nenhuma dessas verificações foi executada pelo agente.
+
+Para retornar especificamente da entrega 2, restaurar juntos `app/config.py` e o pacote `backend/` da versão anterior à entrega 2. Essa versão mantém Eventos em `backend/modules/events/`, mas volta a fornecer `db.engine` pela composição anterior, sem restaurar a chave de ativação removida. Não há conversão de schema ou dados.
+
+### Validação desta entrega
+
+A revisão estática confere a criação central do engine, os limites de configuração, a injeção em Eventos, a ausência de inicialização no import e de descarte por request, a preservação textual dos serviços/repositórios/rotas e o diff completo. Não houve instalação, import, execução, consulta, alteração de dados ou publicação.
+
+**O sistema não foi executado; a validação foi somente estática.** O funcionamento e o dimensionamento no IIS dependem de verificação em ambiente autorizado.

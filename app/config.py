@@ -215,8 +215,6 @@ def create_app():
         # CRIA O ACESSO À BASE DE DADOS
         db.create_all()
 
-        td_engine = db.engine
-
         # REGISTRA AS ROTAS "main" (PARA FUNÇÕES GERAIS) E "auth" (PARA FUNÇÕES DE AUTENTICAÇÃO COMO LOGIN E LOGOUT)
         app.register_blueprint(main)
         app.register_blueprint(auth)
@@ -237,7 +235,13 @@ def create_app():
     register_error_handlers(app)
 
     from backend.bootstrap import init_backend
-    init_backend(app, td_engine=td_engine)
+    from backend.config import BackendConfig
+    init_backend(
+        app,
+        config=BackendConfig.from_env(
+            td_database_uri=app.config["SQLALCHEMY_DATABASE_URI"],
+        ),
+    )
 
     return app
 

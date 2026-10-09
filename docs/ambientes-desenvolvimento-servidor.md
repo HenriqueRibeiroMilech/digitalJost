@@ -6,7 +6,7 @@ Registro atualizado em **09/10/2026**, com base nas informações fornecidas pel
 
 Este documento registra o ambiente atual e o procedimento manual combinado. As restrições de execução por agentes continuam definidas em [AGENTS.md](../AGENTS.md).
 
-**Evolução posterior do código:** Eventos foi transferido para `backend/modules/events/` e a chave `EVENTS_ENABLED` foi removida. O registro abaixo conserva o procedimento da época; seus caminhos `app/modules/` e instruções de ativação não descrevem o fluxo atual. Consulte o [plano de separação](plano-separacao-backend-legado.md#9-registro-da-primeira-entrega) para a composição e a publicação atuais.
+**Evolução posterior do código:** Eventos foi transferido para `backend/modules/events/` e a chave `EVENTS_ENABLED` foi removida. A entrega 2 introduz configuração e engine/pool próprios do backend moderno, para o mesmo banco TD configurado na aplicação. O registro abaixo conserva o procedimento da época; seus caminhos `app/modules/` e instruções de ativação não descrevem o fluxo atual. Consulte o [registro da entrega 2](plano-separacao-backend-legado.md#10-registro-da-entrega-2) para a composição, as opções de pool e a publicação preparadas no código. Essa evolução ainda não foi verificada no servidor.
 
 ## 1. Ambiente de desenvolvimento
 
