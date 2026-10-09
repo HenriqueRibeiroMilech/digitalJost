@@ -3,6 +3,7 @@
 
 def init_backend(app, *, config):
     from .platform.database import init_td_database
+    from .platform.vue_shell import init_vue_shell
     from .modules import register_modules
     from .modules.events.routes import GeneralEventsPermissions
     from .modules.events.services import EventsService
@@ -13,4 +14,5 @@ def init_backend(app, *, config):
         GeneralEventsPermissions(),
     )
 
+    init_vue_shell(app)
     register_modules(app)

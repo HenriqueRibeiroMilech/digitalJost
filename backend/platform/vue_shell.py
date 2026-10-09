@@ -3,11 +3,26 @@
 import json
 from pathlib import Path
 
-from flask import current_app, make_response, render_template, url_for
+from flask import Blueprint, current_app, make_response, render_template, url_for
+from jinja2 import PrefixLoader
+
+
+def init_vue_shell(app):
+    resources = Blueprint(
+        "backend_vue",
+        "backend",
+        static_folder="static/app",
+        static_url_path="/static/app",
+        template_folder="templates",
+    )
+    # O prefixo distingue o shell moderno de eventuais cópias no legado.
+    resources.jinja_loader = PrefixLoader({"backend": resources.jinja_loader})
+    app.register_blueprint(resources)
 
 
 def _manifest_assets():
-    manifest_path = Path(current_app.static_folder) / "app" / ".vite" / "manifest.json"
+    static_folder = current_app.blueprints["backend_vue"].static_folder
+    manifest_path = Path(static_folder) / ".vite" / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     entry = manifest["index.html"]
     stylesheets = []
@@ -15,7 +30,7 @@ def _manifest_assets():
 
     def collect(chunk):
         for filename in chunk.get("css", []):
-            stylesheet = url_for("static", filename=f"app/{filename}")
+            stylesheet = url_for("backend_vue.static", filename=filename)
             if stylesheet not in stylesheets:
                 stylesheets.append(stylesheet)
         for key in chunk.get("imports", []):
@@ -24,7 +39,7 @@ def _manifest_assets():
                 collect(manifest[key])
 
     collect(entry)
-    return url_for("static", filename=f"app/{entry['file']}"), stylesheets
+    return url_for("backend_vue.static", filename=entry["file"]), stylesheets
 
 
 def render_vue_shell(*, title, csrf_token_provider, unavailable_message):
@@ -34,7 +49,7 @@ def render_vue_shell(*, title, csrf_token_provider, unavailable_message):
     except (OSError, KeyError, ValueError):
         return unavailable_message, 503
     response = make_response(render_template(
-        "app/shell.html",
+        "backend/app/shell.html",
         title=title,
         csrf_token=csrf_token_provider(),
         entry_script=entry_script,

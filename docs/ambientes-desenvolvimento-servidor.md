@@ -6,9 +6,13 @@ Registro atualizado em **09/10/2026**, com base nas informações fornecidas pel
 
 Este documento registra o ambiente atual e o procedimento manual combinado. As restrições de execução por agentes continuam definidas em [AGENTS.md](../AGENTS.md).
 
+As informações do servidor são o relato da época. As instruções de build, os caminhos de recursos e a lista de arquivos da publicação foram atualizados para o código preparado na entrega 3b; isso não registra uma publicação nem uma verificação posterior no IIS.
+
 **Evolução posterior do código:** Eventos foi transferido para `backend/modules/events/` e a chave `EVENTS_ENABLED` foi removida. A entrega 2 introduz configuração e engine/pool próprios do backend moderno, para o mesmo banco TD configurado na aplicação. O registro abaixo conserva o procedimento da época; seus caminhos `app/modules/` e instruções de ativação não descrevem o fluxo atual. Consulte o [registro da entrega 2](plano-separacao-backend-legado.md#10-registro-da-entrega-2) para a composição, as opções de pool e a publicação preparadas no código. Essa evolução ainda não foi verificada no servidor.
 
 **Entrega 3a:** a leitura do manifesto e a renderização do shell Vue passaram para `backend/platform/vue_shell.py`. Os caminhos de template/assets foram preservados; o template recebe o título da funcionalidade. As rotas de Eventos, o renderizador e o template precisam ser publicados juntos, conforme o [registro da entrega 3a](plano-separacao-backend-legado.md#11-registro-da-entrega-3a). Esta extração ainda não foi verificada no servidor.
+
+**Entrega 3b:** o template passa para `backend/templates/app/shell.html` e o build para `backend/static/app/`. O blueprint moderno mantém a URL `/static/app/`. Preparar o build inteiro no novo destino e publicar junto com o bootstrap e o renderizador, conforme o [registro da entrega 3b](plano-separacao-backend-legado.md#12-registro-da-entrega-3b). Essa versão ainda não foi verificada no servidor.
 
 ## 1. Ambiente de desenvolvimento
 
@@ -29,9 +33,9 @@ O código-fonte Vue fica em `frontend/`. Para publicar pelo Flask, o responsáve
 npm run build:local
 ```
 
-O script executa a verificação TypeScript e o build Vite, gravando o resultado em `app/static/app/`. A base dos arquivos no build é `/static/app/`; no servidor de desenvolvimento Vite, a base é `/app/`.
+O script executa a verificação TypeScript e o build Vite. O destino definido em `frontend/vite.config.ts` é `backend/static/app/`, a partir da entrega 3b. A base dos arquivos no build é `/static/app/`; no servidor de desenvolvimento Vite, a base é `/app/`.
 
-A pasta `app/static/app/` está ignorada pelo Git. Ela precisa ser gerada e enviada junto com os arquivos do backend em cada publicação que altere o frontend.
+A pasta `backend/static/app/` está ignorada pelo Git. Ela precisa ser gerada e enviada inteira junto com os arquivos do backend. Um build existente compatível pode ser transferido inteiro para o novo destino; copiar somente os arquivos versionados não inclui o build. A pasta antiga `app/static/app/` continua ignorada como destino histórico, mas o shell moderno não a utiliza.
 
 ## 2. Servidor e acesso
 
@@ -91,15 +95,15 @@ Os pacotes binários enviados na listagem, como `pyodbc.cp313-win_amd64.pyd`, in
 
 O código-fonte de `frontend/` é transformado pelo build em arquivos servidos pelo Flask. Node e npm são usados no computador que prepara esse build; o procedimento adotado não inicia um processo Node no servidor.
 
-O template `app/templates/app/shell.html` contém o elemento onde o Vue monta a interface, o token CSRF e os links para os arquivos do build. No servidor, seu caminho é:
+O template `backend/templates/app/shell.html` contém o elemento onde o Vue monta a interface, o token CSRF e os links para os arquivos do build. No pacote preparado para o servidor, seu destino é:
 
 ```text
-I:\IIS\Digital_Jost\app\templates\app\shell.html
+I:\IIS\Digital_Jost\backend\templates\app\shell.html
 ```
 
-O backend lê `app/static/app/.vite/manifest.json` e usa a entrada `index.html` para encontrar os arquivos. É necessário copiar a pasta de build inteira, incluindo `.vite` e todos os recursos do mesmo build.
+O backend lê `backend/static/app/.vite/manifest.json` e usa a entrada `index.html` para encontrar os arquivos. O blueprint `backend_vue` serve esse diretório em `/static/app/` e disponibiliza o template pelo nome `backend/app/shell.html`, distinguindo-o da cópia anterior no legado. É necessário copiar a pasta de build inteira, incluindo `.vite` e todos os recursos do mesmo build. As demais pastas de recursos do legado permanecem em `app/`.
 
-### Configuração da aplicação
+### Configuração da aplicação registrada na época
 
 A versão nova de `app/config.py`:
 
@@ -118,7 +122,7 @@ Para habilitar Eventos pelo IIS, a entrada combinada deve ficar dentro de `<http
 
 Sem essa variável, Eventos fica desabilitado por padrão. APIFlask e Pydantic continuam necessários para carregar a versão nova do código, mesmo com Eventos desabilitado.
 
-### Banco e acesso
+### Banco e acesso registrados na época
 
 - O banco corporativo de referência foi informado como `TRANSFORMAÇÃODIGITAL_JOST`.
 - A conexão reutilizada é `CNNX_JDT`, configurada em `SQLALCHEMY_DATABASE_URI`; Eventos recebe a engine existente `db.engine`.
@@ -189,19 +193,19 @@ Não é necessário ativar a `.venv` para esses comandos. No servidor, o comando
 
 ## 7. Arquivos da publicação
 
-Todos os caminhos abaixo são relativos a `I:\IIS\Digital_Jost`:
+Lista atualizada para o pacote da entrega 3b. Todos os caminhos abaixo são relativos a `I:\IIS\Digital_Jost`; essa lista orienta uma publicação futura e não comprova que os arquivos já foram copiados:
 
 | Arquivo ou pasta | Ação |
 |---|---|
-| `app/config.py` | Atualizar com a configuração que integra Eventos |
-| `app/modules/` | Copiar inteira, incluindo `__init__.py` e todos os arquivos de `events/` |
-| `app/templates/app/shell.html` | Copiar o template |
-| `app/static/app/` | Copiar o build inteiro, incluindo `.vite/manifest.json` |
-| `web.config` | Acrescentar a variável de ativação, preservando a configuração existente do IIS |
+| `app/config.py` | Preservar a ponte atual de composição e o destino aprovado do TD |
+| `backend/` | Copiar o pacote completo, incluindo bootstrap, plataforma, módulos e templates |
+| `backend/templates/app/shell.html` | Incluir o template no pacote moderno |
+| `backend/static/app/` | Copiar o build inteiro, incluindo `.vite/manifest.json`; essa pasta é ignorada pelo Git |
+| `web.config` | Preservar a configuração efetiva do IIS; Eventos não exige variável de ativação |
 
 `main.py` continua sendo o ponto de entrada e não precisou ser alterado para registrar Eventos: a integração é feita em `create_app()`.
 
-A pasta `frontend/` pode acompanhar a publicação como código-fonte. O funcionamento depende também do build em `app/static/app/`. Copiar `requirements.txt` apenas registra as dependências; não as instala.
+A pasta `frontend/` pode acompanhar a publicação como código-fonte. O funcionamento depende também do build em `backend/static/app/`. Copiar `requirements.txt` apenas registra as dependências; não as instala. Guardar o pacote anterior, incluindo o build completo no destino anterior, para o retorno previsto no plano de separação.
 
 Para novas atualizações, guardar uma cópia dos arquivos substituídos, parar o site durante a cópia, preservar a `.venv`, os uploads e as configurações corporativas, e reiniciar o processo da aplicação pelo IIS. Antes de reiniciar o pool, confirmar quais aplicações o utilizam.
 

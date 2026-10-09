@@ -6,7 +6,7 @@ Simplificar o desenvolvimento de novas funcionalidades e a revisão das existent
 
 A proposta mantém inicialmente uma aplicação Flask/APIFlask no Windows/IIS, a autenticação e a sessão atuais, o frontend Vue em `frontend/` e um acesso ao banco da Transformação Digital (TD) compartilhado entre os módulos modernos.
 
-Este arquivo registra o plano discutido e as entregas implementadas nas seções 9 a 11; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
+Este arquivo registra o plano discutido e as entregas implementadas nas seções 9 a 12; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
 
 ## 2. Decisões que orientam a implementação
 
@@ -36,7 +36,7 @@ O documento [Ambientes de desenvolvimento e servidor](ambientes-desenvolvimento-
 | O responsável informou que o portal funcionou após instalar as dependências de Eventos. | Usar esse relato como histórico de funcionamento; a cobertura das verificações não foi detalhada. |
 | O responsável informou que `DJ_EVENTS` já foi criada. | A transferência de Eventos não prevê recriar a tabela nem executar o script SQL. |
 | A publicação acontece por cópia manual de arquivos no servidor Windows/IIS. | Preparar um pacote completo e copiar os arquivos relacionados na mesma janela, com o site parado. |
-| O build Vue é preparado no PC e entregue em `app/static/app/`. | Preservar esse destino inicialmente; a pasta é ignorada pelo Git e precisa acompanhar publicações que alterem o frontend. |
+| O build Vue foi inicialmente entregue em `app/static/app/`. | A entrega 3b muda o destino para `backend/static/app/`, mantendo `/static/app/`. O build é ignorado pelo Git e precisa acompanhar o pacote publicado. |
 | A configuração publicada pode diferir da versionada. | Conferir as opções de inicialização relevantes no servidor, preservando as demais configurações. |
 
 A chave `EVENTS_ENABLED` descrita no registro de ambientes e nos guias anteriores foi retirada do código ativo por decisão do responsável. Eventos é uma funcionalidade normal, sem tratamento de piloto. Uma entrada antiga dessa variável no ambiente deixa de ser consultada pela aplicação; a configuração atual não exige adicionar essa entrada no IIS.
@@ -71,7 +71,7 @@ Não compartilhar uma conexão permanentemente aberta entre requisições, nem t
 
 ## 4. Estrutura inicial e direção de dependências
 
-A estrutura após a entrega 3a inclui o acesso geral ao TD e o carregamento do shell Vue utilizados por Eventos e disponíveis para os próximos módulos:
+A estrutura após a entrega 3b inclui o acesso geral ao TD, o shell e os recursos Vue no backend moderno:
 
 ```text
 digitalJost/
@@ -85,14 +85,16 @@ digitalJost/
 │   │   ├── __init__.py
 │   │   ├── database.py           # engine geral do TD e ciclo de vida
 │   │   └── vue_shell.py          # manifesto Vite e renderização do shell Vue
-│   └── modules/
-│       ├── __init__.py
-│       └── events/
-│           ├── __init__.py
-│           ├── routes.py
-│           ├── schemas.py
-│           ├── services.py
-│           └── repository.py
+│   ├── modules/
+│   │   ├── __init__.py
+│   │   └── events/
+│   │       ├── __init__.py
+│   │       ├── routes.py
+│   │       ├── schemas.py
+│   │       ├── services.py
+│   │       └── repository.py
+│   ├── templates/app/shell.html   # página base do Vue
+│   └── static/app/                # build gerado, ignorado pelo Git
 └── frontend/                     # aplicação Vue existente
 ```
 
@@ -173,6 +175,8 @@ Dividir estes itens em mudanças focadas; eles não precisam entrar na mesma pub
 
 **Situação da entrega 3a:** a leitura do manifesto e a renderização do shell foram extraídas para `backend/platform/vue_shell.py`, conforme a seção 11. O acesso geral ao TD já foi implementado na entrega 2. Identidade, permissões, CSRF e padronização de erros da API permanecem como próximos trabalhos desta etapa.
 
+**Situação da entrega 3b:** o template foi transferido para `backend/templates/app/shell.html`, o destino do build passou para `backend/static/app/` e os recursos são registrados por um blueprint moderno. A seção 12 registra a implementação e o procedimento atual de publicação. A etapa 3 ainda tem os trabalhos de identidade, permissões, CSRF e erros pendentes.
+
 **Critério de passagem:** Eventos usa mecanismos com responsabilidades claras; um segundo módulo pode reutilizá-los sem copiar sua lógica ou importar os detalhes antigos diretamente.
 
 ### Etapa 4 — consolidar configuração e inicialização
@@ -238,8 +242,8 @@ Evitar combinar na primeira entrega transferência de Eventos, reescrita do logi
 Esta seção orienta uma publicação futura pelo responsável; não autoriza o agente a copiar arquivos no servidor, instalar dependências ou reiniciar o IIS.
 
 1. Revisar o pacote e guardar os arquivos correspondentes da versão anterior. Incluir `backend/` inteiro, os arquivos de composição/imports alterados e eventuais encaminhamentos temporários. Evitar misturar arquivos de entregas diferentes.
-2. Manter inicialmente `main.py`, o template `app/templates/app/shell.html` e o destino de assets `app/static/app/` nos caminhos atuais. Preservar `.venv`, uploads e configurações corporativas durante a cópia.
-3. Quando a entrega alterar o frontend, preparar o build no PC pelo procedimento autorizado já registrado e incluir a pasta gerada inteira, com `.vite/manifest.json` e todos os assets do mesmo build. Uma mudança apenas de localização do Python pode reutilizar o build compatível já publicado.
+2. Manter `main.py` no caminho atual. A partir da entrega 3b, incluir o template `backend/templates/app/shell.html` e o build em `backend/static/app/`, preservando a URL pública `/static/app/`. Preservar `.venv`, uploads e configurações corporativas durante a cópia.
+3. Preparar o build no PC pelo procedimento autorizado já registrado e incluir a pasta gerada inteira, com `.vite/manifest.json` e todos os assets do mesmo build. Uma mudança somente de localização pode reutilizar um build compatível, mas o conjunto inteiro precisa estar no destino exigido pela versão publicada; na entrega 3b, `backend/static/app/`.
 4. Conferir a configuração efetiva de inicialização no servidor. Preservar o restante do `web.config`; não substituí-lo indiscriminadamente pela versão do repositório. Eventos não exige uma variável de ativação.
 5. Se uma entrega futura exigir novas dependências, tratar sua instalação previamente em escopo específico e confirmar disponibilidade na `.venv` usada pelo IIS antes de ativar o código que as importa. O registro de ambientes descreve instalação offline; copiar `requirements.txt` não instala pacotes.
 6. Na janela autorizada, parar o site, copiar o pacote completo e reiniciar a aplicação pelo procedimento do IIS. Confirmar as aplicações atendidas pelo Application Pool antes de qualquer reinício do pool, pois sua exclusividade não foi confirmada.
@@ -373,6 +377,8 @@ A revisão estática confere a criação central do engine, os limites de config
 
 **Situação:** shell Vue compartilhado implementado no código e revisado estaticamente. Esta é uma parte da etapa 3; a verificação funcional e a publicação no IIS continuam pendentes de ambiente, janela e escopo autorizados.
 
+Esta seção conserva o registro da extração inicial. A entrega 3b altera a localização física do template/build e o endpoint de recursos; os caminhos atuais e a publicação estão na seção 12.
+
 ### Responsabilidades e uso
 
 `backend/platform/vue_shell.py` concentra a leitura de `app/static/app/.vite/manifest.json`, a resolução do JavaScript de entrada, a coleta dos estilos dos chunks importados e a renderização de `app/templates/app/shell.html`. Esses mecanismos saíram das rotas de Eventos e podem ser usados pelas próximas funcionalidades Vue.
@@ -416,5 +422,49 @@ Para retornar desta entrega, restaurar juntos as rotas de Eventos e o template d
 A validação estática inclui comparação textual da função de leitura do manifesto antes/depois, conferência da ordem de autorização e geração de CSRF, busca dos consumidores do template e dos endpoints, comparação com o router e o cliente HTTP Vue, inspeção do diff e `git diff --check`. Não houve execução, build, import, conexão, consulta ou publicação.
 
 No ambiente autorizado, confirmar acesso direto e redirecionamento de Eventos, carregamento de JavaScript/CSS, título, sessão e permissões, CSRF e comportamento diante de indisponibilidade do build. Qualquer gravação depende do escopo autorizado. A extração ainda não foi verificada no IIS.
+
+**O sistema não foi executado; a validação foi somente estática.**
+
+## 12. Registro da entrega 3b
+
+**Situação:** template e destino do build Vue separados dos recursos legados no código. A validação foi estática; o build não foi executado e a publicação no IIS permanece pendente.
+
+### Localização e configuração
+
+| Recurso | Localização atual |
+| --- | --- |
+| Código-fonte Vue | `frontend/` |
+| Template do shell | `backend/templates/app/shell.html` |
+| Build Vue | `backend/static/app/` |
+| Manifesto Vite | `backend/static/app/.vite/manifest.json` |
+| URL dos arquivos no navegador | `/static/app/` |
+
+O template foi transferido preservando seu conteúdo. `frontend/vite.config.ts` define `build.outDir` como `../backend/static/app`, relativo à raiz `frontend/`, mantendo `manifest: true` e a base pública `/static/app/`. O comando `npm run build:local` continua fazendo a verificação TypeScript e o build, utilizando esse destino central em vez de uma opção de diretório própria no script. `npm run build` e `npm run build-only` também usam esse destino por padrão. Referência: [opções de saída e manifesto do Vite](https://vite.dev/config/build-options.html#build-outdir).
+
+O novo destino é ignorado pelo Git. O destino antigo também continua ignorado, para não incluir builds históricos acidentalmente. Não há artefato de build na cópia de trabalho inspecionada; nenhum foi gerado, transferido ou removido nesta entrega. O diretório de saída será criado durante a geração autorizada do build.
+
+### Recursos do Flask
+
+`init_vue_shell(app)`, em `backend/platform/vue_shell.py`, registra explicitamente o blueprint `backend_vue` durante o bootstrap. Seu diretório raiz vem do pacote `backend`, com `static_folder="static/app"`, `static_url_path="/static/app"` e `template_folder="templates"`. Os caminhos modernos não dependem de `os.getcwd()` nem das pastas de recursos da factory legada.
+
+O shell lê o manifesto pelo diretório estático desse blueprint e gera as URLs com `url_for("backend_vue.static", filename=...)`. O prefixo da URL já contém `/static/app/`, mantendo os caminhos públicos do JavaScript, CSS e demais recursos. `/static/app/<path:filename>` é uma regra mais específica que a rota legada `/static/<path:filename>`; os demais arquivos estáticos do legado continuam sob a configuração atual. Essa precedência é baseada no [roteamento do Werkzeug](https://werkzeug.palletsprojects.com/en/stable/routing/#rule-priority), sem verificação dinâmica nesta entrega.
+
+O loader do blueprint usa `PrefixLoader` com o prefixo `backend`. O renderizador pede `backend/app/shell.html`, que corresponde fisicamente a `backend/templates/app/shell.html`. Isso distingue o novo shell de uma cópia antiga em `app/templates/app/shell.html`, sem alterar o loader dos templates legados. Referências: [recursos de blueprints no Flask](https://flask.palletsprojects.com/en/stable/blueprints/#blueprint-resources) e [PrefixLoader do Jinja](https://jinja.palletsprojects.com/en/stable/api/#jinja2.PrefixLoader).
+
+Uma pasta antiga de build não é usada como fallback pelo blueprint moderno. O pacote precisa incluir o build completo no novo destino. Os arquivos continuam sendo recursos estáticos; sessão, permissão `GENERAL`, CSRF, título, mensagem de indisponibilidade e `Cache-Control` do shell permanecem sob o mesmo contrato. As URLs e registros explícitos de Eventos, seus serviços, consultas e o pool não foram alterados.
+
+### Publicação e retorno
+
+Antes de ativar esta versão, preparar no PC o build pelo comando já utilizado ou transferir um build existente compatível inteiro para `backend/static/app/`, incluindo `.vite/manifest.json` e todos os arquivos correspondentes. Essa preparação cabe ao responsável no procedimento autorizado; o agente não executou o build. A cópia apenas dos arquivos versionados não inclui os assets ignorados pelo Git.
+
+Publicar juntos `backend/bootstrap.py`, `backend/platform/vue_shell.py`, `backend/templates/app/shell.html` e o build completo em `backend/static/app/`, dentro do pacote da seção 6.1. O `frontend/package.json`, a configuração Vite, o `.gitignore`, o README e a documentação acompanham a alteração de desenvolvimento. O template antigo foi retirado do código versionado; não substituir as demais pastas de templates/static do legado na cópia manual. Não é necessário mudar a base pública do Vue nem o handler do IIS descrito no registro de ambientes; a configuração efetiva publicada ainda precisa ser conferida.
+
+Para retornar, restaurar o bootstrap e o renderizador da entrega 3a, o template em `app/templates/app/shell.html`, os arquivos de configuração do build correspondentes e o build completo compatível em `app/static/app/`. Guardar esse pacote anterior antes da publicação. O retorno não altera schema, dados, configuração de banco ou autenticação.
+
+### Validação e pendências
+
+A inspeção estática confere a identidade textual do template transferido, a concordância entre `build.outDir`, blueprint, manifesto e URLs, a preservação do fluxo de CSRF e tratamento de falha, as referências aos caminhos anteriores e o diff completo. O registro de recursos acontece uma vez no bootstrap; imports não leem o build nem o template. Não foram executados testes, build, imports ou requests.
+
+No ambiente autorizado, verificar a geração do build no destino novo, o pacote no IIS, acesso direto/F5 de `/app/eventos`, título, CSS/JavaScript/fontes, sessão e CSRF, e recursos representativos do legado em `/static/`. Conferir também que um asset moderno ausente não seja servido por uma cópia antiga, respeitando o tratamento global de erros existente. Essas verificações ainda não foram realizadas.
 
 **O sistema não foi executado; a validação foi somente estática.**

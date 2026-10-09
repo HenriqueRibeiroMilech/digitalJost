@@ -28,7 +28,7 @@ Navegador
 
 As telas Vue convivem com as páginas Jinja na mesma aplicação. Eventos fica em `/app/eventos`, com API em `/api/v1/events` e código Python em `backend/modules/events/`.
 
-O carregamento do build Vue e a renderização da página base são compartilhados em `backend/platform/vue_shell.py`. Cada módulo mantém sua rota e suas verificações de acesso, fornecendo título, token CSRF e mensagem de indisponibilidade ao shell. Consulte o [registro da entrega 3a](docs/plano-separacao-backend-legado.md#11-registro-da-entrega-3a).
+O carregamento do build Vue e a renderização da página base são compartilhados em `backend/platform/vue_shell.py`. Cada módulo mantém sua rota e suas verificações de acesso, fornecendo título, token CSRF e mensagem de indisponibilidade ao shell. O template fica em `backend/templates/app/shell.html`. O comando `npm run build:local`, executado em `frontend/`, gera o build em `backend/static/app/`, ignorado pelo Git e servido em `/static/app/`. Consulte o [registro da entrega 3b](docs/plano-separacao-backend-legado.md#12-registro-da-entrega-3b) para o pacote e o procedimento de retorno.
 
 O backend moderno possui configuração e engine/pool próprios para o TD, compartilhados pelos seus módulos. A factory fornece o destino já configurado para o banco; os acessos do legado continuam nos mecanismos atuais. As opções do pool, seu ciclo de vida e o procedimento de retorno estão no [registro da entrega 2](docs/plano-separacao-backend-legado.md#10-registro-da-entrega-2).
 
@@ -91,8 +91,10 @@ DigitalJost/
 │   ├── config.py                   # Opções próprias do acesso geral ao TD
 │   ├── platform/
 │   │   ├── database.py             # Engine/pool compartilhado pelos módulos modernos
-│   │   └── vue_shell.py            # Carregamento dos assets e renderização do shell Vue
-│   └── modules/                    # Registro explícito e módulos modernos
+│   │   └── vue_shell.py            # Recursos, assets e renderização do shell Vue
+│   ├── modules/                    # Registro explícito e módulos modernos
+│   ├── templates/app/shell.html    # Página base do Vue
+│   └── static/app/                 # Build Vue gerado e ignorado pelo Git
 ├── frontend/                       # Código-fonte da interface Vue
 ├── scripts/                        # Manutenções manuais potencialmente destrutivas
 └── logs/                           # Logs históricos

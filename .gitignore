@@ -6,7 +6,8 @@ __pycache__/
 .github
 .venv
 
-# Build local do Vue servido pelo Flask
+# Builds Vue gerados, incluindo o destino anterior da transição
+/backend/static/app/
 /app/static/app/
 
 
