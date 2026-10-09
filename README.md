@@ -8,6 +8,7 @@ Portal interno da JOST para operações industriais, solicitações, gestão, mo
 
 - [AGENTS.md](AGENTS.md) — regras obrigatórias de segurança, contexto arquitetural, roteiro de análise estática e fluxo remoto de Git.
 - [Arquitetura e modernização](docs/arquitetura-modernizacao.md) — decisões, organização e roteiro de adoção progressiva.
+- [Plano de separação do backend e legado](docs/plano-separacao-backend-legado.md) — etapas da transição para `backend/` e registro da primeira entrega.
 - [Guia da primeira feature: Eventos](docs/guia-primeira-feature-eventos.md) — tutorial de cards e cadastro de nome e descrição na arquitetura nova.
 
 O próprio código é a fonte de verdade para detalhes funcionais. Comece por `main.py` e rastreie a rota, o template, o JavaScript, as tabelas e os jobs envolvidos.
@@ -25,7 +26,7 @@ Navegador
   → LDAP, SMTP, SAP, Oracle e Microsoft Graph quando necessário
 ```
 
-Não há um frontend SPA separado nem uma API versionada independente.
+As telas Vue convivem com as páginas Jinja na mesma aplicação. Eventos fica em `/app/eventos`, com API em `/api/v1/events` e código Python em `backend/modules/events/`.
 
 ## Principais funcionalidades
 
@@ -76,11 +77,15 @@ DigitalJost/
 │   ├── config.py                   # Factory Flask e extensões
 │   ├── errors.py                   # Handlers de erro
 │   ├── models/                     # Modelo ORM de usuário
-│   ├── routes/                     # Backend organizado por domínio
+│   ├── routes/                     # Backend legado organizado por domínio
 │   ├── templates/                  # Jinja, JavaScript incluído e e-mails
 │   ├── static/                     # CSS, JS, imagens, vídeos e uploads
 │   ├── services/                   # Schedulers e jobs
 │   └── utils/                      # Banco, segurança, arquivos e integrações
+├── backend/                        # Backend moderno, inicialmente com Eventos
+│   ├── bootstrap.py                # Composição com dependências fornecidas pela factory
+│   └── modules/                    # Registro explícito e módulos modernos
+├── frontend/                       # Código-fonte da interface Vue
 ├── scripts/                        # Manutenções manuais potencialmente destrutivas
 └── logs/                           # Logs históricos
 ```

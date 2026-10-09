@@ -216,13 +216,7 @@ def create_app():
         # CRIA O ACESSO À BASE DE DADOS
         db.create_all()
 
-        if app.config["EVENTS_ENABLED"]:
-            from app.modules.events.routes import GeneralEventsPermissions
-            from app.modules.events.services import EventsService
-            app.extensions["events_service"] = EventsService(
-                db.engine,
-                GeneralEventsPermissions(),
-            )
+        td_engine = db.engine if app.config["EVENTS_ENABLED"] else None
 
         # REGISTRA AS ROTAS "main" (PARA FUNÇÕES GERAIS) E "auth" (PARA FUNÇÕES DE AUTENTICAÇÃO COMO LOGIN E LOGOUT)
         app.register_blueprint(main)
@@ -243,8 +237,8 @@ def create_app():
     # REGISTRA OS HANDLERS DE ERRO
     register_error_handlers(app)
 
-    from app.modules import register_modules
-    register_modules(app)
+    from backend.bootstrap import init_backend
+    init_backend(app, td_engine=td_engine)
 
     return app
 

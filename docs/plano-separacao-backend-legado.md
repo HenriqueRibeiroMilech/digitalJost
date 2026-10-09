@@ -16,7 +16,8 @@ Este arquivo registra o plano discutido; não implementa a separação nem autor
 | Python novo | Passa a ficar em `backend/`, organizado por funcionalidade. |
 | Frontend novo | Permanece em `frontend/`, com Vue. |
 | Aplicação em produção | Uma aplicação no IIS, registrando módulos antigos e modernos. |
-| Banco TD | Reutilizar o acesso já utilizado por Eventos, sem criar um engine/pool por módulo nem um pool moderno adicional nesta etapa. |
+| Banco TD na primeira entrega | Transferir Eventos reutilizando `db.engine`, sem criar outro pool durante a mudança de localização. |
+| Banco TD como destino da arquitetura | Dar ao `backend/` configuração e um engine/pool próprios em uma entrega posterior, compartilhados por todos os módulos modernos e apontando inicialmente para o mesmo banco TD do legado. |
 | Banco no desenvolvimento | Manter por enquanto o banco corporativo atualmente utilizado, por decisão do responsável. O isolamento fica como trabalho futuro, sem bloquear a separação do código. |
 | Autenticação | Reutilizar a identidade corporativa e a sessão atuais por uma ponte explícita. |
 | Migração | Transferir e revisar uma fatia por vez; retirar o caminho antigo quando seus consumidores tiverem migrado. |
@@ -43,21 +44,27 @@ O isolamento de desenvolvimento e homologação continua sendo uma melhoria futu
 
 ## 3. O que significa acesso compartilhado ao banco
 
-Um engine/pool gerencia as conexões necessárias ao banco TD. Eventos e as próximas funcionalidades recebem esse recurso compartilhado; cada operação utiliza uma conexão e controla sua transação.
+Um engine/pool gerencia as conexões necessárias ao banco TD. Todos os módulos modernos compartilham um acesso geral; cada operação utiliza uma conexão e controla sua transação. O compartilhamento entre módulos modernos é permanente. O compartilhamento desse engine com o legado é uma ponte da primeira entrega.
 
 ```text
-Acesso compartilhado ao banco TD
-    ├── consumidores antigos que já usam esse acesso
-    └── backend moderno
-            ├── Eventos
-            └── próximas funcionalidades
+Primeira entrega
+    acesso atual ao TD → legado e Eventos em backend/
+
+Entrega posterior
+    app/ → infraestrutura atual de acesso ──────┐
+                                               ├── mesmo banco TD
+    backend/ → engine/pool moderno compartilhado┘
+                   ├── Eventos
+                   └── demais módulos modernos
 ```
 
 Cada funcionalidade continua tendo seu repositório, porque suas consultas e seus dados precisam de um responsável. Repositórios separados não significam conexões ou pools separados.
 
-O estado atual já permite esse começo: `EventsService` recebe um engine, e `app/config.py` fornece `db.engine`. O repositório de Eventos recebe a conexão; o serviço controla a transação de escrita com `engine.begin()`.
+O ponto de partida já permite esse começo: `EventsService` recebe um engine, e `app/config.py` fornece `db.engine`. O repositório de Eventos recebe a conexão; o serviço controla a transação de escrita com `engine.begin()`. A transferência preserva essa dependência, fornecida explicitamente ao bootstrap moderno.
 
-O legado também contém outros mecanismos de acesso em `app/utils/db_utils.py`, além de acessos a FTM, Plex e Trace QR. Portanto, reutilizar `db.engine` para o backend moderno não significa que todo o sistema já tenha um único pool. Unificar os acessos antigos ao TD será uma tarefa posterior, após mapear seus consumidores. As outras fontes de dados continuam distintas.
+O legado também contém outros mecanismos de acesso em `app/utils/db_utils.py`, além de acessos a FTM, Plex e Trace QR. Portanto, reutilizar `db.engine` inicialmente não significa que todo o sistema já tenha um único pool. Na entrega posterior, acrescentar o acesso moderno exige dimensionar o conjunto de pools existentes. As outras fontes de dados continuam distintas.
+
+A duplicidade temporária é da infraestrutura de acesso, mantendo o mesmo banco e os mesmos dados. Ela permite revisar a base moderna sem alterar todos os consumidores antigos juntos. Os acessos antigos só serão retirados após a migração dos respectivos consumidores.
 
 Não compartilhar uma conexão permanentemente aberta entre requisições, nem tratar conexões diferentes como uma única transação. A infraestrutura é compartilhada; o limite de cada operação continua explícito.
 
@@ -130,7 +137,20 @@ A primeira transferência deve preservar as bibliotecas e versões já utilizada
 
 **Retorno:** restaurar o pacote anterior aprovado, sem necessidade de converter dados, pois esta entrega não altera o schema nem o contrato de persistência.
 
-### Etapa 2 — organizar as pontes e a base compartilhada
+### Etapa 2 — introduzir o acesso geral próprio do backend ao TD
+
+**Objetivo:** separar a infraestrutura de banco da arquitetura nova, depois de verificar a transferência de Eventos.
+
+1. Definir a configuração efetiva do TD para o backend moderno, preservando inicialmente o destino corporativo aprovado e sem copiar segredos para o código.
+2. Criar um engine SQLAlchemy próprio em um ponto central da plataforma moderna, inicializado explicitamente na composição e compartilhado por todos os seus módulos. Não registrar uma segunda instância de Flask-SQLAlchemy na mesma aplicação.
+3. Dimensionar o pool adicional considerando o acesso antigo e os processos da aplicação. Não criar engines por request ou por funcionalidade.
+4. Trocar a dependência fornecida a Eventos pelo engine moderno, preservando consultas, contratos e limites de transação.
+5. Manter os consumidores antigos em seus mecanismos atuais. Uma operação que precise de atomicidade deve utilizar a mesma conexão/transação, mesmo durante a convivência.
+6. Documentar o ciclo de vida do engine, a configuração utilizada e o retorno para a composição anterior.
+
+**Critério de passagem:** os módulos modernos têm um acesso geral próprio, com configuração explícita e pool dimensionado; o legado preserva seus acessos e os dois lados continuam no banco TD aprovado. Essa etapa não faz parte da primeira transferência de arquivos.
+
+### Etapa 3 — organizar as pontes e a base compartilhada
 
 **Objetivo:** evitar que cada próxima funcionalidade precise conhecer detalhes do legado.
 
@@ -145,21 +165,21 @@ Dividir estes itens em mudanças focadas; eles não precisam entrar na mesma pub
 
 **Critério de passagem:** Eventos usa mecanismos com responsabilidades claras; um segundo módulo pode reutilizá-los sem copiar sua lógica ou importar os detalhes antigos diretamente.
 
-### Etapa 3 — separar configuração sem duplicar infraestrutura
+### Etapa 4 — consolidar configuração e inicialização
 
-**Objetivo:** tornar explícitas as opções da arquitetura nova sem criar outro acesso ao TD.
+**Objetivo:** consolidar as opções e o ciclo de vida modernos, aproveitando o acesso geral definido na etapa 2.
 
 1. Definir as opções próprias do backend moderno, começando pelas funcionalidades habilitadas e pelos recursos que ele realmente utiliza.
-2. Manter uma fonte efetiva para as configurações compartilhadas de banco e sessão. Separar arquivos não exige duplicar credenciais, criar outro engine ou mudar cookies e chaves de sessão.
-3. Organizar as opções para permitir configuração por ambiente no futuro, mantendo agora o acesso corporativo compartilhado existente. A composição moderna recebe explicitamente esse acesso, sem criar um destino alternativo ou um novo pool nesta etapa.
+2. Manter fontes explícitas para as opções de banco do backend e para a sessão compartilhada da aplicação. Separar configuração não exige copiar credenciais nem mudar cookies e chaves de sessão.
+3. Organizar as opções para permitir configuração por ambiente no futuro, mantendo agora o banco corporativo aprovado. Reutilizar o engine moderno central da etapa 2, sem acrescentar engines por módulo.
 4. Mapear os imports de `db` e `mail` antes de decidir se sua definição muda de lugar. Uma eventual transferência precisa preservar a mesma instância e a compatibilidade dos consumidores antigos.
 5. Planejar separadamente o controle de `db.create_all()`, integrações no import, auditoria e demais efeitos globais da inicialização.
 
 Enquanto a aplicação continuar carregando o legado, seus efeitos globais podem atingir as requisições modernas. A separação de pastas, por si só, não torna o backend isolado. Uma futura composição somente moderna deverá receber dependências próprias do ambiente autorizado, sem carregar a inicialização antiga.
 
-**Critério de passagem:** configurações e dependências explícitas, sem pool moderno adicional ao TD e preservando o acesso corporativo atual. Isolamento de banco, identidade, arquivos e integrações fica registrado como trabalho futuro; execuções continuam limitadas às autorizações específicas do ambiente escolhido.
+**Critério de passagem:** configurações e dependências explícitas, um acesso geral para os módulos modernos e preservação dos consumidores antigos. Isolamento de banco, identidade, arquivos e integrações fica registrado como trabalho futuro; execuções continuam limitadas às autorizações específicas do ambiente escolhido.
 
-### Etapa 4 — desenvolver uma segunda funcionalidade pequena
+### Etapa 5 — desenvolver uma segunda funcionalidade pequena
 
 **Objetivo:** comprovar que a base simplifica o trabalho cotidiano.
 
@@ -172,7 +192,7 @@ Enquanto a aplicação continuar carregando o legado, seus efeitos globais podem
 
 **Critério de passagem:** para criar a funcionalidade, foi necessário escrever principalmente seu contrato, consultas, regras e interface. Não foi necessário copiar autenticação, configuração de banco ou a inicialização de Eventos.
 
-### Etapa 5 — migrar uma fatia do legado por vez
+### Etapa 6 — migrar uma fatia do legado por vez
 
 **Objetivo:** reduzir gradualmente o código antigo sem duplicar regras operacionais.
 
@@ -240,6 +260,30 @@ Registrar separadamente o que existe no código e o que foi verificado em cada a
 
 **Separar Eventos em `backend/`, mantendo o acesso compartilhado ao TD e os contratos atuais.**
 
-Essa entrega estabelece a fronteira do Python moderno e preserva o funcionamento esperado sem exigir um novo pool, outro servidor ou uma nova autenticação. Depois da verificação autorizada, avançar para adaptadores, configuração e reuso por uma segunda funcionalidade.
+Essa entrega estabelece a fronteira do Python moderno e preserva o funcionamento esperado sem exigir um novo pool, outro servidor ou uma nova autenticação. Depois da verificação autorizada, introduzir o acesso geral próprio do backend ao mesmo TD, seguido de adaptadores, consolidação da configuração e reuso por uma segunda funcionalidade.
+
+## 9. Registro da primeira entrega
+
+**Situação:** transferência implementada no código e conferida estaticamente. A verificação funcional e a publicação no IIS permanecem pendentes de ambiente, janela e escopo autorizados.
+
+| Parte | Resultado da implementação |
+| --- | --- |
+| Módulo Eventos | Transferido de `app/modules/events/` para `backend/modules/events/`, preservando o texto das rotas, schemas, consultas e serviços. |
+| Registro moderno | Transferido para `backend/modules/__init__.py`, com a lista explícita dos dois blueprints de Eventos. |
+| Composição | Centralizada em `backend/bootstrap.py`, pela função `init_backend(app, td_engine=...)`. |
+| Ponte da factory | `app/config.py` resolve `db.engine` no contexto já existente, apenas quando Eventos está habilitado, e fornece essa dependência ao bootstrap antes de devolver a aplicação. |
+| Disponibilidade | Com Eventos desligado, o bootstrap registra os blueprints e mantém as respostas de indisponibilidade, sem compor o serviço nem solicitar o engine. |
+| Dependências temporárias | As rotas ainda usam a sessão atual e `app.utils.permissions`; a extração de adaptadores fica para a etapa correspondente. |
+| Banco | A primeira entrega mantém o engine atual e as mesmas operações em `DJ_EVENTS`. O acesso próprio do backend será implementado na etapa 2. |
+
+As referências Python ativas aos caminhos antigos foram atualizadas. Nenhum encaminhamento temporário foi necessário em `app/modules/`. Os guias e o registro de ambientes mantêm seus exemplos históricos; o fluxo atual é o descrito nesta seção.
+
+O bootstrap fornece o serviço em `app.extensions["events_service"]`, mantendo o contrato que as rotas já utilizam. O registro dos módulos antigos em `main.py`, os caminhos de template/assets, o frontend, as dependências, as permissões, o token de sessão CSRF e os limites de transação permanecem com seu desenho anterior.
+
+Para a publicação desta entrega, preparar `backend/` inteiro e o `app/config.py` atualizado juntos. O build Vue compatível já publicado e `app/templates/app/shell.html` continuam sendo necessários, sem exigir um novo build por causa da transferência do Python. O README e este plano acompanham o pacote como documentação.
+
+Para retornar, restaurar o `app/config.py` e o pacote `app/modules/` da versão anterior aprovada. O retorno deve restaurar os arquivos de composição e o módulo correspondente juntos, sem conversão de schema ou dados.
+
+A validação desta entrega inclui busca de referências, inspeção da composição, comparação textual dos seis arquivos transferidos com a versão anterior e revisão do diff. Não houve imports, execução, instalação, build, consulta ao banco ou publicação. O funcionamento no IIS ainda precisa ser confirmado pelo responsável no escopo autorizado.
 
 O sistema não foi executado; a validação foi somente estática. Este documento não comprova funcionamento no IIS, isolamento dos ambientes, persistência ou equivalência funcional do legado.
