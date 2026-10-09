@@ -37,7 +37,6 @@ class Config:
     Define variáveis de ambiente, banco de dados, email, sessão, etc.
     """
     SQLALCHEMY_DATABASE_URI = URL.create("mssql+pyodbc", query={"odbc_connect": CNNX_JDT})
-    EVENTS_ENABLED = os.getenv("EVENTS_ENABLED", "").lower() in ("1", "true", "yes")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
@@ -216,7 +215,7 @@ def create_app():
         # CRIA O ACESSO À BASE DE DADOS
         db.create_all()
 
-        td_engine = db.engine if app.config["EVENTS_ENABLED"] else None
+        td_engine = db.engine
 
         # REGISTRA AS ROTAS "main" (PARA FUNÇÕES GERAIS) E "auth" (PARA FUNÇÕES DE AUTENTICAÇÃO COMO LOGIN E LOGOUT)
         app.register_blueprint(main)

@@ -20,6 +20,7 @@ Este arquivo registra o plano discutido; não implementa a separação nem autor
 | Banco TD como destino da arquitetura | Dar ao `backend/` configuração e um engine/pool próprios em uma entrega posterior, compartilhados por todos os módulos modernos e apontando inicialmente para o mesmo banco TD do legado. |
 | Banco no desenvolvimento | Manter por enquanto o banco corporativo atualmente utilizado, por decisão do responsável. O isolamento fica como trabalho futuro, sem bloquear a separação do código. |
 | Autenticação | Reutilizar a identidade corporativa e a sessão atuais por uma ponte explícita. |
+| Eventos | Funcionalidade normal, registrada e composta na inicialização. O acesso é controlado pela sessão e pelas permissões existentes, sem chave específica de ativação. |
 | Migração | Transferir e revisar uma fatia por vez; retirar o caminho antigo quando seus consumidores tiverem migrado. |
 | Recursos compartilhados | Criar somente os fundamentos necessários ou recursos com reutilização comprovada. |
 
@@ -36,9 +37,9 @@ O documento [Ambientes de desenvolvimento e servidor](ambientes-desenvolvimento-
 | O responsável informou que `DJ_EVENTS` já foi criada. | A transferência de Eventos não prevê recriar a tabela nem executar o script SQL. |
 | A publicação acontece por cópia manual de arquivos no servidor Windows/IIS. | Preparar um pacote completo e copiar os arquivos relacionados na mesma janela, com o site parado. |
 | O build Vue é preparado no PC e entregue em `app/static/app/`. | Preservar esse destino inicialmente; a pasta é ignorada pelo Git e precisa acompanhar publicações que alterem o frontend. |
-| A configuração publicada pode diferir da versionada. | Conferir as opções relevantes no servidor, especialmente `EVENTS_ENABLED`, preservando as demais configurações. |
+| A configuração publicada pode diferir da versionada. | Conferir as opções de inicialização relevantes no servidor, preservando as demais configurações. |
 
-Na consulta estática que embasou esta revisão, o `web.config` versionado não continha `EVENTS_ENABLED`, enquanto o documento de ambientes descrevia a entrada combinada para o servidor. Isso indica um ponto a confirmar, sem comprovar qual configuração está efetivamente publicada.
+A chave `EVENTS_ENABLED` descrita no registro de ambientes e nos guias anteriores foi retirada do código ativo por decisão do responsável. Eventos é uma funcionalidade normal, sem tratamento de piloto. Uma entrada antiga dessa variável no ambiente deixa de ser consultada pela aplicação; a configuração atual não exige adicionar essa entrada no IIS.
 
 O isolamento de desenvolvimento e homologação continua sendo uma melhoria futura, mas não é pré-requisito desta fase de separação. A utilização atual do banco corporativo foi mantida explicitamente pelo responsável. Essa decisão não autoriza agentes a executar o sistema, consultar o banco ou cadastrar dados: as autorizações de comando, ambiente e escopo exigidas em `AGENTS.md` continuam necessárias.
 
@@ -110,12 +111,12 @@ Na primeira transferência de Eventos, dependências HTTP ainda existentes podem
 **Objetivo:** saber o que precisa continuar funcionando e limitar o alcance da mudança.
 
 1. Rastrear Eventos desde o registro na factory até shell, API, serviço, repositório e frontend.
-2. Registrar URLs, nomes dos blueprints e endpoints, contratos JSON, token CSRF, permissões, configuração `EVENTS_ENABLED`, template e caminhos dos assets.
+2. Registrar URLs, nomes dos blueprints e endpoints, contratos JSON, token CSRF, permissões, template e caminhos dos assets.
 3. Identificar os imports de Eventos em `app/config.py`, `app/modules/` e demais consumidores por busca textual.
 4. Registrar os fluxos principais do legado que serão conferidos no ambiente autorizado: login, home e operações representativas dos módulos ativos.
 5. Usar o registro de ambientes para definir o ambiente e o escopo das verificações autorizadas, o pacote anterior e o procedimento de retorno antes da publicação. Registrar que o banco continua corporativo nesta fase.
 
-**Critério de passagem:** referências e dependências conhecidas; escopo sem mudanças de schema, dados, autenticação ou hospedagem. A preparação pode avançar por análise estática, sem exigir a criação de um banco de desenvolvimento. Qualquer execução futura requer autorização explícita para o ambiente e o escopo definidos; a configuração desligada não comprova isolamento da inicialização.
+**Critério de passagem:** referências e dependências conhecidas; escopo sem mudanças de schema, dados, autenticação ou hospedagem. A preparação pode avançar por análise estática, sem exigir a criação de um banco de desenvolvimento. Qualquer execução futura requer autorização explícita para o ambiente e o escopo definidos.
 
 ### Etapa 1 — transferir Eventos para `backend/`
 
@@ -125,7 +126,7 @@ Na primeira transferência de Eventos, dependências HTTP ainda existentes podem
 2. Criar um bootstrap explícito para compor o serviço e registrar seus blueprints.
 3. Fazer o ponto atual de composição delegar ao bootstrap moderno e fornecer o `db.engine` existente no momento apropriado, com o contexto da aplicação quando necessário.
 4. Atualizar os imports conhecidos. Se um encaminhamento temporário em `app/modules/` for necessário, ele apenas delega; não mantém outra implementação nem registra Eventos novamente.
-5. Preservar a condição de disponibilidade de Eventos, incluindo a composição do serviço quando habilitado e as respostas de indisponibilidade quando desligado.
+5. Compor o serviço e registrar Eventos como funcionalidade normal, preservando a autenticação, as permissões e o CSRF existentes.
 6. Manter nomes dos blueprints, endpoints, URLs e os caminhos atuais de template e assets. A mudança de pacote não deve mudar a resolução desses recursos.
 7. Preparar o pacote de publicação com `backend/` completo e todos os arquivos cujos imports ou pontos de composição mudaram. Seguir o procedimento da seção 6.1.
 
@@ -154,7 +155,7 @@ A primeira transferência deve preservar as bibliotecas e versões já utilizada
 
 **Objetivo:** evitar que cada próxima funcionalidade precise conhecer detalhes do legado.
 
-1. Criar um adaptador de identidade e permissões atuais, mantendo o comportamento de acesso existente. Mudanças no mapeamento de quem pode criar ou participar do piloto são entregas específicas.
+1. Criar um adaptador de identidade e permissões atuais, mantendo o comportamento de acesso existente. Mudanças no mapeamento de quem pode consultar ou criar são entregas específicas.
 2. Expor uma identidade normalizada ao serviço; não fornecer objetos de request ou aceitar identidade enviada pelo navegador.
 3. Extrair o mecanismo moderno de CSRF, preservando o contrato utilizado pelo cliente HTTP e a compatibilidade das sessões durante a transição.
 4. Separar leitura do manifesto Vite e entrega do shell da lógica de Eventos. Manter a lista explícita de rotas Vue reconhecidas no servidor.
@@ -169,7 +170,7 @@ Dividir estes itens em mudanças focadas; eles não precisam entrar na mesma pub
 
 **Objetivo:** consolidar as opções e o ciclo de vida modernos, aproveitando o acesso geral definido na etapa 2.
 
-1. Definir as opções próprias do backend moderno, começando pelas funcionalidades habilitadas e pelos recursos que ele realmente utiliza.
+1. Definir as opções próprias do backend moderno para os recursos que ele realmente utiliza. Chaves de ativação por funcionalidade não são um requisito da arquitetura.
 2. Manter fontes explícitas para as opções de banco do backend e para a sessão compartilhada da aplicação. Separar configuração não exige copiar credenciais nem mudar cookies e chaves de sessão.
 3. Organizar as opções para permitir configuração por ambiente no futuro, mantendo agora o banco corporativo aprovado. Reutilizar o engine moderno central da etapa 2, sem acrescentar engines por módulo.
 4. Mapear os imports de `db` e `mail` antes de decidir se sua definição muda de lugar. Uma eventual transferência precisa preservar a mesma instância e a compatibilidade dos consumidores antigos.
@@ -219,7 +220,7 @@ Manter um inventário com situação `LEGACY`, `HYBRID` ou `MODERN`, rotas, dado
 | Inicialização e hooks globais | Mapear efeitos e tratá-los em entregas específicas, pois atingem o portal inteiro. |
 | Publicação | Pacote revisado, verificação autorizada e retorno ao pacote anterior preparado. |
 
-Os controles reduzem o alcance das falhas, mas não garantem ausência de regressões. `EVENTS_ENABLED` bloqueia o uso da funcionalidade conforme seu código; não desfaz mudanças de imports, inicialização ou schema e não substitui o retorno ao pacote anterior.
+Os controles reduzem o alcance das falhas, mas não garantem ausência de regressões. O retorno ao pacote anterior precisa restaurar os arquivos relacionados; uma mudança de configuração não desfaz mudanças de imports, inicialização ou schema.
 
 Evitar combinar na primeira entrega transferência de Eventos, reescrita do login, alteração dos schedulers, mudança da home, substituição de engines antigos ou limpeza ampla do legado. Correções urgentes nesses pontos têm escopo e validação próprios.
 
@@ -230,10 +231,10 @@ Esta seção orienta uma publicação futura pelo responsável; não autoriza o 
 1. Revisar o pacote e guardar os arquivos correspondentes da versão anterior. Incluir `backend/` inteiro, os arquivos de composição/imports alterados e eventuais encaminhamentos temporários. Evitar misturar arquivos de entregas diferentes.
 2. Manter inicialmente `main.py`, o template `app/templates/app/shell.html` e o destino de assets `app/static/app/` nos caminhos atuais. Preservar `.venv`, uploads e configurações corporativas durante a cópia.
 3. Quando a entrega alterar o frontend, preparar o build no PC pelo procedimento autorizado já registrado e incluir a pasta gerada inteira, com `.vite/manifest.json` e todos os assets do mesmo build. Uma mudança apenas de localização do Python pode reutilizar o build compatível já publicado.
-4. Conferir a configuração efetiva relevante no servidor, especialmente `EVENTS_ENABLED`. Preservar o restante do `web.config`; não substituí-lo indiscriminadamente pela versão do repositório.
+4. Conferir a configuração efetiva de inicialização no servidor. Preservar o restante do `web.config`; não substituí-lo indiscriminadamente pela versão do repositório. Eventos não exige uma variável de ativação.
 5. Se uma entrega futura exigir novas dependências, tratar sua instalação previamente em escopo específico e confirmar disponibilidade na `.venv` usada pelo IIS antes de ativar o código que as importa. O registro de ambientes descreve instalação offline; copiar `requirements.txt` não instala pacotes.
 6. Na janela autorizada, parar o site, copiar o pacote completo e reiniciar a aplicação pelo procedimento do IIS. Confirmar as aplicações atendidas pelo Application Pool antes de qualquer reinício do pool, pois sua exclusividade não foi confirmada.
-7. Realizar as verificações autorizadas e registrar resultados. Se houver falha que impeça a liberação, aplicar o retorno preparado; desligar Eventos não corrige necessariamente um erro de inicialização.
+7. Realizar as verificações autorizadas e registrar resultados. Se houver falha que impeça a liberação, aplicar o retorno preparado.
 
 O registro de ambientes relata indisponibilidade após a atualização de `app/config.py` antes da instalação das dependências. A causa foi considerada provável, sem traceback que confirmasse o erro exato. Esse histórico reforça a preparação do pacote e das dependências antes da ativação.
 
@@ -249,7 +250,7 @@ Em uma etapa futura, com autorização explícita para comandos, ambiente e esco
 - Carregamento direto de `/app/eventos`, assets e retorno ao portal.
 - GET paginado e comportamento do POST de Eventos no ambiente aprovado, respeitando o escopo de gravações autorizado.
 - Sessão ausente, acesso negado, CSRF inválido e dados inválidos.
-- Funcionalidade desligada e ausência de registro duplicado.
+- Registro e composição de Eventos sem variável de ativação, sem duplicidade de blueprints.
 - Erros JSON na API e respostas próprias das páginas antigas.
 - Persistência e rollback de transação no ambiente autorizado.
 - Retorno ao pacote anterior, considerando dados e jobs quando uma entrega passar a alterá-los.
@@ -271,14 +272,16 @@ Essa entrega estabelece a fronteira do Python moderno e preserva o funcionamento
 | Módulo Eventos | Transferido de `app/modules/events/` para `backend/modules/events/`, preservando o texto das rotas, schemas, consultas e serviços. |
 | Registro moderno | Transferido para `backend/modules/__init__.py`, com a lista explícita dos dois blueprints de Eventos. |
 | Composição | Centralizada em `backend/bootstrap.py`, pela função `init_backend(app, td_engine=...)`. |
-| Ponte da factory | `app/config.py` resolve `db.engine` no contexto já existente, apenas quando Eventos está habilitado, e fornece essa dependência ao bootstrap antes de devolver a aplicação. |
-| Disponibilidade | Com Eventos desligado, o bootstrap registra os blueprints e mantém as respostas de indisponibilidade, sem compor o serviço nem solicitar o engine. |
+| Ponte da factory | `app/config.py` resolve `db.engine` no contexto já existente e fornece essa dependência ao bootstrap antes de devolver a aplicação. |
+| Disponibilidade | O bootstrap compõe o serviço e registra Eventos em toda inicialização. Shell e API verificam a sessão e as permissões, sem chave de ativação. |
 | Dependências temporárias | As rotas ainda usam a sessão atual e `app.utils.permissions`; a extração de adaptadores fica para a etapa correspondente. |
 | Banco | A primeira entrega mantém o engine atual e as mesmas operações em `DJ_EVENTS`. O acesso próprio do backend será implementado na etapa 2. |
 
 As referências Python ativas aos caminhos antigos foram atualizadas. Nenhum encaminhamento temporário foi necessário em `app/modules/`. Os guias e o registro de ambientes mantêm seus exemplos históricos; o fluxo atual é o descrito nesta seção.
 
 O bootstrap fornece o serviço em `app.extensions["events_service"]`, mantendo o contrato que as rotas já utilizam. O registro dos módulos antigos em `main.py`, os caminhos de template/assets, o frontend, as dependências, as permissões, o token de sessão CSRF e os limites de transação permanecem com seu desenho anterior.
+
+Após a transferência, a chave de ativação foi removida da configuração, da composição e dos handlers. As verificações de sessão, permissão `GENERAL` e CSRF continuam no backend. Os trechos dos guias que ensinam a habilitar Eventos por variável retratam a proposta anterior e não são necessários para o fluxo atual.
 
 Para a publicação desta entrega, preparar `backend/` inteiro e o `app/config.py` atualizado juntos. O build Vue compatível já publicado e `app/templates/app/shell.html` continuam sendo necessários, sem exigir um novo build por causa da transferência do Python. O README e este plano acompanham o pacote como documentação.
 

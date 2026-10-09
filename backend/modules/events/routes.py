@@ -67,8 +67,6 @@ def _manifest_assets():
 
 @events_bp.before_request
 def authorize_api():
-    if not current_app.config["EVENTS_ENABLED"]:
-        return jsonify(message="Não encontrado.", detail={}), 404
     if not current_user.is_authenticated:
         return jsonify(message="Sessão expirada.", detail={}), 401
     if not get_permission("GENERAL").can():
@@ -111,8 +109,6 @@ def create_event(json_data):
 
 @events_shell_bp.get("/app/")
 def app_home():
-    if not current_app.config["EVENTS_ENABLED"]:
-        abort(404)
     if not current_user.is_authenticated:
         return redirect(url_for("auth.login", next=request.url))
     if not get_permission("GENERAL").can():
@@ -122,8 +118,6 @@ def app_home():
 
 @events_shell_bp.get("/app/eventos")
 def events_page():
-    if not current_app.config["EVENTS_ENABLED"]:
-        abort(404)
     if not current_user.is_authenticated:
         return redirect(url_for("auth.login", next=request.url))
     if not get_permission("GENERAL").can():
