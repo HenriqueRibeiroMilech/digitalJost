@@ -8,6 +8,8 @@ Este documento registra o ambiente atual e o procedimento manual combinado. As r
 
 **Evolução posterior do código:** Eventos foi transferido para `backend/modules/events/` e a chave `EVENTS_ENABLED` foi removida. A entrega 2 introduz configuração e engine/pool próprios do backend moderno, para o mesmo banco TD configurado na aplicação. O registro abaixo conserva o procedimento da época; seus caminhos `app/modules/` e instruções de ativação não descrevem o fluxo atual. Consulte o [registro da entrega 2](plano-separacao-backend-legado.md#10-registro-da-entrega-2) para a composição, as opções de pool e a publicação preparadas no código. Essa evolução ainda não foi verificada no servidor.
 
+**Entrega 3a:** a leitura do manifesto e a renderização do shell Vue passaram para `backend/platform/vue_shell.py`. Os caminhos de template/assets foram preservados; o template recebe o título da funcionalidade. As rotas de Eventos, o renderizador e o template precisam ser publicados juntos, conforme o [registro da entrega 3a](plano-separacao-backend-legado.md#11-registro-da-entrega-3a). Esta extração ainda não foi verificada no servidor.
+
 ## 1. Ambiente de desenvolvimento
 
 | Item | Informação conhecida |

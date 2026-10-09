@@ -6,7 +6,7 @@ Simplificar o desenvolvimento de novas funcionalidades e a revisão das existent
 
 A proposta mantém inicialmente uma aplicação Flask/APIFlask no Windows/IIS, a autenticação e a sessão atuais, o frontend Vue em `frontend/` e um acesso ao banco da Transformação Digital (TD) compartilhado entre os módulos modernos.
 
-Este arquivo registra o plano discutido e as entregas implementadas nas seções 9 e 10; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
+Este arquivo registra o plano discutido e as entregas implementadas nas seções 9 a 11; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
 
 ## 2. Decisões que orientam a implementação
 
@@ -71,7 +71,7 @@ Não compartilhar uma conexão permanentemente aberta entre requisições, nem t
 
 ## 4. Estrutura inicial e direção de dependências
 
-A estrutura após a entrega 2 inclui o acesso geral ao TD utilizado por Eventos e pelos próximos módulos:
+A estrutura após a entrega 3a inclui o acesso geral ao TD e o carregamento do shell Vue utilizados por Eventos e disponíveis para os próximos módulos:
 
 ```text
 digitalJost/
@@ -83,7 +83,8 @@ digitalJost/
 │   ├── config.py                 # configuração própria do pool; destino recebido
 │   ├── platform/
 │   │   ├── __init__.py
-│   │   └── database.py           # engine geral do TD e ciclo de vida
+│   │   ├── database.py           # engine geral do TD e ciclo de vida
+│   │   └── vue_shell.py          # manifesto Vite e renderização do shell Vue
 │   └── modules/
 │       ├── __init__.py
 │       └── events/
@@ -95,7 +96,7 @@ digitalJost/
 └── frontend/                     # aplicação Vue existente
 ```
 
-O banco já está em `backend/platform/`. Depois, conforme as responsabilidades forem extraídas, essa pasta recebe mecanismos de identidade, CSRF e entrega do shell Vue. `backend/compatibility/` concentrará os adaptadores temporários do legado. Não criar essas pastas com arquivos vazios apenas para completar uma árvore.
+O banco e o carregamento do shell Vue já estão em `backend/platform/`. Depois, conforme as responsabilidades forem extraídas, essa pasta recebe mecanismos de identidade e CSRF. `backend/compatibility/` concentrará os adaptadores temporários do legado. Não criar essas pastas com arquivos vazios apenas para completar uma árvore.
 
 Regras de dependência:
 
@@ -169,6 +170,8 @@ A primeira transferência deve preservar as bibliotecas e versões já utilizada
 6. Padronizar os erros da API moderna, incluindo validação e erros de roteamento, preservando o comportamento HTML das páginas antigas.
 
 Dividir estes itens em mudanças focadas; eles não precisam entrar na mesma publicação. A disponibilidade de uma funcionalidade e a política de acesso continuam pertencendo ao módulo, mesmo quando usam mecanismos compartilhados.
+
+**Situação da entrega 3a:** a leitura do manifesto e a renderização do shell foram extraídas para `backend/platform/vue_shell.py`, conforme a seção 11. O acesso geral ao TD já foi implementado na entrega 2. Identidade, permissões, CSRF e padronização de erros da API permanecem como próximos trabalhos desta etapa.
 
 **Critério de passagem:** Eventos usa mecanismos com responsabilidades claras; um segundo módulo pode reutilizá-los sem copiar sua lógica ou importar os detalhes antigos diretamente.
 
@@ -365,3 +368,53 @@ Para retornar especificamente da entrega 2, restaurar juntos `app/config.py` e o
 A revisão estática confere a criação central do engine, os limites de configuração, a injeção em Eventos, a ausência de inicialização no import e de descarte por request, a preservação textual dos serviços/repositórios/rotas e o diff completo. Não houve instalação, import, execução, consulta, alteração de dados ou publicação.
 
 **O sistema não foi executado; a validação foi somente estática.** O funcionamento e o dimensionamento no IIS dependem de verificação em ambiente autorizado.
+
+## 11. Registro da entrega 3a
+
+**Situação:** shell Vue compartilhado implementado no código e revisado estaticamente. Esta é uma parte da etapa 3; a verificação funcional e a publicação no IIS continuam pendentes de ambiente, janela e escopo autorizados.
+
+### Responsabilidades e uso
+
+`backend/platform/vue_shell.py` concentra a leitura de `app/static/app/.vite/manifest.json`, a resolução do JavaScript de entrada, a coleta dos estilos dos chunks importados e a renderização de `app/templates/app/shell.html`. Esses mecanismos saíram das rotas de Eventos e podem ser usados pelas próximas funcionalidades Vue.
+
+Cada módulo continua responsável por registrar suas URLs, verificar sessão e permissões e fornecer seu mecanismo de token CSRF. Após essas verificações, chama `render_vue_shell(...)` com o título, a função que fornece o token e a mensagem de indisponibilidade. A plataforma não importa Eventos nem os mecanismos de permissão do legado.
+
+Em Eventos, o fluxo fica:
+
+```text
+GET /app/eventos
+    → events_shell.events_page
+        → verifica sessão e permissão GENERAL
+        → render_vue_shell(...)
+            → lê manifesto e resolve assets
+            → chama o provedor de token CSRF de Eventos
+            → renderiza app/shell.html
+                → navegador carrega o Vue e apresenta Eventos
+```
+
+O título passa a ser um parâmetro do template. Eventos fornece `Eventos | Digital JOST`, preservando o título anterior. A função de token é chamada somente depois de resolver os assets, como antes; uma falha na leitura do manifesto não cria um token de sessão adicional.
+
+O contrato de CSRF permanece com `events_csrf` na sessão, a meta tag `csrf-token` no HTML e o cabeçalho `X-CSRF-Token` nas escritas da API. A extração do mecanismo de CSRF compartilhado será uma entrega própria. Não copiar esse mecanismo para o próximo módulo sem definir o contrato comum.
+
+### Contratos preservados e limites
+
+- `/app/` continua redirecionando para `/app/eventos` após as mesmas verificações de acesso.
+- Os nomes `events`, `events_shell`, `events_shell.app_home` e `events_shell.events_page` e a API `/api/v1/events` permanecem iguais.
+- O shell preserva a meta tag de CSRF, o ponto de montagem `#app`, a ordem dos estilos, o script de entrada e `Cache-Control: private, no-store` na resposta de sucesso.
+- Falhas de manifesto tratadas anteriormente continuam retornando status 503 com `Aplicação de Eventos indisponível.`.
+- O template e os assets permanecem nos caminhos atuais; a extração não altera o frontend, o banco, o pool, a inicialização legada ou os serviços e consultas de Eventos.
+- O novo módulo não lê o manifesto nem renderiza templates durante o import; isso ocorre somente na chamada explícita da rota autorizada.
+
+O shell oferece a renderização comum; as rotas do servidor continuam explícitas. Uma nova tela precisa de sua rota registrada no Flask, com sua autorização, e da rota correspondente no Vue. Esta entrega não cria um encaminhamento genérico para qualquer caminho `/app/`. O layout visual Vue em `frontend/src/app/layouts/AppShell.vue` já é compartilhado e permanece como está; ele é uma responsabilidade distinta do HTML inicial entregue pelo Flask.
+
+### Publicação, retorno e validação
+
+Preparar juntos `backend/platform/vue_shell.py`, `backend/modules/events/routes.py` e `app/templates/app/shell.html`, além do pacote completo previsto na seção 6.1. O título agora depende do valor fornecido pelo novo renderizador; misturar o template atualizado com as rotas anteriores pode produzir um título vazio. Não há nova dependência nem necessidade de novo build Vue por esta extração.
+
+Para retornar desta entrega, restaurar juntos as rotas de Eventos e o template da versão anterior e o pacote `backend/` correspondente. O retorno mantém a infraestrutura de banco da entrega 2 e não exige alterações de schema ou dados.
+
+A validação estática inclui comparação textual da função de leitura do manifesto antes/depois, conferência da ordem de autorização e geração de CSRF, busca dos consumidores do template e dos endpoints, comparação com o router e o cliente HTTP Vue, inspeção do diff e `git diff --check`. Não houve execução, build, import, conexão, consulta ou publicação.
+
+No ambiente autorizado, confirmar acesso direto e redirecionamento de Eventos, carregamento de JavaScript/CSS, título, sessão e permissões, CSRF e comportamento diante de indisponibilidade do build. Qualquer gravação depende do escopo autorizado. A extração ainda não foi verificada no IIS.
+
+**O sistema não foi executado; a validação foi somente estática.**

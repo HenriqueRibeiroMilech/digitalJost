@@ -1,14 +1,14 @@
 import hmac
-import json
 import secrets
-from pathlib import Path
 from types import SimpleNamespace
 
 from apiflask import APIBlueprint
-from flask import Blueprint, abort, current_app, jsonify, make_response, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, jsonify, redirect, request, session, url_for
 from flask_login import current_user
 
 from app.utils.permissions import get_permission
+
+from backend.platform.vue_shell import render_vue_shell
 
 from .schemas import EventCreate, EventList, EventOut, EventQuery
 
@@ -42,27 +42,6 @@ def _csrf_token():
         token = secrets.token_urlsafe(32)
         session["events_csrf"] = token
     return token
-
-
-def _manifest_assets():
-    manifest_path = Path(current_app.static_folder) / "app" / ".vite" / "manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    entry = manifest["index.html"]
-    stylesheets = []
-    visited = set()
-
-    def collect(chunk):
-        for filename in chunk.get("css", []):
-            stylesheet = url_for("static", filename=f"app/{filename}")
-            if stylesheet not in stylesheets:
-                stylesheets.append(stylesheet)
-        for key in chunk.get("imports", []):
-            if key not in visited:
-                visited.add(key)
-                collect(manifest[key])
-
-    collect(entry)
-    return url_for("static", filename=f"app/{entry['file']}"), stylesheets
 
 
 @events_bp.before_request
@@ -122,15 +101,8 @@ def events_page():
         return redirect(url_for("auth.login", next=request.url))
     if not get_permission("GENERAL").can():
         abort(403)
-    try:
-        entry_script, stylesheets = _manifest_assets()
-    except (OSError, KeyError, ValueError):
-        return "Aplicação de Eventos indisponível.", 503
-    response = make_response(render_template(
-        "app/shell.html",
-        csrf_token=_csrf_token(),
-        entry_script=entry_script,
-        stylesheets=stylesheets,
-    ))
-    response.headers["Cache-Control"] = "private, no-store"
-    return response
+    return render_vue_shell(
+        title="Eventos | Digital JOST",
+        csrf_token_provider=_csrf_token,
+        unavailable_message="Aplicação de Eventos indisponível.",
+    )
