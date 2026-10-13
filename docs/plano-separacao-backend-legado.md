@@ -6,7 +6,7 @@ Simplificar o desenvolvimento de novas funcionalidades e a revisão das existent
 
 A proposta mantém inicialmente uma aplicação Flask/APIFlask no Windows/IIS, a autenticação e a sessão atuais, o frontend Vue em `frontend/` e um acesso ao banco da Transformação Digital (TD) compartilhado entre os módulos modernos.
 
-Este arquivo registra o plano discutido e as entregas implementadas nas seções 9 a 12; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
+Este arquivo registra o plano discutido, as entregas implementadas nas seções 9 a 12 e os próximos trabalhos na seção 13; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
 
 ## 2. Decisões que orientam a implementação
 
@@ -163,6 +163,8 @@ A primeira transferência deve preservar as bibliotecas e versões já utilizada
 ### Etapa 3 — organizar as pontes e a base compartilhada
 
 **Objetivo:** evitar que cada próxima funcionalidade precise conhecer detalhes do legado.
+
+Antes de ampliar essa base, priorizar os achados de configuração e acesso da [revisão de segurança](revisao-seguranca-modernizacao.md), registrada em 13/10/2026. A seção 13 organiza as próximas entregas. A separação de pastas não corrige a exposição de segredos nem os problemas da sessão e autorização compartilhadas.
 
 1. Criar um adaptador de identidade e permissões atuais, mantendo o comportamento de acesso existente. Mudanças no mapeamento de quem pode consultar ou criar são entregas específicas.
 2. Expor uma identidade normalizada ao serviço; não fornecer objetos de request ou aceitar identidade enviada pelo navegador.
@@ -466,5 +468,36 @@ Para retornar, restaurar o bootstrap e o renderizador da entrega 3a, o template 
 A inspeção estática confere a identidade textual do template transferido, a concordância entre `build.outDir`, blueprint, manifesto e URLs, a preservação do fluxo de CSRF e tratamento de falha, as referências aos caminhos anteriores e o diff completo. O registro de recursos acontece uma vez no bootstrap; imports não leem o build nem o template. Não foram executados testes, build, imports ou requests.
 
 No ambiente autorizado, verificar a geração do build no destino novo, o pacote no IIS, acesso direto/F5 de `/app/eventos`, título, CSS/JavaScript/fontes, sessão e CSRF, e recursos representativos do legado em `/static/`. Conferir também que um asset moderno ausente não seja servido por uma cópia antiga, respeitando o tratamento global de erros existente. Essas verificações ainda não foram realizadas.
+
+**O sistema não foi executado; a validação foi somente estática.**
+
+## 13. Próximos passos e segurança
+
+As entregas 3a e 3b estabeleceram o shell compartilhado e os recursos modernos em `backend/`. Sua validação funcional no PC/IIS ainda precisa de resultados do responsável no ambiente e escopo autorizados. Não houve nova publicação nesta revisão.
+
+O trabalho seguinte foi planejado como identidade/permissões, CSRF comum, erros de API e uma segunda funcionalidade pequena. A revisão de segurança anterior à implementação identificou segredos literais versionados e problemas ativos no legado. O diagnóstico, os arquivos/linhas, impactos, limitações e propostas estão em [Revisão de segurança e melhorias para a modernização](revisao-seguranca-modernizacao.md).
+
+### Ordem de trabalho recomendada
+
+1. **Configuração externa e resposta à exposição de segredos.** Preparar com TI/DBA a fonte aprovada, mapear consumidores do portal e serviços e retirar valores literais por categoria. Coordenar rotação/revogação e tratamento de sessões/histórico. Manter o mesmo TD corporativo aprovado. Não copiar segredos para outro arquivo versionado, para o build ou para variáveis `VITE_*`.
+2. **Correções pontuais de identidade e acesso.** Tratar o fallback fixo fora do IIS, flags `admin`/`active` textuais usadas como booleanos e destino do login. Corrigir fluxos afetados por entregas pequenas; apenas mover verificações para um adaptador não elimina os problemas existentes.
+3. **Entrega 3c — ponte de identidade e permissões.** Concentrar dependências inevitáveis do legado em adaptadores explícitos, fornecer identidade normalizada aos módulos modernos e aplicar autorização no backend por ação/registro. Reutilizar a sessão e a identidade corporativa com a política aprovada. Retirar de Eventos o import direto de `app.utils.permissions`, sem mudar seus acessos por conveniência.
+4. **Entrega 3d — CSRF compartilhado.** Disponibilizar o mecanismo para os módulos modernos, preservando a meta tag e o cabeçalho do cliente HTTP e definindo a transição da sessão atual. Adotar gradualmente no legado e revisar todos os métodos e seletores por query args, `type` ou `cmd`. Não impor uma troca global de contrato aos formulários antigos na mesma publicação.
+5. **Entrega 3e — erros e auditoria.** Padronizar sessão expirada, acesso negado, validação e falhas nas APIs modernas. Fornecer mensagens externas genéricas e identificadores de correlação; filtrar logs e notificações antes de registrar conteúdo sensível. Preservar as respostas HTML do legado onde esse for o contrato.
+6. **Consolidação e segunda funcionalidade pequena.** Seguir as etapas 4 e 5: manter configuração/ciclo de vida explícitos e provar reutilização de banco, identidade, CSRF e shell em outro módulo. A funcionalidade deve ter contrato, autorização, SQL parametrizado e limites de dados definidos antes dos arquivos.
+7. **Migração gradual e correções do legado.** Corrigir os fluxos de maior risco de SQL, `eval`, HTML bruto e anexos, mesmo antes de sua migração completa. Depois, escolher uma fatia por vez, considerando métodos HTTP, jobs escritores, integrações, transações e retorno.
+
+Esses itens permanecem **planejados**. A revisão não alterou senhas, chaves, contas, grants, dados, rotas ou integrações. Rotação, configurações do servidor e qualquer tratamento de histórico exigem coordenação própria; esta lista não autoriza o agente a executar comandos, acessar bancos, reiniciar serviços, publicar ou reescrever Git.
+
+### Critério de segurança para a base moderna
+
+- Segredos recebidos de uma fonte externa aprovada, sem valores no repositório, frontend, logs ou fallbacks; um acesso geral ao TD por composição.
+- Identidade confiável, flags normalizadas e autorização no servidor, incluindo leitura/escrita/download e escopo por registro quando aplicável.
+- SQL parametrizado, estruturas validadas sem `eval` e saída textual/JSON segura no navegador.
+- Escritas protegidas por CSRF; anexos privados fora de static e publicados por handlers autorizados.
+- Cookies, certificados, headers e privilégios conferidos na configuração efetiva, preservando os consumidores do legado por mudanças localizadas.
+- Publicação revisada com retorno preparado e evidências funcionais obtidas apenas em ambiente autorizado. A leitura estática não comprova que o sistema esteja seguro em produção.
+
+**Próxima entrega de código recomendada:** preparar a leitura externa de segredos e seus adaptadores de compatibilidade, começando pela configuração de sessão e TD, com provisionamento e plano de rotação definidos com os responsáveis antes da liberação. As demais categorias e integrações entram em entregas próprias, sem perder prioridade no inventário de exposição.
 
 **O sistema não foi executado; a validação foi somente estática.**
