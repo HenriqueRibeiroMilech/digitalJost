@@ -92,17 +92,17 @@ def _SIGNAL_DATA(payload):
             SELECT
 
                 FORMAT(record_time, 'dd/MM/yyyy HH:mm:ss') AS Record_Time
-                , Workcenter_Code
-                , Part
-                , Job
+                , T1.workcenter AS Workcenter_Code
+                , COALESCE(T3.Part, '') AS Part
+                , COALESCE(T3.Job, '') AS Job
                 , CAST(T1.production_difference AS INT) AS Signal
-                , Routing_Time
+                , T2.Routing_Time
                 , CAST(T1.time_difference AS FLOAT) / 60.0 AS Duration
 
 
             FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_OEE_v2] T1
-                JOIN target_rates_final T2 ON T1.ID = T2.id_Mach_2_OEE_v2
-                JOIN actual_rates T3 ON T1.id = T3.id_Mach_2_OEE_v2
+                LEFT JOIN target_rates_final T2 ON T1.ID = T2.id_Mach_2_OEE_v2
+                LEFT JOIN actual_rates T3 ON T1.id = T3.id_Mach_2_OEE_v2
 
             WHERE 
                 T1.record_time BETWEEN :start_date AND :end_date
@@ -115,6 +115,7 @@ def _SIGNAL_DATA(payload):
         plex_data = engine_run_query(plex_signal_query, 'plex', where_plex_params)
 
         plex_data = pd.merge(left=plex_data, right=getPlex('workcenters')[['Workcenter_Code', 'Name']], how='left', on='Workcenter_Code')
+        plex_data['Name'] = plex_data['Name'].fillna('')
 
 
     if payload['workcenters_mic']:
@@ -189,7 +190,8 @@ def _SIGNAL_DATA(payload):
 
     data['Duration'] = list(reversed(adjusted_duration))
 
-    return data
+    # Preserva campos ausentes como null no JSON e células vazias no Excel.
+    return data.astype(object).where(pd.notnull(data), None)
 
         
 def _get_stops_workcenters():

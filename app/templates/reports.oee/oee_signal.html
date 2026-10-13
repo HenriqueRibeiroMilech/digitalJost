@@ -439,7 +439,7 @@
 
             function formatMinutesToHHMMSS(minutes) {
 
-                if (isNaN(minutes)) return '';
+                if (minutes == null || minutes === '' || !Number.isFinite(Number(minutes))) return '';
                 const totalSeconds = Math.round(minutes * 60);
                 const hrs = Math.floor(totalSeconds / 3600);
                 const mins = Math.floor((totalSeconds % 3600) / 60);
@@ -455,7 +455,7 @@
                 const row = document.createElement('tr');
 
                 let cell = document.createElement('td');
-                cell.textContent = info['Workcenter_Code'] + '-' + info['Name'];
+                cell.textContent = info['Workcenter_Code'] + (info['Name'] ? '-' + info['Name'] : '');
                 row.appendChild(cell);
 
                 cell = document.createElement('td');
@@ -475,12 +475,18 @@
                 row.appendChild(cell);
 
                 cell = document.createElement('td');
-                const durationPerSignal = parseInt(info['Signal']) < 0 ? '' : info['Duration'] / parseInt(info['Signal']);
+                const signal = Number(info['Signal']);
+                const duration = info['Duration'];
+                const durationPerSignal = signal > 0 && Number.isFinite(signal)
+                    && duration != null && duration !== '' && Number.isFinite(Number(duration))
+                    ? Number(duration) / signal : '';
+                const routingTime = info['Routing_Time'];
+                const hasRoutingTime = routingTime != null && routingTime !== '' && Number.isFinite(Number(routingTime));
 
                 cell.textContent = durationPerSignal === '' ? '' : formatMinutesToHHMMSS(durationPerSignal);
 
-                if (durationPerSignal !== '') {
-                    cell.className = durationPerSignal > info['Routing_Time'] ? 'status-rejected' : 'status-approved';
+                if (durationPerSignal !== '' && hasRoutingTime) {
+                    cell.className = durationPerSignal > Number(routingTime) ? 'status-rejected' : 'status-approved';
                 } else {
                     cell.className = 'status-pending';
                 }
@@ -515,8 +521,8 @@
 
             const filteredData = tableData.filter(user => {
                 
-                const filter1Match = user['Job'].toString().toLowerCase().includes(filter1);
-                const filter2Match = user['Part'].toString().toLowerCase().includes(filter2);
+                const filter1Match = (user['Job'] ?? '').toString().toLowerCase().includes(filter1);
+                const filter2Match = (user['Part'] ?? '').toString().toLowerCase().includes(filter2);
             
                 return filter1Match && filter2Match;
             });
