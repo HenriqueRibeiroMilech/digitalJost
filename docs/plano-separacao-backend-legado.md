@@ -6,7 +6,7 @@ Simplificar o desenvolvimento de novas funcionalidades e a revisão das existent
 
 A proposta mantém inicialmente uma aplicação Flask/APIFlask no Windows/IIS, a autenticação e a sessão atuais, o frontend Vue em `frontend/` e um acesso ao banco da Transformação Digital (TD) compartilhado entre os módulos modernos.
 
-Este arquivo registra o plano discutido, as entregas implementadas nas seções 9 a 12 e os próximos trabalhos na seção 13; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
+Este arquivo registra o plano discutido, as entregas implementadas nas seções 9 a 12 e 14 e os próximos trabalhos na seção 13; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
 
 ## 2. Decisões que orientam a implementação
 
@@ -61,7 +61,7 @@ Entrega 2 (implementada no código)
 
 Cada funcionalidade continua tendo seu repositório, porque suas consultas e seus dados precisam de um responsável. Repositórios separados não significam conexões ou pools separados.
 
-Na primeira entrega, `EventsService` recebeu o `db.engine` fornecido por `app/config.py`. Na entrega 2, a factory fornece apenas a configuração efetiva de destino do TD; `backend/bootstrap.py` cria o engine moderno pelo ponto central da plataforma e o injeta no serviço. O repositório continua recebendo a conexão e o serviço controla a transação de escrita com `engine.begin()`.
+Na primeira entrega, `EventsService` recebeu o `db.engine` fornecido por `app/config.py`. Na entrega 2, a factory passou a fornecer apenas a configuração efetiva de destino do TD; `backend/bootstrap.py` cria o engine moderno pelo ponto central da plataforma e o injeta no serviço. Na entrega S1, o backend passa a ler esse destino diretamente do ambiente, conforme a seção 14. O repositório continua recebendo a conexão e o serviço controla a transação de escrita com `engine.begin()`.
 
 O legado também contém outros mecanismos de acesso em `app/utils/db_utils.py`, além de acessos a FTM, Plex e Trace QR. Portanto, reutilizar `db.engine` inicialmente não significa que todo o sistema já tenha um único pool. A entrega 2 acrescenta um pool moderno limitado por padrão a cinco conexões por instância da aplicação; dimensionar o conjunto de pools e processos ainda exige verificação no ambiente autorizado. As outras fontes de dados continuam distintas.
 
@@ -80,10 +80,11 @@ digitalJost/
 ├── backend/
 │   ├── __init__.py
 │   ├── bootstrap.py              # composição e registro explícitos do moderno
-│   ├── config.py                 # configuração própria do pool; destino recebido
+│   ├── config.py                 # configuração própria do pool e TD pelo ambiente
 │   ├── platform/
 │   │   ├── __init__.py
 │   │   ├── database.py           # engine geral do TD e ciclo de vida
+│   │   ├── environment.py        # leitura externa e ponte de configuração legada
 │   │   └── vue_shell.py          # manifesto Vite e renderização do shell Vue
 │   ├── modules/
 │   │   ├── __init__.py
@@ -332,6 +333,8 @@ app/config.py
 
 A origem do destino e das credenciais ainda é a configuração atual da aplicação, por uma ponte explícita. Essa dependência temporária evita copiar segredos ou alterar o banco aprovado; a configuração do pool e a criação do engine já pertencem ao backend. `backend/config.py` e a plataforma de banco não importam `app/config.py`, constantes de credenciais ou engines antigos. O destino não aparece na representação textual de `BackendConfig`.
 
+**Evolução posterior — S1:** o diagrama e a ponte acima registram a entrega 2. A seção 14 substitui o fornecimento do URI legado por leitura direta de `DJ_TD_ODBC_CONNECTION_STRING` no backend; o legado lê a mesma variável preservando seus contratos. Para publicar ou retornar a versão atual, usar o pacote do [guia de configuração externa](configuracao-externa-td-sessao.md), não apenas os arquivos históricos desta seção.
+
 Eventos continua sendo uma funcionalidade normal. Nenhuma configuração de banco é específica de Eventos. Para acrescentar outro módulo, seu serviço recebe o mesmo `td_engine` na composição; não se cria um engine dentro de suas rotas, serviço ou repositório.
 
 ### Opções do pool moderno
@@ -487,7 +490,7 @@ O trabalho seguinte foi planejado como identidade/permissões, CSRF comum, erros
 6. **Consolidação e segunda funcionalidade pequena.** Seguir as etapas 4 e 5: manter configuração/ciclo de vida explícitos e provar reutilização de banco, identidade, CSRF e shell em outro módulo. A funcionalidade deve ter contrato, autorização, SQL parametrizado e limites de dados definidos antes dos arquivos.
 7. **Migração gradual e correções do legado.** Corrigir os fluxos de maior risco de SQL, `eval`, HTML bruto e anexos, mesmo antes de sua migração completa. Depois, escolher uma fatia por vez, considerando métodos HTTP, jobs escritores, integrações, transações e retorno.
 
-Esses itens permanecem **planejados**. A revisão não alterou senhas, chaves, contas, grants, dados, rotas ou integrações. Rotação, configurações do servidor e qualquer tratamento de histórico exigem coordenação própria; esta lista não autoriza o agente a executar comandos, acessar bancos, reiniciar serviços, publicar ou reescrever Git.
+Os demais itens permanecem **planejados**. A leitura externa de TD/sessão do item 1 foi preparada na entrega S1, seção 14, preservando por decisão do responsável as credenciais atuais. A revisão não alterou senhas, chaves, contas, grants, dados, rotas ou integrações. Rotação, configurações do servidor e qualquer tratamento de histórico exigem coordenação própria; esta lista não autoriza o agente a executar comandos, acessar bancos, reiniciar serviços, publicar ou reescrever Git.
 
 ### Critério de segurança para a base moderna
 
@@ -498,6 +501,36 @@ Esses itens permanecem **planejados**. A revisão não alterou senhas, chaves, c
 - Cookies, certificados, headers e privilégios conferidos na configuração efetiva, preservando os consumidores do legado por mudanças localizadas.
 - Publicação revisada com retorno preparado e evidências funcionais obtidas apenas em ambiente autorizado. A leitura estática não comprova que o sistema esteja seguro em produção.
 
-**Próxima entrega de código recomendada:** preparar a leitura externa de segredos e seus adaptadores de compatibilidade, começando pela configuração de sessão e TD, com provisionamento e plano de rotação definidos com os responsáveis antes da liberação. As demais categorias e integrações entram em entregas próprias, sem perder prioridade no inventário de exposição.
+**Próximo passo para a entrega S1:** provisionar TD/sessão no PC, IIS e consumidores dos serviços, antes da publicação e verificação autorizadas. As demais categorias e integrações entram em entregas próprias, sem perder prioridade no inventário de exposição. Rotação/revogação permanece pendente conforme a decisão atual de manter as credenciais.
 
 **O sistema não foi executado; a validação foi somente estática.**
+
+## 14. Registro da entrega S1 — configuração externa do TD e da sessão
+
+**Situação:** código preparado e validado estaticamente; cadastro das variáveis, publicação e verificação funcional pendentes. O responsável decidiu manter as credenciais atuais nesta etapa.
+
+### Organização implementada
+
+- `backend/platform/environment.py`: leitor pequeno de variável obrigatória, sem carregar arquivos ou iniciar recursos; o erro informa somente o nome e o valor é preservado exatamente.
+- `backend/config.py`: `BackendConfig.from_env()` monta o URI do TD diretamente de `DJ_TD_ODBC_CONNECTION_STRING`, preservando as opções e os limites do pool moderno. Não recebe mais o URI configurado pelo legado.
+- `app/utils/constants.py`: `CNNX_JDT` lê essa mesma variável, preservando os imports, conexões e contratos de rotas/jobs antigos. As demais constantes permanecem fora do escopo.
+- `app/config.py`: a sessão lê `DJ_SESSION_SECRET_KEY`; a composição chama `BackendConfig.from_env()` sem argumentos. A chave continua única para a aplicação Flask compartilhada.
+- `.env.example` e `.gitignore`: documentam os dois nomes com valores vazios e ignoram arquivos locais de ambiente. Não foi adicionado carregamento automático de `.env`.
+
+O banco TD continua sendo o corporativo aprovado, e os engines permanecem separados. Eventos e as próximas funcionalidades usam o engine geral moderno, sem credenciais ou configuração por módulo. Nenhuma consulta, rota, transação, dependência, tabela ou recurso Vue foi alterado.
+
+### Publicação, risco e retorno
+
+O [guia de configuração externa do TD e da sessão](configuracao-externa-td-sessao.md) define as variáveis, consumidores, preparação do PC/IIS/serviços e os quatro arquivos Python que precisam ser publicados juntos. Não é necessário novo build Vue para essa mudança; o build atual continua necessário para servir a interface.
+
+O risco principal é faltar configuração no ambiente de um processo: o portal ou serviço pode não iniciar. `CNNX_JDT` ainda é resolvido ao importar as constantes do legado; a variável é necessária até para consumidores que importem esse módulo por outros nomes. Provisionar antes da troca do código e confirmar a recepção por cada processo em ambiente autorizado.
+
+O retorno restaura os quatro arquivos como conjunto compatível; não retornar somente `app/config.py`, pois a assinatura de `from_env()` mudou. O pacote anterior pode conter segredos e deve ser guardado privadamente. Nenhuma configuração de servidor foi alterada nem valor real foi copiado para o repositório nesta entrega.
+
+### Limites de segurança e validação
+
+Manter as credenciais significa que sua exposição nas versões anteriores, clones e cópias permanece. Esta entrega retira valores literais de TD/sessão do código atual; não resolve os outros bancos/integrações nem faz rotação, revogação ou limpeza de histórico.
+
+Foi realizada inspeção do diff sem reproduzir segredos, conferência de referências, compatibilidade dos consumidores e `git diff --check`. Não houve execução, import, conexão, instalação, build, alteração de dados ou publicação.
+
+**O sistema não foi executado; a validação foi somente estática.** O funcionamento no PC, IIS e serviços precisa de confirmação em ambiente autorizado.

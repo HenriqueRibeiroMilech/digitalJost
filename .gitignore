@@ -6,6 +6,11 @@ __pycache__/
 .github
 .venv
 
+# Configuração privada de ambiente; somente o modelo sem valores é versionado
+.env
+.env.*
+!.env.example
+
 # Builds Vue gerados, incluindo o destino anterior da transição
 /backend/static/app/
 /app/static/app/

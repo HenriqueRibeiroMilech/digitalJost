@@ -2,6 +2,8 @@
 
 Data: **13/10/2026**. Código analisado: commit `49ad011`, posterior à entrega 3b, com o backend moderno em `backend/` e o Vue em `frontend/`.
 
+**Atualização posterior — entrega S1:** a leitura externa de TD e sessão foi implementada após esta revisão, conforme o [guia de configuração externa](configuracao-externa-td-sessao.md) e a seção 14 do plano. Os valores literais dessas duas categorias foram retirados do código atual; os demais achados e as referências abaixo registram o estado analisado na revisão. Por decisão do responsável, as credenciais atuais serão mantidas no ambiente, sem rotação nesta etapa. Provisionamento/publicação/verificação funcional e tratamento da exposição anterior permanecem pendentes.
+
 ## 1. Escopo e limites
 
 Esta revisão é estática: leitura de código, buscas e conferência de referências. Foram considerados a factory, os registros de `main.py`, autenticação, permissões, configurações e integrações, o backend de Eventos, exemplos de operações legadas de leitura/escrita/download, templates e o cliente Vue. Os achados abaixo têm exemplos rastreados; não representam uma auditoria exaustiva de cada handler, job ou integração.

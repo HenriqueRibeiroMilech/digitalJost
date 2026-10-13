@@ -3,6 +3,8 @@
 
 import os
 
+from backend.platform.environment import required_env
+
 
 ENV = 'prod'
 
@@ -21,12 +23,7 @@ MES_MAIN_USER = 'JostBrasilDigitalWs@plex.com'
 MES_MAIN_PASSWORD = '508c9ad-73a6-4'
 
 # CONEXÃO PRINCIPAL - BASE DA TRANSFORMAÇÃO DIGITAL
-CNNX_JDT = (r"Driver={ODBC Driver 18 for SQL Server};"
-            r"Server=clt-sql-03\inssql03;"
-            r"Database=transformacaodigital_jost;"
-            r"UID=transformacaodigital_jost;"
-            r"PWD=E7B?giz@KB&28n01;"
-            r"TrustServerCertificate=yes;")
+CNNX_JDT = required_env("DJ_TD_ODBC_CONNECTION_STRING")
 
 # CONEXÃO PARA BASE DE DADOS DA FÁBRICA MIC
 CNNX_FTM = (r"Driver={ODBC Driver 18 for SQL Server};"

@@ -19,6 +19,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_principal import Principal, RoleNeed, UserNeed, Identity, identity_loaded
 from flask_mail import Mail
 
+from backend.platform.environment import required_env
+
 from app.utils.security_utils import access_register
 from app.utils.constants import CNNX_JDT
 from app.utils.permissions import user_has_role
@@ -48,7 +50,7 @@ class Config:
         "pool_recycle": 3600      # Reciclar conexões após 1 hora
     }
 
-    SECRET_KEY = "tdg_2022J0stW3B4pps!?AOIDUFYGOWIERHU5142LI54B12KNMTNRMlkasçodfjaslkjvn.,MSOçlkszjdg"
+    SECRET_KEY = required_env("DJ_SESSION_SECRET_KEY")
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
     MAIL_SERVER = 'mailapp.randon.com.br'
     MAIL_PORT = 25
@@ -238,9 +240,7 @@ def create_app():
     from backend.config import BackendConfig
     init_backend(
         app,
-        config=BackendConfig.from_env(
-            td_database_uri=app.config["SQLALCHEMY_DATABASE_URI"],
-        ),
+        config=BackendConfig.from_env(),
     )
 
     return app

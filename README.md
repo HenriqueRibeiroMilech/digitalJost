@@ -10,6 +10,7 @@ Portal interno da JOST para operações industriais, solicitações, gestão, mo
 - [Arquitetura e modernização](docs/arquitetura-modernizacao.md) — decisões, organização e roteiro de adoção progressiva.
 - [Plano de separação do backend e legado](docs/plano-separacao-backend-legado.md) — etapas da transição para `backend/` e registro das entregas.
 - [Revisão de segurança e modernização](docs/revisao-seguranca-modernizacao.md) — achados estáticos, prioridades e propostas para configuração, acesso e migração segura.
+- [Configuração externa do TD e da sessão](docs/configuracao-externa-td-sessao.md) — variáveis obrigatórias, cadastro no PC/servidor e publicação preservando as credenciais atuais.
 - [Guia da primeira feature: Eventos](docs/guia-primeira-feature-eventos.md) — tutorial de cards e cadastro de nome e descrição na arquitetura nova.
 
 O próprio código é a fonte de verdade para detalhes funcionais. Comece por `main.py` e rastreie a rota, o template, o JavaScript, as tabelas e os jobs envolvidos.
@@ -31,7 +32,7 @@ As telas Vue convivem com as páginas Jinja na mesma aplicação. Eventos fica e
 
 O carregamento do build Vue e a renderização da página base são compartilhados em `backend/platform/vue_shell.py`. Cada módulo mantém sua rota e suas verificações de acesso, fornecendo título, token CSRF e mensagem de indisponibilidade ao shell. O template fica em `backend/templates/app/shell.html`. O comando `npm run build:local`, executado em `frontend/`, gera o build em `backend/static/app/`, ignorado pelo Git e servido em `/static/app/`. Consulte o [registro da entrega 3b](docs/plano-separacao-backend-legado.md#12-registro-da-entrega-3b) para o pacote e o procedimento de retorno.
 
-O backend moderno possui configuração e engine/pool próprios para o TD, compartilhados pelos seus módulos. A factory fornece o destino já configurado para o banco; os acessos do legado continuam nos mecanismos atuais. As opções do pool, seu ciclo de vida e o procedimento de retorno estão no [registro da entrega 2](docs/plano-separacao-backend-legado.md#10-registro-da-entrega-2).
+O backend moderno possui configuração e engine/pool próprios para o TD, compartilhados pelos seus módulos. Ele lê `DJ_TD_ODBC_CONNECTION_STRING` diretamente do ambiente; o legado preserva `CNNX_JDT`, lendo a mesma variável, e mantém seus mecanismos de acesso. A sessão Flask usa `DJ_SESSION_SECRET_KEY`. Os dois valores são obrigatórios e devem ser provisionados nos processos antes da publicação, conforme o [guia de configuração externa](docs/configuracao-externa-td-sessao.md). O `.env.example` documenta somente os nomes; a aplicação não implementa carregamento de `.env`. As opções do pool e seu ciclo de vida estão no [registro da entrega 2](docs/plano-separacao-backend-legado.md#10-registro-da-entrega-2); o pacote e o retorno desta mudança estão no guia novo.
 
 ## Principais funcionalidades
 
@@ -92,6 +93,7 @@ DigitalJost/
 │   ├── config.py                   # Opções próprias do acesso geral ao TD
 │   ├── platform/
 │   │   ├── database.py             # Engine/pool compartilhado pelos módulos modernos
+│   │   ├── environment.py          # Leitor externo também usado pela ponte legada
 │   │   └── vue_shell.py            # Recursos, assets e renderização do shell Vue
 │   ├── modules/                    # Registro explícito e módulos modernos
 │   ├── templates/app/shell.html    # Página base do Vue

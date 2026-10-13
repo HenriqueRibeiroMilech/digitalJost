@@ -1,9 +1,11 @@
-"""Configuração própria do backend, recebendo o destino do TD na composição."""
+"""Configuração própria do backend, lendo o destino do TD do ambiente."""
 
 import os
 from dataclasses import dataclass, field
 
 from sqlalchemy.engine import URL
+
+from .platform.environment import required_env
 
 
 def _env_int(name, default):
@@ -35,9 +37,12 @@ class BackendConfig:
                 raise ValueError(f"{name} deve ser um inteiro maior ou igual a {minimum}.")
 
     @classmethod
-    def from_env(cls, *, td_database_uri):
+    def from_env(cls):
         return cls(
-            td_database_uri=td_database_uri,
+            td_database_uri=URL.create(
+                "mssql+pyodbc",
+                query={"odbc_connect": required_env("DJ_TD_ODBC_CONNECTION_STRING")},
+            ),
             td_pool_size=_env_int("BACKEND_TD_POOL_SIZE", 5),
             td_max_overflow=_env_int("BACKEND_TD_MAX_OVERFLOW", 0),
             td_pool_timeout=_env_int("BACKEND_TD_POOL_TIMEOUT", 30),
