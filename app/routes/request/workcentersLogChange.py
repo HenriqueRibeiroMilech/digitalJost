@@ -273,7 +273,7 @@ def _find_current_status_stop(check_request, events):
     start_date = pd.to_datetime(check_request['startDate'])
     end_date = pd.to_datetime(check_request['endDate'])
 
-    if pd.isna(start_date) or pd.isna(end_date):
+    if pd.isna(start_date) or pd.isna(end_date) or end_date <= start_date:
         raise _CurrentStatusMatchError(
             'PERIODO DA PARADA DO PLEX NAO FOI ENCONTRADO.'
         )
@@ -313,8 +313,25 @@ def _find_current_status_stop(check_request, events):
     candidates = engine_run_query(query, 'plex', params)
 
     if candidates.empty:
+        # Paradas anteriores a cobertura do Current Status podem nao ter linha
+        # correspondente. Uma linha no mesmo centro e periodo exige analise:
+        # ela pode representar a parada com horario, motivo ou estado diferente.
+        overlapping_status = engine_run_query("""
+            SELECT TOP (1) ID
+            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+            WHERE Workcenter = :workcenter
+                AND StatusBegin < :end_date
+                AND COALESCE(StatusEnd, GETDATE()) > :start_date
+        """, 'plex', {
+            'workcenter': params['workcenter'],
+            'start_date': params['start_date'],
+            'end_date': params['end_date']
+        })
+        if overlapping_status.empty:
+            return None, new_motive
+
         raise _CurrentStatusMatchError(
-            'PARADA CORRESPONDENTE NAO ENCONTRADA NO CURRENT STATUS.'
+            'EXISTE REGISTRO NO CURRENT STATUS PARA O PERIODO, MAS HORARIO, MOTIVO OU ESTADO NAO CORRESPONDE.'
         )
 
     closest_difference = candidates['StartDifference'].min()
@@ -1285,14 +1302,15 @@ def stopChanges_manage():
                         cnnx.rollback()
                         return 'PLEX ERROR.', 400
 
-                    try:
-                        _update_current_status_stop(
-                            current_status_id,
-                            newMotivePlex
-                        )
-                    except _CurrentStatusMatchError as error:
-                        cnnx.rollback()
-                        return str(error), 409
+                    if current_status_id is not None:
+                        try:
+                            _update_current_status_stop(
+                                current_status_id,
+                                newMotivePlex
+                            )
+                        except _CurrentStatusMatchError as error:
+                            cnnx.rollback()
+                            return str(error), 409
 
                 else:
                     
