@@ -4,8 +4,6 @@ Portal interno da JOST para demandas, operações industriais, laboratório, des
 
 Este README reúne os procedimentos essenciais sem depender de outros documentos de projeto. Os caminhos do servidor descrevem o ambiente informado pelo responsável; confirme-os antes de uma nova instalação.
 
-> **Execução controlada:** os comandos abaixo são instruções para o responsável, em ambiente e janela autorizados. Eles não autorizam agentes a executá-los. A inicialização pode acessar recursos corporativos, iniciar threads e chamar `db.create_all()`. Localhost também pode atingir produção. Para agentes, continuam valendo as regras de análise estática de `AGENTS.md`.
-
 ## 1. Como as duas arquiteturas convivem
 
 ```text
@@ -39,7 +37,7 @@ Digital_Jost/                       ← raiz: pasta que contém main.py
 ├── .env.example                    # Modelo sem credenciais
 ├── .env                            # Arquivo privado opcional; nunca versionar
 ├── app/
-│   ├── config.py                    # Factory, extensões e sessão compartilhada
+│   ├── config.py                   # Factory, extensões e sessão compartilhada
 │   ├── routes/                     # Backend antigo por domínio
 │   ├── templates/                  # Jinja, includes JavaScript e e-mails
 │   ├── static/                     # CSS/JS/imagens e uploads operacionais
@@ -88,7 +86,7 @@ Esses comandos não são o procedimento de atualização de um servidor já func
 O leitor comum está em `backend/platform/environment.py`. Ele atende o backend novo e os pontos adaptados do antigo, inclusive serviços Windows.
 
 1. Copie `.env.example` para um arquivo privado e preencha os valores existentes pelo canal seguro da empresa. Não publique credenciais no modelo.
-2. Sem `DJ_ENV_FILE`, o leitor procura **`.env` na raiz, ao lado de `main.py`**. Confirme que o Windows não salvou `.env.txt`.
+2. Sem `DJ_ENV_FILE`, o leitor procura **`.env` na raiz, ao lado de `main.py`**.
 3. Para outro nome/local, defina `DJ_ENV_FILE` no ambiente do processo, com o caminho absoluto. O seletor precisa existir antes da inicialização.
 4. Variáveis já existentes no ambiente do Windows têm prioridade sobre o arquivo, inclusive valores vazios. O arquivo é lido uma vez; alterações exigem reiniciar o processo afetado.
 
@@ -102,10 +100,6 @@ O leitor comum está em `backend/platform/environment.py`. Ele atende o backend 
 | Legado sem uso ativo confirmado | `DJ_PLEX_TEST_ODBC_CONNECTION_STRING` ainda é exigida no import das constantes. `DJ_ORACLE_USER`/`DJ_ORACLE_PASSWORD` são referenciadas em horas produtivas, atualmente desativado. |
 
 Várias constantes e integrações antigas são carregadas já na inicialização. Por isso, preencher somente TD e sessão não basta para subir o portal inteiro. Preserve a chave de sessão atual para evitar invalidar as sessões existentes.
-
-O arquivo usa UTF-8, não interpola `${...}` e depende de **`python-dotenv==1.2.4` no Python de cada processo que o lê**. Não coloque credenciais Python em variáveis `VITE_*`: elas podem entrar no JavaScript enviado ao navegador.
-
-No servidor, a recomendação é guardar o arquivo **fora de qualquer pasta publicada pelo IIS**, com leitura apenas para as contas necessárias. O `.env` na raiz é suportado e foi usado na recuperação do H24, mas exige verificar a proteção contra download e permanece uma pendência de hospedagem. Mover o arquivo exige configurar o seletor também nos serviços; `web.config` só configura o site.
 
 ## 5. Frontend e teste em localhost
 
@@ -162,8 +156,6 @@ Se usar o arquivo padrão `I:\IIS\Digital_Jost\.env`, não é necessário `DJ_EN
 
 Os serviços leem `app/services/` e podem alterar os mesmos dados das telas. Reiniciar o site não reinicia esses serviços. A conta do serviço precisa conseguir ler o arquivo privado; as variáveis do `web.config` não são herdadas por ele.
 
-**Incidente já observado:** o H24 encontrou o `.env`, mas não iniciou porque `python-dotenv` estava disponível somente na `.venv` do site. A instalação offline no Python base `C:\python13\python.exe` resolveu o erro segundo a confirmação do responsável. Para outros serviços, confirme o interpretador antes de repetir a instalação.
-
 ## 7. Instalar dependências no servidor sem internet
 
 Prepare os pacotes em um computador com internet e copie a pasta para o servidor. Os exemplos são para **CPython 3.13 / Windows 64 bits**; ajuste os parâmetros se o processo de destino for diferente.
@@ -182,7 +174,7 @@ Copie a pasta completa para `I:\IIS\Digital_Jost\pacotes-modernizacao`. No CMD d
 "I:\IIS\Digital_Jost\.venv\Scripts\python.exe" -m pip --disable-pip-version-check install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-modernizacao" --only-binary=:all: --no-deps "python-dotenv==1.2.4"
 ```
 
-Para o **H24**, quando necessário, a instalação é separada:
+Para Services, quando necessário, a instalação é separada:
 
 ```bat
 "C:\python13\python.exe" -m pip --disable-pip-version-check install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-modernizacao" --only-binary=:all: --no-deps "python-dotenv==1.2.4"
@@ -215,7 +207,7 @@ Para o **H24**, quando necessário, a instalação é separada:
 5. **Instale as dependências necessárias** no Python correto de cada processo, pelo procedimento offline. Não substitua `.venv` nem reinstale todo o inventário de produção para adicionar um pacote.
 6. **Copie o código e o build**, conforme a tabela abaixo. Ajuste somente os campos necessários do `web.config` existente e confira a configuração privada, o seletor e as permissões das contas.
 7. **Inicie e confira o site.** Acesse uma tela antiga e Eventos, faça F5, confira assets, sessão, permissões e consultas. Gravações somente com dados autorizados. Consulte os logs se houver erro.
-8. **Inicie os serviços afetados, um por vez.** Confira `Running` em `Services` e acompanhe logs/ciclos naturais; não execute jobs manualmente apenas para testar. O H24 não executa todas as rotinas ao iniciar. Registre a versão publicada e o resultado.
+8. **Inicie os serviços afetados, um por vez.** Confira `Running` em `Services` e acompanhe logs/ciclos naturais; não execute jobs manualmente apenas para testar. Registre a versão publicada e o resultado.
 
 | Arquivo/pasta | Como publicar |
 |---|---|
@@ -229,24 +221,3 @@ Para o **H24**, quando necessário, a instalação é separada:
 Não sobrescreva `.venv`, `app/static/uploads/`, logs ou recursos operacionais. Não copie a `.venv` do computador. Pastas antigas como `app/modules/events/` e `app/static/app/` não são os destinos atuais; confira referências e validação antes de arquivar ou remover sobras, sem limpar outras áreas de `app/`.
 
 **Se precisar voltar:** pare os processos afetados, restaure o conjunto compatível de código, manifest/assets, configuração e `web.config`, e inicie novamente. Voltar arquivos não desfaz gravações no banco. Não desinstale bibliotecas compartilhadas nem restaure dados sem avaliar os demais processos.
-
-## 9. Onde procurar erros
-
-| Sintoma | Primeira conferência |
-|---|---|
-| Site não inicia após publicar | Caminho do Python e de `FLASK_APP`, seletor `DJ_ENV_FILE`, acesso ao arquivo e log configurado em `stdoutLogFile`. |
-| Variável `DJ_*` ausente | Arquivo realmente lido por esse processo, nome `.env`, variável preenchida e ambiente do Windows prevalecendo. Não conclua que a senha está errada. |
-| Pedido para instalar `python-dotenv` | Pacote ausente no Python desse processo; instalação na `.venv` não atende automaticamente ao serviço. |
-| Serviço retorna erro específico 1 | `Event Viewer` → `Windows Logs` → `Application`; procure o traceback de `Python Service`. Confira também `System` para o Service Control Manager. |
-| Vue indisponível, página vazia ou assets 404 | Build inteiro em `backend/static/app/`, com `.vite/manifest.json` e arquivos da mesma compilação. |
-| API retorna 401, 403 ou erro de token | 401 indica sessão ausente; 403, perfil sem acesso; CSRF inválido retorna 400. Confira a causa sem remover a proteção. |
-
-Os logs dos schedulers ficam em `app/services/logs/`, mas falhas de importação podem ocorrer antes de o logger iniciar. Não compartilhe logs completos sem retirar segredos e dados pessoais.
-
-## 10. Manutenção e segurança
-
-Para evoluir a parte moderna, use `backend/modules/` e as bases existentes de `backend/platform/` e `frontend/src/shared/`. Mantenha HTTP, regras e SQL separados. Registre o módulo e a rota Vue; novas URLs precisam também da rota Flask que entrega o shell para acesso direto/F5. Para corrigir uma tela antiga, confirme seus imports, templates, JavaScript, permissões, tabelas e jobs antes de alterar.
-
-A externalização das credenciais reduz a exposição no código ativo, mas **não elimina segredos de histórico, cópias e backups nem substitui rotação**. As credenciais foram mantidas por decisão operacional. Permanecem pendências no legado, como SQL interpolado, proteção CSRF desigual, caminhos dinâmicos de arquivos, fallback de identidade e efeitos externos na inicialização. Migrar uma tela exige revisar esses pontos; apenas mudar sua pasta não os resolve.
-
-Este README foi revisado por leitura de código e configuração. Instalação completa, acesso corporativo, autenticação, publicação e execução dos jobs precisam de validação pelo responsável em ambiente autorizado.
