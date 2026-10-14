@@ -36,6 +36,8 @@ Antes de comandos Git mutáveis em outras etapas da publicação, inspecione os 
 
 Copie o bloco inteiro abaixo para o PowerShell, ainda na raiz do clone GitHub:
 
+Se estiver no cmd rode: powershell -NoProfile
+
 ~~~powershell
 $shaOrigem = git rev-parse HEAD
 if ($LASTEXITCODE -ne 0) {
