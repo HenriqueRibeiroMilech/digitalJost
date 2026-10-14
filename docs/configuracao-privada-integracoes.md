@@ -8,6 +8,8 @@ O responsável autorizou preparar um `.env` privado com as credenciais existente
 
 O `.env.example` contém somente os nomes e valores vazios. Credenciais de TD/sessão, FTM, Plex, Plex de teste, Trace QR, MES, LDAP, Microsoft, SAP e Oracle foram retiradas dos arquivos Python identificados pelo inventário. O banco TD, contas, permissões, opções das conexões e fluxos de integração continuam sendo os atuais.
 
+**Organização dos arquivos privados e do modelo:** o grupo A contém TD e sessão, já compartilhados pelas duas arquiteturas. O grupo B contém as integrações implementadas no legado. LDAP fornece identidade e Microsoft participa dos erros globais, portanto ainda podem afetar o Vue indiretamente. O grupo C identifica Plex de teste sem consumidor ativo encontrado e Oracle de horas produtivas desativadas. Os grupos são comentários: não ativam, desativam nem criam conexões.
+
 Essa entrega não faz rotação/revogação, não limpa histórico/clones/cópias, não altera backups históricos e não certifica ausência de outros segredos. Os mesmos valores nas versões antigas continuam expostos. Os demais achados de segurança, efeitos de imports, threads, inicialização e autorização permanecem fora do escopo.
 
 ## 2. Como a leitura funciona
@@ -109,3 +111,34 @@ O arquivo privado `.env` não está nesta lista nem no commit.
 | Leitor e consumidores | `backend/platform/environment.py`, `app/utils/constants.py`, `app/utils/azure_utils.py`, `app/utils/security_utils.py`, `app/routes/auth_routes.py`, `app/routes/jdt/temp.py`, `app/routes/reports/maintenance.py`, `app/routes/reports/productiveHours.py`, `app/services/jobs/mon_mon_h_24_userCheck.py`. |
 | Configuração pública/dependências | `.env.example`, `requirements.txt`, `web.config`. |
 | Documentação | `README.md`, `docs/configuracao-privada-integracoes.md`, `docs/configuracao-externa-td-sessao.md`, `docs/plano-separacao-backend-legado.md`, `docs/ambientes-desenvolvimento-servidor.md`, `docs/revisao-seguranca-modernizacao.md`, `docs/baixar-dependencias-eventos-pc.txt`, `docs/instalar-dependencias-eventos-servidor.txt`. |
+
+## 9. Revisão posterior: comentários e comparação com o Git
+
+Revisão solicitada após `c21e21d`, sem execução do sistema. Foram reorganizados somente os comentários/grupos de `.env` e `.env.example`; as 19 linhas de configuração do arquivo privado foram preservadas, incluindo seus escapes. O arquivo preenchido continua fora do Git.
+
+### Evidências verificadas como texto
+
+- Os **19 valores** do arquivo privado, considerando aspas/escapes do formato, coincidem com os valores originais. TD e sessão foram comparados com `4c7befd`; as demais categorias, com `21c4c81`. Nenhum valor foi exibido ou testado em serviço externo.
+- Os **oito consumidores Python** alterados na S1b coincidem integralmente com `21c4c81` quando se desconsideram apenas o import do leitor e as substituições dos literais por `required_env(...)`. Não houve mudança adicional em consultas, condições, chamadas, transações ou restante desses arquivos.
+- `main.py`, bootstrap, plataforma de banco, módulos de Eventos, `db_utils.py` e os quatro schedulers não mudaram entre `21c4c81` e `c21e21d`. Os contratos de composição de TD/sessão foram revisados separadamente entre `4c7befd` e `c21e21d`.
+- `requirements.txt`, em UTF-16, preserva exatamente os bytes anteriores ao acréscimo da linha de `python-dotenv==1.2.4`. Os comandos offline usam a mesma versão.
+- O modelo tem 19 nomes e nenhum valor; a ordem dos nomes coincide com o arquivo privado. Este permanece ignorado/não rastreado, com permissões `0600` nesta cópia Linux.
+- A gramática de aspas simples/escapes foi conferida no [parser da versão 1.2.4](https://github.com/theskumar/python-dotenv/blob/v1.2.4/src/dotenv/parser.py); a prioridade e os argumentos usados pelo leitor, no [código da biblioteca](https://github.com/theskumar/python-dotenv/blob/v1.2.4/src/dotenv/main.py). Foram lidos como texto, não executados.
+
+**Resultado:** não foram encontradas diferenças indevidas nos valores nem nos consumidores examinados. A comparação estática não comprova conexão, autenticação ou execução correta no PC/IIS/serviços. Não foi necessária correção no código Python nesta revisão.
+
+### O papel de `environment.py`
+
+Esse arquivo é o leitor de configuração compartilhado. Ele fornece valores para as configurações do legado e do backend moderno; não abre uma conexão de banco nem escolhe uma funcionalidade para ativar. Cada engine e integração continua sendo criado pelo seu código responsável.
+
+`load_environment()` prepara a fonte uma vez por processo: arquivo absoluto indicado por `DJ_ENV_FILE`, ou `.env` da raiz, ou somente ambiente quando não há arquivo padrão. Isso permite usar o arquivo no PC e manter uma configuração privada fora do site no servidor. A raiz é calculada pelo módulo para que o diretório de trabalho de um serviço não selecione o arquivo errado.
+
+`override=False` preserva valores fornecidos pelo Windows/IIS; `interpolate=False` protege senhas contendo expressões como `${...}`; `utf-8-sig` aceita o arquivo UTF-8 com ou sem BOM. `required_env()` exige a configuração solicitada e informa apenas seu nome se estiver ausente/vazia. Reiniciar o processo é necessário para trocar configurações já carregadas.
+
+`FLASK_SKIP_DOTENV=1` controla a leitura antecipada feita pelo Flask CLI. Ele **não desliga o nosso leitor** nem qualquer feature. A biblioteca possui outro controle, `PYTHON_DOTENV_DISABLED`: quando definido como verdadeiro no ambiente, `load_dotenv()` não carrega arquivos; nesse caso os valores necessários devem estar no ambiente ou o responsável deve ajustar esse controle. O estado efetivo desses controles no servidor não foi inspecionado.
+
+### Condições para a confirmação funcional
+
+Antes da publicação, conferir arquivo/variáveis efetivos de cada processo, dependência na `.venv` quando houver arquivo, caminhos e ACLs, `FLASK_SKIP_DOTENV` para o CLI e prioridade das variáveis Windows. Os cinco destinos de banco e MES continuam obrigatórios ao importar as constantes legadas; Microsoft é exigido pelo gerenciador de tokens atual. Não excluir grupos B/C em bloco por uma tela nova usar apenas TD: Plex de teste ainda é resolvido no import, enquanto Oracle só é exigido pela função do módulo desativado quando utilizada.
+
+**O sistema não foi executado; a validação foi somente estática.** Não foram verificadas credenciais, instalações ou respostas reais. A confirmação funcional continua condicionada ao ambiente e escopo autorizados.

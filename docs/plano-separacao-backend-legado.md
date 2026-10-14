@@ -547,6 +547,8 @@ Foi realizada inspeção do diff sem reproduzir segredos, conferência de refer�
 
 As 19 variáveis do modelo cobrem TD/sessão, FTM, Plex, Plex de teste, Trace QR, MES, LDAP, Microsoft, SAP e Oracle. Os quatro consumidores LDAP anteriores foram comparados como texto e tinham os mesmos valores. As constantes legadas, contratos HTTP, destinos, contas, privilégios, pools e transações são preservados. Os módulos temporário/horas produtivas permanecem desativados; só sua leitura de credenciais foi alterada.
 
+**Revisão posterior da S1b:** `.env` e modelo foram comentados por grupo compartilhado, integrações implementadas no legado e configurações sem consumidor ativo/módulo desativado. A comparação textual confirmou os 19 valores originais e o restante dos oito consumidores Python, conforme a seção 9 do [guia de configuração privada](configuracao-privada-integracoes.md). Não foi necessário alterar Python; isso não substitui a confirmação funcional no PC/IIS/serviços.
+
 O `web.config` versionado recebe somente `FLASK_SKIP_DOTENV=1`, evitando carregamento antecipado pelo Flask CLI. Aplicar a opção à configuração efetiva sem copiar segredos ou substituir outras opções do servidor. A dependência foi declarada em `requirements.txt`, preservando UTF-16; os dois comandos documentados de preparação offline foram atualizados, sem execução.
 
 ### Preparação e risco
