@@ -1,237 +1,252 @@
 # Digital JOST
 
-Portal interno da JOST para operações industriais, solicitações, gestão, monitoramento e relatórios.
+Portal interno da JOST para demandas, operações industriais, laboratório, desvios, monitoramento, relatórios e gestão de usuários. O sistema funciona em Windows/IIS e está sendo modernizado aos poucos, mantendo as telas antigas em operação.
 
-> **Atenção:** este repositório não deve ser executado localmente nem importado apenas para inspeção. A inicialização e alguns imports podem acessar bancos e serviços corporativos, criar threads e executar operações externas. Consulte [AGENTS.md](AGENTS.md) antes de trabalhar no código.
+Este README reúne os procedimentos essenciais sem depender de outros documentos de projeto. Os caminhos do servidor descrevem o ambiente informado pelo responsável; confirme-os antes de uma nova instalação.
 
-## Documentação principal
+> **Execução controlada:** os comandos abaixo são instruções para o responsável, em ambiente e janela autorizados. Eles não autorizam agentes a executá-los. A inicialização pode acessar recursos corporativos, iniciar threads e chamar `db.create_all()`. Localhost também pode atingir produção. Para agentes, continuam valendo as regras de análise estática de `AGENTS.md`.
 
-- [AGENTS.md](AGENTS.md) — regras obrigatórias de segurança, contexto arquitetural, roteiro de análise estática e fluxo remoto de Git.
-- [Arquitetura e modernização](docs/arquitetura-modernizacao.md) — decisões, organização e roteiro de adoção progressiva.
-- [Plano de separação do backend e legado](docs/plano-separacao-backend-legado.md) — etapas da transição para `backend/` e registro das entregas.
-- [Revisão de segurança e modernização](docs/revisao-seguranca-modernizacao.md) — achados estáticos, prioridades e propostas para configuração, acesso e migração segura.
-- [Configuração externa do TD e da sessão](docs/configuracao-externa-td-sessao.md) — variáveis obrigatórias, cadastro no PC/servidor e publicação preservando as credenciais atuais.
-- [Configuração privada das integrações](docs/configuracao-privada-integracoes.md) — carregamento do `.env`, credenciais restantes, prioridade do Windows e publicação da entrega S1b.
-- [Guia da primeira feature: Eventos](docs/guia-primeira-feature-eventos.md) — tutorial de cards e cadastro de nome e descrição na arquitetura nova.
-- [Base compartilhada e exemplo mínimo](docs/base-compartilhada-novas-features.md) — guia atual para reutilizar identidade, CSRF, erros, componentes Vue, paginação e validação.
-- [Publicação consolidada no servidor](docs/publicacao-modernizacao-servidor.md) — roteiro de `c3838b0` a `6eeffa8`, inventário de arquivos, dependência offline, configuração privada, serviços, conferência e retorno.
-
-O próprio código é a fonte de verdade para detalhes funcionais. Comece por `main.py` e rastreie a rota, o template, o JavaScript, as tabelas e os jobs envolvidos.
-
-## Visão geral
-
-O Digital JOST é um monólito Flask hospedado em Windows/IIS. O backend renderiza páginas Jinja e as telas usam formulários, `fetch` e `XMLHttpRequest` para chamar as próprias rotas Flask.
+## 1. Como as duas arquiteturas convivem
 
 ```text
-Navegador
-  → IIS com autenticação Windows
-  → Flask / Blueprints
-  → Templates Jinja + JavaScript
-  → SQL Server, Plex, FT Metrics, Trace QR e arquivos
-  → LDAP, SMTP, SAP, Oracle e Microsoft Graph quando necessário
+Navegador → IIS / autenticação Windows → aplicação Flask
+                                         ├─ app/: páginas Jinja e rotas antigas
+                                         └─ backend/: APIs e página base do Vue
+                                                           ↑
+                                              build gerado por frontend/
 ```
 
-As telas Vue convivem com as páginas Jinja na mesma aplicação. Eventos fica em `/app/eventos`, com API em `/api/v1/events` e código Python em `backend/modules/events/`.
-
-O carregamento do build Vue e a renderização da página base são compartilhados em `backend/platform/vue_shell.py`. Cada módulo mantém sua rota autorizada e fornece título e mensagem de indisponibilidade; o shell fornece o CSRF comum. O template fica em `backend/templates/app/shell.html`. O comando `npm run build:local`, executado em `frontend/` pelo responsável em ambiente autorizado, gera o build em `backend/static/app/`, ignorado pelo Git e servido em `/static/app/`. A entrega da [base compartilhada](docs/plano-separacao-backend-legado.md#16-base-compartilhada-para-novas-features) exige novo build e publicação do conjunto descrito no guia.
-
-Eventos já usa a ponte de identidade em `backend/compatibility/`, autorização e erros HTTP em `backend/platform/` e componentes pequenos em `frontend/src/shared/`. Serviços e repositórios continuam concentrando as regras e o SQL de cada domínio. As páginas antigas preservam seus contratos; a base moderna ainda depende da sessão e dos perfis legados.
-
-O backend moderno possui configuração e engine/pool próprios para o TD, compartilhados pelos seus módulos. Ele lê `DJ_TD_ODBC_CONNECTION_STRING` diretamente; o legado preserva `CNNX_JDT` e seus mecanismos de acesso. A sessão Flask usa `DJ_SESSION_SECRET_KEY`. O leitor comum carrega um `.env` privado na raiz ou um arquivo externo selecionado por `DJ_ENV_FILE`, com prioridade para as variáveis do Windows e sem interpolar credenciais. O `.env.example` contém somente os nomes. O arquivo privado preenchido não acompanha o Git. A entrega S1b também externaliza as outras conexões e integrações identificadas, mantendo os valores atuais. Preparação, dependência `python-dotenv==1.2.4`, cuidados com o Flask CLI e pacote de publicação estão no [guia de configuração privada](docs/configuracao-privada-integracoes.md). As opções do pool e seu ciclo de vida permanecem no [registro da entrega 2](docs/plano-separacao-backend-legado.md#10-registro-da-entrega-2).
-
-## Principais funcionalidades
-
-- Gestão de demandas, projetos e tarefas;
-- solicitações de melhorias;
-- desvios de processo e planos de ação;
-- solicitações de serviço de laboratório;
-- gestão e agendamento de equipamentos do laboratório;
-- alteração de paradas industriais;
-- indicadores de logística, produção, qualidade e SSMA;
-- planejamento do Operation Meeting;
-- monitoramento industrial, hardware e OEE;
-- rastreabilidade QR e gestão de plaquetas;
-- matriz de versatilidade;
-- metas, fatores e auditorias 5S;
-- biblioteca de conhecimentos;
-- comunicação interna em TVs/cockpit;
-- relatórios de manutenção e Power BI;
-- gestão de usuários, áreas, perfis e alertas.
-
-## Tecnologias
-
-- Python;
-- Flask, Flask-Login, Flask-Principal, Flask-Mail e Flask-SQLAlchemy;
-- SQLAlchemy, pyodbc e pandas;
-- Microsoft SQL Server;
-- Oracle em um job de sincronização;
-- Jinja2, HTML, CSS e JavaScript;
-- Plotly para dashboards;
-- LDAP/Active Directory;
-- Microsoft Graph/Teams;
-- SOAP/Zeep para SAP;
-- APScheduler e serviços Windows;
-- IIS `httpPlatformHandler`.
-
-As versões completas estão fixadas em `requirements.txt`.
-
-## Estrutura do projeto
-
-```text
-DigitalJost/
-├── main.py                         # Criação do app e registro de blueprints
-├── web.config                      # Configuração do IIS
-├── requirements.txt                # Dependências Python
-├── README.md                       # Introdução e onboarding
-├── AGENTS.md                       # Regras para agentes e automações
-├── app/
-│   ├── config.py                   # Factory Flask e extensões
-│   ├── errors.py                   # Handlers de erro
-│   ├── models/                     # Modelo ORM de usuário
-│   ├── routes/                     # Backend legado organizado por domínio
-│   ├── templates/                  # Jinja, JavaScript incluído e e-mails
-│   ├── static/                     # CSS, JS, imagens, vídeos e uploads
-│   ├── services/                   # Schedulers e jobs
-│   └── utils/                      # Banco, segurança, arquivos e integrações
-├── backend/                        # Backend moderno, inicialmente com Eventos
-│   ├── bootstrap.py                # Composição e registro do backend moderno
-│   ├── config.py                   # Opções próprias do acesso geral ao TD
-│   ├── compatibility/              # Ponte temporária com identidade/perfis legados
-│   ├── platform/
-│   │   ├── database.py             # Engine/pool compartilhado pelos módulos modernos
-│   │   ├── environment.py          # Leitor externo também usado pela ponte legada
-│   │   ├── identity.py             # Identidade mínima e autorização por ação
-│   │   ├── csrf.py                 # Token e proteção comuns às APIs modernas
-│   │   ├── http.py                 # Guardas HTTP e respostas JSON de erro
-│   │   ├── schemas.py              # Contratos de paginação
-│   │   └── vue_shell.py            # Recursos, assets e renderização do shell Vue
-│   ├── modules/                    # Registro explícito e módulos modernos
-│   ├── templates/app/shell.html    # Página base do Vue
-│   └── static/app/                 # Build Vue gerado e ignorado pelo Git
-├── frontend/                       # Código-fonte da interface Vue
-├── scripts/                        # Manutenções manuais potencialmente destrutivas
-└── logs/                           # Logs históricos
-```
-
-## Pontos de entrada para leitura
-
-Leia nesta ordem:
-
-1. `AGENTS.md` — regras obrigatórias de segurança;
-2. `main.py` — módulos registrados;
-3. `app/config.py` — criação do Flask e ciclo global;
-4. `app/templates/home.html` — menu e navegação;
-5. `app/utils/permissions.py` — perfis;
-6. rota, template e JavaScript do módulo que será alterado.
-
-## Módulos ativos
-
-O `main.py` é a fonte de verdade sobre os blueprints ativos.
-
-| Domínio | Backend principal |
+| Parte | Responsabilidade atual |
 |---|---|
-| Autenticação e home | `app/routes/auth_routes.py`, `main_default_routes.py` |
-| Demandas | `app/routes/demands/default.py` |
-| Rastreabilidade e cadastros | `app/routes/factoryRegister/` |
-| Comunicação, biblioteca, monitoramento e usuários | `app/routes/jdt/` |
-| Operation Meeting | `app/routes/operation/` |
-| Manutenção, OEE e Power BI | `app/routes/reports/` |
-| Melhorias, laboratório, desvios e paradas | `app/routes/request/` |
+| `main.py` e `app/config.py` | Criam a aplicação, registram módulos e mantêm extensões, sessão e ciclo global. |
+| `app/` | Arquitetura antiga: rotas, templates, usuários, permissões, integrações, arquivos e schedulers. Continua necessária. |
+| `backend/` | Arquitetura nova: módulos Python, configuração própria, acesso geral ao TD, infraestrutura HTTP e shell Vue. |
+| `frontend/` | Código Vue/TypeScript, navegação e componentes. Seu build é publicado dentro de `backend/`. |
 
-## Módulos presentes, mas desativados
+**Banco:** as duas arquiteturas acessam o mesmo banco TD. Cada uma mantém seus mecanismos de conexão; a nova tem uma engine e um pool compartilhados por todos os seus módulos, por instância da aplicação. Pool é um conjunto de conexões reutilizáveis. Não existe um banco ou uma conexão exclusiva de Eventos. Transações antigas e novas continuam independentes.
 
-Os seguintes módulos possuem código no repositório, porém não estão registrados atualmente:
+**Identidade:** a nova arquitetura reaproveita o login, a sessão e os perfis antigos por uma ponte em `backend/compatibility/`. Ela ainda não é uma aplicação independente de `app/`.
 
-- computadores;
-- extras/temporário;
-- horas produtivas;
-- setup.
+**Primeira feature:** Eventos usa `/app/eventos`, API `/api/v1/events` e assets `/static/app/`. É uma feature normal, sem `EVENTS_ENABLED`. Já há base compartilhada para identidade/permissões, CSRF e erros JSON, componentes Vue, paginação e mensagens de validação. Essa proteção moderna não corrige automaticamente as rotas antigas.
 
-Também existem arquivos `Copy`, `BKP`, arquivos com datas e `versaoFim`. Não os trate como versão ativa sem confirmar o import em `main.py`.
-
-## Execução local
-
-**Não há procedimento de execução local autorizado neste repositório.**
-
-Não execute:
-
-- `python main.py`;
-- `flask run`;
-- `teste_h24.py`;
-- arquivos em `scripts/`;
-- arquivos `run_*_scheduler.py`;
-- jobs em `app/services/jobs/`;
-- imports Python para introspecção;
-- testes, builds ou instalação de dependências sem autorização explícita.
-
-Motivos:
-
-- `create_app()` chama `db.create_all()`;
-- módulos podem iniciar threads durante o import;
-- configurações apontam para recursos corporativos;
-- scripts e jobs podem alterar registros, mover arquivos ou enviar notificações;
-- há identidade fixa de fallback fora do IIS.
-
-Toda investigação inicial deve ser feita por leitura estática.
-
-## Como rastrear uma tela
+## 2. Onde encontrar cada coisa
 
 ```text
-URL no menu ou JavaScript
-  → decorator @blueprint.route no arquivo Python
-  → função GET/POST/PATCH/PUT/DELETE
-  → render_template ou resposta JSON/arquivo
-  → template em app/templates
-  → JavaScript inline ou incluído
-  → SQL, upload, e-mail ou integração externa
+Digital_Jost/                       ← raiz: pasta que contém main.py
+├── main.py                         # Entrada da aplicação e blueprints antigos
+├── web.config                      # Hospedagem no IIS
+├── requirements.txt                # Versões das dependências Python
+├── .env.example                    # Modelo sem credenciais
+├── .env                            # Arquivo privado opcional; nunca versionar
+├── app/
+│   ├── config.py                    # Factory, extensões e sessão compartilhada
+│   ├── routes/                     # Backend antigo por domínio
+│   ├── templates/                  # Jinja, includes JavaScript e e-mails
+│   ├── static/                     # CSS/JS/imagens e uploads operacionais
+│   ├── services/                   # Serviços Windows e jobs
+│   └── utils/                      # Banco, segurança e integrações antigas
+├── backend/
+│   ├── bootstrap.py                # Composição da arquitetura nova
+│   ├── config.py                   # Configuração do TD e do pool moderno
+│   ├── compatibility/              # Ponte com identidade antiga
+│   ├── platform/                   # Banco, ambiente, HTTP, CSRF e shell Vue
+│   ├── modules/events/             # Rotas, schemas, serviços e repositório
+│   ├── templates/app/shell.html    # Página que carrega o Vue
+│   └── static/app/                 # Build gerado; não acompanha o Git
+└── frontend/
+    ├── package.json / package-lock.json
+    └── src/                        # Features Vue e recursos compartilhados
 ```
 
-## Bancos e integrações
+`main.py` é a referência dos blueprints antigos registrados; `backend/modules/__init__.py`, dos novos. Computadores, temporário, horas produtivas e setup estão sem registro ativo no estado atual. Arquivos `Copy`, `BKP` e similares podem ser históricos.
 
-O utilitário `app/utils/db_utils.py` expõe quatro engines:
+## 3. Dependências e preparação do computador
 
-- `jdt` — dados principais do portal;
-- `ftm` — eventos e informações industriais do FT Metrics/Mach2;
-- `plex` — dados do Plex e linked server;
-- `trace_qr` — rastreabilidade de montagem.
+| Requisito | Uso |
+|---|---|
+| Windows e Python 3.13 de 64 bits | Referência do servidor; há dependências específicas de Windows. |
+| Driver ODBC compatível com as conexões configuradas | Acesso ao SQL Server; instalar `pyodbc` não instala o driver do Windows. |
+| Acesso corporativo e permissões | TD, FTM, Plex, Trace QR, LDAP e demais integrações necessárias. |
+| Node `^22.18.0` ou `>=24.12.0`, com npm | Instalação e build do Vue no computador de desenvolvimento. |
+| IIS, autenticação Windows e `httpPlatformHandler` | Hospedagem atual e validação da identidade real. |
 
-O sistema também se integra com Active Directory, SMTP, SAP SOAP, Oracle, Microsoft Graph/Teams, Power BI e sistemas legados via iframe.
+O Python usa Flask/APIFlask, SQLAlchemy, pyodbc, pandas, Flask-Login/Principal/Mail, APScheduler e pywin32, além de clientes LDAP, Microsoft Graph, SAP SOAP e Oracle. O frontend usa Vue 3, TypeScript, Vite, Vue Router, Tailwind, PrimeVue/Volt e TanStack Query.
 
-## Serviços automáticos
+As versões estão em `requirements.txt` e nos manifests de `frontend/`. O arquivo Python está em UTF-16; preserve sua codificação ao editá-lo. Ele é um inventário de versões e a instalação completa em ambiente vazio ainda precisa ser validada; não force versões incompatíveis para concluir uma instalação.
 
-Há quatro schedulers separados da aplicação web:
+Em um **ambiente novo e autorizado**, abra o **Command Prompt (CMD)** na raiz do projeto:
 
-- a cada 30 segundos: consolidação do monitoramento;
-- a cada 5 minutos: alertas de paradas e sincronização de ponto;
-- diariamente: usuários, demandas, laboratório, desvios e alterações de parada;
-- a cada minuto: agendamentos automáticos do laboratório, início agendado de demandas e geração de atividades recorrentes.
+```bat
+py -3.13 -m venv .venv
+".venv\Scripts\python.exe" -m pip install -r requirements.txt
+```
 
-Eles são serviços Windows e modificam as mesmas fontes utilizadas pelas telas.
+Esses comandos não são o procedimento de atualização de um servidor já funcionando. Usar o caminho completo do Python evita instalar pacotes no interpretador errado. O isolamento da `.venv` é descrito na [documentação do Python](https://docs.python.org/3.13/library/venv.html).
 
-## Segurança
+## 4. Configuração privada: vale para as duas arquiteturas
 
-O repositório contém problemas conhecidos que devem ser tratados antes de qualquer abertura ou modernização:
+O leitor comum está em `backend/platform/environment.py`. Ele atende o backend novo e os pontos adaptados do antigo, inclusive serviços Windows.
 
-- credenciais e segredos versionados;
-- SQL montado por interpolação em diversos pontos;
-- downloads e exclusões baseados em caminhos dinâmicos;
-- ausência aparente de proteção CSRF;
-- efeitos externos durante inicialização/importação;
-- verificação TLS desabilitada em algumas integrações;
-- logs e payloads potencialmente sensíveis;
-- código legado, backups e logs rastreados no Git.
+1. Copie `.env.example` para um arquivo privado e preencha os valores existentes pelo canal seguro da empresa. Não publique credenciais no modelo.
+2. Sem `DJ_ENV_FILE`, o leitor procura **`.env` na raiz, ao lado de `main.py`**. Confirme que o Windows não salvou `.env.txt`.
+3. Para outro nome/local, defina `DJ_ENV_FILE` no ambiente do processo, com o caminho absoluto. O seletor precisa existir antes da inicialização.
+4. Variáveis já existentes no ambiente do Windows têm prioridade sobre o arquivo, inclusive valores vazios. O arquivo é lido uma vez; alterações exigem reiniciar o processo afetado.
 
-Não copie credenciais para documentação, tickets, commits ou mensagens. Consulte as regras e os riscos conhecidos em `AGENTS.md`.
+| Grupo | Variáveis e finalidade |
+|---|---|
+| Compartilhado | `DJ_TD_ODBC_CONNECTION_STRING`: conexão geral do TD; `DJ_SESSION_SECRET_KEY`: assinatura da sessão Flask. |
+| Bancos antigos | `DJ_FTM_ODBC_CONNECTION_STRING`, `DJ_PLEX_ODBC_CONNECTION_STRING`, `DJ_TRACE_QR_ODBC_CONNECTION_STRING`. |
+| MES e LDAP | Pares `DJ_MES_USER`/`DJ_MES_PASSWORD` e `DJ_LDAP_USER`/`DJ_LDAP_PASSWORD`. |
+| Microsoft/Teams | `DJ_MICROSOFT_TENANT_ID`, `DJ_MICROSOFT_CLIENT_ID`, `DJ_MICROSOFT_CLIENT_SECRET`, `DJ_MICROSOFT_USERNAME`, `DJ_MICROSOFT_PASSWORD`. |
+| SAP | `DJ_SAP_USER` e `DJ_SAP_PASSWORD`. |
+| Legado sem uso ativo confirmado | `DJ_PLEX_TEST_ODBC_CONNECTION_STRING` ainda é exigida no import das constantes. `DJ_ORACLE_USER`/`DJ_ORACLE_PASSWORD` são referenciadas em horas produtivas, atualmente desativado. |
 
-## Regra de contribuição
+Várias constantes e integrações antigas são carregadas já na inicialização. Por isso, preencher somente TD e sessão não basta para subir o portal inteiro. Preserve a chave de sessão atual para evitar invalidar as sessões existentes.
 
-Antes de modificar qualquer funcionalidade:
+O arquivo usa UTF-8, não interpola `${...}` e depende de **`python-dotenv==1.2.4` no Python de cada processo que o lê**. Não coloque credenciais Python em variáveis `VITE_*`: elas podem entrar no JavaScript enviado ao navegador.
 
-1. confirme qual arquivo está ativo;
-2. leia permissões e todos os métodos da rota;
-3. identifique tabelas, arquivos e integrações afetadas;
-4. procure jobs que alteram os mesmos dados;
-5. preserve mudanças existentes no worktree;
-6. faça alterações pequenas e localizadas;
-7. valide estaticamente enquanto não houver ambiente seguro autorizado;
-8. atualize `README.md` ou `AGENTS.md` quando arquitetura, regras de segurança ou o fluxo de manutenção mudarem.
+No servidor, a recomendação é guardar o arquivo **fora de qualquer pasta publicada pelo IIS**, com leitura apenas para as contas necessárias. O `.env` na raiz é suportado e foi usado na recuperação do H24, mas exige verificar a proteção contra download e permanece uma pendência de hospedagem. Mover o arquivo exige configurar o seletor também nos serviços; `web.config` só configura o site.
+
+## 5. Frontend e teste em localhost
+
+No computador autorizado, a partir da raiz, instale pelo lockfile e gere o build:
+
+```bat
+cd frontend
+npm ci
+npm run build:local
+cd ..
+```
+
+O comando verifica os tipos e gera **`backend/static/app/`**, incluindo **`.vite/manifest.json`**. O backend encontra o build nesse local automaticamente. Publique a pasta inteira, com manifest e assets da mesma compilação. Ela é ignorada pelo Git: um pull não produz esses arquivos. O comportamento de instalação pelo lockfile está na [documentação do npm](https://docs.npmjs.com/cli/v11/commands/npm-ci/).
+
+Para conferir o fluxo completo em localhost, prepare um IIS local com autenticação Windows, os caminhos locais do Python/`main.py` e o ambiente privado, seguindo a estrutura da seção seguinte. Use dados e acessos autorizados para esse ambiente. **Ainda não há isolamento automático dos bancos corporativos nem um procedimento de testes sem efeitos externos.** Executar `main.py` fora do IIS usa fallback de identidade e não comprova login ou permissões reais.
+
+`npm run dev` serve para desenvolvimento da interface. Quando `VITE_EVENTS_MOCK=true` no modo de desenvolvimento, Eventos usa dados simulados; isso não valida banco nem integrações. O build integrado ao Flask usa a API real.
+
+Após a preparação autorizada, confira pela web: uma tela antiga, `/app/eventos`, atualização da página com F5, paginação e perfis de acesso. Cadastros e testes de integrações precisam de registros de teste aprovados, pois podem gravar dados ou enviar notificações.
+
+## 6. Como o servidor funciona hoje
+
+O ambiente informado usa **Windows/IIS**, projeto em **`I:\IIS\Digital_Jost`** e servidor sem acesso à internet. O `httpPlatformHandler` inicia o Python do site e encaminha as requisições e o token Windows para o Flask.
+
+| Processo | Python/configuração |
+|---|---|
+| Site Digital JOST | `I:\IIS\Digital_Jost\.venv\Scripts\python.exe`, definido em `web.config`. |
+| H24, serviço `RunH24Scheduler` | Host confirmado: `C:\python13\pythonservice.exe`, conta Local System. Instalações de pacotes usam `C:\python13\python.exe`. |
+| Demais schedulers | Confira o executável e a conta de cada serviço; não presuma que usam a `.venv` do site. |
+
+O `web.config` atual utiliza `arguments="-m flask run --port %HTTP_PLATFORM_PORT%"` e `forwardWindowsAuthToken="true"`. Preserve as configurações reais de autenticação e hospedagem ao publicar.
+
+Dentro de `<httpPlatform>`, a configuração básica do ambiente é:
+
+```xml
+<environmentVariables>
+    <environmentVariable name="FLASK_SKIP_DOTENV" value="1" />
+    <environmentVariable name="FLASK_APP" value="I:\IIS\Digital_Jost\main.py" />
+</environmentVariables>
+```
+
+Se usar o arquivo padrão `I:\IIS\Digital_Jost\.env`, não é necessário `DJ_ENV_FILE`. Para arquivo externo, acrescente uma variável `DJ_ENV_FILE` com o caminho absoluto real, sem credenciais no XML. Um seletor antigo ainda apontando para `digitaljost.env` prevalece sobre o nome `.env` e precisa ser corrigido.
+
+`FLASK_SKIP_DOTENV=1` evita que o Flask CLI carregue arquivos por conta própria antes do leitor do projeto; ele **não desativa** o leitor comum. Defina-o antes de iniciar o processo. Veja a [documentação do Flask CLI](https://flask.palletsprojects.com/en/stable/cli/#disable-dotenv).
+
+### Serviços Windows separados do site
+
+| Nome no Windows | Rotina |
+|---|---|
+| `RunS30Scheduler` | Monitoramento a cada 30 segundos. |
+| `RunM5Scheduler` | Alertas e ponto a cada 5 minutos. |
+| `RunH24Scheduler` | Rotinas diárias às 06:00; parte dos jobs apenas de segunda a sexta. |
+| `RunAutoScheduler` | Agendamentos de laboratório e demandas a cada minuto. |
+
+Os serviços leem `app/services/` e podem alterar os mesmos dados das telas. Reiniciar o site não reinicia esses serviços. A conta do serviço precisa conseguir ler o arquivo privado; as variáveis do `web.config` não são herdadas por ele.
+
+**Incidente já observado:** o H24 encontrou o `.env`, mas não iniciou porque `python-dotenv` estava disponível somente na `.venv` do site. A instalação offline no Python base `C:\python13\python.exe` resolveu o erro segundo a confirmação do responsável. Para outros serviços, confirme o interpretador antes de repetir a instalação.
+
+## 7. Instalar dependências no servidor sem internet
+
+Prepare os pacotes em um computador com internet e copie a pasta para o servidor. Os exemplos são para **CPython 3.13 / Windows 64 bits**; ajuste os parâmetros se o processo de destino for diferente.
+
+### Pacote usado pela configuração privada
+
+No computador, na raiz do projeto:
+
+```bat
+".venv\Scripts\python.exe" -m pip --disable-pip-version-check download --dest "pacotes-modernizacao" --only-binary=:all: --no-deps --platform win_amd64 --python-version 3.13 --implementation cp --abi cp313 "python-dotenv==1.2.4"
+```
+
+Copie a pasta completa para `I:\IIS\Digital_Jost\pacotes-modernizacao`. No CMD do servidor, durante a manutenção autorizada, instale no Python do **site**:
+
+```bat
+"I:\IIS\Digital_Jost\.venv\Scripts\python.exe" -m pip --disable-pip-version-check install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-modernizacao" --only-binary=:all: --no-deps "python-dotenv==1.2.4"
+```
+
+Para o **H24**, quando necessário, a instalação é separada:
+
+```bat
+"C:\python13\python.exe" -m pip --disable-pip-version-check install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-modernizacao" --only-binary=:all: --no-deps "python-dotenv==1.2.4"
+```
+
+### Uma dependência nova no futuro
+
+1. Escolha e valide a versão no ambiente autorizado e registre-a em `requirements.txt`.
+2. No computador com internet, use o download abaixo. Substitua `NOME_PACOTE==VERSAO`; baixe também as dependências transitivas, portanto **não use `--no-deps` nesse caso**.
+
+```bat
+".venv\Scripts\python.exe" -m pip download --dest "pacotes-nova-dependencia" --only-binary=:all: --platform win_amd64 --python-version 3.13 --implementation cp --abi cp313 --constraint requirements.txt "NOME_PACOTE==VERSAO"
+```
+
+3. Revise as versões coletadas e valide o conjunto fora de produção. Se houver conflito com o inventário ou faltar wheel compatível, resolva antes da publicação; não force atualização geral no servidor.
+4. Copie a pasta inteira e instale somente o pacote solicitado no interpretador do processo afetado:
+
+```bat
+"I:\IIS\Digital_Jost\.venv\Scripts\python.exe" -m pip install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-nova-dependencia" --only-binary=:all: --constraint "I:\IIS\Digital_Jost\requirements.txt" "NOME_PACOTE==VERSAO"
+```
+
+`--no-index` impede consulta ao índice online; `--find-links` aponta para os arquivos locais. `--no-deps` foi usado acima apenas para o pacote conhecido `python-dotenv`, que não precisa de dependências adicionais para essa leitura. Não o copie indiscriminadamente para outros pacotes. Referências: [pip download](https://pip.pypa.io/en/stable/cli/pip_download/) e [pip install](https://pip.pypa.io/en/stable/cli/pip_install/).
+
+## 8. Passo a passo para publicar mudanças
+
+1. **Identifique a versão em produção.** Registre o commit e compare no computador de desenvolvimento com `git diff --name-status COMMIT_EM_PRODUCAO HEAD`, substituindo o marcador. Revise adições, alterações e exclusões; não copie arquivos por memória.
+2. **Prepare a entrega.** Gere o Vue quando necessário, reúna os arquivos alterados e prepare os pacotes offline. Frontend e API devem ser da mesma versão.
+3. **Prepare o retorno.** Guarde cópia privada dos arquivos substituídos, build inteiro, `web.config` efetivo e configuração anterior. Mantenha backups com segredos fora de pastas publicadas e registre os caminhos/Pythons dos serviços.
+4. **Abra uma janela de manutenção.** Pare o site e os serviços afetados antes de substituir código compartilhado ou bibliotecas. Configuração e constantes comuns podem afetar todos os schedulers. Confirme a parada e evite cópia com processos usando arquivos antigos.
+5. **Instale as dependências necessárias** no Python correto de cada processo, pelo procedimento offline. Não substitua `.venv` nem reinstale todo o inventário de produção para adicionar um pacote.
+6. **Copie o código e o build**, conforme a tabela abaixo. Ajuste somente os campos necessários do `web.config` existente e confira a configuração privada, o seletor e as permissões das contas.
+7. **Inicie e confira o site.** Acesse uma tela antiga e Eventos, faça F5, confira assets, sessão, permissões e consultas. Gravações somente com dados autorizados. Consulte os logs se houver erro.
+8. **Inicie os serviços afetados, um por vez.** Confira `Running` em `Services` e acompanhe logs/ciclos naturais; não execute jobs manualmente apenas para testar. O H24 não executa todas as rotinas ao iniciar. Registre a versão publicada e o resultado.
+
+| Arquivo/pasta | Como publicar |
+|---|---|
+| `backend/` | Pode ser atualizado como conjunto de código da mesma versão; publique também o build completo em `backend/static/app/`. Confira arquivos removidos para não deixar módulos antigos misturados. |
+| `app/` | Copie somente os arquivos identificados no diff. Preserve uploads, logs e arquivos operacionais; não troque a pasta inteira. |
+| `main.py`, `requirements.txt` e demais arquivos da raiz | Atualize quando constarem na entrega; o manifest Python não instala pacotes sozinho. |
+| `web.config` | Preserve as particularidades do servidor; adapte os campos necessários. |
+| Configuração privada | Transfira por canal separado e seguro, preservando os valores atuais. Não inclua no pacote comum. |
+| `frontend/` | Fonte usada no computador para gerar o build; o servidor não precisa de Node, `node_modules` ou Vite em execução. |
+
+Não sobrescreva `.venv`, `app/static/uploads/`, logs ou recursos operacionais. Não copie a `.venv` do computador. Pastas antigas como `app/modules/events/` e `app/static/app/` não são os destinos atuais; confira referências e validação antes de arquivar ou remover sobras, sem limpar outras áreas de `app/`.
+
+**Se precisar voltar:** pare os processos afetados, restaure o conjunto compatível de código, manifest/assets, configuração e `web.config`, e inicie novamente. Voltar arquivos não desfaz gravações no banco. Não desinstale bibliotecas compartilhadas nem restaure dados sem avaliar os demais processos.
+
+## 9. Onde procurar erros
+
+| Sintoma | Primeira conferência |
+|---|---|
+| Site não inicia após publicar | Caminho do Python e de `FLASK_APP`, seletor `DJ_ENV_FILE`, acesso ao arquivo e log configurado em `stdoutLogFile`. |
+| Variável `DJ_*` ausente | Arquivo realmente lido por esse processo, nome `.env`, variável preenchida e ambiente do Windows prevalecendo. Não conclua que a senha está errada. |
+| Pedido para instalar `python-dotenv` | Pacote ausente no Python desse processo; instalação na `.venv` não atende automaticamente ao serviço. |
+| Serviço retorna erro específico 1 | `Event Viewer` → `Windows Logs` → `Application`; procure o traceback de `Python Service`. Confira também `System` para o Service Control Manager. |
+| Vue indisponível, página vazia ou assets 404 | Build inteiro em `backend/static/app/`, com `.vite/manifest.json` e arquivos da mesma compilação. |
+| API retorna 401, 403 ou erro de token | 401 indica sessão ausente; 403, perfil sem acesso; CSRF inválido retorna 400. Confira a causa sem remover a proteção. |
+
+Os logs dos schedulers ficam em `app/services/logs/`, mas falhas de importação podem ocorrer antes de o logger iniciar. Não compartilhe logs completos sem retirar segredos e dados pessoais.
+
+## 10. Manutenção e segurança
+
+Para evoluir a parte moderna, use `backend/modules/` e as bases existentes de `backend/platform/` e `frontend/src/shared/`. Mantenha HTTP, regras e SQL separados. Registre o módulo e a rota Vue; novas URLs precisam também da rota Flask que entrega o shell para acesso direto/F5. Para corrigir uma tela antiga, confirme seus imports, templates, JavaScript, permissões, tabelas e jobs antes de alterar.
+
+A externalização das credenciais reduz a exposição no código ativo, mas **não elimina segredos de histórico, cópias e backups nem substitui rotação**. As credenciais foram mantidas por decisão operacional. Permanecem pendências no legado, como SQL interpolado, proteção CSRF desigual, caminhos dinâmicos de arquivos, fallback de identidade e efeitos externos na inicialização. Migrar uma tela exige revisar esses pontos; apenas mudar sua pasta não os resolve.
+
+Este README foi revisado por leitura de código e configuração. Instalação completa, acesso corporativo, autenticação, publicação e execução dos jobs precisam de validação pelo responsável em ambiente autorizado.
