@@ -8,4 +8,4 @@ Esta pasta reúne a documentação oficial do projeto. O nome `handbook` signifi
 
 Instalação, configuração do ambiente, build e publicação no servidor estão no [README principal](../README.md).
 
-Os documentos devem distinguir o que está implementado do que é proposta, acompanhar as mudanças relevantes do código e explicar as decisões em linguagem simples. Não devem depender dos documentos históricos nem conter credenciais ou dados operacionais.
+Os documentos devem distinguir o que está implementado do que é proposta, acompanhar as mudanças relevantes do código e explicar as decisões em linguagem simples.

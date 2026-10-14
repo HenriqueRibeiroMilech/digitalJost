@@ -1,6 +1,6 @@
 # Arquitetura modernizada do Digital JOST
 
-Este documento explica a organização atual e o caminho para criar e migrar funcionalidades com menos repetição e menor risco. O estado implementado foi conferido por leitura do código; propostas futuras estão identificadas na seção de evolução.
+Este documento explica a organização atual e o caminho para criar e migrar funcionalidades com menos repetição e menor risco.
 
 ## 1. Objetivo e direção
 
