@@ -2,6 +2,8 @@
 
 Data: **13/10/2026**. Entrega S1 limitada ao banco TD e à chave da sessão Flask.
 
+**Evolução posterior — S1b, 14/10/2026:** este documento registra a primeira entrega, commit `21c4c81`. O código atual também carrega arquivo privado e externaliza as outras integrações identificadas. Para preparação, pacote e retorno da versão atual, usar o [guia de configuração privada das integrações](configuracao-privada-integracoes.md). O pacote de quatro arquivos e a ausência de leitura de `.env` descritos originalmente abaixo não são o procedimento atual.
+
 ## 1. Decisão e estado da entrega
 
 Por decisão do responsável, **as credenciais atuais serão mantidas nesta etapa**. O código passa a recebê-las do ambiente dos processos, sem valores literais para TD ou sessão e sem fallback para os valores anteriores. O destino continua sendo o mesmo banco corporativo aprovado.
@@ -43,7 +45,7 @@ Usar a mesma chave mantém a assinatura das sessões; as outras regras de valida
 
 As opções `BACKEND_TD_POOL_SIZE`, `BACKEND_TD_MAX_OVERFLOW`, `BACKEND_TD_POOL_TIMEOUT` e `BACKEND_TD_POOL_RECYCLE` permanecem opcionais, com os padrões da entrega 2. Não são necessárias novas variáveis por funcionalidade.
 
-O [.env.example](../.env.example) contém somente os nomes, com valores vazios. **A aplicação não implementa carregamento de `.env`: copiar ou preencher o modelo não configura os processos.** O `.gitignore` passa a ignorar `.env` e `.env.*`, exceto esse modelo. Essa proteção não retira arquivos já rastreados nem protege um arquivo de configuração contra acesso pelo servidor web.
+O [.env.example](../.env.example) contém somente os nomes, com valores vazios. **Na primeira S1, a aplicação não implementava carregamento de `.env`. A S1b adiciona essa leitura**, conforme o guia atual indicado acima. O `.gitignore` ignora `.env` e `.env.*`, exceto esse modelo. Essa proteção não retira arquivos já rastreados nem protege um arquivo de configuração contra acesso pelo servidor web.
 
 ## 4. Preparação no computador de desenvolvimento
 

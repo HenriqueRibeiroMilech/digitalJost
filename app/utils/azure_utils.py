@@ -26,14 +26,16 @@ import time
 import msal
 import threading
 
+from backend.platform.environment import required_env
+
 class _TokenManager:
 
     def __init__(self):
-        self.TENANT_ID = "812a6bd0-5829-4196-b2be-d0580b7bd0cb"
-        self.CLIENT_ID = "bc316c09-bd48-41bd-be4b-6a45df25a24e"
-        self.CLIENT_SECRET = "ygr8Q~YerkmRYvW0~imwSOVPsnxE6qn3ktH3Acqi"
-        self.USERNAME = 'digitaljost@randon.com.br'
-        self.PASSWORD = '123tdg!@#123'
+        self.TENANT_ID = required_env("DJ_MICROSOFT_TENANT_ID")
+        self.CLIENT_ID = required_env("DJ_MICROSOFT_CLIENT_ID")
+        self.CLIENT_SECRET = required_env("DJ_MICROSOFT_CLIENT_SECRET")
+        self.USERNAME = required_env("DJ_MICROSOFT_USERNAME")
+        self.PASSWORD = required_env("DJ_MICROSOFT_PASSWORD")
 
         self._app = msal.ConfidentialClientApplication(
             client_id=self.CLIENT_ID,

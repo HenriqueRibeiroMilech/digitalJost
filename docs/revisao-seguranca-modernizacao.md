@@ -4,6 +4,8 @@ Data: **13/10/2026**. Código analisado: commit `49ad011`, posterior à entrega 
 
 **Atualização posterior — entrega S1:** a leitura externa de TD e sessão foi implementada após esta revisão, conforme o [guia de configuração externa](configuracao-externa-td-sessao.md) e a seção 14 do plano. Os valores literais dessas duas categorias foram retirados do código atual; os demais achados e as referências abaixo registram o estado analisado na revisão. Por decisão do responsável, as credenciais atuais serão mantidas no ambiente, sem rotação nesta etapa. Provisionamento/publicação/verificação funcional e tratamento da exposição anterior permanecem pendentes.
 
+**Atualização S1b — 14/10/2026:** o [carregamento de configuração privada e as outras integrações](configuracao-privada-integracoes.md) foram preparados, preservando os valores por decisão do responsável. Os valores identificados de FTM/Plex/Trace QR, MES, LDAP, Microsoft, SAP e Oracle saíram dos arquivos Python correspondentes; o `.env` privado criado nesta cópia de trabalho permanece fora do Git e o modelo não contém valores. Backups/histórico, rotação e demais achados continuam pendentes. Não houve teste de validade ou execução.
+
 ## 1. Escopo e limites
 
 Esta revisão é estática: leitura de código, buscas e conferência de referências. Foram considerados a factory, os registros de `main.py`, autenticação, permissões, configurações e integrações, o backend de Eventos, exemplos de operações legadas de leitura/escrita/download, templates e o cliente Vue. Os achados abaixo têm exemplos rastreados; não representam uma auditoria exaustiva de cada handler, job ou integração.

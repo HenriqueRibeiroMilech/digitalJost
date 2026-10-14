@@ -13,6 +13,8 @@ from datetime import time
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user
 
+from backend.platform.environment import required_env
+
 from app.utils.maintenance_availability import get_maintenance_availability_data, maintenance_event_catalog
 from app.utils.planning_availability import WORKCENTER_GROUPS, get_planning_month_range
 from app.utils.db_utils import engine_run_query
@@ -38,8 +40,8 @@ def _CREATE_CONNECTION():
     wsdl_url = 'https://ecp.sap.randon.com.br:443/sap/bc/srt/wsdl/flv_10002A1011D1/bndg_url/sap/bc/srt/scs/sap/zmes_bbp_rfc_read_table?sap-client=190'
 
     # Credenciais de autenticação
-    username = 'JOST_ROCKWEL'
-    password = 'f9c3s2m4'
+    username = required_env("DJ_SAP_USER")
+    password = required_env("DJ_SAP_PASSWORD")
 
     # Configurar sessão HTTP com autenticação básica
     session = Session()

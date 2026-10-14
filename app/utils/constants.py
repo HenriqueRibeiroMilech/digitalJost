@@ -19,42 +19,22 @@ OFF_APLICATIONS = []
 OFF_ROLES = []
 
 # VARIAVEIS DE CONEXÃO COM O PLEX
-MES_MAIN_USER = 'JostBrasilDigitalWs@plex.com'
-MES_MAIN_PASSWORD = '508c9ad-73a6-4'
+MES_MAIN_USER = required_env("DJ_MES_USER")
+MES_MAIN_PASSWORD = required_env("DJ_MES_PASSWORD")
 
 # CONEXÃO PRINCIPAL - BASE DA TRANSFORMAÇÃO DIGITAL
 CNNX_JDT = required_env("DJ_TD_ODBC_CONNECTION_STRING")
 
 # CONEXÃO PARA BASE DE DADOS DA FÁBRICA MIC
-CNNX_FTM = (r"Driver={ODBC Driver 18 for SQL Server};"
-            r"Server=clt-sql-03\inssql03;"
-            r"Database=FTMETRICS_JOST;"
-            r"UID=transformacaodigital_jost;"
-            r"PWD=E7B?giz@KB&28n01;"
-            r"TrustServerCertificate=yes;")
+CNNX_FTM = required_env("DJ_FTM_ODBC_CONNECTION_STRING")
 
 # CONEXÃO PARA BASE DE DADOS PLEX
-CNNX_PLEX = (r"Driver={ODBC Driver 18 for SQL Server};"
-            r"Server=CLT-SQL-01\INSSQL01;"
-            r"Database=JOST_INTEGRATION_PRD;"
-            r"UID=JOST_INTEGRATION_PRD;"
-            r"PWD=L2OGiEaY2OScB7Wg;"
-            r"TrustServerCertificate=yes;")
+CNNX_PLEX = required_env("DJ_PLEX_ODBC_CONNECTION_STRING")
 
 # CONEXÃO PARA BASE DE DADOS QAS PLEX
-CNNX_PLEX_TEST = (r"Driver={ODBC Driver 18 for SQL Server};"
-            r"Server=VQW-CSL-SQL01A\INSSQL01;"
-            r"Database=JOST_INTEGRATION_QAS;"
-            r"UID=JOSTINTEGRATIONQASUser;"
-            r"PWD=gdpHNxX6UajbMMtl;"
-            r"TrustServerCertificate=yes;")
+CNNX_PLEX_TEST = required_env("DJ_PLEX_TEST_ODBC_CONNECTION_STRING")
 
 # CONEXÃO PARA BASE DE DADOS DA RASTREABILIDADE DA QUINTA RODA
-CNNX_TRACE_QR = (r"Driver={ODBC Driver 18 for SQL Server};"
-            r"Server=CLT-SQL-01\INSSQL01;"
-            r"Database=Rastreabilidade;"
-            r"UID=rastreabilidade;"
-            r"PWD=m7Rkek&$G$XsIN;"
-            r"TrustServerCertificate=yes;")
+CNNX_TRACE_QR = required_env("DJ_TRACE_QR_ODBC_CONNECTION_STRING")
 
 APP_PATH = os.getcwd()

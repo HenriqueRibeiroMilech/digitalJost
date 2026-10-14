@@ -9,6 +9,8 @@ import plotly.graph_objects as go
 from flask import Blueprint, abort, redirect, render_template, request, url_for
 from flask_login import current_user
 
+from backend.platform.environment import required_env
+
 from app.utils.constants import APP_PATH
 from app.utils.data_utils import get_current_shift, return_options
 from app.utils.db_utils import get_engine
@@ -236,7 +238,7 @@ def _OPERS_PERIODIC(arg, json_data, init, end):
     ora_df_filter = pd.DataFrame(columns=['NOME', 'TURNO', 'MATRICULA', 'CCUS', 'DATA_MARCACAO', 'HORA_E1',
                                             'HORA_S1', 'HORA_E2', 'HORA_S2', 'HORA_E3', 'HORA_S3'])
     ora_cnnx_str = oracledb.makedsn('sgf-ora-15-vip', '1521', service_name='EMRA')
-    ora_cnnx = oracledb.connect(user='JOST_ROCKWEL', password='RANDON2022', dsn=ora_cnnx_str)
+    ora_cnnx = oracledb.connect(user=required_env("DJ_ORACLE_USER"), password=required_env("DJ_ORACLE_PASSWORD"), dsn=ora_cnnx_str)
 
     init_month = int(init.split('-')[1])
     end_month = int(end.split('-')[1])

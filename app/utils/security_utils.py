@@ -3,6 +3,8 @@ import json
 
 from sqlalchemy import text
 
+from backend.platform.environment import required_env
+
 from app.utils.db_utils import get_engine
 
 def access_register(user_id, route, args, payload, method, status_code, dt):
@@ -62,7 +64,7 @@ def create_external_user(username):
 
     base = 'ou=EmpresasRandon,dc=randon,dc=com,dc=br'
     ld = ldap3.Server('SVH-DC-21.randon.com.br', use_ssl=False)
-    ld_conn = ldap3.Connection(ld, user=r"randon.com.br\Fabrica_Jost", password='Empresasrandon@2018',
+    ld_conn = ldap3.Connection(ld, user=required_env("DJ_LDAP_USER"), password=required_env("DJ_LDAP_PASSWORD"),
                                authentication=ldap3.NTLM)
     ld_conn.bind()
     ld_conn.search(base, f'(&(objectCategory=Person)(mailNickname={username}))',

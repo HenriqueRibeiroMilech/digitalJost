@@ -6,7 +6,7 @@ Simplificar o desenvolvimento de novas funcionalidades e a revisão das existent
 
 A proposta mantém inicialmente uma aplicação Flask/APIFlask no Windows/IIS, a autenticação e a sessão atuais, o frontend Vue em `frontend/` e um acesso ao banco da Transformação Digital (TD) compartilhado entre os módulos modernos.
 
-Este arquivo registra o plano discutido, as entregas implementadas nas seções 9 a 12 e 14 e os próximos trabalhos na seção 13; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
+Este arquivo registra o plano discutido, as entregas implementadas nas seções 9 a 12, 14 e 15 e os próximos trabalhos na seção 13; não autoriza execução, publicação, consultas ou alterações de banco. As regras de [AGENTS.md](../AGENTS.md) continuam aplicáveis.
 
 ## 2. Decisões que orientam a implementação
 
@@ -490,7 +490,7 @@ O trabalho seguinte foi planejado como identidade/permissões, CSRF comum, erros
 6. **Consolidação e segunda funcionalidade pequena.** Seguir as etapas 4 e 5: manter configuração/ciclo de vida explícitos e provar reutilização de banco, identidade, CSRF e shell em outro módulo. A funcionalidade deve ter contrato, autorização, SQL parametrizado e limites de dados definidos antes dos arquivos.
 7. **Migração gradual e correções do legado.** Corrigir os fluxos de maior risco de SQL, `eval`, HTML bruto e anexos, mesmo antes de sua migração completa. Depois, escolher uma fatia por vez, considerando métodos HTTP, jobs escritores, integrações, transações e retorno.
 
-Os demais itens permanecem **planejados**. A leitura externa de TD/sessão do item 1 foi preparada na entrega S1, seção 14, preservando por decisão do responsável as credenciais atuais. A revisão não alterou senhas, chaves, contas, grants, dados, rotas ou integrações. Rotação, configurações do servidor e qualquer tratamento de histórico exigem coordenação própria; esta lista não autoriza o agente a executar comandos, acessar bancos, reiniciar serviços, publicar ou reescrever Git.
+Os demais itens permanecem **planejados**. A leitura externa de TD/sessão do item 1 foi preparada na S1, seção 14; a S1b, seção 15, adiciona o arquivo privado e externaliza as outras credenciais identificadas, preservando os valores atuais por decisão do responsável. A revisão não alterou senhas, chaves, contas, grants, dados, rotas ou integrações. Rotação, configurações do servidor e qualquer tratamento de histórico exigem coordenação própria; esta lista não autoriza o agente a executar comandos, acessar bancos, reiniciar serviços, publicar ou reescrever Git.
 
 ### Critério de segurança para a base moderna
 
@@ -501,11 +501,13 @@ Os demais itens permanecem **planejados**. A leitura externa de TD/sessão do it
 - Cookies, certificados, headers e privilégios conferidos na configuração efetiva, preservando os consumidores do legado por mudanças localizadas.
 - Publicação revisada com retorno preparado e evidências funcionais obtidas apenas em ambiente autorizado. A leitura estática não comprova que o sistema esteja seguro em produção.
 
-**Próximo passo para a entrega S1:** provisionar TD/sessão no PC, IIS e consumidores dos serviços, antes da publicação e verificação autorizadas. As demais categorias e integrações entram em entregas próprias, sem perder prioridade no inventário de exposição. Rotação/revogação permanece pendente conforme a decisão atual de manter as credenciais.
+**Próximo passo para a entrega S1b:** transferir privadamente o arquivo para o PC e provisionar a configuração completa do portal/serviços no servidor, por ambiente ou arquivo fora da pasta publicada. Preparar dependência quando houver arquivo, prioridade do Windows, ACLs e controle do Flask CLI antes da publicação e verificação autorizadas. Rotação/revogação permanece pendente conforme a decisão atual de manter as credenciais; os próximos trabalhos de código são as correções de identidade/acesso e seus adaptadores.
 
 **O sistema não foi executado; a validação foi somente estática.**
 
 ## 14. Registro da entrega S1 — configuração externa do TD e da sessão
+
+**Registro histórico, commit `21c4c81`:** a S1b da seção 15 substitui o leitor e amplia os consumidores. Para publicar a versão atual, usar o [guia de configuração privada](configuracao-privada-integracoes.md), não o pacote de quatro arquivos da primeira S1.
 
 **Situação:** código preparado e validado estaticamente; cadastro das variáveis, publicação e verificação funcional pendentes. O responsável decidiu manter as credenciais atuais nesta etapa.
 
@@ -534,3 +536,29 @@ Manter as credenciais significa que sua exposição nas versões anteriores, clo
 Foi realizada inspeção do diff sem reproduzir segredos, conferência de referências, compatibilidade dos consumidores e `git diff --check`. Não houve execução, import, conexão, instalação, build, alteração de dados ou publicação.
 
 **O sistema não foi executado; a validação foi somente estática.** O funcionamento no PC, IIS e serviços precisa de confirmação em ambiente autorizado.
+
+## 15. Registro da entrega S1b — arquivo privado e outras credenciais
+
+**Situação:** código preparado, valores atuais preservados em um `.env` privado desta cópia de trabalho e validação somente estática. O arquivo é ignorado, não integra o commit e não acompanha um pull. Publicação, instalação e verificação no PC/IIS/serviços permanecem pendentes.
+
+### Configuração implementada
+
+`backend/platform/environment.py` carrega na primeira utilização um arquivo absoluto selecionado por `DJ_ENV_FILE` ou `.env` na raiz calculada pelo módulo. Sem arquivo padrão, mantém a leitura do ambiente sem importar a biblioteca. Com arquivo, usa `python-dotenv==1.2.4`, prioridade para o Windows, interpolação desativada e leitura UTF-8 com suporte a BOM. O erro de configuração não imprime valores. Não foram acrescentados arquivos com senhas ao pacote versionado.
+
+As 19 variáveis do modelo cobrem TD/sessão, FTM, Plex, Plex de teste, Trace QR, MES, LDAP, Microsoft, SAP e Oracle. Os quatro consumidores LDAP anteriores foram comparados como texto e tinham os mesmos valores. As constantes legadas, contratos HTTP, destinos, contas, privilégios, pools e transações são preservados. Os módulos temporário/horas produtivas permanecem desativados; só sua leitura de credenciais foi alterada.
+
+O `web.config` versionado recebe somente `FLASK_SKIP_DOTENV=1`, evitando carregamento antecipado pelo Flask CLI. Aplicar a opção à configuração efetiva sem copiar segredos ou substituir outras opções do servidor. A dependência foi declarada em `requirements.txt`, preservando UTF-16; os dois comandos documentados de preparação offline foram atualizados, sem execução.
+
+### Preparação e risco
+
+O [guia da S1b](configuracao-privada-integracoes.md) contém nomes, consumidores, transferência privada, pacote de nove arquivos Python, configuração do IIS e retorno compatível. No servidor, usar ambiente dos processos ou arquivo fora da pasta publicada, com ACLs e `DJ_ENV_FILE` definido antes da inicialização. No PC, o arquivo privado precisa ser transferido separadamente, e a biblioteca deve estar disponível na `.venv` utilizada. Não é necessário novo build Vue para esta mudança.
+
+Constantes ainda são resolvidas durante o import legado; seus consumidores precisam dos cinco destinos de banco e MES. Integrações Microsoft também mantêm seu ciclo atual. Ausência de valores, biblioteca quando houver arquivo, caminho, ACL ou precedência incorreta pode impedir inicialização ou falhar no ponto de uso. Conferir cada processo em ambiente autorizado antes de considerar a publicação concluída.
+
+O retorno ao leitor S1 não carrega arquivo: restaurar o conjunto descrito no guia e fornecer ao menos suas variáveis no ambiente. Backups e histórico continuam contendo valores anteriores, e não foram alterados; a exposição desses valores permanece enquanto forem válidos.
+
+### Validação e limites
+
+Revisão estática do diff com valores removidos mascarados, conferência de imports/referências e nomes, comparação textual LDAP, proteção do arquivo privado, prioridade e parâmetros do leitor e inclusão única da dependência em UTF-16; `git diff --check`. Não houve execução de Python, import, build, instalação, conexão, alteração de dados, notificação ou publicação.
+
+**O sistema não foi executado; a validação foi somente estática.** O funcionamento do carregamento e dos consumidores precisa de confirmação em ambiente autorizado.

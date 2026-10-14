@@ -16,6 +16,8 @@ As informações do servidor são o relato da época. As instruções de build, 
 
 **Entrega S1:** TD e sessão passam a exigir `DJ_TD_ODBC_CONNECTION_STRING` e `DJ_SESSION_SECRET_KEY` no ambiente dos processos, preservando por decisão do responsável seus valores atuais. O backend lê o TD diretamente; o legado preserva `CNNX_JDT`. Preparar o ambiente do PC, IIS e consumidores dos quatro serviços antes de publicar os quatro arquivos Python relacionados, conforme o [guia de configuração externa](configuracao-externa-td-sessao.md). Nenhuma variável foi cadastrada e esta entrega não foi verificada no servidor. O modelo `.env.example` não é carregado pela aplicação.
 
+**Entrega S1b:** a configuração atual lê um `.env` privado na raiz ou arquivo absoluto indicado por `DJ_ENV_FILE`, com prioridade para o ambiente Windows. As outras credenciais identificadas também são externas. O arquivo preenchido foi preparado apenas nesta cópia de trabalho, fora do Git; ele precisa de transferência privada para o PC. No servidor, usar variáveis dos processos ou arquivo fora da pasta publicada, com ACLs e dependência `python-dotenv==1.2.4` quando necessário. O IIS/Flask CLI deve receber `FLASK_SKIP_DOTENV=1` antes da inicialização para evitar a leitura antecipada pelo Flask. O [guia da S1b](configuracao-privada-integracoes.md) substitui o pacote de quatro arquivos da S1 e define a preparação dos serviços. Nada foi instalado, publicado ou verificado no servidor.
+
 ## 1. Ambiente de desenvolvimento
 
 | Item | Informação conhecida |
@@ -195,7 +197,7 @@ Não é necessário ativar a `.venv` para esses comandos. No servidor, o comando
 
 ## 7. Arquivos da publicação
 
-Lista atualizada para o pacote das entregas 3b e S1. Todos os caminhos abaixo são relativos a `I:\IIS\Digital_Jost`; essa lista orienta uma publicação futura e não comprova que os arquivos já foram copiados:
+Lista geral do pacote da entrega 3b. A S1b exige também os nove arquivos Python e a preparação do [guia de configuração privada](configuracao-privada-integracoes.md); não publicar somente a lista resumida abaixo. Todos os caminhos são relativos a `I:\IIS\Digital_Jost`; essa orientação não comprova que os arquivos já foram copiados:
 
 | Arquivo ou pasta | Ação |
 |---|---|
@@ -204,7 +206,7 @@ Lista atualizada para o pacote das entregas 3b e S1. Todos os caminhos abaixo s�
 | `backend/` | Copiar o pacote completo, incluindo bootstrap, plataforma, módulos e templates |
 | `backend/templates/app/shell.html` | Incluir o template no pacote moderno |
 | `backend/static/app/` | Copiar o build inteiro, incluindo `.vite/manifest.json`; essa pasta é ignorada pelo Git |
-| `web.config` | Preservar a configuração efetiva do IIS; Eventos não exige variável de ativação |
+| `web.config` | Preservar a configuração efetiva e incluir `FLASK_SKIP_DOTENV=1` na S1b; Eventos não exige variável de ativação |
 
 `main.py` continua sendo o ponto de entrada e não precisou ser alterado para registrar Eventos: a integração é feita em `create_app()`.
 

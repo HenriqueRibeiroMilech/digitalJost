@@ -2,6 +2,8 @@ import pyodbc
 import ldap3
 import pandas as pd
 
+from backend.platform.environment import required_env
+
 from app.services.run_h_24_scheduler import env
 from app.utils.constants import CNNX_JDT, COORD, LEADER
 from app.utils.email_utils import send_email_with_attachment
@@ -16,7 +18,7 @@ def default(logger):
 
     base = 'ou=EmpresasRandon,dc=randon,dc=com,dc=br'
     ld = ldap3.Server('SVH-DC-21.randon.com.br', use_ssl=False)
-    ld_conn = ldap3.Connection(ld, user=r"randon.com.br\Fabrica_Jost", password='Empresasrandon@2018',
+    ld_conn = ldap3.Connection(ld, user=required_env("DJ_LDAP_USER"), password=required_env("DJ_LDAP_PASSWORD"),
                                 authentication=ldap3.NTLM)
     ld_conn.bind()
 
