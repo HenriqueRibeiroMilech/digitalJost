@@ -14,7 +14,7 @@ As decisões que orientam o trabalho são:
 - Manter regras específicas próximas da feature, para que uma alteração seja fácil de localizar.
 - Reutilizar algo existente antes de criar outra implementação; extrair novas abstrações quando elas simplificarem usos concretos.
 - Revisar segurança e comportamento ao migrar, preservando os contratos ainda necessários.
-- Aproveitar alterações em partes antigas para migrar os componentes relacionados quando houver benefício, baixo risco e autorização para esse escopo.
+- Aproveitar alterações em partes antigas para migrar os componentes relacionados quando houver benefício, baixo/moderado risco e autorização para esse escopo.
 
 O resultado esperado é que uma feature nova precise principalmente de seus dados, regras e interface. Login, conexão geral ao TD, CSRF, tratamento básico de erros e componentes comuns já têm uma base para reaproveitar.
 
@@ -201,7 +201,7 @@ Escolha um domínio pequeno e mapeie todos os consumidores antes de substituir o
 
 ### Aproveitar oportunidades durante outras mudanças
 
-Ao alterar uma conexão, integração, rotina, configuração ou regra antiga, a preferência é levar a parte relacionada para a arquitetura nova quando a migração for pequena, útil e de baixo risco. Essa orientação vale para qualquer componente; não é necessário esperar uma reescrita completa do domínio.
+Ao alterar uma conexão, integração, rotina, configuração ou regra antiga, a preferência é levar a parte relacionada para a arquitetura nova quando a migração for pequena, útil e de baixo/moderado risco. Essa orientação vale para qualquer componente; não é necessário esperar uma reescrita completa do domínio.
 
 Antes de incluir a migração, delimite o componente, identifique seus consumidores, avalie o impacto na publicação e defina como preservar o funcionamento antigo e retornar se necessário. A mudança deve reaproveitar a base moderna e permanecer próxima do trabalho solicitado. Dependências fora desse escopo podem continuar temporariamente no legado.
 
@@ -232,7 +232,7 @@ A migração pode usar as tabelas existentes. Separar pastas não exige mudar sc
 | 3 | Controlar os efeitos de inicialização | Retirar gradualmente consultas/threads de imports e planejar mudanças de schema fora do startup. Exige revisar factory, integrações e serviços. |
 | 4 | Evoluir permissões e pontes com o legado | Reduzir a dependência da sessão corrente nos serviços e explicitar regras por ação e, quando necessário, por registro. Preservar os perfis existentes durante a transição. |
 | 5 | Melhorar diagnóstico e publicação | Padronizar logs sem segredos, identificar a versão publicada e tornar o pacote offline e o retorno mais previsíveis. |
-| 6 | Migrar componentes relacionados às partes que forem alteradas | Aproveitar mudanças em conexões, integrações, rotinas e configurações para levar o acesso ou comportamento à base moderna, com baixo risco e escopo autorizado. Preservar consumidores antigos e tratar migrações maiores separadamente. |
+| 6 | Migrar componentes relacionados às partes que forem alteradas | Aproveitar mudanças em conexões, integrações, rotinas e configurações para levar o acesso ou comportamento à base moderna, com baixo/moderado risco e escopo autorizado. Preservar consumidores antigos e tratar migrações maiores separadamente. |
 | 7 | Revisar segurança em cada domínio migrado | SQL parametrizado, acesso a arquivos, CSRF, autorização e tratamento de erros. Externalização não substitui rotação de segredos e tratamento de histórico/backups. |
 | 8 | Avaliar automações que economizem trabalho | Geração de tipos a partir de contratos, modelo de feature ou catálogo de navegação somente quando a repetição justificar o custo de manter a ferramenta. |
 
