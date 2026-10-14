@@ -6,6 +6,8 @@ Registro atualizado em **09/10/2026**, com base nas informações fornecidas pel
 
 Este documento registra o ambiente atual e o procedimento manual combinado. As restrições de execução por agentes continuam definidas em [AGENTS.md](../AGENTS.md).
 
+**Publicação consolidada posterior:** para levar o servidor da base `c3838b0` ao código `6eeffa8`, usar [Publicação no servidor](publicacao-modernizacao-servidor.md). O roteiro reúne o backend completo, os 13 arquivos legados alterados, novo build, configuração privada, comandos incrementais offline e retorno. As listas históricas abaixo não incluem sozinhas toda essa entrega; a versão efetivamente instalada ainda precisa ser confirmada.
+
 As informações do servidor são o relato da época. As instruções de build, os caminhos de recursos e a lista de arquivos da publicação foram atualizados para o código preparado na entrega 3b; isso não registra uma publicação nem uma verificação posterior no IIS.
 
 **Evolução posterior do código:** Eventos foi transferido para `backend/modules/events/` e a chave `EVENTS_ENABLED` foi removida. A entrega 2 introduz configuração e engine/pool próprios do backend moderno, para o mesmo banco TD configurado na aplicação. O registro abaixo conserva o procedimento da época; seus caminhos `app/modules/` e instruções de ativação não descrevem o fluxo atual. Consulte o [registro da entrega 2](plano-separacao-backend-legado.md#10-registro-da-entrega-2) para a composição, as opções de pool e a publicação preparadas no código. Essa evolução ainda não foi verificada no servidor.

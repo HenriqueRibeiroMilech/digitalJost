@@ -569,6 +569,8 @@ Revisão estática do diff com valores removidos mascarados, conferência de imp
 
 ## 16. Base compartilhada para novas features
 
+**Publicação consolidada:** o [roteiro de c3838b0 a 6eeffa8](publicacao-modernizacao-servidor.md) reúne esta entrega com as anteriores, incluindo arquivos legados, build, configuração privada, dependência offline, serviços e retorno. A publicação não foi executada pelo agente.
+
 **Situação:** os cinco passos foram implementados em uma entrega e Eventos foi adaptado para consumir a base. Validação somente estática; build, publicação e verificação funcional no PC/IIS permanecem pendentes. As correções de segurança anteriores foram deixadas para outra tarefa, conforme solicitado.
 
 1. **Identidade/permissões:** `backend/compatibility/identity.py` concentra a ponte com Flask-Login e os perfis do legado. `Actor` e `RolePermissions` fornecem o contrato dos serviços e o mapa de ações. Eventos preserva `GENERAL`, leitura/criação e o identificador usado em `created_by`.

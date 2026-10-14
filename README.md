@@ -14,6 +14,7 @@ Portal interno da JOST para operações industriais, solicitações, gestão, mo
 - [Configuração privada das integrações](docs/configuracao-privada-integracoes.md) — carregamento do `.env`, credenciais restantes, prioridade do Windows e publicação da entrega S1b.
 - [Guia da primeira feature: Eventos](docs/guia-primeira-feature-eventos.md) — tutorial de cards e cadastro de nome e descrição na arquitetura nova.
 - [Base compartilhada e exemplo mínimo](docs/base-compartilhada-novas-features.md) — guia atual para reutilizar identidade, CSRF, erros, componentes Vue, paginação e validação.
+- [Publicação consolidada no servidor](docs/publicacao-modernizacao-servidor.md) — roteiro de `c3838b0` a `6eeffa8`, inventário de arquivos, dependência offline, configuração privada, serviços, conferência e retorno.
 
 O próprio código é a fonte de verdade para detalhes funcionais. Comece por `main.py` e rastreie a rota, o template, o JavaScript, as tabelas e os jobs envolvidos.
 
