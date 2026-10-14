@@ -5,7 +5,7 @@ Esta pasta reúne a documentação oficial do projeto. O nome `handbook` signifi
 | Documento | Conteúdo |
 |---|---|
 | [Arquitetura modernizada](arquitetura-modernizada.md) | Objetivos, implementação atual, criação de features, reutilização e evolução planejada. |
-| [Utilitários](utilitarios.md) | Exportação filtrada de versões do GitHub para publicação no repositório Azure DevOps existente. |
+| [Utilitários](utilitarios.md) | Publicação de versões no Azure DevOps: exportação filtrada do GitHub, substituição do código legado, commit, push e pull request. |
 
 Instalação, configuração do ambiente, build e publicação no servidor estão no [README principal](../README.md).
 
