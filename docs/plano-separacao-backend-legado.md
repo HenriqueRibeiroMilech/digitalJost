@@ -180,6 +180,8 @@ Dividir estes itens em mudanças focadas; eles não precisam entrar na mesma pub
 
 **Situação da entrega 3b:** o template foi transferido para `backend/templates/app/shell.html`, o destino do build passou para `backend/static/app/` e os recursos são registrados por um blueprint moderno. A seção 12 registra a implementação e o procedimento atual de publicação. A etapa 3 ainda tem os trabalhos de identidade, permissões, CSRF e erros pendentes.
 
+**Evolução posterior:** a seção 16 implementa a ponte de identidade/permissões, CSRF e respostas de erro comuns para a API moderna. Os registros 3a/3b acima descrevem seu estado histórico; auditoria e correções de segurança continuam pendentes.
+
 **Critério de passagem:** Eventos usa mecanismos com responsabilidades claras; um segundo módulo pode reutilizá-los sem copiar sua lógica ou importar os detalhes antigos diretamente.
 
 ### Etapa 4 — consolidar configuração e inicialização
@@ -490,7 +492,7 @@ O trabalho seguinte foi planejado como identidade/permissões, CSRF comum, erros
 6. **Consolidação e segunda funcionalidade pequena.** Seguir as etapas 4 e 5: manter configuração/ciclo de vida explícitos e provar reutilização de banco, identidade, CSRF e shell em outro módulo. A funcionalidade deve ter contrato, autorização, SQL parametrizado e limites de dados definidos antes dos arquivos.
 7. **Migração gradual e correções do legado.** Corrigir os fluxos de maior risco de SQL, `eval`, HTML bruto e anexos, mesmo antes de sua migração completa. Depois, escolher uma fatia por vez, considerando métodos HTTP, jobs escritores, integrações, transações e retorno.
 
-Os demais itens permanecem **planejados**. A leitura externa de TD/sessão do item 1 foi preparada na S1, seção 14; a S1b, seção 15, adiciona o arquivo privado e externaliza as outras credenciais identificadas, preservando os valores atuais por decisão do responsável. A revisão não alterou senhas, chaves, contas, grants, dados, rotas ou integrações. Rotação, configurações do servidor e qualquer tratamento de histórico exigem coordenação própria; esta lista não autoriza o agente a executar comandos, acessar bancos, reiniciar serviços, publicar ou reescrever Git.
+**Atualização:** a seção 16 prepara a ponte de identidade do item 3, CSRF para APIs modernas do item 4 e respostas JSON do item 5. Proteção do legado, correções de identidade, correlação/auditoria e segunda funcionalidade continuam **planejadas**. A leitura externa de TD/sessão do item 1 foi preparada na S1, seção 14; a S1b, seção 15, adiciona o arquivo privado e externaliza as outras credenciais identificadas, preservando os valores atuais por decisão do responsável. Rotação, configurações do servidor e qualquer tratamento de histórico exigem coordenação própria; esta lista não autoriza o agente a executar comandos, acessar bancos, reiniciar serviços, publicar ou reescrever Git.
 
 ### Critério de segurança para a base moderna
 
@@ -501,7 +503,7 @@ Os demais itens permanecem **planejados**. A leitura externa de TD/sessão do it
 - Cookies, certificados, headers e privilégios conferidos na configuração efetiva, preservando os consumidores do legado por mudanças localizadas.
 - Publicação revisada com retorno preparado e evidências funcionais obtidas apenas em ambiente autorizado. A leitura estática não comprova que o sistema esteja seguro em produção.
 
-**Próximo passo para a entrega S1b:** transferir privadamente o arquivo para o PC e provisionar a configuração completa do portal/serviços no servidor, por ambiente ou arquivo fora da pasta publicada. Preparar dependência quando houver arquivo, prioridade do Windows, ACLs e controle do Flask CLI antes da publicação e verificação autorizadas. Rotação/revogação permanece pendente conforme a decisão atual de manter as credenciais; os próximos trabalhos de código são as correções de identidade/acesso e seus adaptadores.
+**Próximo passo para a entrega S1b:** transferir privadamente o arquivo para o PC e provisionar a configuração completa do portal/serviços no servidor, por ambiente ou arquivo fora da pasta publicada. Preparar dependência quando houver arquivo, prioridade do Windows, ACLs e controle do Flask CLI antes da publicação e verificação autorizadas. Rotação/revogação permanece pendente conforme a decisão atual de manter as credenciais. A base da seção 16 foi preparada por solicitação do responsável; correções de segurança continuam separadas, conforme sua decisão de tratá-las depois.
 
 **O sistema não foi executado; a validação foi somente estática.**
 
@@ -564,3 +566,31 @@ O retorno ao leitor S1 não carrega arquivo: restaurar o conjunto descrito no gu
 Revisão estática do diff com valores removidos mascarados, conferência de imports/referências e nomes, comparação textual LDAP, proteção do arquivo privado, prioridade e parâmetros do leitor e inclusão única da dependência em UTF-16; `git diff --check`. Não houve execução de Python, import, build, instalação, conexão, alteração de dados, notificação ou publicação.
 
 **O sistema não foi executado; a validação foi somente estática.** O funcionamento do carregamento e dos consumidores precisa de confirmação em ambiente autorizado.
+
+## 16. Base compartilhada para novas features
+
+**Situação:** os cinco passos foram implementados em uma entrega e Eventos foi adaptado para consumir a base. Validação somente estática; build, publicação e verificação funcional no PC/IIS permanecem pendentes. As correções de segurança anteriores foram deixadas para outra tarefa, conforme solicitado.
+
+1. **Identidade/permissões:** `backend/compatibility/identity.py` concentra a ponte com Flask-Login e os perfis do legado. `Actor` e `RolePermissions` fornecem o contrato dos serviços e o mapa de ações. Eventos preserva `GENERAL`, leitura/criação e o identificador usado em `created_by`.
+2. **CSRF e erros HTTP:** `backend/platform/csrf.py` e `http.py` fornecem guardas reutilizáveis, token comum e respostas JSON. Sessões com `events_csrf` continuam aceitas. O shell passa a fornecer o token compartilhado. A pequena ponte em `app/errors.py` cobre inclusive 404/405 antes da seleção de blueprint e se limita ao prefixo da API moderna.
+3. **Componentes Vue:** `PageHeader`, `FormField`, `RequestState` e `ListPagination` reutilizam Volt e recebem conteúdo/textos da feature. Eventos mantém cards, formulário, validações, diálogo, foco, permissões e mensagens.
+4. **Paginação e validação comuns:** schemas Python e tipos/serialização TypeScript compartilham o formato de lista. `usePagination` mantém página inicial 1 e tamanho 12; o componente converte o índice do PrimeVue. `validationMessages` extrai erros 422 por campo, sem transferir regras de negócio para a infraestrutura.
+5. **Guia mínimo:** [Base compartilhada e exemplo mínimo](base-compartilhada-novas-features.md) documenta o passo a passo, recortes de Eventos, lista completa de arquivos, publicação, retorno e conferências funcionais pendentes. Não foi criada uma segunda feature artificial.
+
+Rotas e nomes de blueprints, engine geral do TD, pool, SQL, tabela, ordenação, limites, transações e retorno do cadastro permanecem. Serviços/repositórios de Eventos, autenticação legada, jobs, credenciais e dependências não foram alterados. Não há configuração de infraestrutura por feature. Registros de módulos e rotas continuam explícitos.
+
+### Publicação e risco
+
+**É necessário novo build Vue nesta entrega**, no PC e procedimento autorizados. Publicar os onze arquivos Python listados no guia e o build inteiro em `backend/static/app/`, com manifest e assets correspondentes; enviar apenas um pull não cria o build. A configuração privada da S1b deve estar provisionada antes, conforme seu guia. O agente não executou build, instalou dependências ou publicou no servidor.
+
+O retorno restaura o pacote anterior compatível de Python e build, sem alterar o banco. Principais riscos: arquivo novo ausente, mistura de versões e comportamento em runtime não detectável por texto. A compatibilidade do token antigo reduz o risco de invalidar as sessões/abas existentes; não houve troca da chave de sessão.
+
+### Validação e próximos passos
+
+Revisão do diff, imports, registros, schemas, contratos HTTP/TypeScript, índices de paginação, associação de campos/erros, transição de token e `git diff --check`. A compilação Vue e a integração efetiva com APIFlask, sessão, IIS e banco precisam de confirmação em ambiente autorizado.
+
+Conferir primeiro a entrega completa no PC/IIS. Depois escolher uma segunda feature pequena para comprovar a reutilização da base. Antes de migrar um domínio, rastrear todos os métodos, SQL, arquivos, notificações e jobs que gravam seus dados. A autorização por registro depende do domínio; não está implícita no mapa geral de perfis.
+
+As correções de autenticação/fallback, flags textuais, CSRF legado, SQL/eval, arquivos, segredos históricos, correlação e filtragem da auditoria seguem no documento de segurança. A ponte não corrige essas políticas automaticamente nem torna a aplicação independente de `app/`.
+
+**O sistema não foi executado; a validação foi somente estática.**

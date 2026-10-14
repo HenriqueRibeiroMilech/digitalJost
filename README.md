@@ -13,6 +13,7 @@ Portal interno da JOST para operações industriais, solicitações, gestão, mo
 - [Configuração externa do TD e da sessão](docs/configuracao-externa-td-sessao.md) — variáveis obrigatórias, cadastro no PC/servidor e publicação preservando as credenciais atuais.
 - [Configuração privada das integrações](docs/configuracao-privada-integracoes.md) — carregamento do `.env`, credenciais restantes, prioridade do Windows e publicação da entrega S1b.
 - [Guia da primeira feature: Eventos](docs/guia-primeira-feature-eventos.md) — tutorial de cards e cadastro de nome e descrição na arquitetura nova.
+- [Base compartilhada e exemplo mínimo](docs/base-compartilhada-novas-features.md) — guia atual para reutilizar identidade, CSRF, erros, componentes Vue, paginação e validação.
 
 O próprio código é a fonte de verdade para detalhes funcionais. Comece por `main.py` e rastreie a rota, o template, o JavaScript, as tabelas e os jobs envolvidos.
 
@@ -31,7 +32,9 @@ Navegador
 
 As telas Vue convivem com as páginas Jinja na mesma aplicação. Eventos fica em `/app/eventos`, com API em `/api/v1/events` e código Python em `backend/modules/events/`.
 
-O carregamento do build Vue e a renderização da página base são compartilhados em `backend/platform/vue_shell.py`. Cada módulo mantém sua rota e suas verificações de acesso, fornecendo título, token CSRF e mensagem de indisponibilidade ao shell. O template fica em `backend/templates/app/shell.html`. O comando `npm run build:local`, executado em `frontend/`, gera o build em `backend/static/app/`, ignorado pelo Git e servido em `/static/app/`. Consulte o [registro da entrega 3b](docs/plano-separacao-backend-legado.md#12-registro-da-entrega-3b) para o pacote e o procedimento de retorno.
+O carregamento do build Vue e a renderização da página base são compartilhados em `backend/platform/vue_shell.py`. Cada módulo mantém sua rota autorizada e fornece título e mensagem de indisponibilidade; o shell fornece o CSRF comum. O template fica em `backend/templates/app/shell.html`. O comando `npm run build:local`, executado em `frontend/` pelo responsável em ambiente autorizado, gera o build em `backend/static/app/`, ignorado pelo Git e servido em `/static/app/`. A entrega da [base compartilhada](docs/plano-separacao-backend-legado.md#16-base-compartilhada-para-novas-features) exige novo build e publicação do conjunto descrito no guia.
+
+Eventos já usa a ponte de identidade em `backend/compatibility/`, autorização e erros HTTP em `backend/platform/` e componentes pequenos em `frontend/src/shared/`. Serviços e repositórios continuam concentrando as regras e o SQL de cada domínio. As páginas antigas preservam seus contratos; a base moderna ainda depende da sessão e dos perfis legados.
 
 O backend moderno possui configuração e engine/pool próprios para o TD, compartilhados pelos seus módulos. Ele lê `DJ_TD_ODBC_CONNECTION_STRING` diretamente; o legado preserva `CNNX_JDT` e seus mecanismos de acesso. A sessão Flask usa `DJ_SESSION_SECRET_KEY`. O leitor comum carrega um `.env` privado na raiz ou um arquivo externo selecionado por `DJ_ENV_FILE`, com prioridade para as variáveis do Windows e sem interpolar credenciais. O `.env.example` contém somente os nomes. O arquivo privado preenchido não acompanha o Git. A entrega S1b também externaliza as outras conexões e integrações identificadas, mantendo os valores atuais. Preparação, dependência `python-dotenv==1.2.4`, cuidados com o Flask CLI e pacote de publicação estão no [guia de configuração privada](docs/configuracao-privada-integracoes.md). As opções do pool e seu ciclo de vida permanecem no [registro da entrega 2](docs/plano-separacao-backend-legado.md#10-registro-da-entrega-2).
 
@@ -92,9 +95,14 @@ DigitalJost/
 ├── backend/                        # Backend moderno, inicialmente com Eventos
 │   ├── bootstrap.py                # Composição e registro do backend moderno
 │   ├── config.py                   # Opções próprias do acesso geral ao TD
+│   ├── compatibility/              # Ponte temporária com identidade/perfis legados
 │   ├── platform/
 │   │   ├── database.py             # Engine/pool compartilhado pelos módulos modernos
 │   │   ├── environment.py          # Leitor externo também usado pela ponte legada
+│   │   ├── identity.py             # Identidade mínima e autorização por ação
+│   │   ├── csrf.py                 # Token e proteção comuns às APIs modernas
+│   │   ├── http.py                 # Guardas HTTP e respostas JSON de erro
+│   │   ├── schemas.py              # Contratos de paginação
 │   │   └── vue_shell.py            # Recursos, assets e renderização do shell Vue
 │   ├── modules/                    # Registro explícito e módulos modernos
 │   ├── templates/app/shell.html    # Página base do Vue

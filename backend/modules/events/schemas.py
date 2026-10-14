@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.platform.schemas import PaginatedResponse, PaginationQuery
+
 
 class EventCreate(BaseModel):
     model_config = ConfigDict(
@@ -12,11 +14,8 @@ class EventCreate(BaseModel):
     description: str = Field(min_length=1, max_length=2000)
 
 
-class EventQuery(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    page: int = Field(default=1, ge=1)
-    per_page: int = Field(default=12, ge=1, le=100)
+class EventQuery(PaginationQuery):
+    """Consulta paginada de Eventos."""
 
 
 class EventOut(BaseModel):
@@ -29,9 +28,5 @@ class EventCapabilities(BaseModel):
     can_create: bool
 
 
-class EventList(BaseModel):
-    items: list[EventOut]
-    page: int
-    per_page: int
-    total: int
-    capabilities: EventCapabilities
+class EventList(PaginatedResponse[EventOut, EventCapabilities]):
+    """Lista com as capacidades específicas de Eventos."""

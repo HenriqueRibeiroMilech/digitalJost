@@ -6,6 +6,8 @@ from pathlib import Path
 from flask import Blueprint, current_app, make_response, render_template, url_for
 from jinja2 import PrefixLoader
 
+from .csrf import get_csrf_token
+
 
 def init_vue_shell(app):
     resources = Blueprint(
@@ -42,8 +44,8 @@ def _manifest_assets():
     return url_for("backend_vue.static", filename=entry["file"]), stylesheets
 
 
-def render_vue_shell(*, title, csrf_token_provider, unavailable_message):
-    """Renderiza após a autorização do módulo, que também fornece seu token CSRF."""
+def render_vue_shell(*, title, unavailable_message, csrf_token_provider=get_csrf_token):
+    """Renderiza após a autorização do módulo e fornece o token CSRF compartilhado."""
     try:
         entry_script, stylesheets = _manifest_assets()
     except (OSError, KeyError, ValueError):
