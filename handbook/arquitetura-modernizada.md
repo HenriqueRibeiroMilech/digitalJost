@@ -14,6 +14,7 @@ As decisões que orientam o trabalho são:
 - Manter regras específicas próximas da feature, para que uma alteração seja fácil de localizar.
 - Reutilizar algo existente antes de criar outra implementação; extrair novas abstrações quando elas simplificarem usos concretos.
 - Revisar segurança e comportamento ao migrar, preservando os contratos ainda necessários.
+- Aproveitar alterações em partes antigas para migrar os componentes relacionados quando houver benefício, baixo risco e autorização para esse escopo.
 
 O resultado esperado é que uma feature nova precise principalmente de seus dados, regras e interface. Login, conexão geral ao TD, CSRF, tratamento básico de erros e componentes comuns já têm uma base para reaproveitar.
 
@@ -144,6 +145,8 @@ Não precisamos de um CRUD universal, repositório genérico, sistema automátic
 
 Descreva quem usa a funcionalidade, quais ações existem, quais dados entram e saem, permissões e critérios de conclusão. Identifique tabelas, arquivos, integrações e jobs envolvidos. Para uma migração, rastreie também os métodos e comportamentos da tela antiga.
 
+Se o trabalho tocar uma parte antiga, avalie a oportunidade de migração descrita na seção 7 antes de ampliar sua implementação no legado.
+
 Comece com um fluxo pequeno que possa ser entregue e conferido de ponta a ponta. Não adicione edição, exclusão, filtros ou exportações apenas porque poderão ser úteis depois.
 
 ### 2. Desenhar o contrato
@@ -190,11 +193,25 @@ Neste repositório, agentes fazem somente validação estática, conforme `AGENT
 
 Quando autorizado, gere o build Vue e publique o conjunto compatível de backend e assets em `backend/static/app/`, incluindo `.vite/manifest.json`. O Git não leva o build automaticamente. Planeje dependências offline, processos afetados, conferência e retorno conforme o [README principal](../README.md).
 
-Registre o que foi implementado e atualize este manual quando a base comum ou o processo mudar. Não publique uma ideia como funcionalidade existente.
+Registre o que foi implementado e confira se este manual precisa de atualização pelos critérios da seção 10. Não publique uma ideia como funcionalidade existente.
 
 ## 7. Como migrar uma parte antiga
 
 Escolha um domínio pequeno e mapeie todos os consumidores antes de substituir o fluxo. Uma tela pode compartilhar tabelas com jobs, relatórios, exports, notificações e outras rotas.
+
+### Aproveitar oportunidades durante outras mudanças
+
+Ao alterar uma conexão, integração, rotina, configuração ou regra antiga, a preferência é levar a parte relacionada para a arquitetura nova quando a migração for pequena, útil e de baixo risco. Essa orientação vale para qualquer componente; não é necessário esperar uma reescrita completa do domínio.
+
+Antes de incluir a migração, delimite o componente, identifique seus consumidores, avalie o impacto na publicação e defina como preservar o funcionamento antigo e retornar se necessário. A mudança deve reaproveitar a base moderna e permanecer próxima do trabalho solicitado. Dependências fora desse escopo podem continuar temporariamente no legado.
+
+Por exemplo: se uma tarefa exigir mexer no acesso ao banco Jost Integration, avalie migrar a configuração e o acesso para a camada moderna adequada a esse destino, compartilhada pelos consumidores que precisarem dela. Se telas ou jobs antigos ainda dependerem desse acesso, preserve uma ponte de compatibilidade durante a transição. Isso não significa mudar o banco, suas tabelas ou credenciais, nem usar a engine do TD para um destino diferente.
+
+**Para trabalho por IA, a migração precisa estar no escopo solicitado ou já autorizado pelo usuário.** Se a oportunidade ampliar esse escopo, apresente a mudança, o benefício e os impactos e obtenha autorização antes de implementá-la. Uma sugestão registrada neste documento não é autorização para executar a migração.
+
+Se houver impacto alto, dependências desconhecidas ou falta de condições para validar, mantenha o funcionamento necessário no legado e registre a oportunidade na seção 8, com o motivo do adiamento. Isso permite concluir a tarefa autorizada e planejar a migração separadamente.
+
+### Concluir uma migração
 
 1. Registre o comportamento e as permissões que precisam continuar funcionando.
 2. Implemente a nova parte usando a base comum, preservando as dependências ainda necessárias por adaptadores claros.
@@ -215,7 +232,7 @@ A migração pode usar as tabelas existentes. Separar pastas não exige mudar sc
 | 3 | Controlar os efeitos de inicialização | Retirar gradualmente consultas/threads de imports e planejar mudanças de schema fora do startup. Exige revisar factory, integrações e serviços. |
 | 4 | Evoluir permissões e pontes com o legado | Reduzir a dependência da sessão corrente nos serviços e explicitar regras por ação e, quando necessário, por registro. Preservar os perfis existentes durante a transição. |
 | 5 | Melhorar diagnóstico e publicação | Padronizar logs sem segredos, identificar a versão publicada e tornar o pacote offline e o retorno mais previsíveis. |
-| 6 | Organizar integrações e rotinas conforme forem migradas | Criar adaptadores e casos de uso claros para integrações realmente utilizadas, sem reconfigurar todos os bancos corporativos agora. |
+| 6 | Migrar componentes relacionados às partes que forem alteradas | Aproveitar mudanças em conexões, integrações, rotinas e configurações para levar o acesso ou comportamento à base moderna, com baixo risco e escopo autorizado. Preservar consumidores antigos e tratar migrações maiores separadamente. |
 | 7 | Revisar segurança em cada domínio migrado | SQL parametrizado, acesso a arquivos, CSRF, autorização e tratamento de erros. Externalização não substitui rotação de segredos e tratamento de histórico/backups. |
 | 8 | Avaliar automações que economizem trabalho | Geração de tipos a partir de contratos, modelo de feature ou catálogo de navegação somente quando a repetição justificar o custo de manter a ferramenta. |
 
@@ -231,3 +248,14 @@ Separar totalmente a criação do app, a identidade e a hospedagem do legado pod
 - Quais decisões precisam ser atualizadas neste manual.
 
 O código ativo é a referência para o estado implementado. Instalação e operação ficam no README principal; este documento concentra organização, desenvolvimento e evolução da arquitetura.
+
+## 10. Quando e como atualizar este documento
+
+Ao concluir uma mudança na arquitetura nova, confira se ela altera algo descrito aqui. **Atualize o documento quando necessário para que continue representando a arquitetura e suas orientações.**
+
+- Atualize as seções afetadas quando mudarem responsabilidades, organização, dependências com o legado, conexões, contratos compartilhados, permissões, recursos reutilizáveis ou o processo de desenvolvimento.
+- Preserve os trechos que continuam corretos. Uma correção local ou detalhe interno de uma feature não exige alterar o guia se a descrição arquitetural permanecer válida. Evite reescrever ou reorganizar o arquivo inteiro sem necessidade.
+- Acrescente novas propostas pertinentes à lista da seção 8, com objetivo, benefício e limite inicial. Se o assunto já estiver na lista, complemente o item existente para evitar duplicação. Uma ideia continua identificada como proposta até ser implementada.
+- Quando uma proposta for entregue, atualize a descrição do estado atual e retire da lista futura somente o que foi concluído. Preserve as partes ainda pendentes e ajuste a prioridade quando houver motivo.
+
+Este guia acompanha as decisões e a evolução da arquitetura; detalhes de cada alteração ficam no histórico do Git. A revisão deve ser proporcional à mudança, mantendo o documento claro e útil para a próxima pessoa que for desenvolver.
