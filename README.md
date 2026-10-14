@@ -25,8 +25,6 @@ Navegador → IIS / autenticação Windows → aplicação Flask
 
 **Identidade:** a nova arquitetura reaproveita o login, a sessão e os perfis antigos por uma ponte em `backend/compatibility/`. Ela ainda não é uma aplicação independente de `app/`.
 
-**Primeira feature:** Eventos usa `/app/eventos`, API `/api/v1/events` e assets `/static/app/`. É uma feature normal, sem `EVENTS_ENABLED`. Já há base compartilhada para identidade/permissões, CSRF e erros JSON, componentes Vue, paginação e mensagens de validação. Essa proteção moderna não corrige automaticamente as rotas antigas.
-
 ## 2. Onde encontrar cada coisa
 
 ```text
