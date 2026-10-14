@@ -4,6 +4,8 @@ Portal interno da JOST para demandas, operações industriais, laboratório, des
 
 Este README reúne os procedimentos essenciais sem depender de outros documentos de projeto. Os caminhos do servidor descrevem o ambiente informado pelo responsável; confirme-os antes de uma nova instalação.
 
+A documentação oficial fica em [handbook/](handbook/README.md). Comece pelo guia de [arquitetura modernizada](handbook/arquitetura-modernizada.md) para entender a base atual, criar novas features e acompanhar as propostas de evolução.
+
 ## 1. Como as duas arquiteturas convivem
 
 ```text
