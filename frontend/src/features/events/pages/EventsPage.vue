@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { ApiError } from '@/shared/api/client'
 import { usePagination } from '@/shared/composables/usePagination'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import CardGrid from '@/shared/components/CardGrid.vue'
@@ -11,8 +12,10 @@ import Message from '@/volt/Message.vue'
 import Skeleton from '@/volt/Skeleton.vue'
 import EventCard from '../components/EventCard.vue'
 import EventDialog from '../components/EventDialog.vue'
+import EventFilters from '../components/EventFilters.vue'
 import { eventsApi } from '../api'
-import type { EventChange } from '../types'
+import { defaultEventStatuses } from '../statuses'
+import type { EventChange, EventFilters as EventFilterValues } from '../types'
 
 const { page, perPage, resetPage } = usePagination()
 const dialogOpen = ref(false)
@@ -20,12 +23,35 @@ const selectedId = ref<number | null>(null)
 const feedback = ref('')
 const newEventAction = ref<HTMLElement | null>(null)
 const pageElement = ref<HTMLElement | null>(null)
+const canCreate = ref(false)
+const filters = ref<EventFilterValues>({ search: '', statuses: [...defaultEventStatuses] })
+const initialFilters = computed(() => !filters.value.search
+  && filters.value.statuses.join(',') === defaultEventStatuses.join(','))
 const queryClient = useQueryClient()
 const { data, isPending: loading, isError, error: listError, refetch } = useQuery({
-  queryKey: ['events', 'list', page],
-  queryFn: () => eventsApi.list(page.value, perPage),
+  queryKey: ['events', 'list', page, filters],
+  queryFn: () => eventsApi.list(page.value, perPage, filters.value),
   retry: false,
+  refetchInterval: computed<number | false>(() => dialogOpen.value ? false : 60_000),
+  refetchIntervalInBackground: false,
 })
+
+watch(data, result => {
+  if (!result) return
+  canCreate.value = result.capabilities.can_create
+  const lastPage = Math.max(1, Math.ceil(result.total / perPage))
+  if (page.value > lastPage) page.value = lastPage
+}, { immediate: true })
+
+watch(listError, error => {
+  if (error instanceof ApiError && [401, 403, 404].includes(error.status)) canCreate.value = false
+}, { immediate: true })
+
+function applyFilters(next: EventFilterValues) {
+  if (next.search === filters.value.search && next.statuses.join(',') === filters.value.statuses.join(',')) return
+  resetPage()
+  filters.value = next
+}
 
 function openEvent(id: number | null = null) {
   selectedId.value = id
@@ -63,9 +89,9 @@ async function eventChanged(action: EventChange) {
     <PageHeader id="events-title" eyebrow="Agenda corporativa" title="Eventos"
       description="Organize os eventos do Digital JOST e acompanhe os períodos de realização.">
       <template #actions>
-        <div v-if="data?.capabilities.can_create" ref="newEventAction">
+        <div v-if="canCreate" ref="newEventAction">
           <Button type="button" label="Novo evento" icon="pi pi-plus"
-            :disabled="dialogOpen" @click="openEvent()" />
+            :disabled="dialogOpen" pt:root:class="rounded-xl px-5 py-3 shadow-sm" @click="openEvent()" />
         </div>
       </template>
     </PageHeader>
@@ -74,9 +100,11 @@ async function eventChanged(action: EventChange) {
       {{ feedback }}
     </Message>
 
+    <EventFilters @change="applyFilters" />
+
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
       <h2 class="flex items-center gap-2.5 text-sm font-semibold text-dj-ink">
-        Todos os eventos
+        Eventos encontrados
         <span v-if="data && !isError" class="rounded-full border border-dj-border bg-dj-surface px-2.5 py-0.5 text-xs text-dj-muted tabular-nums"
           :aria-label="'Total de eventos: ' + data.total">{{ data.total }}</span>
       </h2>
@@ -85,8 +113,8 @@ async function eventChanged(action: EventChange) {
 
     <RequestState :loading="loading" :failed="isError" :error="listError"
       :empty="data?.items.length === 0" loading-label="Carregando eventos…"
-      empty-title="Nenhum evento cadastrado"
-      empty-description="Os eventos aparecerão aqui quando forem criados."
+      :empty-title="initialFilters ? 'Nenhum evento futuro ou em andamento' : 'Nenhum evento para estes filtros'"
+      empty-description="Altere a pesquisa ou os status para consultar outros eventos, incluindo os concluídos e os que ainda não têm período."
       empty-icon="pi pi-calendar"
       error-message="Não foi possível carregar os eventos."
       forbidden-message="Você não tem permissão para ver os eventos."

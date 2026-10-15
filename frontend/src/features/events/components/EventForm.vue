@@ -5,6 +5,7 @@ import Button from '@/volt/Button.vue'
 import DatePicker from '@/volt/DatePicker.vue'
 import InputText from '@/volt/InputText.vue'
 import Message from '@/volt/Message.vue'
+import SecondaryButton from '@/volt/SecondaryButton.vue'
 import Textarea from '@/volt/Textarea.vue'
 import { eventDate, eventDateTime } from '../dates'
 import type { EventCreate, EventItem } from '../types'
@@ -68,47 +69,54 @@ function submit() {
 
 <template>
   <form ref="formElement" novalidate :aria-busy="busy" @submit.prevent="submit">
-    <p id="event-form-help" class="text-sm text-dj-muted">
-      Informe o nome, a descrição e o período do evento. Todos os campos são obrigatórios.
-      Use o horário local do evento.
+    <p id="event-form-help" class="mb-5 flex items-start gap-3 rounded-xl bg-dj-canvas p-4 text-xs leading-5 text-dj-muted">
+      <i class="pi pi-info-circle mt-0.5 text-dj-brand" aria-hidden="true" />
+      <span>Preencha todos os campos e informe o horário local do evento. O status será definido automaticamente pelo período.</span>
     </p>
 
-    <FormField id="event-name" v-slot="{ controlProps }" label="Nome" :error="nameError" class="mt-6">
-      <InputText v-bind="controlProps" v-model="fields.name" class="w-full"
-        autofocus required :maxlength="120" :disabled="busy" />
-    </FormField>
-
-    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <FormField id="event-start" v-slot="{ controlProps }" label="Data e hora de início"
-        :error="startsAtError">
-        <DatePicker v-model="fields.starts_at" input-id="event-start" :invalid="controlProps.invalid"
-          :input-props="{ 'aria-describedby': controlProps['aria-describedby'], 'aria-invalid': controlProps['aria-invalid'] }"
-          date-format="dd/mm/yy" show-time hour-format="24" show-icon fluid
-          :manual-input="false" :disabled="busy" required class="w-full" />
+    <fieldset class="min-w-0 rounded-2xl border border-dj-border p-4 sm:p-5">
+      <legend class="px-2 text-xs font-semibold tracking-wide text-dj-muted uppercase">Informações do evento</legend>
+      <FormField id="event-name" v-slot="{ controlProps }" label="Título do evento" :error="nameError">
+        <InputText v-bind="controlProps" v-model="fields.name" pt:root:class="w-full rounded-xl py-3"
+          placeholder="Informe o título do evento" autofocus required :maxlength="120" :disabled="busy" />
       </FormField>
-      <FormField id="event-end" v-slot="{ controlProps }" label="Data e hora de fim"
-        :error="endsAtError">
-        <DatePicker v-model="fields.ends_at" input-id="event-end" :invalid="controlProps.invalid"
-          :input-props="{ 'aria-describedby': controlProps['aria-describedby'], 'aria-invalid': controlProps['aria-invalid'] }"
-          date-format="dd/mm/yy" show-time hour-format="24" show-icon fluid
-          :manual-input="false" :min-date="fields.starts_at ?? undefined"
-          :disabled="busy" required class="w-full" />
+      <FormField id="event-description" v-slot="{ controlProps }" label="Descrição"
+        :error="descriptionError" class="mt-4">
+        <Textarea v-bind="controlProps" v-model="fields.description" :rows="4" auto-resize
+          placeholder="Descreva o objetivo e as informações importantes do evento"
+          required :maxlength="2000" :disabled="busy" pt:root:class="w-full rounded-xl" />
       </FormField>
-    </div>
+      <p class="mt-2 text-right text-xs text-dj-muted tabular-nums">{{ fields.description.length }} / 2.000 caracteres</p>
+    </fieldset>
 
-    <FormField id="event-description" v-slot="{ controlProps }" label="Descrição"
-      :error="descriptionError" class="mt-4">
-      <Textarea v-bind="controlProps" v-model="fields.description" :rows="4" auto-resize
-        required :maxlength="2000" :disabled="busy" class="w-full" />
-    </FormField>
+    <fieldset class="mt-5 min-w-0 rounded-2xl border border-dj-border p-4 sm:p-5">
+      <legend class="px-2 text-xs font-semibold tracking-wide text-dj-muted uppercase">Período de realização</legend>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField id="event-start" v-slot="{ controlProps }" label="Data e hora de início" :error="startsAtError">
+          <DatePicker v-model="fields.starts_at" input-id="event-start" :invalid="controlProps.invalid"
+            :input-props="{ 'aria-describedby': controlProps['aria-describedby'], 'aria-invalid': controlProps['aria-invalid'] }"
+            date-format="dd/mm/yy" show-time hour-format="24" show-icon fluid input-class="rounded-xl py-3"
+            pt:dropdown:class="rounded-e-xl"
+            :manual-input="false" :disabled="busy" required class="w-full" />
+        </FormField>
+        <FormField id="event-end" v-slot="{ controlProps }" label="Data e hora de fim" :error="endsAtError">
+          <DatePicker v-model="fields.ends_at" input-id="event-end" :invalid="controlProps.invalid"
+            :input-props="{ 'aria-describedby': controlProps['aria-describedby'], 'aria-invalid': controlProps['aria-invalid'] }"
+            date-format="dd/mm/yy" show-time hour-format="24" show-icon fluid input-class="rounded-xl py-3"
+            pt:dropdown:class="rounded-e-xl"
+            :manual-input="false" :min-date="fields.starts_at ?? undefined"
+            :disabled="busy" required class="w-full" />
+        </FormField>
+      </div>
+    </fieldset>
 
     <Message v-if="serverError" severity="error" class="mt-4">
       {{ serverError }}
     </Message>
-    <div class="mt-6 flex flex-wrap gap-3">
+    <div class="mt-6 flex flex-wrap justify-end gap-3 border-t border-dj-border pt-5">
+      <SecondaryButton type="button" label="Cancelar" outlined :disabled="busy" pt:root:class="rounded-xl px-5 py-3" @click="emit('cancel')" />
       <Button type="submit" :label="busy ? 'Salvando…' : event ? 'Salvar alterações' : 'Criar evento'"
-        :loading="busy" :disabled="busy" />
-      <Button type="button" label="Cancelar" outlined :disabled="busy" @click="emit('cancel')" />
+        :loading="busy" :disabled="busy" pt:root:class="rounded-xl px-5 py-3" />
     </div>
   </form>
 </template>

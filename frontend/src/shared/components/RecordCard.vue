@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Card from '@/volt/Card.vue'
 
-defineProps<{
+withDefaults(defineProps<{
   titleId: string
   title: string
   description?: string
@@ -9,21 +9,22 @@ defineProps<{
   actionLabel: string
   actionId?: string
   opensDialog?: boolean
-}>()
+  tone?: 'brand' | 'success' | 'neutral'
+}>(), { tone: 'brand' })
 defineEmits<{ open: [] }>()
 </script>
 
 <template>
   <article :aria-labelledby="titleId" class="group relative h-full min-w-0 rounded-dj-card motion-safe:transition-transform
-    motion-safe:duration-200 motion-safe:hover:-translate-y-1 motion-safe:focus-within:-translate-y-1">
-    <Card pt:root:class="h-full overflow-hidden rounded-(--radius-dj-card) border border-dj-border bg-dj-surface shadow-(--shadow-dj-card) transition-shadow duration-200
-      group-hover:border-primary-200 group-hover:shadow-(--shadow-dj-card-hover) group-focus-within:border-primary-200 group-focus-within:shadow-(--shadow-dj-card-hover)"
+    motion-safe:duration-200 motion-safe:hover:-translate-y-1 motion-safe:focus-within:-translate-y-1" :class="'dj-tone-' + tone">
+    <Card pt:root:class="dj-record-card-surface h-full overflow-hidden rounded-(--radius-dj-card) border border-t-4 border-dj-border bg-dj-surface shadow-(--shadow-dj-card) transition-shadow duration-200
+      group-hover:border-(--dj-tone-border) group-hover:shadow-(--shadow-dj-card-hover) group-focus-within:border-(--dj-tone-border) group-focus-within:shadow-(--shadow-dj-card-hover)"
       pt:body:class="flex h-full flex-1 flex-col gap-0 p-5"
       pt:content:class="flex flex-1 flex-col">
       <template #content>
         <div v-if="icon || $slots.marker || $slots.badge" class="mb-4 flex items-start justify-between gap-3">
           <slot name="marker">
-            <span v-if="icon" class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-dj-brand" aria-hidden="true">
+            <span v-if="icon" class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-(--dj-tone-soft) text-(--dj-tone)" aria-hidden="true">
               <i :class="icon" class="text-xl" />
             </span>
           </slot>
@@ -39,10 +40,10 @@ defineEmits<{ open: [] }>()
           <slot />
         </div>
         <div class="mt-auto pt-4">
-          <div class="flex items-center justify-between gap-3 border-t border-dj-border pt-3 text-sm font-semibold text-dj-brand" aria-hidden="true">
+          <div class="flex items-center justify-between gap-3 border-t border-dj-border pt-3 text-sm font-semibold text-(--dj-tone)" aria-hidden="true">
             <span>{{ actionLabel }}</span>
-            <span class="inline-flex size-8 items-center justify-center rounded-full bg-primary-50 transition-colors
-              group-hover:bg-dj-brand group-hover:text-white group-focus-within:bg-dj-brand group-focus-within:text-white">
+            <span class="inline-flex size-8 items-center justify-center rounded-full bg-(--dj-tone-soft) transition-colors
+              group-hover:bg-(--dj-tone) group-hover:text-white group-focus-within:bg-(--dj-tone) group-focus-within:text-white">
               <i class="pi pi-arrow-up-right text-xs" />
             </span>
           </div>

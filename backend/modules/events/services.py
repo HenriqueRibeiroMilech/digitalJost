@@ -17,10 +17,14 @@ class EventsService:
     def list(self, query, actor):
         self.permissions.require(actor, "events.read")
         with self.engine.connect() as connection:
+            now = repository.current_time(connection)
             items, total = repository.list_events(
                 connection,
                 page=query.page,
                 per_page=query.per_page,
+                search=query.search,
+                statuses=query.status.split(","),
+                now=now,
             )
         return {
             "items": items,
@@ -33,7 +37,7 @@ class EventsService:
     def get(self, event_id, actor):
         self.permissions.require(actor, "events.read")
         with self.engine.connect() as connection:
-            event = repository.get_event(connection, event_id)
+            event = repository.get_event(connection, event_id, now=repository.current_time(connection))
         if event is None:
             raise EventNotFoundError()
         return {**event, "capabilities": self._capabilities(actor)}
@@ -49,6 +53,7 @@ class EventsService:
                 starts_at=data.starts_at,
                 ends_at=data.ends_at,
                 created_by=str(actor.id),
+                now=repository.current_time(connection),
             )
         return event
 
@@ -63,6 +68,7 @@ class EventsService:
                 description=data.description,
                 starts_at=data.starts_at,
                 ends_at=data.ends_at,
+                now=repository.current_time(connection),
             )
             if event is None:
                 raise EventNotFoundError()

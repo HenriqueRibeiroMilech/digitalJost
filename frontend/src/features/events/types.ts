@@ -1,11 +1,19 @@
 import type { PaginatedResponse } from '@/shared/api/pagination'
 
+export type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'unscheduled'
+
+export interface EventFilters {
+  search: string
+  statuses: EventStatus[]
+}
+
 export interface EventItem {
   id: number
   name: string
   description: string
   starts_at: string | null
   ends_at: string | null
+  status: EventStatus
 }
 
 export interface EventCreate {
@@ -29,7 +37,7 @@ export type EventList = PaginatedResponse<EventItem, EventCapabilities>
 export type EventChange = 'created' | 'updated' | 'deleted'
 
 export interface EventsApi {
-  list(page: number, perPage: number): Promise<EventList>
+  list(page: number, perPage: number, filters: EventFilters): Promise<EventList>
   create(payload: EventCreate): Promise<EventItem>
   get(id: number): Promise<EventDetail>
   update(id: number, payload: EventCreate): Promise<EventItem>

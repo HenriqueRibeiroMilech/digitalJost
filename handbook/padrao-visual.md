@@ -33,6 +33,7 @@ O espaço entre cards é de 20 px. As colunas usam `minmax(0, 1fr)` para permiti
 | Resumo | `description`, limitado visualmente a duas linhas. O texto completo deve continuar disponível nos detalhes. |
 | Identificação visual | `icon` para um PrimeIcon ou slot `marker` para conteúdo específico, como a data do evento. |
 | Identificador ou etiqueta | Slot `badge`, usando Tag Volt quando adequado. O texto precisa explicar o significado, sem depender somente da cor. |
+| Cor de identificação | `tone`: `brand`, `success` ou `neutral`. Controla a faixa superior, o marcador, a ação e o destaque ao interagir. A feature escolhe o tom. |
 | Informações do domínio | Slot padrão, com os campos necessários para reconhecer o registro. |
 | Ação | Rótulo obrigatório em `actionLabel`, evento `open` e, quando necessário, `actionId` para restaurar o foco. `opensDialog` informa que a ação abre um diálogo. |
 
@@ -40,11 +41,36 @@ O card inteiro é acionável por um botão nativo, incluindo Enter e Espaço. O 
 
 O título reserva duas linhas e o resumo mantém uma altura mínima uniforme. A ação fica no rodapé. O foco usa um contorno visível, e a elevação por movimento respeita `prefers-reduced-motion`. Para superfícies apenas informativas, o `Card` Volt continua disponível.
 
-Em Eventos, `EventCard` continua responsável por selecionar os campos, formatar o período, apresentar dia/mês, o identificador e emitir a abertura do evento. `RecordCard` não consulta a API, não conhece permissões e não calcula status ou regras de negócio.
+Em Eventos, `EventCard` continua responsável por selecionar os campos, formatar o período, apresentar dia/mês e o rótulo de status e emitir a abertura do evento. `RecordCard` não consulta a API, não conhece permissões e não calcula status ou regras de negócio.
+
+## Status e filtros de Eventos
+
+O status vem da API e determina a identificação visual, sempre acompanhada de texto e ícone.
+
+| Status | Identificação | Critério |
+|---|---|---|
+| Futuro (`upcoming`) | Azul | O início ainda não foi atingido. |
+| Em andamento (`ongoing`) | Verde | Início atingido e fim ainda não atingido. |
+| Concluído (`completed`) | Cinza | Fim atingido. |
+| Sem período (`unscheduled`) | Neutra, com rótulo próprio | Registro antigo sem período completo. |
+
+A faixa superior do card, o marcador da data e o rodapé acompanham o tom. `EventStatusBadge` usa Tag Volt e centraliza o rótulo e o ícone, tanto no card quanto nos detalhes e na confirmação de exclusão. O identificador do evento fica nos modais. Cores adicionais de outros domínios precisam ter um significado definido pela própria feature.
+
+`EventFilters` compõe InputText e MultiSelect Volt. A tela começa com Futuros e Em andamento selecionados. É possível combinar vários status, desmarcar todos para consultar todos ou usar “Restaurar padrão”. A pesquisa por título reage após uma pausa de 300 ms ou imediatamente ao pressionar Enter. Os filtros consultam a API; não se limitam aos 12 itens da página atual. O total exibido é o total filtrado.
+
+As consultas de lista e detalhes atualizam o status a cada 60 segundos com a aba ativa, usando o relógio do TD. A lista pausa com o modal aberto, e os detalhes pausam na edição e na confirmação de exclusão. A edição preserva os filtros da lista; ao alterar o período, um evento pode deixar de corresponder aos status selecionados. O estado vazio orienta a ajustar a busca ou incluir outros status.
+
+## Modais
+
+`AppDialog` compõe o Dialog Volt com cabeçalho, ícone, subtítulo, superfície arredondada e rodapé separado. Use um `id` único, `visible`, `title` e o evento `update:visible`; `closed` é emitido após a transição e permite que a página restaure o foco. O título recebe um ID explícito para nomear o diálogo de forma acessível. `descriptionId` pode associar uma instrução existente no conteúdo.
+
+O modal limita a largura a 768 px e respeita o espaço da janela, com rolagem interna. `tone` aceita `brand`, `success`, `neutral` ou `danger`. O estado `busy` bloqueia o botão de fechar e a tecla Escape; a máscara não fecha o diálogo ao clicar fora. Regras, envio e tratamento das falhas continuam na feature.
+
+Em Eventos, cadastro e edição agrupam identificação e período em fieldsets com legendas e rótulos. Detalhes destacam título, status, período e descrição, com editar e excluir no topo. A confirmação de exclusão apresenta o evento e o período, usa tom vermelho e mantém o foco inicial em Cancelar. A ação de confirmar só fica disponível com a permissão correspondente e sem gravação em andamento. Requisições de consulta em segundo plano não desmontam o conteúdo dos detalhes nem reiniciam o formulário.
 
 ## Estados e componentes existentes
 
-Use `RequestState` para carregamento, falha e vazio. O estado vazio usa a mesma superfície e pode receber `emptyIcon`; a mensagem deve explicar o que aparecerá naquela tela. Skeletons ficam dentro de `CardGrid`. Mensagens, botões, campos, tags, paginação e diálogos continuam usando Volt e os componentes compartilhados existentes.
+Use `RequestState` para carregamento, falha e vazio. O estado vazio usa a mesma superfície e pode receber `emptyIcon`; a mensagem deve explicar o que aparecerá naquela tela. Skeletons ficam dentro de `CardGrid`. Mensagens, botões, campos, tags, paginação e diálogos continuam usando Volt e os componentes compartilhados existentes. Os tons e a classe `dj-danger-action` ficam nos estilos compartilhados; esta evolução não altera os arquivos dos componentes Volt instalados.
 
 As cores de foco se adaptam ao fundo: azul nas superfícies claras e branco no cabeçalho escuro. Textos longos precisam quebrar dentro dos cards; informações truncadas no resumo devem permanecer acessíveis ao abrir o registro.
 
@@ -55,5 +81,6 @@ As cores de foco se adaptam ao fundo: azul nas superfícies claras e branco no c
 3. Crie um componente pequeno na feature que forneça os dados ao `RecordCard`, como faz `EventCard`.
 4. Preserve autorizações no backend e o tratamento de carregamento, falha, vazio e foco na interface.
 5. Ajuste tokens e componentes comuns quando a decisão visual for compartilhada; mantenha estilos e regras específicos próximos da feature.
+6. Componha os modais com `AppDialog` e mantenha a restauração de foco, a confirmação das exclusões e o bloqueio de ações duplicadas.
 
 Esta entrega foi conferida somente por análise estática. Build, aparência no navegador, interação por teclado e adaptação em diferentes larguras precisam ser confirmados em ambiente autorizado, conforme `AGENTS.md`.

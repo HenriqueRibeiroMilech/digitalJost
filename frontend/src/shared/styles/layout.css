@@ -19,6 +19,50 @@
   letter-spacing: -0.035em;
 }
 
+.dj-tone-brand {
+  --dj-tone: var(--color-dj-brand);
+  --dj-tone-soft: var(--color-primary-50);
+  --dj-tone-border: var(--color-primary-200);
+}
+
+.dj-tone-success {
+  --dj-tone: var(--color-dj-success);
+  --dj-tone-soft: var(--color-dj-success-soft);
+  --dj-tone-border: var(--color-dj-success-border);
+}
+
+.dj-tone-neutral {
+  --dj-tone: var(--color-dj-muted);
+  --dj-tone-soft: var(--color-surface-100);
+  --dj-tone-border: var(--color-surface-300);
+}
+
+.dj-tone-danger {
+  --dj-tone: var(--color-dj-danger);
+  --dj-tone-soft: var(--color-dj-danger-soft);
+  --dj-tone-border: var(--color-dj-danger);
+}
+
+.dj-record-card-surface {
+  border-top-color: var(--dj-tone);
+}
+
+.dj-tone-badge {
+  color: var(--dj-tone);
+  background: var(--dj-tone-soft);
+}
+
+.dj-danger-action {
+  color: white;
+  background: var(--color-dj-danger);
+  border-color: var(--color-dj-danger);
+}
+
+.dj-danger-action:enabled:hover {
+  background: var(--color-dj-danger-emphasis);
+  border-color: var(--color-dj-danger-emphasis);
+}
+
 .dj-card-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

@@ -9,6 +9,11 @@
   --color-dj-muted: #526078;
   --color-dj-border: #dfe6ef;
   --color-dj-danger: #b42318;
+  --color-dj-danger-emphasis: #961b13;
+  --color-dj-danger-soft: #fff1f0;
+  --color-dj-success: #087f5b;
+  --color-dj-success-soft: #e9f8f1;
+  --color-dj-success-border: #a8dcc5;
   --container-dj-page: 110rem;
   --radius-dj-card: 1.25rem;
   --shadow-dj-card: 0 2px 4px rgb(16 38 86 / 2%), 0 8px 24px rgb(16 38 86 / 4%);

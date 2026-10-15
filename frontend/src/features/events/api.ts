@@ -3,8 +3,11 @@ import { paginationQuery } from '@/shared/api/pagination'
 import type { EventDetail, EventItem, EventList, EventsApi } from './types'
 
 export const eventsApi: EventsApi = {
-  list(page, perPage) {
+  list(page, perPage, filters) {
     const query = paginationQuery(page, perPage)
+    query.set('search', filters.search)
+    query.set('status', (filters.statuses.length ? filters.statuses
+      : ['upcoming', 'ongoing', 'completed', 'unscheduled']).join(','))
     return requestJson<EventList>('/api/v1/events?' + query.toString())
   },
   create(payload) {

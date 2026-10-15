@@ -1,8 +1,12 @@
 from datetime import datetime
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.platform.schemas import PaginatedResponse, PaginationQuery
+
+
+EventStatus = Literal["upcoming", "ongoing", "completed", "unscheduled"]
 
 
 class EventCreate(BaseModel):
@@ -37,6 +41,24 @@ class EventCreate(BaseModel):
 class EventQuery(PaginationQuery):
     """Consulta paginada de Eventos."""
 
+    search: str = Field(default="", max_length=120)
+    status: str = Field(default="upcoming,ongoing", min_length=1, max_length=80)
+
+    @field_validator("search", mode="before")
+    @classmethod
+    def strip_search(cls, value):
+        if isinstance(value, str) and "\x00" in value:
+            raise ValueError("Informe um título sem caracteres nulos.")
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        statuses = [status.strip() for status in value.split(",")]
+        if any(status not in get_args(EventStatus) for status in statuses):
+            raise ValueError("Selecione status válidos para os eventos.")
+        return ",".join(dict.fromkeys(statuses))
+
 
 class EventOut(BaseModel):
     id: int
@@ -44,6 +66,7 @@ class EventOut(BaseModel):
     description: str
     starts_at: datetime | None
     ends_at: datetime | None
+    status: EventStatus
 
 
 class EventCapabilities(BaseModel):

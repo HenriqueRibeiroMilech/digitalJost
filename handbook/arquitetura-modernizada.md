@@ -44,11 +44,17 @@ Ainda existe **uma aplicação Flask compartilhada**. A separação em pastas pe
 | Infraestrutura HTTP | Guardas de acesso, CSRF e erros JSON em `backend/platform/`, aplicados à API de Eventos. |
 | Interface compartilhada | Cabeçalho, grade e cards de registros, campos, estados de requisição, paginação, cliente HTTP e mensagens de validação em `frontend/src/shared/`. |
 
-Eventos oferece listagem paginada, cadastro, detalhes, edição e exclusão: página `/app/eventos`, API `/api/v1/events` e tabela `dbo.DJ_EVENTS`. Clicar no cartão abre os detalhes em um diálogo Volt; as ações de editar e excluir ficam no topo, e a exclusão pede confirmação. A interface usa diretamente essa API em desenvolvimento e no build publicado, pelo cliente HTTP compartilhado. Ele serve como exemplo concreto de organização; suas regras e seus campos não são um modelo obrigatório para todo módulo.
+Eventos oferece listagem paginada com pesquisa por título e filtro de status, cadastro, detalhes, edição e exclusão: página `/app/eventos`, API `/api/v1/events` e tabela `dbo.DJ_EVENTS`. Clicar no cartão abre os detalhes em um diálogo composto sobre Volt; as ações de editar e excluir ficam no topo, e a exclusão pede confirmação. A interface usa diretamente essa API em desenvolvimento e no build publicado, pelo cliente HTTP compartilhado. Ele serve como exemplo concreto de organização; suas regras e seus campos não são um modelo obrigatório para todo módulo.
 
 O cadastro e a edição exigem `name`, `description`, `starts_at` e `ends_at`. As datas são strings ISO 8601 com data e hora, sem fuso (`2026-10-15T14:30:00.000`), representando o horário local informado para o evento. O serviço exige fim posterior ao início. O DatePicker Volt usa formato brasileiro e relógio de 24 horas, sem converter o valor para UTC. Eventos antigos podem ter ambas as datas nulas e aparecem com “Não informado”; ao editar, é necessário preencher o período.
 
 Além de `GET`/`POST /api/v1/events`, o módulo expõe `GET`, `PUT` (edição completa) e `DELETE /api/v1/events/<id>`. Os detalhes retornam as capacidades da sessão; o DELETE retorna JSON com o `id` excluído. Eventos ausentes retornam 404. Escritas reaproveitam o CSRF comum e transações da engine TD. Não há novas integrações ou jobs neste fluxo.
+
+A listagem aceita `search` (trecho literal do título, até 120 caracteres) e `status` (valores separados por vírgulas). O padrão da API e da tela é `upcoming,ongoing`. Para consultar todos, envie `upcoming,ongoing,completed,unscheduled`; na interface, desmarcar todos os status equivale a essa seleção. Pesquisa e status são combinados antes de contar e paginar, mantendo a ordenação por ID decrescente. A busca respeita a collation existente do TD; `%`, `_` e `[` digitados são tratados como texto. Status inválidos ou vazios retornam 422.
+
+`EventOut` retorna `status`, calculado no repositório por um único `CASE` compartilhado entre lista, detalhes e retorno das escritas. A referência de horário vem de `SYSDATETIME()` do SQL Server TD, lida uma vez por operação e reaproveitada na contagem e nos itens. As datas locais cadastradas precisam usar essa mesma referência. Os valores são `upcoming` (antes do início), `ongoing` (início inclusivo até fim exclusivo), `completed` (fim atingido) e `unscheduled` (período ausente). O status não é armazenado nem editado manualmente e não exige migration ou job adicional. A interface apresenta o status retornado, sem recalculá-lo pelo relógio do navegador.
+
+Lista e detalhes são atualizados a cada 60 segundos enquanto a aba está ativa; a lista pausa com o modal aberto, e os detalhes pausam durante edição ou confirmação de exclusão. Alterar filtros reinicia a página, e a paginação se ajusta quando o total diminui. Salvar mantém os filtros atuais: um evento pode sair da seleção ao mudar de período. API e build precisam ser publicados juntos para entregar o campo `status` e os novos filtros.
 
 **Publicação desta evolução:** o responsável pelo banco precisa revisar e aplicar `database/migrations/20261015_add_dj_events_schedule.sql` após a criação de `DJ_EVENTS` e antes de publicar a API e o build compatíveis. O arquivo adiciona as duas colunas anuláveis e a restrição do período, sem inventar datas para registros antigos. A aplicação não executa a migração. O retorno de código pode manter essas colunas, pois o código anterior não as utiliza.
 
@@ -112,6 +118,7 @@ Hoje `RolePermissions` consulta as permissões da **sessão corrente**. O `Actor
 | `requestJson` e `ApiError` | Centralizam JSON, sessão, envio de CSRF, timeout e erros HTTP. `api.ts` da feature continua definindo as operações e seus caminhos. |
 | `PageHeader` | Título, descrição, identificação opcional da área (`eyebrow`) e ações da página. |
 | `CardGrid` e `RecordCard` | Grade responsiva de até quatro colunas e apresentação comum dos registros, composta sobre o Card Volt. A feature fornece seus dados e ações. |
+| `AppDialog` | Diálogo composto sobre Volt, com título acessível, subtítulo, ícone, tom visual, rodapé e bloqueio de fechamento durante gravações. |
 | `FormField` | Rótulo, erro e atributos de acessibilidade; o controle recebe os atributos fornecidos pelo componente. |
 | `RequestState` | Estados de carregamento, erro e lista vazia. |
 | `ListPagination` e `usePagination` | Controle e estado da página; API e estado usam páginas começando em 1. |
@@ -122,6 +129,8 @@ Hoje `RolePermissions` consulta as permissões da **sessão corrente**. O `Actor
 Os tipos TypeScript e schemas Python são mantidos manualmente; não há geração automática entre eles. A validação na interface ajuda o usuário, mas a validação e a autorização do backend continuam obrigatórias.
 
 O [padrão visual](padrao-visual.md) documenta a base aplicada em Eventos: conteúdo até 1.760 px, margens laterais adaptáveis e quatro cards por linha em janelas a partir de 1.200 px. Novas telas devem compor essa base, mantendo informações e regras de cada domínio na respectiva feature. A aplicação desse padrão ao Gerenciador de Demandas ainda é uma etapa futura.
+
+Os tons `brand`, `success`, `neutral` e `danger` em `shared/styles/layout.css` fornecem cores consistentes para superfícies. `RecordCard` recebe somente um tom visual; a feature de Eventos escolhe esse tom a partir do status da API, por `statuses.ts` e `EventStatusBadge`. Os componentes compartilhados não calculam status de negócio.
 
 Para adicionar um componente Volt em um computador de desenvolvimento autorizado, execute na pasta `frontend/` o comando `npx volt-vue add NomeDoComponente`; por exemplo, `npx volt-vue add DatePicker`. Revise os arquivos gerados em `frontend/src/volt/` e reutilize-os na feature. Consulte a [documentação do Volt](https://volt.primevue.org/datepicker/) para as opções do componente. Esse procedimento não autoriza agentes a instalar dependências ou executar o projeto.
 
