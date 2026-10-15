@@ -16,19 +16,23 @@ const feedback = ref<'ready' | 'success' | 'duplicate' | 'invalid' | 'error'>('r
 const message = ref('')
 const blocked = ref(false)
 const focused = ref(false)
+const settling = ref(false)
+const readingDelay = 2000
+let readingTimer: ReturnType<typeof setTimeout> | undefined
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined
 const { mutateAsync: register, isPending } = useMutation({
   mutationFn: (value: string) => attendanceApi.register(props.eventId, props.listId, value),
   retry: false,
 })
-const tone = computed(() => isPending.value || feedback.value === 'ready' ? 'brand'
+const confirming = computed(() => settling.value || isPending.value)
+const tone = computed(() => confirming.value || feedback.value === 'ready' ? 'brand'
   : feedback.value === 'success' || feedback.value === 'duplicate' ? 'success' : 'danger')
-const icon = computed(() => isPending.value ? 'pi pi-spin pi-spinner'
+const icon = computed(() => confirming.value ? 'pi pi-spin pi-spinner'
   : feedback.value === 'success' ? 'pi pi-check'
   : feedback.value === 'duplicate' ? 'pi pi-check-circle'
   : blocked.value ? 'pi pi-exclamation-triangle'
   : feedback.value === 'ready' ? 'pi pi-id-card' : 'pi pi-refresh')
-const heading = computed(() => isPending.value ? 'Confirmando presença…'
+const heading = computed(() => confirming.value ? 'Confirmando presença…'
   : feedback.value === 'success' ? 'Presença confirmada!'
   : feedback.value === 'duplicate' ? 'Sua presença já está registrada'
   : feedback.value === 'invalid' ? 'Tente novamente'
@@ -43,22 +47,55 @@ async function focusInput() {
 onMounted(() => window.addEventListener('focus', focusInput))
 onBeforeUnmount(() => {
   window.removeEventListener('focus', focusInput)
+  cancelReading()
   clearTimeout(feedbackTimer)
 })
 
 watch(registration, value => {
-  if (value && !isPending.value && !blocked.value) {
+  cancelReading()
+  if (!value) {
+    if (!isPending.value) message.value = ''
+    return
+  }
+  if (!isPending.value && !blocked.value && visible.value) {
     clearTimeout(feedbackTimer)
     feedback.value = 'ready'
-    message.value = ''
+    scheduleReading()
   }
 }, { flush: 'sync' })
 
-async function readBadge() {
-  // Cada Enter encerra uma leitura. Limpar também as leituras recebidas durante o envio.
+function cancelReading() {
+  clearTimeout(readingTimer)
+  readingTimer = undefined
+  settling.value = false
+}
+
+function scheduleReading() {
+  if (isPending.value || blocked.value || !visible.value || !registration.value) return
+  settling.value = true
+  message.value = 'Mantenha o crachá encostado enquanto a leitura é conferida.'
+  readingTimer = setTimeout(() => {
+    readingTimer = undefined
+    settling.value = false
+    void confirmReading()
+  }, readingDelay)
+}
+
+function finishReading() {
+  // Enter não antecipa a espera nem reinicia a contagem; Enter vazio/tardio é ignorado.
+  if (readingTimer === undefined) scheduleReading()
+}
+
+function blurInput() {
+  focused.value = false
+  cancelReading()
+  registration.value = ''
+}
+
+async function confirmReading() {
+  if (isPending.value || blocked.value || !visible.value || !registration.value) return
   const value = registration.value
   registration.value = ''
-  if (isPending.value || blocked.value) return
   clearTimeout(feedbackTimer)
   if (!/^[0-9]{12}$/.test(value)) {
     feedback.value = 'invalid'
@@ -66,7 +103,7 @@ async function readBadge() {
     await focusInput()
     return
   }
-  message.value = ''
+  message.value = 'Aguarde a confirmação antes de retirar o crachá.'
   try {
     const result = await register(value)
     feedback.value = result.created ? 'success' : 'duplicate'
@@ -88,7 +125,12 @@ async function readBadge() {
 }
 
 function closeReader() {
-  if (!isPending.value) visible.value = false
+  if (!isPending.value) {
+    cancelReading()
+    clearTimeout(feedbackTimer)
+    registration.value = ''
+    visible.value = false
+  }
 }
 </script>
 
@@ -112,7 +154,7 @@ function closeReader() {
     </template>
     <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center text-center">
       <div class="rounded-3xl border border-dj-border bg-dj-surface px-5 py-10 shadow-dj-card sm:px-10 sm:py-14"
-        :aria-busy="isPending" @click.self="focusInput">
+        :aria-busy="confirming" @click.self="focusInput">
         <span class="mx-auto mb-7 flex size-24 items-center justify-center rounded-3xl bg-(--dj-tone-soft) text-(--dj-tone) transition-colors motion-reduce:transition-none" aria-hidden="true">
           <i :class="icon" class="text-5xl" />
         </span>
@@ -120,13 +162,13 @@ function closeReader() {
           <h2 id="attendance-reader-title" class="text-2xl leading-tight font-bold tracking-tight text-dj-ink sm:text-4xl">{{ heading }}</h2>
           <p class="mx-auto mt-4 max-w-xl text-base leading-7 text-dj-muted">{{ message || 'Aproxime seu crachá e mantenha-o no leitor. A confirmação aparecerá aqui.' }}</p>
         </div>
-        <form class="mx-auto mt-8 max-w-sm" novalidate @submit.prevent="readBadge">
+        <form class="mx-auto mt-8 max-w-sm" novalidate @submit.prevent="finishReading">
           <label for="attendance-reader-input" class="mb-2 block text-xs font-semibold tracking-wide text-dj-muted uppercase">Leitura do crachá</label>
           <InputText id="attendance-reader-input" v-model="registration" type="text" inputmode="none" autofocus
             autocomplete="off" :spellcheck="false" :readonly="isPending || blocked"
             :aria-invalid="feedback === 'invalid'" aria-describedby="attendance-reader-help"
             placeholder="Aguardando leitura…" pt:root:class="w-full rounded-xl py-4 text-center font-mono text-lg tabular-nums"
-            @focus="focused = true" @blur="focused = false; registration = ''" />
+            @focus="focused = true" @blur="blurInput" />
           <p id="attendance-reader-help" class="mt-3 text-xs leading-5 text-dj-muted">Aguarde a confirmação antes de retirar o crachá.</p>
         </form>
         <SecondaryButton v-if="!focused && !blocked && !isPending" type="button" label="Ativar campo de leitura"

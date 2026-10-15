@@ -4,17 +4,19 @@
 
 Em `/app/eventos`, abra um evento e selecione **Listas de presença**. Crie uma lista pelo nome e abra-a para ver Matrícula, Nome e Setor. Um evento pode ter várias listas, e uma pessoa pode participar de listas diferentes. A listagem de listas usa seis itens por página; participantes usam 25, com os mais recentes primeiro.
 
-**Iniciar preenchimento por leitor** abre uma tela que ocupa a janela para os convidados. Ela usa a sessão autenticada do responsável pelo evento; não é uma página pública nem uma nova forma de login. A tela informa “Encoste o crachá até receber a aprovação” e mantém um campo de texto preparado para o leitor que funciona como teclado e encerra a leitura com Enter.
+**Iniciar preenchimento por leitor** abre uma tela que ocupa a janela para os convidados. Ela usa a sessão autenticada do responsável pelo evento; não é uma página pública nem uma nova forma de login. A tela informa “Encoste o crachá até receber a aprovação” e mantém um campo de texto preparado para o leitor que funciona como teclado, com ou sem Enter ao final.
+
+Ao receber caracteres, a tela mostra “Confirmando presença…” e espera **2 segundos sem alteração no campo** antes de validar e enviar. Cada alteração reinicia a espera, permitindo conferir o código completo em vez de gravar assim que chegar ao 12º dígito. O Enter é aceito sem antecipar nem reiniciar a contagem; quando o leitor não o envia, a confirmação automática usa a mesma espera. Enter com campo vazio, inclusive tardio ou repetido após uma leitura, é ignorado e preserva o resultado exibido.
 
 Uma leitura é aceita somente quando contém exatamente **12 dígitos de 0 a 9**. A matrícula é texto em todas as camadas para preservar zeros à esquerda. Não são retirados prefixos, espaços ou caracteres extras, nem truncadas leituras longas. Uma leitura incompleta, longa ou com outros caracteres mostra “Tente novamente”, limpa o campo e não envia uma gravação à API. O backend repete a validação, inclusive para requisições feitas fora da interface.
 
-Uma leitura válida mostra “Confirmando presença…” enquanto aguarda a API. **“Presença confirmada!” só aparece após a transação ser confirmada pelo servidor.** A tela informa que o crachá pode ser retirado e retorna à instrução em 3,5 segundos ou ao iniciar a próxima leitura. Leituras durante um envio pendente são descartadas; o campo permanece somente leitura até o envio terminar.
+Após estabilizar, uma leitura válida continua mostrando “Confirmando presença…” enquanto aguarda a API. **“Presença confirmada!” só aparece após a transação ser confirmada pelo servidor.** A tela informa que o crachá pode ser retirado e retorna à instrução em 3,5 segundos ou ao iniciar a próxima leitura. O campo aceita correções durante a espera de estabilização e fica somente leitura durante a gravação na API; leituras nesse envio pendente são descartadas.
 
 A matrícula é única dentro de uma lista. Uma repetição retorna “Sua presença já está registrada” sem criar outra linha. Isso permite também conferir uma leitura quando uma falha de comunicação deixa o resultado incerto. Não há reenvio automático de escritas. Em falha de conexão, a tela pede uma nova aproximação; em falha de segurança da sessão, sessão expirada, acesso negado ou lista ausente, bloqueia novas leituras e orienta chamar o responsável.
 
 Nome e setor ficam nulos e aparecem como “Não informado”. Não há consulta a API de funcionários ou outra integração nesta etapa. O formato do crachá é validado, mas a existência/identidade da pessoa ainda não é verificada.
 
-O foco volta ao campo após cada leitura e quando a janela recupera o foco. Se o usuário mover o foco, uma ação permite ativar o campo novamente; partes de uma leitura são apagadas ao sair do campo. Durante a captura, a navegação do evento fica bloqueada. **Encerrar leitura** restaura a lista e o foco no botão de iniciar, ficando indisponível durante uma gravação.
+O foco volta ao campo após cada leitura e quando a janela recupera o foco. Se o usuário mover o foco, uma ação permite ativar o campo novamente; partes de uma leitura e sua espera de estabilização são canceladas ao sair do campo. Durante a captura, a navegação do evento fica bloqueada. **Encerrar leitura** cancela uma leitura ainda em estabilização, restaura a lista e o foco no botão de iniciar, ficando indisponível durante uma gravação na API. Os temporizadores são removidos ao desmontar a tela.
 
 Presenças confirmadas atualizam o cache da primeira página. A tabela consulta novamente ao sair da captura e, enquanto aberta sem captura e com a aba do navegador ativa, a cada cinco segundos. O total das listas é atualizado ao retornar à coleção. Falha nessa atualização não refaz uma presença já salva.
 
@@ -55,10 +57,10 @@ Depois da revisão e aplicação do SQL, publique backend e build compatíveis j
 A entrega recebeu somente análise estática. Build, migração, navegador, leitor físico e concorrência no SQL Server precisam de validação pelo responsável, conforme `AGENTS.md`:
 
 1. Criar duas listas no mesmo evento e outra em evento diferente; conferir isolamento e paginação.
-2. Ler 12 dígitos com Enter, inclusive com zero inicial; conferir uma linha persistida e os dois campos opcionais vazios.
+2. Ler 12 dígitos com e sem Enter, inclusive com zero inicial; conferir a espera de dois segundos desde a última alteração antes da gravação, uma linha persistida e os dois campos opcionais vazios. Enters repetidos ou tardios não devem apagar o sucesso nem gerar outra tentativa vazia.
 3. Ler menos/mais de 12 caracteres e valores com letras ou espaços; conferir “Tente novamente” sem nova presença e a validação 422 da API.
 4. Repetir a matrícula na mesma lista, inclusive simultaneamente em duas sessões autorizadas; conferir uma linha e a resposta de presença existente. A mesma matrícula em outra lista deve ser aceita.
-5. Conferir foco inicial, leituras consecutivas, perda/retorno de foco e bloqueio durante gravação.
+5. Conferir foco inicial, leituras consecutivas, perda/retorno de foco e bloqueio durante gravação. Alterar o código durante a espera deve reiniciar os dois segundos; acrescentar um 13º caractere deve invalidar a leitura completa. Perder foco, encerrar ou desmontar a tela durante a espera deve cancelá-la sem gravar depois.
 6. Conferir falha de conexão, resultado incerto, nova leitura idempotente, sessão expirada e lista/evento ausente. Nenhuma falha deve mostrar confirmação falsa.
 7. Conferir acesso sem permissão, CSRF ausente e lista informada com evento errado; não devem permitir ler ou registrar os dados.
 8. Em dados de conferência autorizados, verificar o aviso e a cascata ao excluir um evento. O agente não cria nem remove dados para essa validação.
