@@ -1,110 +1,50 @@
 # Digital JOST
 
-Portal interno da JOST para demandas, operações industriais, laboratório, desvios, monitoramento, relatórios e gestão de usuários. O sistema funciona em Windows/IIS e está sendo modernizado aos poucos, mantendo as telas antigas em operação.
+Portal interno da JOST para demandas, operações industriais, laboratório, monitoramento e relatórios. Roda em Windows/IIS e está sendo modernizado sem interromper as telas antigas.
 
-Este README apresenta o projeto e reúne a preparação inicial do ambiente. Os procedimentos detalhados de arquitetura, servidor e publicação ficam na documentação oficial em `handbook/`.
+## Estrutura
 
-A documentação oficial fica em [handbook/](handbook/README.md). Comece pelo guia de [arquitetura modernizada](handbook/arquitetura-modernizada.md) para entender a base atual, criar novas features e acompanhar as propostas de evolução.
-
-## 1. Como as duas arquiteturas convivem
-
-```text
-Navegador → IIS / autenticação Windows → aplicação Flask
-                                         ├─ app/: páginas Jinja e rotas antigas
-                                         └─ backend/: APIs e página base do Vue
-                                                           ↑
-                                              build gerado por frontend/
-```
-
-| Parte | Responsabilidade atual |
+| Local | Conteúdo |
 |---|---|
-| `main.py` e `app/config.py` | Criam a aplicação, registram módulos e mantêm extensões, sessão e ciclo global. |
-| `app/` | Arquitetura antiga: rotas, templates, usuários, permissões, integrações, arquivos e schedulers. Continua necessária. |
-| `backend/` | Arquitetura nova: módulos Python, configuração própria, acesso geral ao TD, infraestrutura HTTP e shell Vue. |
-| `frontend/` | Código Vue/TypeScript, navegação e componentes. Seu build é publicado dentro de `backend/`. |
+| `main.py` e `app/config.py` | Entrada Flask, sessão, extensões e registro das partes antiga e nova. |
+| `app/` | Rotas e páginas Jinja, usuários, integrações e serviços Windows do legado. |
+| `backend/` | APIs modernas, módulos, banco compartilhado e shell que carrega o Vue. |
+| `frontend/` | Interface Vue/TypeScript e componentes compartilhados. |
+| `handbook/` | Documentação oficial. |
 
-**Banco:** as duas arquiteturas acessam o mesmo banco TD. Cada uma mantém seus mecanismos de conexão; a nova tem uma engine e um pool compartilhados por todos os seus módulos, por instância da aplicação. Pool é um conjunto de conexões reutilizáveis. Não existe um banco ou uma conexão exclusiva de Eventos. Transações antigas e novas continuam independentes.
+As duas arquiteturas usam o mesmo TD, com acessos separados. A nova mantém um pool geral de conexões e reaproveita o login e os perfis antigos. `app/` continua necessário.
 
-**Identidade:** a nova arquitetura reaproveita o login, a sessão e os perfis antigos por uma ponte em `backend/compatibility/`. Ela ainda não é uma aplicação independente de `app/`.
+## Preparar o computador
 
-## 2. Onde encontrar cada coisa
+Requisitos:
 
-```text
-Digital_Jost/                       ← raiz: pasta que contém main.py
-├── main.py                         # Entrada da aplicação e blueprints antigos
-├── web.config                      # Hospedagem no IIS
-├── requirements.txt                # Versões das dependências Python
-├── .env.example                    # Modelo sem credenciais
-├── .env                            # Arquivo privado opcional; nunca versionar
-├── app/
-│   ├── config.py                   # Factory, extensões e sessão compartilhada
-│   ├── routes/                     # Backend antigo por domínio
-│   ├── templates/                  # Jinja, includes JavaScript e e-mails
-│   ├── static/                     # CSS/JS/imagens e uploads operacionais
-│   ├── services/                   # Serviços Windows e jobs
-│   └── utils/                      # Banco, segurança e integrações antigas
-├── backend/
-│   ├── bootstrap.py                # Composição da arquitetura nova
-│   ├── config.py                   # Configuração do TD e do pool moderno
-│   ├── compatibility/              # Ponte com identidade antiga
-│   ├── platform/                   # Banco, ambiente, HTTP, CSRF e shell Vue
-│   ├── modules/events/             # Rotas, schemas, serviços e repositório
-│   ├── templates/app/shell.html    # Página que carrega o Vue
-│   └── static/app/                 # Build gerado; não acompanha o Git
-├── frontend/
-│   ├── package.json / package-lock.json
-│   └── src/                        # Features Vue e recursos compartilhados
-└── handbook/                      # Documentação oficial
-```
+- Windows e Python 3.13 de 64 bits, como referência do servidor.
+- Node `^22.18.0` ou `>=24.12.0`, com npm, para gerar o Vue.
+- Driver ODBC compatível e acesso autorizado aos recursos corporativos.
+- IIS com autenticação Windows e `httpPlatformHandler` para conferir o login real.
 
-`main.py` é a referência dos blueprints antigos registrados; `backend/modules/__init__.py`, dos novos. Computadores, temporário, horas produtivas e setup estão sem registro ativo no estado atual. Arquivos `Copy`, `BKP` e similares podem ser históricos.
-
-## 3. Dependências e preparação do computador
-
-| Requisito | Uso |
-|---|---|
-| Windows e Python 3.13 de 64 bits | Referência do servidor; há dependências específicas de Windows. |
-| Driver ODBC compatível com as conexões configuradas | Acesso ao SQL Server; instalar `pyodbc` não instala o driver do Windows. |
-| Acesso corporativo e permissões | TD, FTM, Plex, Trace QR, LDAP e demais integrações necessárias. |
-| Node `^22.18.0` ou `>=24.12.0`, com npm | Instalação e build do Vue no computador de desenvolvimento. |
-| IIS, autenticação Windows e `httpPlatformHandler` | Hospedagem atual e validação da identidade real. |
-
-O Python usa Flask/APIFlask, SQLAlchemy, pyodbc, pandas, Flask-Login/Principal/Mail, APScheduler e pywin32, além de clientes LDAP, Microsoft Graph, SAP SOAP e Oracle. O frontend usa Vue 3, TypeScript, Vite, Vue Router, Tailwind, PrimeVue/Volt e TanStack Query.
-
-As versões estão em `requirements.txt` e nos manifests de `frontend/`. O arquivo Python está em UTF-16; preserve sua codificação ao editá-lo. Ele é um inventário de versões e a instalação completa em ambiente vazio ainda precisa ser validada; não force versões incompatíveis para concluir uma instalação.
-
-Em um **ambiente novo e autorizado**, abra o **Command Prompt (CMD)** na raiz do projeto:
+Em ambiente novo e autorizado, abra o **CMD na raiz do projeto**, onde está `main.py`:
 
 ```bat
 py -3.13 -m venv .venv
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 ```
 
-Esses comandos não são o procedimento de atualização de um servidor já funcionando. Usar o caminho completo do Python evita instalar pacotes no interpretador errado. O isolamento da `.venv` é descrito na [documentação do Python](https://docs.python.org/3.13/library/venv.html).
+As versões Python estão em `requirements.txt` (UTF-16; preserve a codificação). A instalação completa em ambiente vazio ainda precisa ser validada. Para atualizar produção, use o guia do servidor.
 
-## 4. Configuração privada: vale para as duas arquiteturas
+## Configuração privada
 
-O leitor comum está em `backend/platform/environment.py`. Ele atende o backend novo e os pontos adaptados do antigo, inclusive serviços Windows.
+1. Use `.env.example` como modelo e preencha somente o arquivo privado.
+2. Salve como `.env` ao lado de `main.py`, ou defina `DJ_ENV_FILE` com o caminho absoluto antes de iniciar o processo.
+3. Reinicie o processo após alterar a configuração. Variáveis do Windows têm prioridade, inclusive quando vazias.
 
-1. Copie `.env.example` para um arquivo privado e preencha os valores existentes pelo canal seguro da empresa. Não publique credenciais no modelo.
-2. Sem `DJ_ENV_FILE`, o leitor procura **`.env` na raiz, ao lado de `main.py`**.
-3. Para outro nome/local, defina `DJ_ENV_FILE` no ambiente do processo, com o caminho absoluto. O seletor precisa existir antes da inicialização.
-4. Variáveis já existentes no ambiente do Windows têm prioridade sobre o arquivo, inclusive valores vazios. O arquivo é lido uma vez; alterações exigem reiniciar o processo afetado.
+O leitor `backend/platform/environment.py` atende as duas arquiteturas. TD e sessão usam `DJ_TD_ODBC_CONNECTION_STRING` e `DJ_SESSION_SECRET_KEY`; o legado também exige as variáveis das demais integrações. Preencha os grupos indicados no modelo e preserve a chave de sessão atual.
 
-| Grupo | Variáveis e finalidade |
-|---|---|
-| Compartilhado | `DJ_TD_ODBC_CONNECTION_STRING`: conexão geral do TD; `DJ_SESSION_SECRET_KEY`: assinatura da sessão Flask. |
-| Bancos antigos | `DJ_FTM_ODBC_CONNECTION_STRING`, `DJ_PLEX_ODBC_CONNECTION_STRING`, `DJ_TRACE_QR_ODBC_CONNECTION_STRING`. |
-| MES e LDAP | Pares `DJ_MES_USER`/`DJ_MES_PASSWORD` e `DJ_LDAP_USER`/`DJ_LDAP_PASSWORD`. |
-| Microsoft/Teams | `DJ_MICROSOFT_TENANT_ID`, `DJ_MICROSOFT_CLIENT_ID`, `DJ_MICROSOFT_CLIENT_SECRET`, `DJ_MICROSOFT_USERNAME`, `DJ_MICROSOFT_PASSWORD`. |
-| SAP | `DJ_SAP_USER` e `DJ_SAP_PASSWORD`. |
-| Legado sem uso ativo confirmado | `DJ_PLEX_TEST_ODBC_CONNECTION_STRING` ainda é exigida no import das constantes. `DJ_ORACLE_USER`/`DJ_ORACLE_PASSWORD` são referenciadas em horas produtivas, atualmente desativado. |
+Nunca versione valores privados. A leitura do arquivo exige `python-dotenv==1.2.4` no Python de cada processo.
 
-Várias constantes e integrações antigas são carregadas já na inicialização. Por isso, preencher somente TD e sessão não basta para subir o portal inteiro. Preserve a chave de sessão atual para evitar invalidar as sessões existentes.
+## Build e localhost
 
-## 5. Frontend e teste em localhost
-
-No computador autorizado, a partir da raiz, instale pelo lockfile e gere o build:
+Na raiz, em ambiente autorizado:
 
 ```bat
 cd frontend
@@ -113,18 +53,18 @@ npm run build:local
 cd ..
 ```
 
-O comando verifica os tipos e gera **`backend/static/app/`**, incluindo **`.vite/manifest.json`**. O backend encontra o build nesse local automaticamente. Publique a pasta inteira, com manifest e assets da mesma compilação. Ela é ignorada pelo Git: um pull não produz esses arquivos. O comportamento de instalação pelo lockfile está na [documentação do npm](https://docs.npmjs.com/cli/v11/commands/npm-ci/).
+O build verifica os tipos e gera `backend/static/app/`. Publique a pasta inteira, incluindo `.vite/manifest.json`. O Git não inclui esses arquivos.
 
-Para conferir o fluxo completo em localhost, prepare um IIS local com autenticação Windows, os caminhos locais do Python/`main.py` e o ambiente privado, seguindo a estrutura do [guia de servidor](handbook/servidor-e-publicacao.md#1-como-o-servidor-funciona-hoje). Use dados e acessos autorizados para esse ambiente. **Ainda não há isolamento automático dos bancos corporativos nem um procedimento de testes sem efeitos externos.** Executar `main.py` fora do IIS usa fallback de identidade e não comprova login ou permissões reais.
+Para conferir a aplicação integrada, use o build servido pelo Flask e um IIS local configurado conforme o [guia do servidor](handbook/servidor-e-publicacao.md). Eventos fica em `/app/eventos` e usa sempre a API real. `npm run dev` serve apenas a interface; o Vite atual não encaminha `/api/v1/` ao Flask.
 
-Eventos usa diretamente a API real do Flask, inclusive durante o desenvolvimento. `npm run dev` inicia apenas o servidor da interface; a configuração atual do Vite não encaminha `/api/v1/` ao Flask. Para conferir o fluxo integrado, use o build servido pelo backend, com sessão e token CSRF fornecidos pelo portal.
+A inicialização pode criar tabelas, iniciar threads e acessar recursos corporativos. Localhost não isola esses recursos; valide login e permissões pelo IIS, sem usar a identidade de fallback. Cadastros e integrações precisam de dados de teste autorizados. Agentes seguem a análise estática definida em `AGENTS.md`.
 
-Após a preparação autorizada, confira pela web: uma tela antiga, `/app/eventos`, atualização da página com F5, paginação e perfis de acesso. Cadastros e testes de integrações precisam de registros de teste aprovados, pois podem gravar dados ou enviar notificações.
+## Guias
 
-## 6. Servidor e publicação
+| Guia | Assunto |
+|---|---|
+| [Arquitetura modernizada](handbook/arquitetura-modernizada.md) | Criar features, reutilizar código e migrar o legado. |
+| [Servidor e publicação](handbook/servidor-e-publicacao.md) | IIS, serviços, dependências offline, atualização e retorno. |
+| [Publicação no Azure](handbook/publicacao-azure.md) | Levar a versão do código para o repositório oficial. |
 
-O portal é hospedado em Windows/IIS e possui schedulers separados, executados como serviços Windows. O site e os serviços podem usar interpretadores Python diferentes; mudanças em configuração, código ou dependências compartilhadas precisam considerar os processos afetados.
-
-Consulte o guia de [servidor e publicação](handbook/servidor-e-publicacao.md) para configurar o IIS, conferir os serviços, instalar dependências offline, publicar mudanças e retornar à versão anterior.
-
-O [guia de publicação no Azure](handbook/publicacao-azure.md) explica como transferir a versão do código para o repositório oficial. A atualização do servidor segue o procedimento próprio acima.
+Índice completo: [handbook/](handbook/README.md).
