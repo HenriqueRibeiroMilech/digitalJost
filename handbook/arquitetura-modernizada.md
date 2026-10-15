@@ -42,7 +42,7 @@ Ainda existe **uma aplicação Flask compartilhada**. A separação em pastas pe
 | Banco | Engine/pool geral do TD em `backend/platform/database.py`, separado dos mecanismos antigos. |
 | Identidade | A ponte `backend/compatibility/identity.py` usa a sessão e os perfis antigos. Não há outro login ou cliente LDAP moderno. |
 | Infraestrutura HTTP | Guardas de acesso, CSRF e erros JSON em `backend/platform/`, aplicados à API de Eventos. |
-| Interface compartilhada | Cabeçalho, campos, estados de requisição, paginação, cliente HTTP e mensagens de validação em `frontend/src/shared/`. |
+| Interface compartilhada | Cabeçalho, grade e cards de registros, campos, estados de requisição, paginação, cliente HTTP e mensagens de validação em `frontend/src/shared/`. |
 
 Eventos oferece listagem paginada, cadastro, detalhes, edição e exclusão: página `/app/eventos`, API `/api/v1/events` e tabela `dbo.DJ_EVENTS`. Clicar no cartão abre os detalhes em um diálogo Volt; as ações de editar e excluir ficam no topo, e a exclusão pede confirmação. A interface usa diretamente essa API em desenvolvimento e no build publicado, pelo cliente HTTP compartilhado. Ele serve como exemplo concreto de organização; suas regras e seus campos não são um modelo obrigatório para todo módulo.
 
@@ -110,15 +110,18 @@ Hoje `RolePermissions` consulta as permissões da **sessão corrente**. O `Actor
 | Recurso existente | Como aproveitar |
 |---|---|
 | `requestJson` e `ApiError` | Centralizam JSON, sessão, envio de CSRF, timeout e erros HTTP. `api.ts` da feature continua definindo as operações e seus caminhos. |
-| `PageHeader` | Título, descrição e ações da página. |
+| `PageHeader` | Título, descrição, identificação opcional da área (`eyebrow`) e ações da página. |
+| `CardGrid` e `RecordCard` | Grade responsiva de até quatro colunas e apresentação comum dos registros, composta sobre o Card Volt. A feature fornece seus dados e ações. |
 | `FormField` | Rótulo, erro e atributos de acessibilidade; o controle recebe os atributos fornecidos pelo componente. |
 | `RequestState` | Estados de carregamento, erro e lista vazia. |
 | `ListPagination` e `usePagination` | Controle e estado da página; API e estado usam páginas começando em 1. |
 | `paginationQuery` e `PaginatedResponse` | Parâmetros e tipo da listagem. |
 | `validationMessages` | Converte os detalhes de validação recebidos em mensagens de campo. |
-| `src/volt/` e `shared/styles/tokens.css` | Controles visuais e estilos comuns já adotados. |
+| `src/volt/`, `shared/styles/tokens.css` e `shared/styles/layout.css` | Controles Volt, cores, tipografia, bordas, sombras, largura e grade comuns. |
 
 Os tipos TypeScript e schemas Python são mantidos manualmente; não há geração automática entre eles. A validação na interface ajuda o usuário, mas a validação e a autorização do backend continuam obrigatórias.
+
+O [padrão visual](padrao-visual.md) documenta a base aplicada em Eventos: conteúdo até 1.760 px, margens laterais adaptáveis e quatro cards por linha em janelas a partir de 1.200 px. Novas telas devem compor essa base, mantendo informações e regras de cada domínio na respectiva feature. A aplicação desse padrão ao Gerenciador de Demandas ainda é uma etapa futura.
 
 Para adicionar um componente Volt em um computador de desenvolvimento autorizado, execute na pasta `frontend/` o comando `npx volt-vue add NomeDoComponente`; por exemplo, `npx volt-vue add DatePicker`. Revise os arquivos gerados em `frontend/src/volt/` e reutilize-os na feature. Consulte a [documentação do Volt](https://volt.primevue.org/datepicker/) para as opções do componente. Esse procedimento não autoriza agentes a instalar dependências ou executar o projeto.
 

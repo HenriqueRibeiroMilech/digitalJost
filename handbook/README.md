@@ -5,6 +5,7 @@ Esta pasta reúne a documentação oficial do projeto. O nome `handbook` signifi
 | Documento | Conteúdo |
 |---|---|
 | [Arquitetura modernizada](arquitetura-modernizada.md) | Objetivos, implementação atual, criação de features, reutilização e evolução planejada. |
+| [Padrão visual](padrao-visual.md) | Identidade, largura das telas, grade de quatro cards no desktop e componentes compartilhados da modernização. |
 | [Servidor e publicação](servidor-e-publicacao.md) | IIS, serviços Windows, dependências offline, publicação no servidor e retorno à versão anterior. |
 | [Publicação no Azure](publicacao-azure.md) | Passo a passo para gerar o ZIP filtrado, substituir o código preservando .git e publicar a versão oficial no Azure. |
 

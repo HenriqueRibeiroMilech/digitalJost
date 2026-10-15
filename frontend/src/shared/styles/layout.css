@@ -1,0 +1,44 @@
+.dj-container {
+  width: 100%;
+  max-width: var(--container-dj-page);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 2.5vw, 2.5rem);
+}
+
+.dj-app-header {
+  --dj-focus-color: #ffffff;
+  color: white;
+  background: var(--color-dj-header);
+  border-bottom: 3px solid var(--color-dj-accent);
+}
+
+.dj-app-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  letter-spacing: -0.035em;
+}
+
+.dj-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+@media (min-width: 40rem) {
+  .dj-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 60rem) {
+  .dj-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75rem) {
+  .dj-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

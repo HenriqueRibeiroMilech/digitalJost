@@ -3,6 +3,7 @@ import { nextTick, ref } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { usePagination } from '@/shared/composables/usePagination'
 import PageHeader from '@/shared/components/PageHeader.vue'
+import CardGrid from '@/shared/components/CardGrid.vue'
 import RequestState from '@/shared/components/RequestState.vue'
 import ListPagination from '@/shared/components/ListPagination.vue'
 import Button from '@/volt/Button.vue'
@@ -59,7 +60,8 @@ async function eventChanged(action: EventChange) {
 
 <template>
   <section ref="pageElement" tabindex="-1" aria-labelledby="events-title">
-    <PageHeader id="events-title" title="Eventos" description="Organize os eventos do Digital JOST.">
+    <PageHeader id="events-title" eyebrow="Agenda corporativa" title="Eventos"
+      description="Organize os eventos do Digital JOST e acompanhe os períodos de realização.">
       <template #actions>
         <div v-if="data?.capabilities.can_create" ref="newEventAction">
           <Button type="button" label="Novo evento" icon="pi pi-plus"
@@ -72,24 +74,40 @@ async function eventChanged(action: EventChange) {
       {{ feedback }}
     </Message>
 
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="flex items-center gap-2.5 text-sm font-semibold text-dj-ink">
+        Todos os eventos
+        <span v-if="data && !isError" class="rounded-full border border-dj-border bg-dj-surface px-2.5 py-0.5 text-xs text-dj-muted tabular-nums"
+          :aria-label="'Total de eventos: ' + data.total">{{ data.total }}</span>
+      </h2>
+      <p class="text-xs text-dj-muted">Selecione um evento para ver os detalhes.</p>
+    </div>
+
     <RequestState :loading="loading" :failed="isError" :error="listError"
       :empty="data?.items.length === 0" loading-label="Carregando eventos…"
       empty-title="Nenhum evento cadastrado"
       empty-description="Os eventos aparecerão aqui quando forem criados."
+      empty-icon="pi pi-calendar"
       error-message="Não foi possível carregar os eventos."
       forbidden-message="Você não tem permissão para ver os eventos."
       not-found-message="Eventos não está disponível para seu acesso." @retry="refetch()">
       <template #loading>
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          <div v-for="index in 6" :key="index" class="rounded-xl border border-dj-border bg-white p-6">
-            <Skeleton width="70%" height="1.5rem" />
-            <Skeleton width="100%" height="4.5rem" class="mt-4" />
+        <CardGrid>
+          <div v-for="index in 8" :key="index" class="rounded-dj-card border border-dj-border bg-dj-surface p-5 shadow-dj-card">
+            <div class="mb-4 flex items-start justify-between gap-3">
+              <Skeleton width="3rem" height="3rem" border-radius="0.75rem" />
+              <Skeleton width="4rem" height="1.5rem" border-radius="1rem" />
+            </div>
+            <Skeleton width="85%" height="3rem" />
+            <Skeleton width="100%" height="3rem" class="mt-2" />
+            <Skeleton width="100%" height="5rem" class="mt-4" border-radius="0.75rem" />
+            <Skeleton width="100%" height="2rem" class="mt-4" />
           </div>
-        </div>
+        </CardGrid>
       </template>
-      <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <CardGrid>
         <EventCard v-for="event in data?.items ?? []" :key="event.id" :event="event" @open="openEvent" />
-      </div>
+      </CardGrid>
     </RequestState>
 
     <ListPagination v-if="!loading && !isError && data" v-model:page="page"

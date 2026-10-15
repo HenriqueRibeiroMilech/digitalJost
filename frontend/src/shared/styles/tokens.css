@@ -2,11 +2,17 @@
   --font-sans: "Montserrat", "Segoe UI", sans-serif;
   --color-dj-brand: #163a8a;
   --color-dj-accent: #ef7b04;
-  --color-dj-canvas: #f4f6fa;
+  --color-dj-canvas: #f5f7fb;
+  --color-dj-surface: #ffffff;
+  --color-dj-header: #102656;
   --color-dj-ink: #182337;
   --color-dj-muted: #526078;
-  --color-dj-border: #d7dfea;
+  --color-dj-border: #dfe6ef;
   --color-dj-danger: #b42318;
+  --container-dj-page: 110rem;
+  --radius-dj-card: 1.25rem;
+  --shadow-dj-card: 0 2px 4px rgb(16 38 86 / 2%), 0 8px 24px rgb(16 38 86 / 4%);
+  --shadow-dj-card-hover: 0 6px 12px rgb(16 38 86 / 4%), 0 18px 36px rgb(16 38 86 / 9%);
 
   --color-primary: #163a8a;
   --color-primary-emphasis: #123174;
@@ -43,10 +49,11 @@ body {
   background: var(--color-dj-canvas);
   color: var(--color-dj-ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-dj-brand);
+  outline: 2px solid var(--dj-focus-color, var(--color-dj-brand));
   outline-offset: 3px;
 }
 

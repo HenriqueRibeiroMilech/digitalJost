@@ -13,6 +13,7 @@ const props = withDefaults(defineProps<{
   loadingLabel?: string
   emptyTitle?: string
   emptyDescription?: string
+  emptyIcon?: string
   errorMessage?: string
   forbiddenMessage?: string
   notFoundMessage?: string
@@ -20,6 +21,7 @@ const props = withDefaults(defineProps<{
   loadingLabel: 'Carregando…',
   emptyTitle: 'Nenhum registro encontrado',
   emptyDescription: '',
+  emptyIcon: 'pi pi-inbox',
   errorMessage: 'Não foi possível carregar os dados.',
   forbiddenMessage: 'Você não tem permissão para acessar estes dados.',
   notFoundMessage: 'Recurso não disponível para seu acesso.',
@@ -46,9 +48,12 @@ const message = computed(() => status.value === 401
     </a>
     <Button v-else type="button" label="Tentar novamente" outlined @click="$emit('retry')" />
   </div>
-  <div v-else-if="empty" class="rounded-xl border border-dj-border bg-white p-8">
-    <h2 class="text-lg font-semibold">{{ emptyTitle }}</h2>
-    <p v-if="emptyDescription" class="mt-2 text-dj-muted">{{ emptyDescription }}</p>
+  <div v-else-if="empty" class="flex flex-col items-center rounded-dj-card border border-dashed border-dj-border bg-dj-surface px-6 py-14 text-center">
+    <span class="mb-5 inline-flex size-14 items-center justify-center rounded-2xl bg-primary-50 text-dj-brand" aria-hidden="true">
+      <i :class="emptyIcon" class="text-2xl" />
+    </span>
+    <h2 class="text-lg font-semibold tracking-tight text-dj-ink">{{ emptyTitle }}</h2>
+    <p v-if="emptyDescription" class="mt-2 max-w-md text-sm leading-6 text-dj-muted">{{ emptyDescription }}</p>
   </div>
   <slot v-else />
 </template>
