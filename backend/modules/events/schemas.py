@@ -85,3 +85,52 @@ class EventDeleted(BaseModel):
 
 class EventList(PaginatedResponse[EventOut, EventCapabilities]):
     """Lista com as capacidades específicas de Eventos."""
+
+
+class AttendanceListCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+
+    name: str = Field(min_length=1, max_length=120)
+
+
+class AttendanceCreate(BaseModel):
+    # Matrícula é texto: não converter em número nem retirar zeros à esquerda.
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    registration: str = Field(min_length=12, max_length=12, pattern=r"^[0-9]{12}$")
+
+
+class AttendanceCapabilities(BaseModel):
+    can_create: bool
+    can_register: bool
+
+
+class AttendanceListOut(BaseModel):
+    id: int
+    event_id: int
+    name: str
+    total: int
+
+
+class AttendanceListDetail(AttendanceListOut):
+    capabilities: AttendanceCapabilities
+
+
+class AttendanceLists(PaginatedResponse[AttendanceListOut, AttendanceCapabilities]):
+    """Listas de presença de um único evento."""
+
+
+class AttendanceOut(BaseModel):
+    id: int
+    registration: str
+    name: str | None
+    department: str | None
+
+
+class AttendanceEntries(PaginatedResponse[AttendanceOut, AttendanceCapabilities]):
+    """Presenças paginadas de uma lista."""
+
+
+class AttendanceRegistered(BaseModel):
+    item: AttendanceOut
+    created: bool

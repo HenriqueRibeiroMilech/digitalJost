@@ -43,3 +43,34 @@ export interface EventsApi {
   update(id: number, payload: EventCreate): Promise<EventItem>
   delete(id: number): Promise<{ id: number }>
 }
+
+export interface AttendanceCapabilities {
+  can_create: boolean
+  can_register: boolean
+}
+
+export interface AttendanceListItem {
+  id: number
+  event_id: number
+  name: string
+  total: number
+}
+
+export interface AttendanceListDetail extends AttendanceListItem {
+  capabilities: AttendanceCapabilities
+}
+
+export interface AttendanceEntry {
+  id: number
+  registration: string
+  name: string | null
+  department: string | null
+}
+
+export interface AttendanceRegistered {
+  item: AttendanceEntry
+  created: boolean
+}
+
+export type AttendanceLists = PaginatedResponse<AttendanceListItem, AttendanceCapabilities>
+export type AttendanceEntries = PaginatedResponse<AttendanceEntry, AttendanceCapabilities>

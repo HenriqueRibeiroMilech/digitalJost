@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, ref } from 'vue'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { ApiError } from '@/shared/api/client'
 import { validationMessages } from '@/shared/api/validation'
@@ -8,12 +8,19 @@ import AppDialog from '@/shared/components/AppDialog.vue'
 import Button from '@/volt/Button.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import Message from '@/volt/Message.vue'
+import Tabs from '@/volt/Tabs.vue'
+import Tab from '@/volt/Tab.vue'
+import TabList from '@/volt/TabList.vue'
+import TabPanels from '@/volt/TabPanels.vue'
+import TabPanel from '@/volt/TabPanel.vue'
 import { eventsApi } from '../api'
 import { formatEventDateTime } from '../dates'
 import { eventStatuses } from '../statuses'
 import type { EventChange, EventCreate } from '../types'
 import EventForm from './EventForm.vue'
 import EventStatusBadge from './EventStatusBadge.vue'
+
+const EventAttendance = defineAsyncComponent(() => import('./EventAttendance.vue'))
 
 const props = defineProps<{ eventId: number | null }>()
 const emit = defineEmits<{ closed: []; changed: [action: EventChange] }>()
@@ -23,6 +30,8 @@ const submitError = ref('')
 const emptyErrors = () => ({ name: '', description: '', starts_at: '', ends_at: '' })
 const fieldErrors = ref(emptyErrors())
 const contentElement = ref<HTMLElement | null>(null)
+const activeTab = ref<string | number>('details')
+const attendanceBusy = ref(false)
 const { data: event, isPending: loading, isFetching, isError, error, refetch } = useQuery({
   queryKey: ['events', 'detail', props.eventId],
   queryFn: () => {
@@ -34,7 +43,7 @@ const { data: event, isPending: loading, isFetching, isError, error, refetch } =
   // Não substituir dados do formulário enquanto o usuário está editando.
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
-  refetchInterval: computed<number | false>(() => view.value === 'details' && visible.value ? 60_000 : false),
+  refetchInterval: computed<number | false>(() => view.value === 'details' && activeTab.value === 'details' && visible.value ? 60_000 : false),
   refetchIntervalInBackground: false,
 })
 const { mutateAsync: save, isPending: saving } = useMutation({
@@ -49,7 +58,7 @@ const { mutateAsync: remove, isPending: deleting } = useMutation({
   },
   retry: false,
 })
-const busy = computed(() => saving.value || deleting.value)
+const busy = computed(() => saving.value || deleting.value || attendanceBusy.value)
 const title = computed(() => view.value === 'create' ? 'Novo evento'
   : view.value === 'edit' ? 'Editar evento'
   : view.value === 'delete' ? 'Excluir evento' : 'Detalhes do evento')
@@ -149,7 +158,7 @@ async function deleteEvent() {
                 {{ formatEventDateTime(event.starts_at) }} → {{ formatEventDateTime(event.ends_at) }}
               </p>
             </div>
-            <Message severity="warn" class="mt-5">O evento será excluído permanentemente. Esta ação não pode ser desfeita.</Message>
+            <Message severity="warn" class="mt-5">O evento, suas listas de presença e os participantes registrados serão excluídos permanentemente. Esta ação não pode ser desfeita.</Message>
             <Message v-if="submitError" severity="error" class="mt-4">{{ submitError }}</Message>
           </div>
 
@@ -161,31 +170,45 @@ async function deleteEvent() {
               </div>
               <div class="flex flex-wrap gap-2">
                 <Button v-if="event.capabilities.can_update" type="button" label="Editar"
-                  icon="pi pi-pencil" outlined :disabled="isFetching" pt:root:class="rounded-xl" @click="changeView('edit')" />
+                  icon="pi pi-pencil" outlined :disabled="isFetching || busy" pt:root:class="rounded-xl" @click="changeView('edit')" />
                 <SecondaryButton v-if="event.capabilities.can_delete" type="button" label="Excluir"
-                  icon="pi pi-trash" outlined :disabled="isFetching"
+                  icon="pi pi-trash" outlined :disabled="isFetching || busy"
                   pt:root:class="rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft enabled:hover:text-dj-danger"
                   @click="changeView('delete')" />
               </div>
             </div>
             <h3 id="event-details-title" tabindex="-1" class="break-words text-2xl leading-8 font-bold tracking-tight text-dj-ink">{{ event.name }}</h3>
-            <dl class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
-                <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-calendar" aria-hidden="true" /> Início</dt>
-                <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.starts_at) }}</dd>
-              </div>
-              <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
-                <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-clock" aria-hidden="true" /> Fim</dt>
-                <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.ends_at) }}</dd>
-              </div>
-            </dl>
-            <Message v-if="event.status === 'unscheduled'" severity="info" class="mt-4">
-              Preencha as datas na edição para que o evento acompanhe os status de realização.
-            </Message>
-            <section class="mt-6 rounded-2xl border border-dj-border p-5">
-              <h4 class="mb-3 text-xs font-semibold tracking-wide text-dj-muted uppercase">Sobre o evento</h4>
-              <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-ink">{{ event.description }}</p>
-            </section>
+            <Tabs v-model:value="activeTab" class="mt-4">
+              <TabList>
+                <Tab value="details" :disabled="busy || isFetching">Informações</Tab>
+                <Tab value="attendance" :disabled="busy || isFetching"><i class="pi pi-users mr-2" aria-hidden="true" />Listas de presença</Tab>
+              </TabList>
+              <TabPanels pt:root:class="px-0 pt-5 pb-0">
+                <TabPanel value="details">
+                  <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-calendar" aria-hidden="true" /> Início</dt>
+                      <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.starts_at) }}</dd>
+                    </div>
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-clock" aria-hidden="true" /> Fim</dt>
+                      <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.ends_at) }}</dd>
+                    </div>
+                  </dl>
+                  <Message v-if="event.status === 'unscheduled'" severity="info" class="mt-4">
+                    Preencha as datas na edição para que o evento acompanhe os status de realização.
+                  </Message>
+                  <section class="mt-6 rounded-2xl border border-dj-border p-5">
+                    <h4 class="mb-3 text-xs font-semibold tracking-wide text-dj-muted uppercase">Sobre o evento</h4>
+                    <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-ink">{{ event.description }}</p>
+                  </section>
+                </TabPanel>
+                <TabPanel value="attendance">
+                  <EventAttendance v-if="activeTab === 'attendance'" :event-id="event.id" :event-name="event.name"
+                    @busy="attendanceBusy = $event" />
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
           </div>
         </template>
       </RequestState>
@@ -198,7 +221,7 @@ async function deleteEvent() {
           :loading="deleting" :disabled="busy || isError || !event?.capabilities.can_delete"
           pt:root:class="dj-danger-action rounded-xl" @click="deleteEvent" />
       </template>
-      <SecondaryButton v-else type="button" label="Fechar" outlined pt:root:class="rounded-xl" @click="updateVisibility(false)" />
+      <SecondaryButton v-else type="button" label="Fechar" outlined :disabled="busy" pt:root:class="rounded-xl" @click="updateVisibility(false)" />
     </template>
   </AppDialog>
 </template>

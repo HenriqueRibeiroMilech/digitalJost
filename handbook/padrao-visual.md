@@ -58,7 +58,7 @@ A faixa superior do card, o marcador da data e o rodapé acompanham o tom. `Even
 
 `EventFilters` compõe InputText e MultiSelect Volt. A tela começa com Futuros e Em andamento selecionados. É possível combinar vários status, desmarcar todos para consultar todos ou usar “Restaurar padrão”. A pesquisa por título reage após uma pausa de 300 ms ou imediatamente ao pressionar Enter. Os filtros consultam a API; não se limitam aos 12 itens da página atual. O total exibido é o total filtrado.
 
-As consultas de lista e detalhes atualizam o status a cada 60 segundos com a aba ativa, usando o relógio do TD. A lista pausa com o modal aberto, e os detalhes pausam na edição e na confirmação de exclusão. A edição preserva os filtros da lista; ao alterar o período, um evento pode deixar de corresponder aos status selecionados. O estado vazio orienta a ajustar a busca ou incluir outros status.
+As consultas de lista e detalhes atualizam o status a cada 60 segundos com a aba ativa, usando o relógio do TD. A lista pausa com o modal aberto, e os detalhes pausam na edição, na confirmação de exclusão e na aba de presença. A edição preserva os filtros da lista; ao alterar o período, um evento pode deixar de corresponder aos status selecionados. O estado vazio orienta a ajustar a busca ou incluir outros status.
 
 ## Modais
 
@@ -67,6 +67,12 @@ As consultas de lista e detalhes atualizam o status a cada 60 segundos com a aba
 O modal limita a largura a 768 px e respeita o espaço da janela, com rolagem interna. `tone` aceita `brand`, `success`, `neutral` ou `danger`. O estado `busy` bloqueia o botão de fechar e a tecla Escape; a máscara não fecha o diálogo ao clicar fora. Regras, envio e tratamento das falhas continuam na feature.
 
 Em Eventos, cadastro e edição agrupam identificação e período em fieldsets com legendas e rótulos. Detalhes destacam título, status, período e descrição, com editar e excluir no topo. A confirmação de exclusão apresenta o evento e o período, usa tom vermelho e mantém o foco inicial em Cancelar. A ação de confirmar só fica disponível com a permissão correspondente e sem gravação em andamento. Requisições de consulta em segundo plano não desmontam o conteúdo dos detalhes nem reiniciam o formulário.
+
+Os detalhes de Eventos usam Tabs Volt para separar Informações e Listas de presença. Cada lista tem nome, total e uma ação explícita de abertura. Seus participantes aparecem no DataTable Volt, com paginação no servidor e três colunas: Matrícula, Nome e Setor. Nome e setor vazios aparecem como “Não informado”. As colunas vêm do `primevue/column`, pois recebem o estilo do DataTable Volt instalado.
+
+O preenchimento por leitor usa Dialog Volt ocupando a janela, com o evento e a lista no cabeçalho. A tela para convidados concentra instrução, campo e resultado: azul para aguardar/gravar, verde para confirmação ou presença existente e vermelho para tentar novamente/falha. Texto e ícone acompanham as cores. O campo recebe foco ao abrir e após cada leitura; há uma ação para reativá-lo quando perde foco. O sucesso retorna à instrução após 3,5 segundos ou ao começar outra leitura. A tela não exibe a tabela dos demais participantes.
+
+Durante a captura, não se pode trocar de aba, editar/excluir ou fechar o evento; “Encerrar leitura” devolve o foco ao botão de iniciar. O encerramento fica bloqueado enquanto uma gravação está pendente. A exclusão do evento avisa que também remove suas listas e presenças.
 
 ## Estados e componentes existentes
 

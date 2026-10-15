@@ -9,6 +9,10 @@ class InvalidEventScheduleError(ValueError):
     """O fim precisa ser posterior ao início do evento."""
 
 
+class AttendanceListNotFoundError(LookupError):
+    """A lista não existe neste evento."""
+
+
 class EventsService:
     def __init__(self, engine, permissions):
         self.engine = engine
@@ -88,6 +92,67 @@ class EventsService:
             "can_update": self.permissions.can(actor, "events.update"),
             "can_delete": self.permissions.can(actor, "events.delete"),
         }
+
+    def list_attendance_lists(self, event_id, query, actor):
+        self.permissions.require(actor, "events.attendance.read")
+        with self.engine.connect() as connection:
+            if not repository.event_exists(connection, event_id):
+                raise EventNotFoundError()
+            items, total = repository.list_attendance_lists(
+                connection, event_id, page=query.page, per_page=query.per_page,
+            )
+        return self._attendance_page(items, total, query, actor)
+
+    def create_attendance_list(self, event_id, data, actor):
+        self.permissions.require(actor, "events.attendance.create")
+        with self.engine.begin() as connection:
+            if not repository.event_exists(connection, event_id, lock=True):
+                raise EventNotFoundError()
+            return repository.create_attendance_list(
+                connection, event_id, name=data.name, created_by=str(actor.id),
+            )
+
+    def get_attendance_list(self, event_id, list_id, actor):
+        self.permissions.require(actor, "events.attendance.read")
+        with self.engine.connect() as connection:
+            attendance_list = self._require_attendance_list(connection, event_id, list_id)
+        return {**attendance_list, "capabilities": self._attendance_capabilities(actor)}
+
+    def list_attendance_entries(self, event_id, list_id, query, actor):
+        self.permissions.require(actor, "events.attendance.read")
+        with self.engine.connect() as connection:
+            self._require_attendance_list(connection, event_id, list_id)
+            items, total = repository.list_attendance_entries(
+                connection, list_id, page=query.page, per_page=query.per_page,
+            )
+        return self._attendance_page(items, total, query, actor)
+
+    def register_attendance(self, event_id, list_id, data, actor):
+        self.permissions.require(actor, "events.attendance.register")
+        with self.engine.begin() as connection:
+            self._require_attendance_list(connection, event_id, list_id, lock=True)
+            return repository.register_attendance(
+                connection, list_id, registration=data.registration, created_by=str(actor.id),
+            )
+
+    def _attendance_capabilities(self, actor):
+        return {
+            "can_create": self.permissions.can(actor, "events.attendance.create"),
+            "can_register": self.permissions.can(actor, "events.attendance.register"),
+        }
+
+    def _attendance_page(self, items, total, query, actor):
+        return {
+            "items": items, "total": total, "page": query.page, "per_page": query.per_page,
+            "capabilities": self._attendance_capabilities(actor),
+        }
+
+    @staticmethod
+    def _require_attendance_list(connection, event_id, list_id, *, lock=False):
+        attendance_list = repository.get_attendance_list(connection, event_id, list_id, lock=lock)
+        if attendance_list is None:
+            raise AttendanceListNotFoundError()
+        return attendance_list
 
     @staticmethod
     def _validate_schedule(data):

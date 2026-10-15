@@ -1,0 +1,138 @@
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useMutation } from '@tanstack/vue-query'
+import { ApiError } from '@/shared/api/client'
+import Dialog from '@/volt/Dialog.vue'
+import InputText from '@/volt/InputText.vue'
+import SecondaryButton from '@/volt/SecondaryButton.vue'
+import { attendanceApi } from '../attendanceApi'
+import type { AttendanceRegistered } from '../types'
+
+const props = defineProps<{ eventId: number; eventName: string; listId: number; listName: string }>()
+const emit = defineEmits<{ registered: [result: AttendanceRegistered]; closed: [] }>()
+const visible = ref(true)
+const registration = ref('')
+const feedback = ref<'ready' | 'success' | 'duplicate' | 'invalid' | 'error'>('ready')
+const message = ref('')
+const blocked = ref(false)
+const focused = ref(false)
+let feedbackTimer: ReturnType<typeof setTimeout> | undefined
+const { mutateAsync: register, isPending } = useMutation({
+  mutationFn: (value: string) => attendanceApi.register(props.eventId, props.listId, value),
+  retry: false,
+})
+const tone = computed(() => isPending.value || feedback.value === 'ready' ? 'brand'
+  : feedback.value === 'success' || feedback.value === 'duplicate' ? 'success' : 'danger')
+const icon = computed(() => isPending.value ? 'pi pi-spin pi-spinner'
+  : feedback.value === 'success' ? 'pi pi-check'
+  : feedback.value === 'duplicate' ? 'pi pi-check-circle'
+  : blocked.value ? 'pi pi-exclamation-triangle'
+  : feedback.value === 'ready' ? 'pi pi-id-card' : 'pi pi-refresh')
+const heading = computed(() => isPending.value ? 'Confirmando presença…'
+  : feedback.value === 'success' ? 'Presença confirmada!'
+  : feedback.value === 'duplicate' ? 'Sua presença já está registrada'
+  : feedback.value === 'invalid' ? 'Tente novamente'
+  : feedback.value === 'error' ? blocked.value ? 'Solicite ajuda ao responsável' : 'Não foi possível confirmar'
+  : 'Encoste o crachá até receber a aprovação')
+
+async function focusInput() {
+  await nextTick()
+  if (visible.value && !blocked.value) document.getElementById('attendance-reader-input')?.focus()
+}
+
+onMounted(() => window.addEventListener('focus', focusInput))
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', focusInput)
+  clearTimeout(feedbackTimer)
+})
+
+watch(registration, value => {
+  if (value && !isPending.value && !blocked.value) {
+    clearTimeout(feedbackTimer)
+    feedback.value = 'ready'
+    message.value = ''
+  }
+}, { flush: 'sync' })
+
+async function readBadge() {
+  // Cada Enter encerra uma leitura. Limpar também as leituras recebidas durante o envio.
+  const value = registration.value
+  registration.value = ''
+  if (isPending.value || blocked.value) return
+  clearTimeout(feedbackTimer)
+  if (!/^[0-9]{12}$/.test(value)) {
+    feedback.value = 'invalid'
+    message.value = 'Mantenha o crachá encostado no leitor até receber a confirmação.'
+    await focusInput()
+    return
+  }
+  message.value = ''
+  try {
+    const result = await register(value)
+    feedback.value = result.created ? 'success' : 'duplicate'
+    message.value = result.created ? 'Tudo certo. Pode retirar o crachá.' : 'Tudo certo. Você já está nesta lista.'
+    emit('registered', result)
+    feedbackTimer = setTimeout(() => {
+      feedback.value = 'ready'
+      message.value = ''
+    }, 3500)
+  } catch (error) {
+    feedback.value = 'error'
+    blocked.value = error instanceof ApiError && [400, 401, 403, 404].includes(error.status)
+    message.value = blocked.value ? 'É necessário conferir a sessão ou esta lista. Chame o responsável pelo evento.'
+      : 'Não recebemos a confirmação do servidor. Encoste o crachá novamente para conferir sua presença.'
+  }
+  // Nunca manter partes de uma próxima leitura que chegaram durante a gravação.
+  registration.value = ''
+  await focusInput()
+}
+
+function closeReader() {
+  if (!isPending.value) visible.value = false
+}
+</script>
+
+<template>
+  <Dialog id="attendance-reader" :visible="visible" modal maximized :draggable="false" :closable="false"
+    :close-on-escape="false" :dismissable-mask="false" aria-labelledby="attendance-reader-title"
+    :style="{ width: '100vw', height: '100dvh', maxWidth: '100vw', maxHeight: '100dvh', margin: 0 }"
+    :class="'dj-tone-' + tone" pt:root:class="rounded-none border-0 bg-dj-canvas"
+    pt:header:class="border-b border-dj-border bg-dj-surface px-5 py-4 sm:px-8"
+    pt:content:class="flex flex-1 flex-col px-5 py-8 sm:px-8"
+    @show="focusInput" @after-hide="emit('closed')">
+    <template #header>
+      <div class="flex w-full flex-wrap items-center justify-between gap-4">
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-semibold tracking-widest text-dj-brand uppercase">Digital JOST · Presença</p>
+          <p class="mt-1 break-words text-sm font-semibold text-dj-ink">{{ eventName }} <span class="font-normal text-dj-muted">/ {{ listName }}</span></p>
+        </div>
+        <SecondaryButton type="button" label="Encerrar leitura" icon="pi pi-times" outlined :disabled="isPending"
+          pt:root:class="rounded-xl" @click="closeReader" />
+      </div>
+    </template>
+    <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center text-center">
+      <div class="rounded-3xl border border-dj-border bg-dj-surface px-5 py-10 shadow-dj-card sm:px-10 sm:py-14"
+        :aria-busy="isPending" @click.self="focusInput">
+        <span class="mx-auto mb-7 flex size-24 items-center justify-center rounded-3xl bg-(--dj-tone-soft) text-(--dj-tone) transition-colors motion-reduce:transition-none" aria-hidden="true">
+          <i :class="icon" class="text-5xl" />
+        </span>
+        <div role="status" aria-live="polite" aria-atomic="true">
+          <h2 id="attendance-reader-title" class="text-2xl leading-tight font-bold tracking-tight text-dj-ink sm:text-4xl">{{ heading }}</h2>
+          <p class="mx-auto mt-4 max-w-xl text-base leading-7 text-dj-muted">{{ message || 'Aproxime seu crachá e mantenha-o no leitor. A confirmação aparecerá aqui.' }}</p>
+        </div>
+        <form class="mx-auto mt-8 max-w-sm" novalidate @submit.prevent="readBadge">
+          <label for="attendance-reader-input" class="mb-2 block text-xs font-semibold tracking-wide text-dj-muted uppercase">Leitura do crachá</label>
+          <InputText id="attendance-reader-input" v-model="registration" type="text" inputmode="none" autofocus
+            autocomplete="off" :spellcheck="false" :readonly="isPending || blocked"
+            :aria-invalid="feedback === 'invalid'" aria-describedby="attendance-reader-help"
+            placeholder="Aguardando leitura…" pt:root:class="w-full rounded-xl py-4 text-center font-mono text-lg tabular-nums"
+            @focus="focused = true" @blur="focused = false; registration = ''" />
+          <p id="attendance-reader-help" class="mt-3 text-xs leading-5 text-dj-muted">Aguarde a confirmação antes de retirar o crachá.</p>
+        </form>
+        <SecondaryButton v-if="!focused && !blocked && !isPending" type="button" label="Ativar campo de leitura"
+          icon="pi pi-id-card" outlined class="mt-5" @click="focusInput" />
+      </div>
+      <p class="mt-6 text-sm text-dj-muted">Uma presença por pessoa nesta lista.</p>
+    </div>
+  </Dialog>
+</template>
