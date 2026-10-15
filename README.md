@@ -2,9 +2,7 @@
 
 Portal interno da JOST para demandas, operações industriais, laboratório, desvios, monitoramento, relatórios e gestão de usuários. O sistema funciona em Windows/IIS e está sendo modernizado aos poucos, mantendo as telas antigas em operação.
 
-Este README apresenta o projeto e reúne a preparação inicial do ambiente. Os procedimentos detalhados de arquitetura, servidor e publicação ficam na documentação oficial em `handbook/`.
-
-A documentação oficial fica em [handbook/](handbook/README.md). Comece pelo guia de [arquitetura modernizada](handbook/arquitetura-modernizada.md) para entender a base atual, criar novas features e acompanhar as propostas de evolução.
+Este README apresenta o projeto e reúne a preparação inicial do ambiente.
 
 ## 1. Como as duas arquiteturas convivem
 
@@ -52,12 +50,10 @@ Digital_Jost/                       ← raiz: pasta que contém main.py
 │   ├── templates/app/shell.html    # Página que carrega o Vue
 │   └── static/app/                 # Build gerado; não acompanha o Git
 ├── frontend/
-│   ├── package.json / package-lock.json
-│   └── src/                        # Features Vue e recursos compartilhados
-└── handbook/                      # Documentação oficial
-```
+    ├── package.json / package-lock.json
+    └── src/                        # Features Vue e recursos compartilhados
 
-`main.py` é a referência dos blueprints antigos registrados; `backend/modules/__init__.py`, dos novos. Computadores, temporário, horas produtivas e setup estão sem registro ativo no estado atual. Arquivos `Copy`, `BKP` e similares podem ser históricos.
+```
 
 ## 3. Dependências e preparação do computador
 
@@ -79,8 +75,6 @@ Em um **ambiente novo e autorizado**, abra o **Command Prompt (CMD)** na raiz do
 py -3.13 -m venv .venv
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 ```
-
-Esses comandos não são o procedimento de atualização de um servidor já funcionando. Usar o caminho completo do Python evita instalar pacotes no interpretador errado. O isolamento da `.venv` é descrito na [documentação do Python](https://docs.python.org/3.13/library/venv.html).
 
 ## 4. Configuração privada: vale para as duas arquiteturas
 
@@ -113,13 +107,7 @@ npm run build:local
 cd ..
 ```
 
-O comando verifica os tipos e gera **`backend/static/app/`**, incluindo **`.vite/manifest.json`**. O backend encontra o build nesse local automaticamente. Publique a pasta inteira, com manifest e assets da mesma compilação. Ela é ignorada pelo Git: um pull não produz esses arquivos. O comportamento de instalação pelo lockfile está na [documentação do npm](https://docs.npmjs.com/cli/v11/commands/npm-ci/).
-
-Para conferir o fluxo completo em localhost, prepare um IIS local com autenticação Windows, os caminhos locais do Python/`main.py` e o ambiente privado, seguindo a estrutura do [guia de servidor](handbook/servidor-e-publicacao.md#1-como-o-servidor-funciona-hoje). Use dados e acessos autorizados para esse ambiente. **Ainda não há isolamento automático dos bancos corporativos nem um procedimento de testes sem efeitos externos.** Executar `main.py` fora do IIS usa fallback de identidade e não comprova login ou permissões reais.
-
-Eventos usa diretamente a API real do Flask, inclusive durante o desenvolvimento. `npm run dev` inicia apenas o servidor da interface; a configuração atual do Vite não encaminha `/api/v1/` ao Flask. Para conferir o fluxo integrado, use o build servido pelo backend, com sessão e token CSRF fornecidos pelo portal.
-
-Após a preparação autorizada, confira pela web: uma tela antiga, `/app/eventos`, atualização da página com F5, paginação e perfis de acesso. Cadastros e testes de integrações precisam de registros de teste aprovados, pois podem gravar dados ou enviar notificações.
+O comando verifica os tipos e gera **`backend/static/app/`**, incluindo **`.vite/manifest.json`**. O backend encontra o build nesse local automaticamente. Publique a pasta inteira, com manifest e assets da mesma compilação. Ela é ignorada pelo Git: um pull não produz esses arquivos.
 
 ## 6. Servidor e publicação
 
@@ -127,4 +115,3 @@ O portal é hospedado em Windows/IIS e possui schedulers separados, executados c
 
 Consulte o guia de [servidor e publicação](handbook/servidor-e-publicacao.md) para configurar o IIS, conferir os serviços, instalar dependências offline, publicar mudanças e retornar à versão anterior.
 
-O [guia de publicação no Azure](handbook/publicacao-azure.md) explica como transferir a versão do código para o repositório oficial. A atualização do servidor segue o procedimento próprio acima.

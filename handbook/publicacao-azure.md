@@ -166,6 +166,4 @@ Se não houver alterações, a versão filtrada pode já estar publicada. Se o p
 
 No Azure DevOps, abra **Repos → Files**, selecione main e confira o código atualizado e o commit recém-enviado. A branch legacy/pre-atualizacao deve continuar mostrando o estado legado.
 
-Repita os passos 1 a 6 a cada nova versão oficial. Correções feitas diretamente no Azure precisam voltar também ao GitHub antes da próxima exportação.
-
 Este processo não implanta nem executa o sistema. Builds e configuração privada do servidor são tratados separadamente.
