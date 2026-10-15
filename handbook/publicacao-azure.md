@@ -1,6 +1,6 @@
 # Publicar versões no Azure DevOps
 
-O GitHub recebe os commits do dia a dia. Para publicar uma versão oficial no Azure, gere um ZIP filtrado, substitua o código no clone Azure e faça commit e push.
+Para publicar uma versão oficial no Azure, gere um ZIP filtrado, substitua o código no clone Azure e faça commit e push.
 
 | Uso | Caminho |
 |---|---|
@@ -14,13 +14,7 @@ Use **PowerShell** e mantenha a mesma janela durante o procedimento. Se estiver 
 powershell -NoProfile
 ~~~
 
-Execute os comandos na ordem e pare se houver erro. Este guia publica código; não execute o sistema, builds, testes ou integrações.
-
-**Somente na primeira publicação:** no Azure, em **Repos → Branches**, crie legacy/pre-atualizacao a partir da branch principal antiga. Preserve essa referência nas próximas publicações. Confira também se o push dispara pipelines ou implantação; trate essas automações com a equipe antes de enviar.
-
-Os exemplos usam main como branch principal e pressupõem que o origin do clone digitalJostAzure aponta para o Azure. Se a branch principal tiver outro nome, substitua main nos comandos.
-
-**Se já colocou os arquivos do ZIP na pasta Azure, vá para o passo 5. Não faça pull com essas alterações pendentes.**
+Execute os comandos na ordem e pare se houver erro.
 
 ## 1. Gerar o ZIP na pasta do GitHub
 
@@ -110,8 +104,6 @@ git status --short
 
 Confirme que está na main e que o status está vazio. Se estiver em outra branch ou houver alterações anteriores, pare para conferir.
 
-Antes dos comandos Git mutáveis, confira os hooks conforme o AGENTS.md; não execute hooks que possam iniciar o projeto ou acessar serviços externos sem autorização específica.
-
 Somente com essas condições atendidas:
 
 ~~~powershell
@@ -160,16 +152,10 @@ git diff --cached --check
 git diff --cached
 ~~~
 
-Confira o conteúdo preparado, inclusive os arquivos novos. Se abriu outro PowerShell, informe antes do commit o hash completo do nome do ZIP, substituindo o texto de exemplo:
+Confira o conteúdo preparado, inclusive os arquivos novos. 
 
 ~~~powershell
-$shaOrigem = "HASH_COMPLETO_DO_ZIP"
-~~~
-
-Se manteve a janela do passo 1, a variável já contém o hash correto. Com tudo revisado, execute uma linha por vez:
-
-~~~powershell
-git commit -m "Atualiza versao oficial do Digital JOST" -m "Origem GitHub: $shaOrigem"
+git commit -m "NOME DO COMMIT"
 git push origin main
 ~~~
 
@@ -183,6 +169,4 @@ No Azure DevOps, abra **Repos → Files**, selecione main e confira o código at
 
 Repita os passos 1 a 6 a cada nova versão oficial. Correções feitas diretamente no Azure precisam voltar também ao GitHub antes da próxima exportação.
 
-Este processo não implanta nem executa o sistema. Builds e configuração privada do servidor são tratados separadamente. Este guia permanece no GitHub, pois handbook/ está excluído da exportação.
-
-Referências: [git archive](https://git-scm.com/docs/git-archive), [gitignore](https://git-scm.com/docs/gitignore), [git add](https://git-scm.com/docs/git-add) e [git push](https://git-scm.com/docs/git-push).
+Este processo não implanta nem executa o sistema. Builds e configuração privada do servidor são tratados separadamente.
