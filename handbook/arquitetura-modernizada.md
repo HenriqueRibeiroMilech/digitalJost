@@ -44,7 +44,13 @@ Ainda existe **uma aplicação Flask compartilhada**. A separação em pastas pe
 | Infraestrutura HTTP | Guardas de acesso, CSRF e erros JSON em `backend/platform/`, aplicados à API de Eventos. |
 | Interface compartilhada | Cabeçalho, campos, estados de requisição, paginação, cliente HTTP e mensagens de validação em `frontend/src/shared/`. |
 
-Eventos oferece listagem paginada e cadastro: página `/app/eventos`, API `/api/v1/events` e tabela `dbo.DJ_EVENTS`. A interface usa diretamente essa API em desenvolvimento e no build publicado, pelo cliente HTTP compartilhado. Ele serve como exemplo concreto de organização; suas regras e seus campos não são um modelo obrigatório para todo módulo.
+Eventos oferece listagem paginada, cadastro, detalhes, edição e exclusão: página `/app/eventos`, API `/api/v1/events` e tabela `dbo.DJ_EVENTS`. Clicar no cartão abre os detalhes em um diálogo Volt; as ações de editar e excluir ficam no topo, e a exclusão pede confirmação. A interface usa diretamente essa API em desenvolvimento e no build publicado, pelo cliente HTTP compartilhado. Ele serve como exemplo concreto de organização; suas regras e seus campos não são um modelo obrigatório para todo módulo.
+
+O cadastro e a edição exigem `name`, `description`, `starts_at` e `ends_at`. As datas são strings ISO 8601 com data e hora, sem fuso (`2026-10-15T14:30:00.000`), representando o horário local informado para o evento. O serviço exige fim posterior ao início. O DatePicker Volt usa formato brasileiro e relógio de 24 horas, sem converter o valor para UTC. Eventos antigos podem ter ambas as datas nulas e aparecem com “Não informado”; ao editar, é necessário preencher o período.
+
+Além de `GET`/`POST /api/v1/events`, o módulo expõe `GET`, `PUT` (edição completa) e `DELETE /api/v1/events/<id>`. Os detalhes retornam as capacidades da sessão; o DELETE retorna JSON com o `id` excluído. Eventos ausentes retornam 404. Escritas reaproveitam o CSRF comum e transações da engine TD. Não há novas integrações ou jobs neste fluxo.
+
+**Publicação desta evolução:** o responsável pelo banco precisa revisar e aplicar `database/migrations/20261015_add_dj_events_schedule.sql` após a criação de `DJ_EVENTS` e antes de publicar a API e o build compatíveis. O arquivo adiciona as duas colunas anuláveis e a restrição do período, sem inventar datas para registros antigos. A aplicação não executa a migração. O retorno de código pode manter essas colunas, pois o código anterior não as utiliza.
 
 ### O que ainda depende do legado
 
@@ -97,7 +103,7 @@ Crie `domain.py`, `integration.py` ou composables locais somente quando houver c
 | `PaginationQuery` e `PaginatedResponse` | Padronizam paginação; cada módulo define seus itens e capacidades. |
 | `render_vue_shell` | Entrega a página base e os assets. A feature informa título e mensagem de indisponibilidade após autorizar o acesso. |
 
-Hoje `RolePermissions` consulta as permissões da **sessão corrente**. O `Actor` contém o identificador do usuário; não permite consultar ou representar livremente outro usuário. Em Eventos, `events.read` e `events.create` estão mapeadas para `GENERAL`; cada nova feature precisa escolher seus próprios critérios de acesso.
+Hoje `RolePermissions` consulta as permissões da **sessão corrente**. O `Actor` contém o identificador do usuário; não permite consultar ou representar livremente outro usuário. Em Eventos, `events.read`, `events.create`, `events.update` e `events.delete` estão mapeadas para `GENERAL`; cada nova feature precisa escolher seus próprios critérios de acesso. As capacidades orientam a interface, e cada ação também exige a respectiva permissão no serviço.
 
 ### Frontend
 
@@ -113,6 +119,10 @@ Hoje `RolePermissions` consulta as permissões da **sessão corrente**. O `Actor
 | `src/volt/` e `shared/styles/tokens.css` | Controles visuais e estilos comuns já adotados. |
 
 Os tipos TypeScript e schemas Python são mantidos manualmente; não há geração automática entre eles. A validação na interface ajuda o usuário, mas a validação e a autorização do backend continuam obrigatórias.
+
+Para adicionar um componente Volt em um computador de desenvolvimento autorizado, execute na pasta `frontend/` o comando `npx volt-vue add NomeDoComponente`; por exemplo, `npx volt-vue add DatePicker`. Revise os arquivos gerados em `frontend/src/volt/` e reutilize-os na feature. Consulte a [documentação do Volt](https://volt.primevue.org/datepicker/) para as opções do componente. Esse procedimento não autoriza agentes a instalar dependências ou executar o projeto.
+
+O DatePicker local aceita `inputProps` para associar erros e atributos de acessibilidade ao input interno, preservando as classes do Volt. Use `input-id` para ligar o controle ao rótulo de `FormField`.
 
 ### Banco e configuração compartilhados
 

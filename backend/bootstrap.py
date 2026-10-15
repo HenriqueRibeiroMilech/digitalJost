@@ -15,6 +15,8 @@ def init_backend(app, *, config):
         RolePermissions(identity.can_access, {
             "events.read": "GENERAL",
             "events.create": "GENERAL",
+            "events.update": "GENERAL",
+            "events.delete": "GENERAL",
         }),
     )
 

@@ -101,14 +101,19 @@ import ChevronLeftIcon from '@primevue/icons/chevronleft';
 import ChevronRightIcon from '@primevue/icons/chevronright';
 import ChevronUpIcon from '@primevue/icons/chevronup';
 import DatePicker from 'primevue/datepicker';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import SecondaryButton from './SecondaryButton.vue';
 import { ptViewMerge } from './utils';
 
-const theme = ref({
+// Permite associar rótulos/erros ao input interno sem substituir o tema Volt.
+const props = defineProps({
+    inputProps: { type: Object, default: () => ({}) }
+});
+
+const theme = computed(() => ({
     root: `inline-flex max-w-full relative p-fluid:flex`,
     pcInputText: {
-        root: `flex-auto w-[1%] appearance-none rounded-md outline-hidden
+        root: { class: `flex-auto w-[1%] appearance-none rounded-md outline-hidden
         p-has-dropdown:rounded-e-none p-has-e-icon:pe-10
         bg-surface-0 dark:bg-surface-950
         p-filled:bg-surface-50 dark:p-filled:bg-surface-800
@@ -124,7 +129,8 @@ const theme = ref({
         px-3 py-2 p-fluid:w-full
         p-small:text-sm p-small:px-[0.625rem] p-small:py-[0.375rem]
         p-large:text-lg p-large:px-[0.875rem] p-large:py-[0.625rem]
-        transition-colors duration-200 shadow-[0_1px_2px_0_rgba(18,18,23,0.05)]`
+        transition-colors duration-200 shadow-[0_1px_2px_0_rgba(18,18,23,0.05)]`,
+        ...props.inputProps }
     },
     dropdown: `cursor-pointer inline-flex items-center justify-center select-none overflow-hidden relative w-10 shrink-0 rounded-e-md
         border border-s-0 border-surface-300 dark:border-surface-700
@@ -213,5 +219,5 @@ const theme = ref({
         leaveActiveClass: 'transition-opacity duration-100 ease-linear',
         leaveToClass: 'opacity-0'
     }
-});
+}));
 </script>

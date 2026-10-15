@@ -1,6 +1,6 @@
 import { requestJson } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
-import type { EventItem, EventList, EventsApi } from './types'
+import type { EventDetail, EventItem, EventList, EventsApi } from './types'
 
 export const eventsApi: EventsApi = {
   list(page, perPage) {
@@ -12,5 +12,17 @@ export const eventsApi: EventsApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
+  },
+  get(id) {
+    return requestJson<EventDetail>(`/api/v1/events/${id}`)
+  },
+  update(id, payload) {
+    return requestJson<EventItem>(`/api/v1/events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+  delete(id) {
+    return requestJson<{ id: number }>(`/api/v1/events/${id}`, { method: 'DELETE' })
   },
 }

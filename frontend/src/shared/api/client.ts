@@ -41,7 +41,7 @@ export async function requestJson<T>(
     const contentType = response.headers.get('content-type') ?? ''
     if (!contentType.includes('application/json')) {
       throw new ApiError(
-        writing ? 'Resposta inesperada. Confira a listagem antes de tentar cadastrar novamente.'
+        writing ? 'Resposta inesperada. Confira os dados antes de repetir a operação.'
           : 'O servidor devolveu uma resposta inesperada.',
         response.status,
       )
@@ -50,7 +50,7 @@ export async function requestJson<T>(
   } catch (error) {
     if (error instanceof ApiError) throw error
     throw new ApiError(
-      writing ? 'Não foi possível confirmar o cadastro. Confira a listagem antes de tentar novamente.'
+      writing ? 'Não foi possível confirmar a operação. Confira os dados antes de tentar novamente.'
         : 'Não foi possível carregar os dados. Verifique a conexão.',
       0,
     )
