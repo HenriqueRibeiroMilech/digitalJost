@@ -116,7 +116,7 @@ O comando verifica os tipos e gera **`backend/static/app/`**, incluindo **`.vite
 
 Para conferir o fluxo completo em localhost, prepare um IIS local com autenticação Windows, os caminhos locais do Python/`main.py` e o ambiente privado, seguindo a estrutura da seção seguinte. Use dados e acessos autorizados para esse ambiente. **Ainda não há isolamento automático dos bancos corporativos nem um procedimento de testes sem efeitos externos.** Executar `main.py` fora do IIS usa fallback de identidade e não comprova login ou permissões reais.
 
-`npm run dev` serve para desenvolvimento da interface. Quando `VITE_EVENTS_MOCK=true` no modo de desenvolvimento, Eventos usa dados simulados; isso não valida banco nem integrações. O build integrado ao Flask usa a API real.
+Eventos usa diretamente a API real do Flask, inclusive durante o desenvolvimento. `npm run dev` inicia apenas o servidor da interface; a configuração atual do Vite não encaminha `/api/v1/` ao Flask. Para conferir o fluxo integrado, use o build servido pelo backend, com sessão e token CSRF fornecidos pelo portal.
 
 Após a preparação autorizada, confira pela web: uma tela antiga, `/app/eventos`, atualização da página com F5, paginação e perfis de acesso. Cadastros e testes de integrações precisam de registros de teste aprovados, pois podem gravar dados ou enviar notificações.
 

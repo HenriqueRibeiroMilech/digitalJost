@@ -44,7 +44,7 @@ Ainda existe **uma aplicação Flask compartilhada**. A separação em pastas pe
 | Infraestrutura HTTP | Guardas de acesso, CSRF e erros JSON em `backend/platform/`, aplicados à API de Eventos. |
 | Interface compartilhada | Cabeçalho, campos, estados de requisição, paginação, cliente HTTP e mensagens de validação em `frontend/src/shared/`. |
 
-Eventos oferece listagem paginada e cadastro: página `/app/eventos`, API `/api/v1/events` e tabela `dbo.DJ_EVENTS`. Ele serve como exemplo concreto de organização; suas regras e seus campos não são um modelo obrigatório para todo módulo.
+Eventos oferece listagem paginada e cadastro: página `/app/eventos`, API `/api/v1/events` e tabela `dbo.DJ_EVENTS`. A interface usa diretamente essa API em desenvolvimento e no build publicado, pelo cliente HTTP compartilhado. Ele serve como exemplo concreto de organização; suas regras e seus campos não são um modelo obrigatório para todo módulo.
 
 ### O que ainda depende do legado
 
@@ -187,7 +187,7 @@ Defina o ponto de entrada no portal ou na navegação necessária e mantenha a a
 
 Confira o fluxo completo: entrada na tela, acesso, contrato, regras, transação, SQL, resposta e atualização da interface. Inclua falhas e usuários sem permissão; não confira apenas o caminho de sucesso.
 
-Neste repositório, agentes fazem somente validação estática, conforme `AGENTS.md`. Testes, imports, builds e execução exigem autorização explícita de comando, ambiente e escopo. Não use o fallback de identidade fora do IIS como prova de autorização. Os mocks de Eventos ajudam na interface e não comprovam banco, sessão ou integrações.
+Neste repositório, agentes fazem somente validação estática, conforme `AGENTS.md`. Testes, imports, builds e execução exigem autorização explícita de comando, ambiente e escopo. Não use o fallback de identidade fora do IIS como prova de autorização.
 
 ### 8. Publicar uma entrega pequena
 
