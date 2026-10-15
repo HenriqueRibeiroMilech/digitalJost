@@ -1,18 +1,22 @@
 # Servidor e publicação
 
-Preparação local, configuração privada e build: [README](../README.md). Os caminhos abaixo descrevem o ambiente informado; confirme-os antes de instalar ou publicar.
+Este guia reúne o funcionamento do IIS e dos serviços Windows, a instalação de dependências sem internet e o processo de publicação e retorno à versão anterior.
 
-## Ambiente
+Os caminhos descrevem o ambiente informado pelo responsável; confirme-os antes de uma nova instalação. Preparação do computador, configuração privada e build Vue estão no [README principal](../README.md).
 
-O portal roda em Windows/IIS, em `I:\IIS\Digital_Jost`, sem internet no servidor.
+## 1. Como o servidor funciona hoje
 
-| Processo | Python |
+O ambiente informado usa **Windows/IIS**, projeto em **`I:\IIS\Digital_Jost`** e servidor sem acesso à internet. O `httpPlatformHandler` inicia o Python do site e encaminha as requisições e o token Windows para o Flask.
+
+| Processo | Python/configuração |
 |---|---|
-| Site | `I:\IIS\Digital_Jost\.venv\Scripts\python.exe`. |
-| H24 (`RunH24Scheduler`, Local System) | Host `C:\python13\pythonservice.exe`; pacotes instalados com `C:\python13\python.exe`. |
-| Outros serviços | Confira o executável e a conta de cada um. |
+| Site Digital JOST | `I:\IIS\Digital_Jost\.venv\Scripts\python.exe`, definido em `web.config`. |
+| H24, serviço `RunH24Scheduler` | Host confirmado: `C:\python13\pythonservice.exe`, conta Local System. Instalações de pacotes usam `C:\python13\python.exe`. |
+| Demais schedulers | Confira o executável e a conta de cada serviço; não presuma que usam a `.venv` do site. |
 
-O IIS usa `httpPlatformHandler`, `arguments="-m flask run --port %HTTP_PLATFORM_PORT%"` e `forwardWindowsAuthToken="true"`. Dentro de `<httpPlatform>`:
+O `web.config` atual utiliza `arguments="-m flask run --port %HTTP_PLATFORM_PORT%"` e `forwardWindowsAuthToken="true"`. Preserve as configurações reais de autenticação e hospedagem ao publicar.
+
+Dentro de `<httpPlatform>`, a configuração básica do ambiente é:
 
 ```xml
 <environmentVariables>
@@ -21,79 +25,83 @@ O IIS usa `httpPlatformHandler`, `arguments="-m flask run --port %HTTP_PLATFORM_
 </environmentVariables>
 ```
 
-Sem `DJ_ENV_FILE`, o leitor procura `.env` na raiz. Para outro arquivo, defina o seletor com caminho absoluto antes de iniciar. `FLASK_SKIP_DOTENV=1` evita a leitura automática do Flask CLI e mantém o leitor do projeto.
+Se usar o arquivo padrão `I:\IIS\Digital_Jost\.env`, não é necessário `DJ_ENV_FILE`. Para arquivo externo, acrescente uma variável `DJ_ENV_FILE` com o caminho absoluto real, sem credenciais no XML. Um seletor antigo ainda apontando para `digitaljost.env` prevalece sobre o nome `.env` e precisa ser corrigido.
 
-As variáveis de `web.config` valem apenas para o site. Serviços precisam de configuração própria ou acesso ao `.env` padrão. A conta de cada processo precisa conseguir ler o arquivo privado.
+`FLASK_SKIP_DOTENV=1` evita que o Flask CLI carregue arquivos por conta própria antes do leitor do projeto; ele **não desativa** o leitor comum. Defina-o antes de iniciar o processo. Veja a [documentação do Flask CLI](https://flask.palletsprojects.com/en/stable/cli/#disable-dotenv).
 
-| Serviço | Rotina |
+### Serviços Windows separados do site
+
+| Nome no Windows | Rotina |
 |---|---|
 | `RunS30Scheduler` | Monitoramento a cada 30 segundos. |
 | `RunM5Scheduler` | Alertas e ponto a cada 5 minutos. |
-| `RunH24Scheduler` | Rotinas às 06:00; parte somente de segunda a sexta. |
-| `RunAutoScheduler` | Agendamentos a cada minuto. |
+| `RunH24Scheduler` | Rotinas diárias às 06:00; parte dos jobs apenas de segunda a sexta. |
+| `RunAutoScheduler` | Agendamentos de laboratório e demandas a cada minuto. |
 
-Reiniciar o site não reinicia os serviços. Eles podem alterar os mesmos dados das telas.
+Os serviços leem `app/services/` e podem alterar os mesmos dados das telas. Reiniciar o site não reinicia esses serviços. A conta do serviço precisa conseguir ler o arquivo privado; as variáveis do `web.config` não são herdadas por ele.
 
-## Dependências sem internet
+## 2. Instalar dependências no servidor sem internet
 
-Use **CMD**. Os exemplos são para CPython 3.13 / Windows 64 bits; ajuste se o processo de destino for diferente.
+Prepare os pacotes em um computador com internet e copie a pasta para o servidor. Os exemplos são para **CPython 3.13 / Windows 64 bits**; ajuste os parâmetros se o processo de destino for diferente.
 
-### python-dotenv
+### Pacote usado pela configuração privada
 
-No computador com internet, na raiz do projeto:
+No computador, na raiz do projeto:
 
 ```bat
 ".venv\Scripts\python.exe" -m pip --disable-pip-version-check download --dest "pacotes-modernizacao" --only-binary=:all: --no-deps --platform win_amd64 --python-version 3.13 --implementation cp --abi cp313 "python-dotenv==1.2.4"
 ```
 
-Copie `pacotes-modernizacao` para a raiz do projeto no servidor. Durante a manutenção autorizada, instale no Python do site:
+Copie a pasta completa para `I:\IIS\Digital_Jost\pacotes-modernizacao`. No CMD do servidor, durante a manutenção autorizada, instale no Python do **site**:
 
 ```bat
 "I:\IIS\Digital_Jost\.venv\Scripts\python.exe" -m pip --disable-pip-version-check install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-modernizacao" --only-binary=:all: --no-deps "python-dotenv==1.2.4"
 ```
 
-Para o H24, instale também no Python base, se necessário. Confirme o interpretador antes de repetir para outros serviços:
+Para Services, quando necessário, a instalação é separada:
 
 ```bat
 "C:\python13\python.exe" -m pip --disable-pip-version-check install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-modernizacao" --only-binary=:all: --no-deps "python-dotenv==1.2.4"
 ```
 
-### Outros pacotes
+### Uma dependência nova no futuro
 
-1. Valide e registre a versão em `requirements.txt`.
-2. No computador com internet, substitua `NOME_PACOTE==VERSAO` e baixe o pacote com suas dependências:
+1. Escolha e valide a versão no ambiente autorizado e registre-a em `requirements.txt`.
+2. No computador com internet, use o download abaixo. Substitua `NOME_PACOTE==VERSAO`; baixe também as dependências transitivas, portanto **não use `--no-deps` nesse caso**.
 
 ```bat
 ".venv\Scripts\python.exe" -m pip download --dest "pacotes-nova-dependencia" --only-binary=:all: --platform win_amd64 --python-version 3.13 --implementation cp --abi cp313 --constraint requirements.txt "NOME_PACOTE==VERSAO"
 ```
 
-3. Resolva conflitos ou falta de wheel antes da publicação e valide o conjunto fora de produção.
-4. Copie a pasta inteira e instale no Python do processo afetado; abaixo, o do site:
+3. Revise as versões coletadas e valide o conjunto fora de produção. Se houver conflito com o inventário ou faltar wheel compatível, resolva antes da publicação; não force atualização geral no servidor.
+4. Copie a pasta inteira e instale somente o pacote solicitado no interpretador do processo afetado:
 
 ```bat
 "I:\IIS\Digital_Jost\.venv\Scripts\python.exe" -m pip install --no-index --find-links "I:\IIS\Digital_Jost\pacotes-nova-dependencia" --only-binary=:all: --constraint "I:\IIS\Digital_Jost\requirements.txt" "NOME_PACOTE==VERSAO"
 ```
 
-`--no-index` usa apenas os arquivos locais de `--find-links`. `--no-deps` foi usado somente para `python-dotenv`, que não exige dependências adicionais nessa leitura. Outros pacotes precisam das dependências transitivas.
+`--no-index` impede consulta ao índice online; `--find-links` aponta para os arquivos locais. `--no-deps` foi usado acima apenas para o pacote conhecido `python-dotenv`, que não precisa de dependências adicionais para essa leitura. Não o copie indiscriminadamente para outros pacotes. Referências: [pip download](https://pip.pypa.io/en/stable/cli/pip_download/) e [pip install](https://pip.pypa.io/en/stable/cli/pip_install/).
 
-## Publicar no servidor
+## 3. Passo a passo para publicar mudanças
 
-1. Registre o commit em produção e compare com `git diff --name-status COMMIT_EM_PRODUCAO HEAD`, substituindo o marcador.
-2. Prepare código, build Vue completo e pacotes offline da mesma versão.
-3. Guarde backup privado do código substituído, build, configuração e `web.config`, fora de pastas publicadas.
-4. Na janela de manutenção, pare o site e os serviços afetados por código, configuração ou bibliotecas compartilhadas.
-5. Instale somente as dependências necessárias no Python de cada processo. Preserve a `.venv` existente.
-6. Copie a entrega conforme a tabela e confira caminhos, arquivo privado e permissões.
-7. Inicie o site; confira uma tela antiga e Eventos, F5, assets, sessão, perfis e consultas. Gravações somente com dados autorizados.
-8. Inicie os serviços afetados um por vez; confira `Running` e acompanhe logs e ciclos naturais, sem executar jobs manualmente. Registre o resultado.
+1. **Identifique a versão em produção.** Registre o commit e compare no computador de desenvolvimento com `git diff --name-status COMMIT_EM_PRODUCAO HEAD`, substituindo o marcador. Revise adições, alterações e exclusões; não copie arquivos por memória.
+2. **Prepare a entrega.** Gere o Vue quando necessário, reúna os arquivos alterados e prepare os pacotes offline. Frontend e API devem ser da mesma versão.
+3. **Prepare o retorno.** Guarde cópia privada dos arquivos substituídos, build inteiro, `web.config` efetivo e configuração anterior. Mantenha backups com segredos fora de pastas publicadas e registre os caminhos/Pythons dos serviços.
+4. **Abra uma janela de manutenção.** Pare o site e os serviços afetados antes de substituir código compartilhado ou bibliotecas. Configuração e constantes comuns podem afetar todos os schedulers. Confirme a parada e evite cópia com processos usando arquivos antigos.
+5. **Instale as dependências necessárias** no Python correto de cada processo, pelo procedimento offline. Não substitua `.venv` nem reinstale todo o inventário de produção para adicionar um pacote.
+6. **Copie o código e o build**, conforme a tabela abaixo. Ajuste somente os campos necessários do `web.config` existente e confira a configuração privada, o seletor e as permissões das contas.
+7. **Inicie e confira o site.** Acesse uma tela antiga e Eventos, faça F5, confira assets, sessão, permissões e consultas. Gravações somente com dados autorizados. Consulte os logs se houver erro.
+8. **Inicie os serviços afetados, um por vez.** Confira `Running` em `Services` e acompanhe logs/ciclos naturais; não execute jobs manualmente apenas para testar. Registre a versão publicada e o resultado.
 
-| Local | O que copiar |
+| Arquivo/pasta | Como publicar |
 |---|---|
-| `backend/` | Código da versão e build inteiro em `static/app/`, incluindo `.vite/manifest.json`. Confira arquivos removidos. |
-| `app/` | Somente arquivos do diff; preserve uploads, logs e dados operacionais. |
-| Raiz e `web.config` | Arquivos alterados; preserve as particularidades do servidor ao ajustar o XML. |
-| Configuração privada | Valores atuais, enviados por canal separado e seguro. |
+| `backend/` | Pode ser atualizado como conjunto de código da mesma versão; publique também o build completo em `backend/static/app/`. Confira arquivos removidos para não deixar módulos antigos misturados. |
+| `app/` | Copie somente os arquivos identificados no diff. Preserve uploads, logs e arquivos operacionais; não troque a pasta inteira. |
+| `main.py`, `requirements.txt` e demais arquivos da raiz | Atualize quando constarem na entrega; o manifest Python não instala pacotes sozinho. |
+| `web.config` | Preserve as particularidades do servidor; adapte os campos necessários. |
+| Configuração privada | Transfira por canal separado e seguro, preservando os valores atuais. Não inclua no pacote comum. |
+| `frontend/` | Fonte usada no computador para gerar o build; o servidor não precisa de Node, `node_modules` ou Vite em execução. |
 
-O servidor não precisa de Node, `node_modules` ou Vite em execução. Não copie a `.venv` do computador nem reinstale todo o inventário para adicionar um pacote. Remova sobras dos caminhos antigos somente após conferir referências e funcionamento.
+Não sobrescreva `.venv`, `app/static/uploads/`, logs ou recursos operacionais. Não copie a `.venv` do computador. Pastas antigas como `app/modules/events/` e `app/static/app/` não são os destinos atuais; confira referências e validação antes de arquivar ou remover sobras, sem limpar outras áreas de `app/`.
 
-**Para voltar:** pare os processos afetados, restaure código, build, configuração e `web.config` compatíveis e inicie novamente. Isso não desfaz gravações no banco; não restaure dados ou remova bibliotecas compartilhadas sem avaliar o impacto.
+**Se precisar voltar:** pare os processos afetados, restaure o conjunto compatível de código, manifest/assets, configuração e `web.config`, e inicie novamente. Voltar arquivos não desfaz gravações no banco. Não desinstale bibliotecas compartilhadas nem restaure dados sem avaliar os demais processos.

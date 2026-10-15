@@ -1,6 +1,6 @@
 # Publicar versões no Azure DevOps
 
-Gere o ZIP, atualize o clone Azure e envie o commit. Este fluxo publica código no repositório; não atualiza o servidor.
+Para publicar uma versão oficial no Azure, gere um ZIP filtrado, substitua o código no clone Azure e faça commit e push.
 
 | Uso | Caminho |
 |---|---|
@@ -8,15 +8,15 @@ Gere o ZIP, atualize o clone Azure e envie o commit. Este fluxo publica código 
 | Azure | C:\Users\00063689\dev\codes\td\digitalJostAzure |
 | ZIPs | C:\Users\00063689\dev\codes\td\exportacoes |
 
-Use a mesma janela do **PowerShell**. Se estiver no CMD:
+Use **PowerShell** e mantenha a mesma janela durante o procedimento. Se estiver no CMD, entre no PowerShell primeiro:
 
 ~~~cmd
 powershell -NoProfile
 ~~~
 
-Siga a ordem e pare se houver erro.
+Execute os comandos na ordem e pare se houver erro.
 
-## 1. Gerar o ZIP
+## 1. Gerar o ZIP na pasta do GitHub
 
 ~~~powershell
 cd "C:\Users\00063689\dev\codes\td\digitalJost"
@@ -24,7 +24,7 @@ git branch --show-current
 git status --short
 ~~~
 
-Confirme a branch `main`, o status limpo e o commit já enviado ao GitHub. Copie o bloco inteiro:
+Confirme que está na main, sem alterações pendentes, e que o último commit é a versão escolhida e já foi enviado ao GitHub. Depois, copie o bloco inteiro:
 
 ~~~powershell
 $shaOrigem = git rev-parse HEAD
@@ -81,19 +81,19 @@ Write-Host "Commit de origem: $shaOrigem"
 Write-Host "ZIP criado em: $arquivoZip"
 ~~~
 
-O ZIP contém o commit escolhido, sem `.git` ou histórico. Se já existir, confira-o; para refazer com outros filtros, use outro nome.
+O ZIP contém os arquivos do commit selecionado, sem a pasta .git nem o histórico do GitHub. Se ele já existir para esse commit, confira o arquivo existente; para mudar os filtros e refazer a exportação, escolha outro nome de ZIP.
 
-## 2. Conferir o ZIP
+## 2. Extrair e conferir o ZIP
 
-No Explorador, use **Extrair Tudo** para uma pasta nova.
+Abra a pasta exportacoes no Explorador, localize o ZIP e use **Extrair Tudo** para uma pasta nova.
 
-Confira código, `.gitignore`, README e `handbook/`. O filtro exclui `docs/`, `database/`, `AGENTS.md`, `.env*`, uploads, logs, dependências instaladas, caches e builds.
+Confira se o código, os .gitignore, o README principal e a pasta handbook/ estão presentes. O handbook contém a documentação oficial referenciada pelo README e acompanha a versão publicada no Azure. Ficam fora docs/, database/, AGENTS.md, arquivos .env e variantes, uploads, logs, dependências instaladas, caches e os builds listados no bloco.
 
-A exclusão de `.env*` também vale para o frontend; `frontend/src/` continua incluído.
+O filtro de .env vale também para frontend/.env.local e outras variantes dentro do frontend. O código de frontend/src/ continua incluído.
 
-O `.gitignore` não retira arquivos já rastreados do ZIP. Revise possíveis segredos no código antes de publicar.
+O .gitignore é mantido, mas não exclui do ZIP arquivos já rastreados: os filtros acima fazem essa seleção. Revise também possíveis segredos embutidos no código antes de publicar.
 
-## 3. Atualizar o clone Azure
+## 3. Atualizar o clone Azure antes de substituir os arquivos
 
 ~~~powershell
 cd "C:\Users\00063689\dev\codes\td\digitalJostAzure"
@@ -101,35 +101,40 @@ git branch --show-current
 git status --short
 ~~~
 
-Prossiga somente na `main`, com status limpo:
+Confirme que está na main e que o status está vazio. Se estiver em outra branch ou houver alterações anteriores, pare para conferir.
+
+Somente com essas condições atendidas:
 
 ~~~powershell
 git pull --ff-only origin main
 ~~~
 
-Se o pull falhar, pare.
+Se o pull falhar, não continue com a substituição.
 
-## 4. Substituir o código
+## 4. Substituir o código, preservando .git
 
-No Explorador, abra **digitalJostAzure** e habilite a exibição de itens ocultos.
+No Explorador, abra **digitalJostAzure** e mostre os itens ocultos:
 
-**Preserve `.git`. Faça a substituição somente no clone Azure, fora da pasta GitHub e do servidor.**
+- **Windows 11:** **Exibir → Mostrar → Itens ocultos**.
+- **Windows 10:** aba **Exibir → Itens ocultos**.
 
-Se houver `.env`, uploads, logs, outros dados operacionais ou configuração exclusiva nesse clone, preserve-os e revise antes de excluir arquivos.
+**A pasta .git deve permanecer intacta. Não faça esta substituição na pasta do GitHub ou no servidor de produção.**
 
-Em um clone exclusivo de código:
+Se esse clone contiver .env, uploads, logs, dados operacionais ou configurações exclusivas do Azure, preserve-os e revise o caso antes de fazer uma exclusão geral.
 
-1. Selecione os itens com **Ctrl+A**.
-2. Segure **Ctrl** e clique em **.git** para removê-la da seleção.
-3. Confira a seleção e use **Delete**, sem Shift+Delete.
-4. Copie o conteúdo extraído, incluindo `.gitignore` e `handbook/`, para o clone.
-5. Confira `main.py`, `app/`, `backend/` e `frontend/` na raiz, ao lado da `.git` preservada.
+Para um clone exclusivo de código:
 
-Copie o conteúdo do ZIP, sem a pasta externa de extração e sem outra `.git`. A substituição deve registrar também os arquivos removidos da versão.
+1. Use **Ctrl+A** para selecionar os itens.
+2. Segure **Ctrl** e clique em **.git** para retirá-la da seleção.
+3. Confira que .git não está selecionada e pressione **Delete**, sem Shift+Delete.
+4. Copie o conteúdo da pasta extraída do ZIP para digitalJostAzure, incluindo os .gitignore.
+5. Confira que main.py, app/, backend/ e frontend/ estão diretamente na raiz, ao lado da .git preservada.
 
-## 5. Enviar ao Azure
+Copie o conteúdo extraído, não a pasta externa de extração. A origem não deve conter .git. A retirada do código antigo registra exclusões no próximo commit e preserva o histórico anterior.
 
-Na raiz do clone Azure:
+## 5. Conferir e enviar ao Azure
+
+Na raiz de digitalJostAzure:
 
 ~~~powershell
 cd "C:\Users\00063689\dev\codes\td\digitalJostAzure"
@@ -138,7 +143,7 @@ git status --short
 git diff --check
 ~~~
 
-Confira a `main` e as mudanças, incluindo adições e exclusões. Somente neste fluxo manual no seu PC, prepare os arquivos:
+Confirme que a branch é main e que só aparecem as alterações desejadas. Arquivos antigos removidos e arquivos novos são esperados. Para este fluxo manual no seu PC, prepare as alterações:
 
 ~~~powershell
 git add .
@@ -146,19 +151,21 @@ git diff --cached --check
 git diff --cached
 ~~~
 
-Revise o conteúdo preparado, incluindo arquivos novos:
+Confira o conteúdo preparado, inclusive os arquivos novos. 
 
 ~~~powershell
 git commit -m "NOME DO COMMIT"
 git push origin main
 ~~~
 
-Sem mudanças, a versão filtrada pode já estar publicada. Se o push for rejeitado, pare e confira; não use force push. Se houver exigência de PR, siga a revisão da equipe.
+O git add . registra arquivos novos, modificados e removidos dentro dessa pasta.
 
-## 6. Confirmar
+Se não houver alterações, a versão filtrada pode já estar publicada. Se o push for rejeitado, pare e confira a causa; não use force push. Se o Azure exigir PR, use uma branch de publicação e siga o fluxo de revisão da equipe.
 
-No Azure DevOps, abra **Repos → Files**, selecione `main` e confira o commit e os arquivos. Preserve o estado da branch `legacy/pre-atualizacao`.
+## 6. Confirmar a publicação
 
-Repita para cada versão. Traga correções feitas no Azure de volta ao GitHub antes da próxima exportação.
+No Azure DevOps, abra **Repos → Files**, selecione main e confira o código atualizado e o commit recém-enviado. A branch legacy/pre-atualizacao deve continuar mostrando o estado legado.
 
-Para instalar a versão no servidor, siga o [guia de servidor e publicação](servidor-e-publicacao.md).
+Repita os passos 1 a 6 a cada nova versão oficial. Correções feitas diretamente no Azure precisam voltar também ao GitHub antes da próxima exportação.
+
+Este processo não implanta nem executa o sistema. Builds e configuração privada do servidor são tratados separadamente.
