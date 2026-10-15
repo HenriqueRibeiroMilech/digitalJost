@@ -25,9 +25,9 @@ Dentro de `<httpPlatform>`, a configuração básica do ambiente é:
 </environmentVariables>
 ```
 
-Se usar o arquivo padrão `I:\IIS\Digital_Jost\.env`, não é necessário `DJ_ENV_FILE`. Para arquivo externo, acrescente uma variável `DJ_ENV_FILE` com o caminho absoluto real, sem credenciais no XML. Um seletor antigo ainda apontando para `digitaljost.env` prevalece sobre o nome `.env` e precisa ser corrigido.
+Se usar o arquivo padrão `I:\IIS\Digital_Jost\.env`, não é necessário `DJ_ENV_FILE`. Para arquivo externo, acrescente uma variável `DJ_ENV_FILE` com o caminho absoluto real, sem credenciais no XML.
 
-`FLASK_SKIP_DOTENV=1` evita que o Flask CLI carregue arquivos por conta própria antes do leitor do projeto; ele **não desativa** o leitor comum. Defina-o antes de iniciar o processo. Veja a [documentação do Flask CLI](https://flask.palletsprojects.com/en/stable/cli/#disable-dotenv).
+`FLASK_SKIP_DOTENV=1` evita que o Flask CLI carregue arquivos por conta própria antes do leitor do projeto; ele **não desativa** o leitor comum. Defina-o antes de iniciar o processo.
 
 ### Serviços Windows separados do site
 
