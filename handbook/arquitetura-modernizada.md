@@ -120,7 +120,7 @@ O TD moderno usa `DJ_TD_ODBC_CONNECTION_STRING`. Cada instância da aplicação 
 
 O legado mantém seus próprios acessos ao TD e a outros bancos. Essa duplicidade temporária permite migrar sem trocar toda a infraestrutura de uma vez. Não há transação única que englobe automaticamente conexões antigas e novas.
 
-O leitor `backend/platform/environment.py` é usado pelas duas arquiteturas. Ele lê o `.env` da raiz ou o arquivo absoluto selecionado por `DJ_ENV_FILE`, preservando a prioridade do ambiente do processo. Não copie credenciais para módulos, documentação ou variáveis frontend. Instalação, configuração e particularidades dos serviços estão no [README principal](../README.md).
+O leitor `backend/platform/environment.py` é usado pelas duas arquiteturas. Ele lê o `.env` da raiz ou o arquivo absoluto selecionado por `DJ_ENV_FILE`, preservando a prioridade do ambiente do processo. Não copie credenciais para módulos, documentação ou variáveis frontend. A preparação local e a configuração privada estão no [README principal](../README.md); as particularidades dos serviços, no guia de [servidor e publicação](servidor-e-publicacao.md).
 
 ## 5. Quando compartilhar e quando manter local
 
@@ -191,7 +191,7 @@ Neste repositório, agentes fazem somente validação estática, conforme `AGENT
 
 ### 8. Publicar uma entrega pequena
 
-Quando autorizado, gere o build Vue e publique o conjunto compatível de backend e assets em `backend/static/app/`, incluindo `.vite/manifest.json`. O Git não leva o build automaticamente. Planeje dependências offline, processos afetados, conferência e retorno conforme o [README principal](../README.md).
+Quando autorizado, gere o build Vue e publique o conjunto compatível de backend e assets em `backend/static/app/`, incluindo `.vite/manifest.json`. O Git não leva o build automaticamente. Planeje dependências offline, processos afetados, conferência e retorno conforme o guia de [servidor e publicação](servidor-e-publicacao.md).
 
 Registre o que foi implementado e confira se este manual precisa de atualização pelos critérios da seção 10. Não publique uma ideia como funcionalidade existente.
 
@@ -247,7 +247,7 @@ Separar totalmente a criação do app, a identidade e a hospedagem do legado pod
 - Como foi validada, o que depende do ambiente e como publicar ou retornar.
 - Quais decisões precisam ser atualizadas neste manual.
 
-O código ativo é a referência para o estado implementado. Instalação e operação ficam no README principal; este documento concentra organização, desenvolvimento e evolução da arquitetura.
+O código ativo é a referência para o estado implementado. A preparação local fica no README principal; a operação, no guia de servidor e publicação. Este documento concentra organização, desenvolvimento e evolução da arquitetura.
 
 ## 10. Quando e como atualizar este documento
 

@@ -5,8 +5,9 @@ Esta pasta reúne a documentação oficial do projeto. O nome `handbook` signifi
 | Documento | Conteúdo |
 |---|---|
 | [Arquitetura modernizada](arquitetura-modernizada.md) | Objetivos, implementação atual, criação de features, reutilização e evolução planejada. |
+| [Servidor e publicação](servidor-e-publicacao.md) | IIS, serviços Windows, dependências offline, publicação no servidor e retorno à versão anterior. |
 | [Publicação no Azure](publicacao-azure.md) | Passo a passo para gerar o ZIP filtrado, substituir o código preservando .git e publicar a versão oficial no Azure. |
 
-Instalação, configuração do ambiente, build e publicação no servidor estão no [README principal](../README.md).
+Preparação do computador, configuração privada e build estão no [README principal](../README.md). Os procedimentos completos de servidor e de publicação ficam nos guias acima.
 
 Os documentos devem distinguir o que está implementado do que é proposta, acompanhar as mudanças relevantes do código e explicar as decisões em linguagem simples.

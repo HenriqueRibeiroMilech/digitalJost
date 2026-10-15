@@ -43,7 +43,6 @@ if (Test-Path $arquivoZip) {
 
 $exclusoesAzure = @(
     ":(top,exclude)docs"
-    ":(top,exclude)handbook"
     ":(top,exclude)database"
     ":(top,glob,icase,exclude)**/AGENTS.md"
     ":(top,glob,exclude)**/.env*"
@@ -88,7 +87,7 @@ O ZIP contém os arquivos do commit selecionado, sem a pasta .git nem o históri
 
 Abra a pasta exportacoes no Explorador, localize o ZIP e use **Extrair Tudo** para uma pasta nova.
 
-Confira se o código e os .gitignore estão presentes. Ficam fora docs/, handbook/, database/, AGENTS.md, arquivos .env e variantes, uploads, logs, dependências instaladas, caches e os builds listados no bloco.
+Confira se o código, os .gitignore, o README principal e a pasta handbook/ estão presentes. O handbook contém a documentação oficial referenciada pelo README e acompanha a versão publicada no Azure. Ficam fora docs/, database/, AGENTS.md, arquivos .env e variantes, uploads, logs, dependências instaladas, caches e os builds listados no bloco.
 
 O filtro de .env vale também para frontend/.env.local e outras variantes dentro do frontend. O código de frontend/src/ continua incluído.
 
