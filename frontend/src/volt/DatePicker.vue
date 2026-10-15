@@ -94,18 +94,35 @@
     </DatePicker>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import CalendarIcon from '@primevue/icons/calendar';
 import ChevronDownIcon from '@primevue/icons/chevrondown';
 import ChevronLeftIcon from '@primevue/icons/chevronleft';
 import ChevronRightIcon from '@primevue/icons/chevronright';
 import ChevronUpIcon from '@primevue/icons/chevronup';
+<<<<<<< HEAD
 import DatePicker from 'primevue/datepicker';
 import { ref } from 'vue';
 import SecondaryButton from './SecondaryButton.vue';
 import { ptViewMerge } from './utils';
 
 const theme = ref({
+=======
+import DatePicker, { type DatePickerProps } from 'primevue/datepicker';
+import { computed, type InputHTMLAttributes } from 'vue';
+import SecondaryButton from './SecondaryButton.vue';
+import { ptViewMerge } from './utils';
+
+// Permite associar rótulos/erros ao input interno sem substituir o tema Volt.
+interface Props extends /* @vue-ignore */ DatePickerProps {
+    inputProps?: InputHTMLAttributes;
+}
+const props = withDefaults(defineProps<Props>(), {
+    inputProps: () => ({})
+});
+
+const theme = computed(() => ({
+>>>>>>> e0a7def6e4e077bf0578d5b552f383ec2483f7c2
     root: `inline-flex max-w-full relative p-fluid:flex`,
     pcInputText: {
         root: `flex-auto w-[1%] appearance-none rounded-md outline-hidden
