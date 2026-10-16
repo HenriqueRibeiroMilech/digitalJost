@@ -37,10 +37,11 @@ Ainda existe **uma aplicação Flask compartilhada**. A separação em pastas pe
 |---|---|
 | Entrada e aplicação | `main.py` e `app/config.py` continuam responsáveis pelo app e pelo ciclo global. A factory chama `backend/bootstrap.py`. |
 | Backend moderno | `backend/modules/` reúne os módulos; Eventos é o primeiro. O registro dos blueprints é explícito. |
+| Integrações modernas | `backend/integrations/employee_directory.py` consulta nome/setor no LDAP por matrícula. A composição injeta o cliente no serviço de Eventos, sem conexão no startup. |
 | Frontend moderno | Vue/TypeScript com Vue Router, TanStack Query, Tailwind e componentes PrimeVue/Volt. |
 | Shell compartilhado | `backend/platform/vue_shell.py` carrega o manifest do build e entrega o template base com o token CSRF. O layout visual fica em `frontend/src/app/layouts/AppShell.vue`. |
 | Banco | Engine/pool geral do TD em `backend/platform/database.py`, separado dos mecanismos antigos. |
-| Identidade | A ponte `backend/compatibility/identity.py` usa a sessão e os perfis antigos. Não há outro login ou cliente LDAP moderno. |
+| Identidade | A ponte `backend/compatibility/identity.py` usa a sessão e os perfis antigos. A consulta LDAP moderna é somente leitura de dados de funcionários e não cria outro login. |
 | Infraestrutura HTTP | Guardas de acesso, CSRF e erros JSON em `backend/platform/`, aplicados à API de Eventos. |
 | Interface compartilhada | Cabeçalho, grade e cards de registros, campos, estados de requisição, paginação, cliente HTTP e mensagens de validação em `frontend/src/shared/`. |
 
@@ -62,7 +63,9 @@ Eventos também possui a aba **Listas de presença**, com várias listas por eve
 
 As rotas ficam sob `/api/v1/events/<event_id>/attendance-lists`: GET/POST na coleção, GET em `/<list_id>` e GET/POST em `/<list_id>/entries`. Consultas são paginadas; o serviço verifica o vínculo evento/lista. As ações `events.attendance.read`, `.create` e `.register` usam o perfil GENERAL nesta etapa e são verificadas no backend. A tela para convidados usa a sessão autenticada do responsável, com o mesmo CSRF das demais escritas.
 
-A matrícula é uma string de exatamente 12 dígitos ASCII, preservando zeros à esquerda. A API devolve `{item, created}` somente após o commit; uma repetição na mesma lista retorna o registro existente com `created: false`. Uma trava da lista na transação serializa registros concorrentes; a restrição UNIQUE também protege `(list_id, registration)`. Nome e setor são anuláveis, ficam vazios no cadastro e não têm integração externa nesta etapa. As novas tabelas e sua publicação estão documentadas em [Listas de presença](listas-de-presenca.md); o script SQL é uma proposta e não foi executado pelo agente ou pelo startup da aplicação.
+A matrícula é uma string de exatamente 12 dígitos ASCII, preservando zeros à esquerda. A API devolve `{item, created, lookup_status}` após a operação; uma repetição na mesma lista retorna `created: false` e pode completar nome/setor ausentes, sem sobrescrever dados existentes. Uma trava da lista na transação serializa registros concorrentes; a restrição UNIQUE também protege `(list_id, registration)`. Nome e setor vêm da consulta LDAP moderna para crachás com prefixo `2300`, usando os oito dígitos finais somente na consulta. Os campos continuam anuláveis: falha, ausência, ambiguidade ou dados parciais não impedem a gravação da presença, mas geram aviso explícito. As tabelas e a publicação estão documentadas em [Listas de presença](listas-de-presenca.md); esta integração reutiliza as colunas existentes, sem nova migration.
+
+`EmployeeDirectory` recebe `LdapDirectoryConfig`, abre uma conexão própria por consulta e a encerra ao final. Pede somente `description`, `displayName` e `department`, aplica filtro escapado, limita resultados/tempo e exige matrícula exata no valor retornado. Não importa clientes de `app/`, não altera LDAP, sessão ou usuários do portal e não tem threads, pool ou busca durante imports/startup. A duplicidade temporária com os clientes do legado é intencional. O serviço autoriza o recurso e fecha a conexão SQL de leitura antes da consulta externa; depois revalida a lista e grava em uma transação curta. Uma presença já completa dispensa LDAP.
 
 ### O que ainda depende do legado
 
@@ -108,6 +111,7 @@ Crie `domain.py`, `integration.py` ou composables locais somente quando houver c
 | Recurso existente | Como aproveitar |
 |---|---|
 | `BackendConfig` e engine TD | A composição entrega a engine ao serviço. O módulo não cria outra configuração ou outro pool para o mesmo TD. |
+| `LdapDirectoryConfig` e `EmployeeDirectory` | Configuração e cliente modernos de consulta de funcionários, injetados pela composição. Reaproveitam o ambiente privado e não dependem do login LDAP legado. |
 | `Actor` e `RolePermissions` | Identificam o usuário da sessão e mapeiam ações do domínio para perfis existentes. |
 | `configure_api` e `page_access` | Aplicam acesso à API e à página. O serviço também exige a permissão específica da operação. |
 | `get_csrf_token` e `has_valid_csrf` | Mantêm a proteção comum das operações de escrita; o shell fornece o token e o cliente HTTP o envia. |
@@ -149,6 +153,8 @@ O TD moderno usa `DJ_TD_ODBC_CONNECTION_STRING`. Cada instância da aplicação 
 O legado mantém seus próprios acessos ao TD e a outros bancos. Essa duplicidade temporária permite migrar sem trocar toda a infraestrutura de uma vez. Não há transação única que englobe automaticamente conexões antigas e novas.
 
 O leitor `backend/platform/environment.py` é usado pelas duas arquiteturas. Ele lê o `.env` da raiz ou o arquivo absoluto selecionado por `DJ_ENV_FILE`, preservando a prioridade do ambiente do processo. Não copie credenciais para módulos, documentação ou variáveis frontend. A preparação local e a configuração privada estão no [README principal](../README.md); as particularidades dos serviços, no guia de [servidor e publicação](servidor-e-publicacao.md).
+
+A consulta LDAP moderna usa o par privado `DJ_LDAP_USER`/`DJ_LDAP_PASSWORD`, com configuração própria no `BackendConfig.employee_directory`. Host/base têm os mesmos padrões do legado; `DJ_LDAP_HOST`, `DJ_LDAP_SEARCH_BASE`, `DJ_LDAP_PORT`, `DJ_LDAP_USE_SSL`, `DJ_LDAP_CONNECT_TIMEOUT` e `DJ_LDAP_RECEIVE_TIMEOUT` permitem configurá-la sem alterar o cliente antigo. O padrão é NTLM na porta 389, sem SSL, com dois segundos para conexão e recebimento. Quando SSL é habilitado, a porta padrão é 636 e o cliente exige certificado confiável pelo sistema. Não são desativadas validações de certificado. Sem o par de credenciais, o cliente moderno retorna indisponibilidade sem bloquear startup/presença; o login legado mantém seus requisitos próprios. Erros de valores nas opções configuradas são tratados como erro de configuração, sem imprimir credenciais.
 
 ## 5. Quando compartilhar e quando manter local
 

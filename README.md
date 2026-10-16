@@ -45,6 +45,7 @@ Digital_Jost/                       ← raiz: pasta que contém main.py
 │   ├── bootstrap.py                # Composição da arquitetura nova
 │   ├── config.py                   # Configuração do TD e do pool moderno
 │   ├── compatibility/              # Ponte com identidade antiga
+│   ├── integrations/               # Clientes modernos, como a consulta de funcionários no LDAP
 │   ├── platform/                   # Banco, ambiente, HTTP, CSRF e shell Vue
 │   ├── modules/events/             # Rotas, schemas, serviços e repositório
 │   ├── templates/app/shell.html    # Página que carrega o Vue
@@ -89,7 +90,7 @@ O leitor comum está em `backend/platform/environment.py`. Ele atende o backend 
 |---|---|
 | Compartilhado | `DJ_TD_ODBC_CONNECTION_STRING`: conexão geral do TD; `DJ_SESSION_SECRET_KEY`: assinatura da sessão Flask. |
 | Bancos antigos | `DJ_FTM_ODBC_CONNECTION_STRING`, `DJ_PLEX_ODBC_CONNECTION_STRING`, `DJ_TRACE_QR_ODBC_CONNECTION_STRING`. |
-| MES e LDAP | Pares `DJ_MES_USER`/`DJ_MES_PASSWORD` e `DJ_LDAP_USER`/`DJ_LDAP_PASSWORD`. |
+| MES e LDAP | Pares `DJ_MES_USER`/`DJ_MES_PASSWORD` e `DJ_LDAP_USER`/`DJ_LDAP_PASSWORD`. LDAP atende o legado e a consulta moderna de nome/setor nas presenças. |
 | Microsoft/Teams | `DJ_MICROSOFT_TENANT_ID`, `DJ_MICROSOFT_CLIENT_ID`, `DJ_MICROSOFT_CLIENT_SECRET`, `DJ_MICROSOFT_USERNAME`, `DJ_MICROSOFT_PASSWORD`. |
 | SAP | `DJ_SAP_USER` e `DJ_SAP_PASSWORD`. |
 | Legado sem uso ativo confirmado | `DJ_PLEX_TEST_ODBC_CONNECTION_STRING` ainda é exigida no import das constantes. `DJ_ORACLE_USER`/`DJ_ORACLE_PASSWORD` são referenciadas em horas produtivas, atualmente desativado. |

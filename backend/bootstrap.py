@@ -8,6 +8,7 @@ def init_backend(app, *, config):
     from .compatibility import identity
     from .platform.identity import RolePermissions
     from .modules.events.services import EventsService
+    from .integrations.employee_directory import EmployeeDirectory
 
     td_engine = init_td_database(app, config)
     app.extensions["events_service"] = EventsService(
@@ -21,6 +22,7 @@ def init_backend(app, *, config):
             "events.attendance.create": "GENERAL",
             "events.attendance.register": "GENERAL",
         }),
+        EmployeeDirectory(config.employee_directory),
     )
 
     init_vue_shell(app)

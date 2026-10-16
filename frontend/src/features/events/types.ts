@@ -70,7 +70,10 @@ export interface AttendanceEntry {
 export interface AttendanceRegistered {
   item: AttendanceEntry
   created: boolean
+  lookup_status: AttendanceLookupStatus
 }
+
+export type AttendanceLookupStatus = 'complete' | 'partial' | 'not_found' | 'unavailable' | 'ambiguous' | 'unsupported_badge'
 
 export type AttendanceLists = PaginatedResponse<AttendanceListItem, AttendanceCapabilities>
 export type AttendanceEntries = PaginatedResponse<AttendanceEntry, AttendanceCapabilities>

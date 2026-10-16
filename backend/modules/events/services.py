@@ -14,9 +14,10 @@ class AttendanceListNotFoundError(LookupError):
 
 
 class EventsService:
-    def __init__(self, engine, permissions):
+    def __init__(self, engine, permissions, employee_directory):
         self.engine = engine
         self.permissions = permissions
+        self.employee_directory = employee_directory
 
     def list(self, query, actor):
         self.permissions.require(actor, "events.read")
@@ -129,11 +130,26 @@ class EventsService:
 
     def register_attendance(self, event_id, list_id, data, actor):
         self.permissions.require(actor, "events.attendance.register")
+        # Autoriza o recurso antes da consulta externa; não retém conexão/trava SQL no LDAP.
+        with self.engine.connect() as connection:
+            self._require_attendance_list(connection, event_id, list_id)
+            existing = repository.get_attendance_entry(connection, list_id, data.registration)
+        if existing is not None and existing["name"] and existing["department"]:
+            return {"item": existing, "created": False, "lookup_status": "complete"}
+
+        employee = self.employee_directory.find_by_badge(data.registration)
         with self.engine.begin() as connection:
+            # Revalidar após o LDAP: a lista pode ter sido excluída durante a consulta.
             self._require_attendance_list(connection, event_id, list_id, lock=True)
-            return repository.register_attendance(
+            result = repository.register_attendance(
                 connection, list_id, registration=data.registration, created_by=str(actor.id),
+                name=employee.name, department=employee.department,
             )
+        item = result["item"]
+        lookup_status = "complete" if item["name"] and item["department"] else (
+            "partial" if item["name"] or item["department"] else employee.status
+        )
+        return {**result, "lookup_status": lookup_status}
 
     def _attendance_capabilities(self, actor):
         return {

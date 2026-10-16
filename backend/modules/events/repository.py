@@ -183,23 +183,41 @@ def list_attendance_entries(connection, list_id, *, page, per_page):
     return [dict(row) for row in rows], total
 
 
-def register_attendance(connection, list_id, *, registration, created_by):
-    # O serviço já travou a lista na transação; a constraint UNIQUE é a última defesa.
-    parameters = {"list_id": list_id, "registration": registration}
-    existing = connection.execute(
+def get_attendance_entry(connection, list_id, registration):
+    row = connection.execute(
         text("""
             SELECT id, registration, name, department
             FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES
             WHERE list_id = :list_id AND registration = :registration
-        """), parameters,
+        """), {"list_id": list_id, "registration": registration},
     ).mappings().one_or_none()
+    return dict(row) if row is not None else None
+
+
+def register_attendance(connection, list_id, *, registration, created_by, name, department):
+    # O serviço já travou a lista na transação; a constraint UNIQUE é a última defesa.
+    parameters = {
+        "list_id": list_id, "registration": registration,
+        "name": name, "department": department,
+    }
+    existing = get_attendance_entry(connection, list_id, registration)
     if existing is not None:
-        return {"item": dict(existing), "created": False}
+        if (name and not existing["name"]) or (department and not existing["department"]):
+            existing = dict(connection.execute(
+                text("""
+                    UPDATE dbo.DJ_EVENT_ATTENDANCE_ENTRIES
+                    SET name = COALESCE(NULLIF(name, ''), :name),
+                        department = COALESCE(NULLIF(department, ''), :department)
+                    OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department
+                    WHERE id = :entry_id AND list_id = :list_id
+                """), {**parameters, "entry_id": existing["id"]},
+            ).mappings().one())
+        return {"item": existing, "created": False}
     row = connection.execute(
         text("""
-            INSERT INTO dbo.DJ_EVENT_ATTENDANCE_ENTRIES (list_id, registration, created_by)
+            INSERT INTO dbo.DJ_EVENT_ATTENDANCE_ENTRIES (list_id, registration, name, department, created_by)
             OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department
-            VALUES (:list_id, :registration, :created_by)
+            VALUES (:list_id, :registration, :name, :department, :created_by)
         """), {**parameters, "created_by": created_by},
     ).mappings().one()
     return {"item": dict(row), "created": True}

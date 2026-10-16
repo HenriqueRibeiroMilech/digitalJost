@@ -56,6 +56,11 @@ function registered(result: AttendanceRegistered) {
       items: [result.item, ...current.items.filter(item => item.id !== result.item.id)].slice(0, perPage),
       total: current.total + 1,
     }))
+  } else {
+    queryClient.setQueryData<AttendanceEntries>([...entriesKey, 1], current => current && ({
+      ...current,
+      items: current.items.map(item => item.id === result.item.id ? result.item : item),
+    }))
   }
   void queryClient.invalidateQueries({ queryKey: entriesKey })
   void queryClient.invalidateQueries({ queryKey: [...baseKey, 'lists'] })
@@ -84,7 +89,7 @@ async function readerClosed() {
           <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
             label="Iniciar preenchimento por leitor" icon="pi pi-id-card" pt:root:class="rounded-xl" @click="readerOpen = true" />
         </div>
-        <p class="mt-4 text-xs leading-5 text-dj-muted">Nome e setor aparecerão como “Não informado” nesta etapa.</p>
+        <p class="mt-4 text-xs leading-5 text-dj-muted">Nome e setor são preenchidos automaticamente quando encontrados. Dados ausentes aparecem como “Não informado”.</p>
       </div>
       <RequestState :loading="entriesPending" :failed="entriesError" :error="entriesFailure" :empty="false"
         loading-label="Carregando presenças…" @retry="refetchEntries()">

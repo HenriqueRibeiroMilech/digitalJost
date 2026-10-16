@@ -4,6 +4,7 @@ from typing import Literal, get_args
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.platform.schemas import PaginatedResponse, PaginationQuery
+from backend.integrations.employee_directory import EmployeeLookupStatus
 
 
 EventStatus = Literal["upcoming", "ongoing", "completed", "unscheduled"]
@@ -134,3 +135,4 @@ class AttendanceEntries(PaginatedResponse[AttendanceOut, AttendanceCapabilities]
 class AttendanceRegistered(BaseModel):
     item: AttendanceOut
     created: bool
+    lookup_status: EmployeeLookupStatus

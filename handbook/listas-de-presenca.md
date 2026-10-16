@@ -12,9 +12,11 @@ Uma leitura é aceita somente quando contém exatamente **12 dígitos de 0 a 9**
 
 Após estabilizar, uma leitura válida continua mostrando “Confirmando presença…” enquanto aguarda a API. **“Presença confirmada!” só aparece após a transação ser confirmada pelo servidor.** A tela informa que o crachá pode ser retirado e retorna à instrução em 3,5 segundos ou ao iniciar a próxima leitura. O campo aceita correções durante a espera de estabilização e fica somente leitura durante a gravação na API; leituras nesse envio pendente são descartadas.
 
-A matrícula é única dentro de uma lista. Uma repetição retorna “Sua presença já está registrada” sem criar outra linha. Isso permite também conferir uma leitura quando uma falha de comunicação deixa o resultado incerto. Não há reenvio automático de escritas. Em falha de conexão, a tela pede uma nova aproximação; em falha de segurança da sessão, sessão expirada, acesso negado ou lista ausente, bloqueia novas leituras e orienta chamar o responsável.
+A matrícula é única dentro de uma lista. Uma repetição não cria outra linha e, quando nome e setor estão completos, retorna “Sua presença já está registrada”. Se faltarem dados, pode completá-los ou apresentar o aviso de identificação incompleta. Isso permite também conferir uma leitura quando uma falha de comunicação deixa o resultado incerto. Não há reenvio automático de escritas. Em falha de conexão, a tela pede uma nova aproximação; em falha de segurança da sessão, sessão expirada, acesso negado ou lista ausente, bloqueia novas leituras e orienta chamar o responsável.
 
-Nome e setor ficam nulos e aparecem como “Não informado”. Não há consulta a API de funcionários ou outra integração nesta etapa. O formato do crachá é validado, mas a existência/identidade da pessoa ainda não é verificada.
+Nome e setor são preenchidos automaticamente por uma consulta LDAP na arquitetura nova. Para crachás com prefixo `2300`, o cliente usa os oito dígitos finais na busca, preservando os 12 dígitos na presença. Solicita `description`, `displayName` e `department`; exige resultado único e matrícula exata no último trecho de `description`, separado por ponto e vírgula (ou no valor completo quando não há separador). O campo nome vem de `displayName` e setor vem de `department`. Valores ausentes, vazios, inválidos ou maiores que os 200 caracteres UTF-16 suportados pelas colunas ficam nulos e aparecem como “Não informado”.
+
+Se o diretório estiver indisponível, não houver correspondência única ou o prefixo não for suportado, **a presença é salva mesmo assim**, com aviso de identificação incompleta na tela. O formato válido não é tratado como prova de identidade; a consulta é complementar e não autentica o convidado. O sucesso completo continua verde; identificação incompleta usa mensagem informativa azul, deixando claro que a presença foi salva. Uma nova leitura de presença incompleta tenta preencher somente os campos que faltam, sem duplicar a matrícula. Presenças já completas dispensam nova consulta. Não há atualização em lote dos registros antigos.
 
 O foco volta ao campo após cada leitura e quando a janela recupera o foco. Se o usuário mover o foco, uma ação permite ativar o campo novamente; partes de uma leitura e sua espera de estabilização são canceladas ao sair do campo. Durante a captura, a navegação do evento fica bloqueada. **Encerrar leitura** cancela uma leitura ainda em estabilização, restaura a lista e o foco no botão de iniciar, ficando indisponível durante uma gravação na API. Os temporizadores são removidos ao desmontar a tela.
 
@@ -30,13 +32,17 @@ Base: `/api/v1/events/<event_id>/attendance-lists`.
 | POST na base | `{name}`, texto de 1 a 120 caracteres após trim; retorna a lista criada com total zero e HTTP 201. |
 | GET `/<list_id>` | Lista, total e capacidades da sessão. |
 | GET `/<list_id>/entries` | `page` e `per_page`; itens `{id, registration, name, department}`, paginação e capacidades. |
-| POST `/<list_id>/entries` | `{registration}` como string; HTTP 200 com `{item, created}` tanto na criação quanto na repetição. |
+| POST `/<list_id>/entries` | `{registration}` como string; HTTP 200 com `{item, created, lookup_status}` tanto na criação quanto na repetição. Nome e setor vêm exclusivamente do backend. |
+
+`lookup_status` é `complete` quando o registro retornado possui nome e setor; `partial` quando algum dado está ausente; `not_found` para matrícula não localizada; `unavailable` para falha de configuração/consulta; `ambiguous` para múltiplos resultados ou resultado truncado; `unsupported_badge` para um prefixo diferente de `2300`. Esse status é retornado pela operação, sem nova coluna no banco.
 
 Paginação usa o contrato compartilhado: página mínima 1 e de 1 a 100 itens por página. JSON inválido retorna 422. Evento ausente na coleção ou lista ausente/no evento errado retorna 404. A listagem de registros é sempre restrita à lista cujo vínculo foi verificado pelo serviço.
 
 Todas as rotas usam a guarda de identidade, o perfil GENERAL e o CSRF compartilhados. Serviços exigem `events.attendance.read`, `events.attendance.create` ou `events.attendance.register`, mapeados explicitamente em `backend/bootstrap.py`. Capacidades `can_create` e `can_register` orientam a interface; não substituem a autorização do backend.
 
-O serviço delimita transações na engine TD. A criação de lista mantém o evento existente com HOLDLOCK durante a escrita. O registro trava a lista com UPDLOCK/HOLDLOCK, verifica a matrícula e grava apenas se ela ainda não existir. A constraint UNIQUE é uma defesa adicional contra duplicidade. Consultas e escritas usam parâmetros SQL; não há jobs, uploads, e-mails ou chamadas corporativas novas.
+O serviço delimita transações na engine TD. A criação de lista mantém o evento existente com HOLDLOCK durante a escrita. O registro verifica permissão e vínculo antes do LDAP, encerra a leitura SQL e faz a consulta externa sem reter conexão/trava SQL. Em seguida, revalida a lista, trava-a com UPDLOCK/HOLDLOCK e insere ou completa campos nulos/vazios. A constraint UNIQUE é uma defesa adicional contra duplicidade. Consultas e escritas usam parâmetros SQL. Não há novos jobs, uploads, e-mails ou notificações.
+
+O cliente em `backend/integrations/employee_directory.py` tem configuração própria e conexão por consulta, usando NTLM, modo somente leitura, sem seguir referrals e com filtro escapado, no máximo dois resultados e limites de tempo. Não busca schema nem dados no startup; encerra a conexão em `finally` e não devolve detalhes LDAP/credenciais ao navegador. A configuração vem de `backend/config.py` e dos valores privados `DJ_LDAP_USER`/`DJ_LDAP_PASSWORD`, sem importar utilitários ou rotas do legado. Os padrões de host/base são os mesmos do cliente antigo; opções e SSL estão em [Arquitetura modernizada](arquitetura-modernizada.md). A dependência `ldap3==2.9.1` já consta no projeto. Veja também as referências oficiais de [conexão](https://ldap3.readthedocs.io/en/latest/connection.html) e [busca](https://ldap3.readthedocs.io/en/latest/searches.html).
 
 ## Banco e publicação
 
@@ -52,15 +58,20 @@ As FKs têm exclusão em cascata: excluir um evento também exclui suas listas e
 
 Depois da revisão e aplicação do SQL, publique backend e build compatíveis juntos, conforme [Servidor e publicação](servidor-e-publicacao.md). Os componentes Volt necessários já estão no repositório; não há dependência nova. Em retorno de código, as tabelas podem ser mantidas sem remoção de dados. A exclusão de evento pelo código anterior também seguirá as novas cascatas do banco, caso sejam mantidas.
 
+A integração LDAP usa as colunas `name` e `department` já existentes: não requer outra migration. Confira o par privado LDAP e a conectividade no ambiente autorizado, e publique a API/build compatíveis com `lookup_status`. O cliente HTTP possui timeout de dez segundos; ampliar os tempos LDAP exige considerar também a espera do banco e esse limite total. A consulta foi implementada por leitura estática e não foi executada pelo agente.
+
 ## Conferência em ambiente autorizado
 
 A entrega recebeu somente análise estática. Build, migração, navegador, leitor físico e concorrência no SQL Server precisam de validação pelo responsável, conforme `AGENTS.md`:
 
 1. Criar duas listas no mesmo evento e outra em evento diferente; conferir isolamento e paginação.
-2. Ler 12 dígitos com e sem Enter, inclusive com zero inicial; conferir a espera de dois segundos desde a última alteração antes da gravação, uma linha persistida e os dois campos opcionais vazios. Enters repetidos ou tardios não devem apagar o sucesso nem gerar outra tentativa vazia.
+2. Ler 12 dígitos com e sem Enter, inclusive com zero inicial na matrícula de oito dígitos; conferir a espera de dois segundos desde a última alteração, uma linha persistida e nome/setor preenchidos quando houver correspondência única. Enters repetidos ou tardios não devem apagar o sucesso nem gerar outra tentativa vazia.
 3. Ler menos/mais de 12 caracteres e valores com letras ou espaços; conferir “Tente novamente” sem nova presença e a validação 422 da API.
 4. Repetir a matrícula na mesma lista, inclusive simultaneamente em duas sessões autorizadas; conferir uma linha e a resposta de presença existente. A mesma matrícula em outra lista deve ser aceita.
 5. Conferir foco inicial, leituras consecutivas, perda/retorno de foco e bloqueio durante gravação. Alterar o código durante a espera deve reiniciar os dois segundos; acrescentar um 13º caractere deve invalidar a leitura completa. Perder foco, encerrar ou desmontar a tela durante a espera deve cancelá-la sem gravar depois.
 6. Conferir falha de conexão, resultado incerto, nova leitura idempotente, sessão expirada e lista/evento ausente. Nenhuma falha deve mostrar confirmação falsa.
 7. Conferir acesso sem permissão, CSRF ausente e lista informada com evento errado; não devem permitir ler ou registrar os dados.
 8. Em dados de conferência autorizados, verificar o aviso e a cascata ao excluir um evento. O agente não cria nem remove dados para essa validação.
+9. Conferir matrícula não encontrada, resultado múltiplo/truncado, descrição com matrícula diferente, ausência de nome/setor, valores longos e prefixo diferente de `2300`: a presença deve ser salva com o aviso/status correto, sem associar dados de outra pessoa.
+10. Conferir LDAP indisponível, timeout e falha de bind; deve salvar presença incompleta, sem vazar detalhes internos. Repetir essa presença após a recuperação deve completar somente campos faltantes, sem nova linha. Presença completa não deve consultar o LDAP novamente.
+11. Conferir que a conexão SQL é liberada antes da consulta externa, que a conexão LDAP é encerrada e que exclusão concorrente da lista durante o LDAP é revalidada antes de gravar. O login/sessão do convidado não deve ser alterado.

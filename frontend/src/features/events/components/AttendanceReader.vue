@@ -6,13 +6,13 @@ import Dialog from '@/volt/Dialog.vue'
 import InputText from '@/volt/InputText.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import { attendanceApi } from '../attendanceApi'
-import type { AttendanceRegistered } from '../types'
+import type { AttendanceLookupStatus, AttendanceRegistered } from '../types'
 
 const props = defineProps<{ eventId: number; eventName: string; listId: number; listName: string }>()
 const emit = defineEmits<{ registered: [result: AttendanceRegistered]; closed: [] }>()
 const visible = ref(true)
 const registration = ref('')
-const feedback = ref<'ready' | 'success' | 'duplicate' | 'invalid' | 'error'>('ready')
+const feedback = ref<'ready' | 'success' | 'duplicate' | 'incomplete' | 'invalid' | 'error'>('ready')
 const message = ref('')
 const blocked = ref(false)
 const focused = ref(false)
@@ -20,21 +20,31 @@ const settling = ref(false)
 const readingDelay = 2000
 let readingTimer: ReturnType<typeof setTimeout> | undefined
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined
+const lookupMessages: Record<AttendanceLookupStatus, string> = {
+  complete: '',
+  partial: 'Alguns dados do participante não estão disponíveis. Avise o responsável pelo evento.',
+  not_found: 'Os dados do participante não foram encontrados. Avise o responsável pelo evento.',
+  unavailable: 'Não foi possível consultar os dados do participante agora. Avise o responsável pelo evento.',
+  ambiguous: 'Não foi possível identificar os dados do participante com segurança. Avise o responsável pelo evento.',
+  unsupported_badge: 'Este crachá foi registrado sem identificação automática. Avise o responsável pelo evento.',
+}
 const { mutateAsync: register, isPending } = useMutation({
   mutationFn: (value: string) => attendanceApi.register(props.eventId, props.listId, value),
   retry: false,
 })
 const confirming = computed(() => settling.value || isPending.value)
-const tone = computed(() => confirming.value || feedback.value === 'ready' ? 'brand'
+const tone = computed(() => confirming.value || feedback.value === 'ready' || feedback.value === 'incomplete' ? 'brand'
   : feedback.value === 'success' || feedback.value === 'duplicate' ? 'success' : 'danger')
 const icon = computed(() => confirming.value ? 'pi pi-spin pi-spinner'
   : feedback.value === 'success' ? 'pi pi-check'
   : feedback.value === 'duplicate' ? 'pi pi-check-circle'
+  : feedback.value === 'incomplete' ? 'pi pi-info-circle'
   : blocked.value ? 'pi pi-exclamation-triangle'
   : feedback.value === 'ready' ? 'pi pi-id-card' : 'pi pi-refresh')
 const heading = computed(() => confirming.value ? 'Confirmando presença…'
   : feedback.value === 'success' ? 'Presença confirmada!'
   : feedback.value === 'duplicate' ? 'Sua presença já está registrada'
+  : feedback.value === 'incomplete' ? 'Presença registrada'
   : feedback.value === 'invalid' ? 'Tente novamente'
   : feedback.value === 'error' ? blocked.value ? 'Solicite ajuda ao responsável' : 'Não foi possível confirmar'
   : 'Encoste o crachá até receber a aprovação')
@@ -106,8 +116,15 @@ async function confirmReading() {
   message.value = 'Aguarde a confirmação antes de retirar o crachá.'
   try {
     const result = await register(value)
-    feedback.value = result.created ? 'success' : 'duplicate'
-    message.value = result.created ? 'Tudo certo. Pode retirar o crachá.' : 'Tudo certo. Você já está nesta lista.'
+    if (result.lookup_status === 'complete') {
+      feedback.value = result.created ? 'success' : 'duplicate'
+      message.value = result.created ? `${result.item.name}, sua presença está confirmada. Pode retirar o crachá.`
+        : 'Tudo certo. Você já está nesta lista.'
+    } else {
+      feedback.value = 'incomplete'
+      message.value = 'Sua presença foi salva. ' + (lookupMessages[result.lookup_status]
+        || 'Os dados do participante ainda estão incompletos. Avise o responsável pelo evento.')
+    }
     emit('registered', result)
     feedbackTimer = setTimeout(() => {
       feedback.value = 'ready'
