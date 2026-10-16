@@ -54,23 +54,28 @@ class EmployeeDirectory:
                 return EmployeeLookup("unavailable")
             connection.search(
                 self.config.search_base,
-                f"(&(objectCategory=Person)(description=*{escape_filter_chars(registration)}))",
+                # O legado lê a matrícula do segundo campo de description, que
+                # pode ter outros campos depois. A busca não pode exigir um sufixo.
+                f"(&(objectCategory=Person)(description=*{escape_filter_chars(registration)}*))",
                 search_scope=SUBTREE,
                 attributes=["description", "displayName", "department"],
                 size_limit=2, time_limit=self.config.receive_timeout,
             )
             result_code = connection.result.get("result")
             # Não selecionar a primeira pessoa quando há mais de uma ou truncamento.
-            if result_code == 4 or len(connection.entries) > 1:
+            if result_code == 4:
                 return EmployeeLookup("ambiguous")
             if result_code != 0:
                 return EmployeeLookup("unavailable")
-            if not connection.entries:
+            matches = [
+                entry for entry in connection.entries
+                if self._matches_registration(entry, registration)
+            ]
+            if len(matches) > 1:
+                return EmployeeLookup("ambiguous")
+            if not matches:
                 return EmployeeLookup("not_found")
-            entry = connection.entries[0]
-            description = self._text(entry, "description")
-            if not description or description.rsplit(";", 1)[-1].strip() != registration:
-                return EmployeeLookup("not_found")
+            entry = matches[0]
             name = self._text(entry, "displayName", max_length=200)
             department = self._text(entry, "department", max_length=200)
             status: EmployeeLookupStatus = "complete" if name and department else "partial"
@@ -84,6 +89,17 @@ class EmployeeDirectory:
                     connection.unbind()
                 except (LDAPException, OSError):
                     pass
+
+    @classmethod
+    def _matches_registration(cls, entry, registration):
+        description = cls._text(entry, "description")
+        if not description:
+            return False
+        fields = description.split(";")
+        # Mesmo campo usado em auth_routes/create_external_user, tolerando espaços.
+        # Mantém suporte ao atributo que contém somente os oito dígitos.
+        value = fields[1].strip() if len(fields) > 1 else description
+        return value == registration
 
     @staticmethod
     def _text(entry, attribute, *, max_length=None):
