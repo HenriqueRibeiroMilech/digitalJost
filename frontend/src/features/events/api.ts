@@ -1,8 +1,16 @@
 import { requestJson } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
-import type { EventDetail, EventItem, EventList, EventsApi } from './types'
+import type { EventDetail, EventItem, EventList, EventsApi, EventType, EventTypes } from './types'
 
 export const eventsApi: EventsApi = {
+  types() {
+    return requestJson<EventTypes>('/api/v1/events/types')
+  },
+  createType(name) {
+    return requestJson<EventType>('/api/v1/events/types', {
+      method: 'POST', body: JSON.stringify({ name }),
+    })
+  },
   list(page, perPage, filters) {
     const query = paginationQuery(page, perPage)
     query.set('search', filters.search)

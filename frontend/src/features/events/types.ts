@@ -11,6 +11,10 @@ export interface EventItem {
   id: number
   name: string
   description: string
+  event_type_id: number | null
+  event_type_name: string | null
+  instructor: string | null
+  syllabus: string | null
   starts_at: string | null
   ends_at: string | null
   status: EventStatus
@@ -19,6 +23,9 @@ export interface EventItem {
 export interface EventCreate {
   name: string
   description: string
+  event_type_id: number
+  instructor: string | null
+  syllabus: string | null
   starts_at: string
   ends_at: string
 }
@@ -37,11 +44,23 @@ export type EventList = PaginatedResponse<EventItem, EventCapabilities>
 export type EventChange = 'created' | 'updated' | 'deleted'
 
 export interface EventsApi {
+  types(): Promise<EventTypes>
+  createType(name: string): Promise<EventType>
   list(page: number, perPage: number, filters: EventFilters): Promise<EventList>
   create(payload: EventCreate): Promise<EventItem>
   get(id: number): Promise<EventDetail>
   update(id: number, payload: EventCreate): Promise<EventItem>
   delete(id: number): Promise<{ id: number }>
+}
+
+export interface EventType {
+  id: number
+  name: string
+}
+
+export interface EventTypes {
+  items: EventType[]
+  can_create: boolean
 }
 
 export interface AttendanceCapabilities {

@@ -27,11 +27,12 @@ const emit = defineEmits<{ closed: []; changed: [action: EventChange] }>()
 const visible = ref(true)
 const view = ref<'create' | 'details' | 'edit' | 'delete'>(props.eventId === null ? 'create' : 'details')
 const submitError = ref('')
-const emptyErrors = () => ({ name: '', description: '', starts_at: '', ends_at: '' })
+const emptyErrors = () => ({ name: '', description: '', event_type_id: '', instructor: '', syllabus: '', starts_at: '', ends_at: '' })
 const fieldErrors = ref(emptyErrors())
 const contentElement = ref<HTMLElement | null>(null)
 const activeTab = ref<string | number>('details')
 const attendanceBusy = ref(false)
+const typeBusy = ref(false)
 const { data: event, isPending: loading, isFetching, isError, error, refetch } = useQuery({
   queryKey: ['events', 'detail', props.eventId],
   queryFn: () => {
@@ -58,7 +59,7 @@ const { mutateAsync: remove, isPending: deleting } = useMutation({
   },
   retry: false,
 })
-const busy = computed(() => saving.value || deleting.value || attendanceBusy.value)
+const busy = computed(() => saving.value || deleting.value || attendanceBusy.value || typeBusy.value)
 const title = computed(() => view.value === 'create' ? 'Novo evento'
   : view.value === 'edit' ? 'Editar evento'
   : view.value === 'delete' ? 'Excluir evento' : 'Detalhes do evento')
@@ -99,10 +100,10 @@ async function saveEvent(payload: EventCreate) {
     await save(payload)
   } catch (error) {
     if (error instanceof ApiError && error.status === 422) {
-      fieldErrors.value = validationMessages(error.detail, ['name', 'description', 'starts_at', 'ends_at'] as const)
+      fieldErrors.value = validationMessages(error.detail, ['name', 'description', 'event_type_id', 'instructor', 'syllabus', 'starts_at', 'ends_at'] as const)
       if (Object.values(fieldErrors.value).some(Boolean)) {
         await nextTick()
-        contentElement.value?.querySelector<HTMLElement>('input[aria-invalid="true"], textarea[aria-invalid="true"]')?.focus()
+        contentElement.value?.querySelector<HTMLElement>('input[aria-invalid="true"], textarea[aria-invalid="true"], [role="combobox"][aria-invalid="true"]')?.focus()
         return
       }
     }
@@ -135,7 +136,7 @@ async function deleteEvent() {
     @update:visible="updateVisibility" @closed="emit('closed')">
     <div ref="contentElement">
       <EventForm v-if="view === 'create'" :busy="busy" :server-error="submitError"
-        :field-errors="fieldErrors" @submit="saveEvent" @cancel="cancelForm" />
+        :field-errors="fieldErrors" @submit="saveEvent" @cancel="cancelForm" @busy="typeBusy = $event" />
 
       <RequestState v-else :loading="loading"
         :failed="isError" :error="error" :empty="false"
@@ -145,7 +146,7 @@ async function deleteEvent() {
         <template v-if="event">
           <EventForm v-if="view === 'edit'" :event="event" :busy="busy"
             :server-error="submitError" :field-errors="fieldErrors"
-            @submit="saveEvent" @cancel="cancelForm" />
+            @submit="saveEvent" @cancel="cancelForm" @busy="typeBusy = $event" />
 
           <div v-else-if="view === 'delete'" :aria-busy="busy">
             <div class="rounded-2xl border border-dj-border bg-dj-canvas p-5">
@@ -187,6 +188,14 @@ async function deleteEvent() {
                 <TabPanel value="details">
                   <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-tag" aria-hidden="true" /> Tipo de evento</dt>
+                      <dd class="mt-3 break-words text-sm font-semibold text-dj-ink">{{ event.event_type_name || 'Não informado' }}</dd>
+                    </div>
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-user" aria-hidden="true" /> Instrutor</dt>
+                      <dd class="mt-3 break-words text-sm font-semibold text-dj-ink">{{ event.instructor || 'Não informado' }}</dd>
+                    </div>
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
                       <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-calendar" aria-hidden="true" /> Início</dt>
                       <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.starts_at) }}</dd>
                     </div>
@@ -201,6 +210,10 @@ async function deleteEvent() {
                   <section class="mt-6 rounded-2xl border border-dj-border p-5">
                     <h4 class="mb-3 text-xs font-semibold tracking-wide text-dj-muted uppercase">Sobre o evento</h4>
                     <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-ink">{{ event.description }}</p>
+                  </section>
+                  <section class="mt-4 rounded-2xl border border-dj-border p-5">
+                    <h4 class="mb-3 text-xs font-semibold tracking-wide text-dj-muted uppercase">Conteúdo programático</h4>
+                    <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-ink">{{ event.syllabus || 'Não informado' }}</p>
                   </section>
                 </TabPanel>
                 <TabPanel value="attendance">

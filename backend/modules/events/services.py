@@ -9,6 +9,10 @@ class InvalidEventScheduleError(ValueError):
     """O fim precisa ser posterior ao início do evento."""
 
 
+class InvalidEventTypeError(ValueError):
+    """O tipo selecionado não existe."""
+
+
 class AttendanceListNotFoundError(LookupError):
     """A lista não existe neste evento."""
 
@@ -63,10 +67,14 @@ class EventsService:
         self.permissions.require(actor, "events.create")
         self._validate_schedule(data)
         with self.engine.begin() as connection:
+            self._require_event_type(connection, data.event_type_id)
             event = repository.create_event(
                 connection,
                 name=data.name,
                 description=data.description,
+                event_type_id=data.event_type_id,
+                instructor=data.instructor or None,
+                syllabus=data.syllabus or None,
                 starts_at=data.starts_at,
                 ends_at=data.ends_at,
                 created_by=str(actor.id),
@@ -78,11 +86,15 @@ class EventsService:
         self.permissions.require(actor, "events.update")
         self._validate_schedule(data)
         with self.engine.begin() as connection:
+            self._require_event_type(connection, data.event_type_id)
             event = repository.update_event(
                 connection,
                 event_id,
                 name=data.name,
                 description=data.description,
+                event_type_id=data.event_type_id,
+                instructor=data.instructor or None,
+                syllabus=data.syllabus or None,
                 starts_at=data.starts_at,
                 ends_at=data.ends_at,
                 now=repository.current_time(connection),
@@ -105,6 +117,23 @@ class EventsService:
             "can_update": self.permissions.can(actor, "events.update"),
             "can_delete": self.permissions.can(actor, "events.delete"),
         }
+
+    def list_event_types(self, actor):
+        self.permissions.require(actor, "events.read")
+        with self.engine.connect() as connection:
+            items = repository.list_event_types(connection)
+        return {"items": items, "can_create": self.permissions.can(actor, "events.types.create")}
+
+    def create_event_type(self, data, actor):
+        self.permissions.require(actor, "events.types.create")
+        with self.engine.begin() as connection:
+            event_type = repository.create_event_type(connection, name=data.name, created_by=str(actor.id))
+        return event_type
+
+    @staticmethod
+    def _require_event_type(connection, event_type_id):
+        if not repository.event_type_exists(connection, event_type_id):
+            raise InvalidEventTypeError()
 
     def list_attendance_lists(self, event_id, query, actor):
         self.permissions.require(actor, "events.attendance.read")

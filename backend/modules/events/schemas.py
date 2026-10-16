@@ -18,6 +18,9 @@ class EventCreate(BaseModel):
 
     name: str = Field(min_length=3, max_length=120)
     description: str = Field(min_length=1, max_length=2000)
+    event_type_id: int = Field(gt=0, le=2147483647)
+    instructor: str | None = Field(default=None, max_length=200)
+    syllabus: str | None = Field(default=None, max_length=4000)
     starts_at: datetime
     ends_at: datetime
 
@@ -64,6 +67,10 @@ class EventOut(BaseModel):
     id: int
     name: str
     description: str
+    event_type_id: int | None
+    event_type_name: str | None
+    instructor: str | None
+    syllabus: str | None
     starts_at: datetime | None
     ends_at: datetime | None
     status: EventStatus
@@ -81,6 +88,22 @@ class EventDetail(EventOut):
 
 class EventDeleted(BaseModel):
     id: int
+
+
+class EventTypeCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+
+    name: str = Field(min_length=1, max_length=80)
+
+
+class EventTypeOut(BaseModel):
+    id: int
+    name: str
+
+
+class EventTypes(BaseModel):
+    items: list[EventTypeOut]
+    can_create: bool
 
 
 class EventList(PaginatedResponse[EventOut, EventCapabilities]):

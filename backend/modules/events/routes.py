@@ -10,10 +10,11 @@ from .schemas import (
     AttendanceCreate, AttendanceDeleted, AttendanceEntries, AttendanceListCreate, AttendanceListDetail,
     AttendanceListOut, AttendanceLists, AttendanceRegistered,
     EventCreate, EventDeleted, EventDetail, EventList, EventOut, EventQuery,
+    EventTypeCreate, EventTypeOut, EventTypes,
 )
 from .services import (
     AttendanceEntryNotFoundError, AttendanceIdentificationError, AttendanceListNotFoundError,
-    EventNotFoundError, InvalidEventScheduleError,
+    EventNotFoundError, InvalidEventScheduleError, InvalidEventTypeError,
 )
 
 
@@ -32,6 +33,26 @@ def invalid_event_schedule(error):
     return api_error(422, detail={
         "json": {"ends_at": ["O fim deve ser posterior ao início do evento."]}
     })
+
+
+@events_bp.errorhandler(InvalidEventTypeError)
+def invalid_event_type(error):
+    return api_error(422, detail={
+        "json": {"event_type_id": ["Selecione um tipo de evento cadastrado."]}
+    })
+
+
+@events_bp.get("/types")
+@events_bp.output(EventTypes)
+def list_event_types():
+    return get_service("events_service").list_event_types(identity.current_actor())
+
+
+@events_bp.post("/types")
+@events_bp.input(EventTypeCreate)
+@events_bp.output(EventTypeOut)
+def create_event_type(json_data):
+    return get_service("events_service").create_event_type(json_data, identity.current_actor())
 
 
 @events_bp.errorhandler(AttendanceListNotFoundError)

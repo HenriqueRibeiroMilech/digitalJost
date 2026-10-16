@@ -3,14 +3,16 @@ from sqlalchemy import bindparam, text
 
 # Um único CASE atende listagem, detalhes e retorno das gravações.
 _EVENT_SELECT = """
-    SELECT id, name, description, starts_at, ends_at,
+    SELECT events.id, events.name, events.description, events.starts_at, events.ends_at,
+        events.event_type_id, types.name AS event_type_name, events.instructor, events.syllabus,
         CASE
             WHEN starts_at IS NULL OR ends_at IS NULL THEN 'unscheduled'
             WHEN ends_at <= :now THEN 'completed'
             WHEN starts_at <= :now THEN 'ongoing'
             ELSE 'upcoming'
         END AS status
-    FROM dbo.DJ_EVENTS
+    FROM dbo.DJ_EVENTS AS events
+    LEFT JOIN dbo.DJ_EVENT_TYPES AS types ON types.id = events.event_type_id
 """
 _LIST_FILTER = "WHERE status IN :statuses AND name LIKE :search ESCAPE '~'"
 
@@ -39,7 +41,8 @@ def list_events(connection, *, page, per_page, search, statuses, now):
     ).scalar_one()
     items_query = text(f"""
         WITH event_state AS ({_EVENT_SELECT})
-        SELECT id, name, description, starts_at, ends_at, status
+        SELECT id, name, description, starts_at, ends_at, status,
+            event_type_id, event_type_name, instructor, syllabus
         FROM event_state {_LIST_FILTER}
         ORDER BY id DESC
         OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
@@ -53,22 +56,27 @@ def list_events(connection, *, page, per_page, search, statuses, now):
 
 def get_event(connection, event_id, *, now):
     row = connection.execute(
-        text(_EVENT_SELECT + " WHERE id = :event_id"),
+        text(_EVENT_SELECT + " WHERE events.id = :event_id"),
         {"event_id": event_id, "now": now},
     ).mappings().one_or_none()
     return dict(row) if row is not None else None
 
 
-def create_event(connection, *, name, description, starts_at, ends_at, created_by, now):
+def create_event(connection, *, name, description, event_type_id, instructor, syllabus,
+                 starts_at, ends_at, created_by, now):
     event_id = connection.execute(
         text("""
-            INSERT INTO dbo.DJ_EVENTS (name, description, starts_at, ends_at, created_by)
+            INSERT INTO dbo.DJ_EVENTS
+                (name, description, event_type_id, instructor, syllabus, starts_at, ends_at, created_by)
             OUTPUT inserted.id
-            VALUES (:name, :description, :starts_at, :ends_at, :created_by)
+            VALUES (:name, :description, :event_type_id, :instructor, :syllabus, :starts_at, :ends_at, :created_by)
         """),
         {
             "name": name,
             "description": description,
+            "event_type_id": event_type_id,
+            "instructor": instructor,
+            "syllabus": syllabus,
             "starts_at": starts_at,
             "ends_at": ends_at,
             "created_by": created_by,
@@ -77,11 +85,13 @@ def create_event(connection, *, name, description, starts_at, ends_at, created_b
     return get_event(connection, event_id, now=now)
 
 
-def update_event(connection, event_id, *, name, description, starts_at, ends_at, now):
+def update_event(connection, event_id, *, name, description, event_type_id, instructor, syllabus,
+                 starts_at, ends_at, now):
     updated_id = connection.execute(
         text("""
             UPDATE dbo.DJ_EVENTS
             SET name = :name, description = :description,
+                event_type_id = :event_type_id, instructor = :instructor, syllabus = :syllabus,
                 starts_at = :starts_at, ends_at = :ends_at
             OUTPUT inserted.id
             WHERE id = :event_id
@@ -90,6 +100,9 @@ def update_event(connection, event_id, *, name, description, starts_at, ends_at,
             "event_id": event_id,
             "name": name,
             "description": description,
+            "event_type_id": event_type_id,
+            "instructor": instructor,
+            "syllabus": syllabus,
             "starts_at": starts_at,
             "ends_at": ends_at,
         },
@@ -106,6 +119,38 @@ def delete_event(connection, event_id):
         """),
         {"event_id": event_id},
     ).scalar_one_or_none()
+
+
+def list_event_types(connection):
+    rows = connection.execute(
+        text("SELECT id, name FROM dbo.DJ_EVENT_TYPES ORDER BY name, id"),
+    ).mappings().all()
+    return [dict(row) for row in rows]
+
+
+def event_type_exists(connection, event_type_id):
+    return connection.execute(
+        text("SELECT id FROM dbo.DJ_EVENT_TYPES WITH (HOLDLOCK) WHERE id = :event_type_id"),
+        {"event_type_id": event_type_id},
+    ).scalar_one_or_none() is not None
+
+
+def create_event_type(connection, *, name, created_by):
+    # A chave única e a trava de intervalo serializam cadastros do mesmo nome.
+    existing = connection.execute(
+        text("SELECT id, name FROM dbo.DJ_EVENT_TYPES WITH (UPDLOCK, HOLDLOCK) WHERE name = :name"),
+        {"name": name},
+    ).mappings().one_or_none()
+    if existing is not None:
+        return dict(existing)
+    row = connection.execute(
+        text("""
+            INSERT INTO dbo.DJ_EVENT_TYPES (name, created_by)
+            OUTPUT inserted.id, inserted.name
+            VALUES (:name, :created_by)
+        """), {"name": name, "created_by": created_by},
+    ).mappings().one()
+    return dict(row)
 
 
 def event_exists(connection, event_id, *, lock=False):
