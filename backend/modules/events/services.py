@@ -13,6 +13,14 @@ class InvalidEventTypeError(ValueError):
     """O tipo selecionado não existe."""
 
 
+class EventTypeNotFoundError(LookupError):
+    """O tipo não existe ou já foi excluído."""
+
+
+class EventTypeInUseError(ValueError):
+    """Eventos ainda usam este tipo."""
+
+
 class AttendanceListNotFoundError(LookupError):
     """A lista não existe neste evento."""
 
@@ -126,13 +134,29 @@ class EventsService:
         self.permissions.require(actor, "events.read")
         with self.engine.connect() as connection:
             items = repository.list_event_types(connection)
-        return {"items": items, "can_create": self.permissions.can(actor, "events.types.create")}
+        return {
+            "items": items,
+            "can_create": self.permissions.can(actor, "events.types.create"),
+            "can_delete": self.permissions.can(actor, "events.types.delete"),
+        }
 
     def create_event_type(self, data, actor):
         self.permissions.require(actor, "events.types.create")
         with self.engine.begin() as connection:
             event_type = repository.create_event_type(connection, name=data.name, created_by=str(actor.id))
         return event_type
+
+    def delete_event_type(self, event_type_id, actor):
+        self.permissions.require(actor, "events.types.delete")
+        with self.engine.begin() as connection:
+            if repository.lock_event_type(connection, event_type_id) is None:
+                raise EventTypeNotFoundError()
+            if repository.event_type_in_use(connection, event_type_id):
+                raise EventTypeInUseError()
+            deleted_id = repository.delete_event_type(connection, event_type_id)
+            if deleted_id is None:
+                raise EventTypeNotFoundError()
+        return {"id": deleted_id}
 
     @staticmethod
     def _require_event_type(connection, event_type_id):

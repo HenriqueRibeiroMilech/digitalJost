@@ -11,6 +11,9 @@ export const eventsApi: EventsApi = {
       method: 'POST', body: JSON.stringify({ name }),
     })
   },
+  deleteType(id) {
+    return requestJson<{ id: number }>(`/api/v1/events/types/${id}`, { method: 'DELETE' })
+  },
   list(page, perPage, filters) {
     const query = paginationQuery(page, perPage)
     query.set('search', filters.search)

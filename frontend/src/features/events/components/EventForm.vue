@@ -13,7 +13,8 @@ import Select from '@/volt/Select.vue'
 import Textarea from '@/volt/Textarea.vue'
 import { eventDate, eventDateTime } from '../dates'
 import { eventsApi } from '../api'
-import type { EventCreate, EventItem, EventTypes } from '../types'
+import type { EventCreate, EventItem, EventType, EventTypes } from '../types'
+import EventTypeDeleteDialog from './EventTypeDeleteDialog.vue'
 
 const props = defineProps<{
   busy: boolean
@@ -48,6 +49,8 @@ const addingType = ref(false)
 const typeName = ref('')
 const typeNameError = ref('')
 const typeSaveError = ref('')
+const pendingType = ref<EventType | null>(null)
+const typeSelectVersion = ref(0)
 const queryClient = useQueryClient()
 const { data: types, isPending: typesLoading, isError: typesFailed, refetch: refetchTypes } = useQuery({
   queryKey: ['events', 'types'],
@@ -60,8 +63,52 @@ const { mutateAsync: createType, isPending: typeSaving } = useMutation({
   mutationFn: (name: string) => eventsApi.createType(name),
   retry: false,
 })
-watch(typeSaving, value => emit('busy', value), { immediate: true, flush: 'sync' })
+const typeDescription = computed(() => [
+  typeError.value ? 'event-type-error' : '',
+  types.value?.can_delete ? 'event-type-keyboard-help' : '',
+].filter(Boolean).join(' ') || undefined)
+watch(() => typeSaving.value || pendingType.value !== null, value => emit('busy', value), { immediate: true, flush: 'sync' })
+watch(types, value => {
+  if (value && fields.event_type_id !== null && !value.items.some(item => item.id === fields.event_type_id)) {
+    fields.event_type_id = null
+  }
+})
 onBeforeUnmount(() => emit('busy', false))
+
+function requestTypeDeletion(eventType: EventType) {
+  if (props.busy || typeSaving.value || pendingType.value || addingType.value || !types.value?.can_delete) return
+  pendingType.value = { ...eventType }
+  // Encerra o overlay do Select Volt antes de abrir a confirmação, preservando o v-model.
+  typeSelectVersion.value += 1
+}
+
+function typeKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Delete' || !event.altKey || !(event.target instanceof HTMLElement)
+    || event.target.getAttribute('role') !== 'combobox') return
+  const selected = types.value?.items.find(item => item.id === fields.event_type_id)
+  if (selected) {
+    event.preventDefault()
+    event.stopPropagation()
+    requestTypeDeletion(selected)
+  }
+}
+
+async function typeDeleteClosed(deleted: boolean) {
+  const previous = pendingType.value
+  if (!previous) return
+  if (deleted) {
+    queryClient.setQueryData<EventTypes>(['events', 'types'], current => current && ({
+      ...current, items: current.items.filter(item => item.id !== previous.id),
+    }))
+    if (fields.event_type_id === previous.id) fields.event_type_id = null
+    errors.event_type_id = ''
+  }
+  pendingType.value = null
+  // Reconcilia também cancelamentos e respostas incertas, sem repetir o DELETE.
+  void queryClient.invalidateQueries({ queryKey: ['events', 'types'], exact: true })
+  await nextTick()
+  document.getElementById('event-type')?.focus()
+}
 
 async function toggleTypeForm(open: boolean) {
   if (props.busy) return
@@ -88,6 +135,7 @@ async function saveType() {
       items: [...(current?.items ?? []).filter(item => item.id !== created.id), created]
         .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
       can_create: current?.can_create ?? false,
+      can_delete: current?.can_delete ?? false,
     }))
     fields.event_type_id = created.id
     errors.event_type_id = ''
@@ -162,18 +210,33 @@ function submit() {
       <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField id="event-type" v-slot="{ controlProps }" label="Tipo de evento" :error="typeError">
           <div class="flex items-start gap-2">
-            <Select v-model="fields.event_type_id" input-id="event-type" :options="types?.items ?? []"
+            <Select :key="typeSelectVersion" v-model="fields.event_type_id" input-id="event-type" :options="types?.items ?? []"
               option-label="name" option-value="id" filter :loading="typesLoading"
               placeholder="Selecione um tipo" empty-message="Nenhum tipo cadastrado" empty-filter-message="Nenhum tipo encontrado"
               :invalid="controlProps.invalid" aria-label="Tipo de evento"
-              :pt:label:aria-describedby="controlProps['aria-describedby']" pt:label:aria-required="true"
-              :disabled="busy || addingType || typesLoading || typesFailed" class="min-w-0 flex-1" pt:root:class="rounded-xl" />
+              :pt:label:aria-describedby="typeDescription" pt:label:aria-required="true"
+              :pt:label:aria-keyshortcuts="types?.can_delete ? 'Alt+Delete' : undefined"
+              :disabled="busy || addingType || typesLoading || typesFailed" class="min-w-0 flex-1" pt:root:class="rounded-xl"
+              @keydown="typeKeydown">
+              <template #option="{ option }">
+                <div class="flex w-full min-w-0 items-center justify-between gap-3">
+                  <span class="min-w-0 whitespace-normal break-words">{{ option.name }}</span>
+                  <SecondaryButton v-if="types?.can_delete" type="button" icon="pi pi-trash" text :tabindex="-1"
+                    :aria-label="'Excluir tipo ' + option.name" :title="'Excluir tipo ' + option.name" :disabled="busy"
+                    pt:root:class="size-9 shrink-0 rounded-xl text-dj-danger enabled:hover:bg-dj-danger-soft"
+                    @mousedown.stop.prevent @click.stop="requestTypeDeletion(option)" @keydown.enter.stop @keydown.space.stop />
+                </div>
+              </template>
+            </Select>
             <SecondaryButton v-if="types?.can_create" id="event-type-add" type="button" icon="pi pi-plus" outlined
               aria-label="Adicionar tipo de evento" :aria-expanded="addingType" aria-controls="event-type-editor"
               :disabled="busy || typesLoading || typesFailed || addingType" pt:root:class="shrink-0 rounded-xl"
               @click="toggleTypeForm(true)" />
           </div>
           <p v-if="!typesLoading && !typesFailed && !types?.items.length" class="mt-2 text-xs text-dj-muted">Use o botão + para cadastrar o primeiro tipo.</p>
+          <p v-if="types?.can_delete" id="event-type-keyboard-help" class="mt-2 text-xs leading-5 text-dj-muted">
+            Para excluir pelo teclado, selecione um tipo e pressione Alt+Delete.
+          </p>
         </FormField>
         <FormField id="event-instructor" v-slot="{ controlProps }" label="Instrutor (opcional)" :error="instructorError">
           <InputText v-bind="controlProps" v-model="fields.instructor" placeholder="Nome do instrutor"
@@ -245,4 +308,5 @@ function submit() {
         :loading="busy" :disabled="busy || addingType || typesLoading || typesFailed" pt:root:class="rounded-xl px-5 py-3" />
     </div>
   </form>
+  <EventTypeDeleteDialog v-if="pendingType" :event-type="pendingType" :allowed="types?.can_delete ?? false" @closed="typeDeleteClosed" />
 </template>

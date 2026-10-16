@@ -101,9 +101,14 @@ class EventTypeOut(BaseModel):
     name: str
 
 
+class EventTypeDeleted(BaseModel):
+    id: int
+
+
 class EventTypes(BaseModel):
     items: list[EventTypeOut]
     can_create: bool
+    can_delete: bool
 
 
 class EventList(PaginatedResponse[EventOut, EventCapabilities]):

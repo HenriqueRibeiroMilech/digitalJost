@@ -153,6 +153,28 @@ def create_event_type(connection, *, name, created_by):
     return dict(row)
 
 
+def lock_event_type(connection, event_type_id):
+    # Bloqueia validações/novos vínculos até concluir a verificação e a exclusão.
+    return connection.execute(
+        text("SELECT id FROM dbo.DJ_EVENT_TYPES WITH (XLOCK, HOLDLOCK) WHERE id = :event_type_id"),
+        {"event_type_id": event_type_id},
+    ).scalar_one_or_none()
+
+
+def event_type_in_use(connection, event_type_id):
+    return connection.execute(
+        text("SELECT TOP (1) id FROM dbo.DJ_EVENTS WHERE event_type_id = :event_type_id"),
+        {"event_type_id": event_type_id},
+    ).scalar_one_or_none() is not None
+
+
+def delete_event_type(connection, event_type_id):
+    return connection.execute(
+        text("DELETE FROM dbo.DJ_EVENT_TYPES OUTPUT deleted.id WHERE id = :event_type_id"),
+        {"event_type_id": event_type_id},
+    ).scalar_one_or_none()
+
+
 def event_exists(connection, event_id, *, lock=False):
     # A trava mantém o evento existente durante a criação de uma lista.
     locking = " WITH (HOLDLOCK)" if lock else ""

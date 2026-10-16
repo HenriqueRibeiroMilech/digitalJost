@@ -46,6 +46,7 @@ export type EventChange = 'created' | 'updated' | 'deleted'
 export interface EventsApi {
   types(): Promise<EventTypes>
   createType(name: string): Promise<EventType>
+  deleteType(id: number): Promise<{ id: number }>
   list(page: number, perPage: number, filters: EventFilters): Promise<EventList>
   create(payload: EventCreate): Promise<EventItem>
   get(id: number): Promise<EventDetail>
@@ -61,6 +62,7 @@ export interface EventType {
 export interface EventTypes {
   items: EventType[]
   can_create: boolean
+  can_delete: boolean
 }
 
 export interface AttendanceCapabilities {

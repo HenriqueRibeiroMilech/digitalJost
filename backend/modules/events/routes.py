@@ -10,12 +10,13 @@ from .schemas import (
     AttendanceCreate, AttendanceDeleted, AttendanceEntries, AttendanceListCreate, AttendanceListDetail,
     AttendanceListOut, AttendanceLists, AttendanceRegistered,
     EventCreate, EventDeleted, EventDetail, EventList, EventOut, EventQuery,
-    EventTypeCreate, EventTypeOut, EventTypes,
+    EventTypeCreate, EventTypeDeleted, EventTypeOut, EventTypes,
 )
 from .services import (
     AttendanceEntryNotFoundError, AttendanceIdentificationError, AttendanceListNotFoundError,
     AttendancePdfUnavailableError,
-    EventNotFoundError, InvalidEventScheduleError, InvalidEventTypeError,
+    EventNotFoundError, EventTypeInUseError, EventTypeNotFoundError,
+    InvalidEventScheduleError, InvalidEventTypeError,
 )
 
 
@@ -54,6 +55,22 @@ def list_event_types():
 @events_bp.output(EventTypeOut)
 def create_event_type(json_data):
     return get_service("events_service").create_event_type(json_data, identity.current_actor())
+
+
+@events_bp.errorhandler(EventTypeNotFoundError)
+def event_type_not_found(error):
+    return api_error(404, message="Tipo de evento não encontrado ou já excluído.")
+
+
+@events_bp.errorhandler(EventTypeInUseError)
+def event_type_in_use(error):
+    return api_error(409, message="Este tipo está em uso por eventos. Altere o tipo desses eventos antes de excluí-lo.")
+
+
+@events_bp.delete("/types/<int:event_type_id>")
+@events_bp.output(EventTypeDeleted)
+def delete_event_type(event_type_id):
+    return get_service("events_service").delete_event_type(event_type_id, identity.current_actor())
 
 
 @events_bp.errorhandler(AttendanceListNotFoundError)

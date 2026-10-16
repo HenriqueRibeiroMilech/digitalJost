@@ -19,6 +19,7 @@ def init_backend(app, *, config):
             "events.update": "GENERAL",
             "events.delete": "GENERAL",
             "events.types.create": "GENERAL",
+            "events.types.delete": "GENERAL",
             "events.attendance.read": "GENERAL",
             "events.attendance.export": "GENERAL",
             "events.attendance.create": "GENERAL",
