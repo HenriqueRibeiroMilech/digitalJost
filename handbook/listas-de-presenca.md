@@ -62,46 +62,6 @@ Depois da revisão e aplicação do SQL, publique backend e build compatíveis j
 
 A integração LDAP usa as colunas `name` e `department` já existentes: não requer outra migration. Confira o par privado LDAP e a conectividade no ambiente autorizado, e publique a API/build compatíveis com `lookup_status`. O cliente HTTP possui timeout de dez segundos; ampliar os tempos LDAP exige considerar também a espera do banco e esse limite total. A consulta foi implementada por leitura estática e não foi executada pelo agente.
 
-## Diagnóstico isolado da consulta por matrícula
-
-O módulo `backend.integrations.diagnose_employee_directory` permite ao responsável testar a consulta no computador Windows com acesso à rede corporativa, usando a `.venv` já existente. Na raiz do repositório, ao lado de `main.py`, execute no PowerShell:
-
-```powershell
-.\.venv\Scripts\python.exe -B -m backend.integrations.diagnose_employee_directory
-```
-
-Informe o crachá completo de 12 dígitos com prefixo `2300` quando solicitado. A entrada fica oculta, preserva zeros e não entra no histórico do comando. Se o leitor não enviar Enter, pressione Enter manualmente. Não há leitura contínua nem registro de presença.
-
-**Escopo:** uma execução, uma matrícula, uma conexão LDAP com no máximo um bind e duas buscas somente leitura. A primeira reutiliza o filtro atual do cliente moderno, que contém a matrícula sem zeros iniciais; a segunda reproduz o filtro legado, que termina com os oito dígitos sem retirar os zeros. Cada busca retorna no máximo dois candidatos e usa os tempos limite configurados. Ambas usam o parser atual para informar a correspondência após normalizar o preenchimento com zeros. O diagnóstico não chama a rota antiga de login, não inicializa Flask, não importa `app`/`main`/`bootstrap`, não abre banco e não grava arquivos. A opção `-B` impede a geração de bytecode pelo Python. Não executa o fluxo HTTP ou de gravação da presença.
-
-Quando as duas buscas terminarem com código zero e nenhum candidato, compare também com o filtro usado pelo login do portal:
-
-```powershell
-.\.venv\Scripts\python.exe -B -m backend.integrations.diagnose_employee_directory --by-login
-```
-
-Esse modo pede o crachá e o **login Windows da mesma pessoa**, sem domínio nem sufixo de e-mail. Os dois valores ficam ocultos. Acrescenta uma terceira busca exata por `mailNickname`, mantendo uma única conexão/bind, modo somente leitura e limite de dois candidatos por busca. Não cria usuário, não faz login no portal e não grava presença. O login informado não é incluído no relatório.
-
-Se `por_login` retornar um candidato, os indicadores comparam o `description` dessa pessoa com o crachá informado. Por exemplo, `igual_sem_zeros_iniciais: true` com `igual_matricula: false` indica diferença de preenchimento com zeros. O parser aceita essa diferença somente no campo esperado com um a oito dígitos ASCII. `resultado_pela_regra_atual` continua avaliando a correspondência com o crachá, mesmo na consulta por login; não indica se o login foi encontrado. Se as três buscas retornarem zero, é preciso conferir login, cadastro, base de busca e visibilidade de leitura com o responsável pelo diretório. Bind bem-sucedido, sozinho, não prova acesso de leitura a todos os usuários/atributos.
-
-A configuração é a mesma do cliente moderno: ambiente do processo tem prioridade sobre `.env` ou `DJ_ENV_FILE`. O comando importa somente a configuração e o cliente independente, além das bibliotecas já existentes; não instala dependências. Se o portal estiver no IIS com ambiente ou conta diferentes, um resultado positivo no terminal não prova que o processo do IIS recebeu a mesma configuração.
-
-O relatório JSON não inclui crachá, matrícula, nomes, setores, conteúdo de `description`, DN, host, usuário, senha ou mensagens brutas do LDAP. Mostra somente etapa, código numérico LDAP, duração, contagem, tamanhos e indicadores de correspondência/presença dos campos. Apenas os oito primeiros campos de `description` têm a estrutura detalhada. As comparações com crachá inteiro e sem zeros são **indicadores de diagnóstico**; não alteram as regras de identificação da aplicação.
-
-| Resultado | Interpretação |
-|---|---|
-| Falha em `dependencias` ou `configuracao` | O teste ainda não consultou o LDAP. Conferir dependências/configuração no ambiente autorizado. |
-| Falha em `conexao_e_bind` | A conexão/autenticação não terminou. Código 49 indica credenciais rejeitadas; exceções de socket podem indicar rede ou timeout. O tipo da exceção é mostrado sem mensagem privada. |
-| `codigo_ldap: 0`, zero candidatos | O diretório não devolveu registros para aquele filtro/base/conta. Não é possível concluir apenas disso que a pessoa não existe. |
-| Candidatos, mas `aceito_pelo_parser_atual: false` | A busca encontrou dados, mas o segundo campo de `description` (ou o atributo inteiro sem separador) não tem formato numérico válido ou não coincide com os oito dígitos finais após completar os zeros. Os tamanhos e indicadores ajudam a identificar o formato sem expor valores. |
-| `codigo_ldap: 4` | Resultado truncado; permanece `ambiguous`, sem selecionar uma pessoa. |
-| `resultado_pela_regra_atual: complete` | A busca isolada encontrou uma correspondência única com nome e setor utilizáveis. Conferir diferenças de ambiente/publicação se a tela continuar sem nome. |
-| `resultado_pela_regra_atual: partial` | Houve correspondência única, mas nome ou setor está ausente/inválido/acima do limite. |
-
-O código de saída zero significa que todas as consultas do modo escolhido terminaram, mesmo que o resultado seja `not_found` ou `ambiguous`; 1 indica falha e 2 indica entrada inválida ou interrupção. Compartilhe somente o relatório sanitizado para análise.
-
-O agente preparou este diagnóstico por análise estática e não o executou. Pelo [AGENTS.md](../AGENTS.md), a execução pelo agente exige autorização explícita com o comando acima, o ambiente e o escopo descrito; o pedido genérico para testar não autoriza conexão corporativa.
-
 ## Conferência em ambiente autorizado
 
 A entrega recebeu somente análise estática. Build, migração, navegador, leitor físico e concorrência no SQL Server precisam de validação pelo responsável, conforme `AGENTS.md`:
