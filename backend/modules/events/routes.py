@@ -7,12 +7,13 @@ from backend.platform.schemas import PaginationQuery
 from backend.platform.vue_shell import render_vue_shell
 
 from .schemas import (
-    AttendanceCreate, AttendanceEntries, AttendanceListCreate, AttendanceListDetail,
+    AttendanceCreate, AttendanceDeleted, AttendanceEntries, AttendanceListCreate, AttendanceListDetail,
     AttendanceListOut, AttendanceLists, AttendanceRegistered,
     EventCreate, EventDeleted, EventDetail, EventList, EventOut, EventQuery,
 )
 from .services import (
-    AttendanceIdentificationError, AttendanceListNotFoundError, EventNotFoundError, InvalidEventScheduleError,
+    AttendanceEntryNotFoundError, AttendanceIdentificationError, AttendanceListNotFoundError,
+    EventNotFoundError, InvalidEventScheduleError,
 )
 
 
@@ -36,6 +37,11 @@ def invalid_event_schedule(error):
 @events_bp.errorhandler(AttendanceListNotFoundError)
 def attendance_list_not_found(error):
     return api_error(404, message="Lista de presença não encontrada neste evento.")
+
+
+@events_bp.errorhandler(AttendanceEntryNotFoundError)
+def attendance_entry_not_found(error):
+    return api_error(404, message="Participante não encontrado nesta lista.")
 
 
 @events_bp.errorhandler(AttendanceIdentificationError)
@@ -102,6 +108,19 @@ def get_attendance_list(event_id, list_id):
     return get_service("events_service").get_attendance_list(event_id, list_id, identity.current_actor())
 
 
+@events_bp.put("/<int:event_id>/attendance-lists/<int:list_id>")
+@events_bp.input(AttendanceListCreate)
+@events_bp.output(AttendanceListOut)
+def update_attendance_list(event_id, list_id, json_data):
+    return get_service("events_service").update_attendance_list(event_id, list_id, json_data, identity.current_actor())
+
+
+@events_bp.delete("/<int:event_id>/attendance-lists/<int:list_id>")
+@events_bp.output(AttendanceDeleted)
+def delete_attendance_list(event_id, list_id):
+    return get_service("events_service").delete_attendance_list(event_id, list_id, identity.current_actor())
+
+
 @events_bp.get("/<int:event_id>/attendance-lists/<int:list_id>/entries")
 @events_bp.input(PaginationQuery, location="query")
 @events_bp.output(AttendanceEntries)
@@ -114,6 +133,12 @@ def list_attendance_entries(event_id, list_id, query_data):
 @events_bp.output(AttendanceRegistered)
 def register_attendance(event_id, list_id, json_data):
     return get_service("events_service").register_attendance(event_id, list_id, json_data, identity.current_actor())
+
+
+@events_bp.delete("/<int:event_id>/attendance-lists/<int:list_id>/entries/<int:entry_id>")
+@events_bp.output(AttendanceDeleted)
+def delete_attendance_entry(event_id, list_id, entry_id):
+    return get_service("events_service").delete_attendance_entry(event_id, list_id, entry_id, identity.current_actor())
 
 
 @events_shell_bp.get("/app/")

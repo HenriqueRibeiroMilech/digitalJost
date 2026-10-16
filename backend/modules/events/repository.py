@@ -165,6 +165,39 @@ def create_attendance_list(connection, event_id, *, name, created_by):
     return {**row, "total": 0}
 
 
+def update_attendance_list(connection, event_id, list_id, *, name):
+    updated_id = connection.execute(
+        text("""
+            UPDATE dbo.DJ_EVENT_ATTENDANCE_LISTS
+            SET name = :name
+            OUTPUT inserted.id
+            WHERE id = :list_id AND event_id = :event_id
+        """), {"event_id": event_id, "list_id": list_id, "name": name},
+    ).scalar_one_or_none()
+    return get_attendance_list(connection, event_id, list_id) if updated_id is not None else None
+
+
+def delete_attendance_list(connection, event_id, list_id):
+    # A FK existente remove somente as presenças desta lista por ON DELETE CASCADE.
+    return connection.execute(
+        text("""
+            DELETE FROM dbo.DJ_EVENT_ATTENDANCE_LISTS
+            OUTPUT deleted.id
+            WHERE id = :list_id AND event_id = :event_id
+        """), {"event_id": event_id, "list_id": list_id},
+    ).scalar_one_or_none()
+
+
+def delete_attendance_entry(connection, list_id, entry_id):
+    return connection.execute(
+        text("""
+            DELETE FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES
+            OUTPUT deleted.id
+            WHERE id = :entry_id AND list_id = :list_id
+        """), {"list_id": list_id, "entry_id": entry_id},
+    ).scalar_one_or_none()
+
+
 def list_attendance_entries(connection, list_id, *, page, per_page):
     total = connection.execute(
         text("SELECT COUNT(*) FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES WHERE list_id = :list_id"),

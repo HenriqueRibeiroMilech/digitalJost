@@ -35,7 +35,10 @@ const { mutateAsync: create, isPending: saving } = useMutation({
   mutationFn: (value: string) => attendanceApi.create(props.eventId, value),
   retry: false,
 })
-watch(() => saving.value || childBusy.value, value => emit('busy', value), { immediate: true })
+watch(() => saving.value || childBusy.value, value => emit('busy', value), { immediate: true, flush: 'sync' })
+watch(data, value => {
+  if (value) page.value = Math.min(page.value, Math.max(1, Math.ceil(value.total / perPage)))
+})
 onBeforeUnmount(() => emit('busy', false))
 
 async function showCreate() {

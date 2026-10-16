@@ -21,6 +21,9 @@ def init_backend(app, *, config):
             "events.attendance.read": "GENERAL",
             "events.attendance.create": "GENERAL",
             "events.attendance.register": "GENERAL",
+            "events.attendance.update": "GENERAL",
+            "events.attendance.delete": "GENERAL",
+            "events.attendance.delete_entry": "GENERAL",
         }),
         EmployeeDirectory(config.employee_directory),
     )

@@ -13,6 +13,10 @@ class AttendanceListNotFoundError(LookupError):
     """A lista não existe neste evento."""
 
 
+class AttendanceEntryNotFoundError(LookupError):
+    """O participante não está nesta lista."""
+
+
 class AttendanceIdentificationError(ValueError):
     """A consulta não identificou uma única pessoa; nenhuma presença deve ser gravada."""
 
@@ -127,6 +131,33 @@ class EventsService:
             attendance_list = self._require_attendance_list(connection, event_id, list_id)
         return {**attendance_list, "capabilities": self._attendance_capabilities(actor)}
 
+    def update_attendance_list(self, event_id, list_id, data, actor):
+        self.permissions.require(actor, "events.attendance.update")
+        with self.engine.begin() as connection:
+            self._require_attendance_list(connection, event_id, list_id, lock=True)
+            updated = repository.update_attendance_list(connection, event_id, list_id, name=data.name)
+            if updated is None:
+                raise AttendanceListNotFoundError()
+        return updated
+
+    def delete_attendance_list(self, event_id, list_id, actor):
+        self.permissions.require(actor, "events.attendance.delete")
+        with self.engine.begin() as connection:
+            self._require_attendance_list(connection, event_id, list_id, lock=True)
+            deleted_id = repository.delete_attendance_list(connection, event_id, list_id)
+            if deleted_id is None:
+                raise AttendanceListNotFoundError()
+        return {"id": deleted_id}
+
+    def delete_attendance_entry(self, event_id, list_id, entry_id, actor):
+        self.permissions.require(actor, "events.attendance.delete_entry")
+        with self.engine.begin() as connection:
+            self._require_attendance_list(connection, event_id, list_id, lock=True)
+            deleted_id = repository.delete_attendance_entry(connection, list_id, entry_id)
+            if deleted_id is None:
+                raise AttendanceEntryNotFoundError()
+        return {"id": deleted_id}
+
     def list_attendance_entries(self, event_id, list_id, query, actor):
         self.permissions.require(actor, "events.attendance.read")
         with self.engine.connect() as connection:
@@ -163,6 +194,9 @@ class EventsService:
         return {
             "can_create": self.permissions.can(actor, "events.attendance.create"),
             "can_register": self.permissions.can(actor, "events.attendance.register"),
+            "can_update": self.permissions.can(actor, "events.attendance.update"),
+            "can_delete": self.permissions.can(actor, "events.attendance.delete"),
+            "can_delete_entry": self.permissions.can(actor, "events.attendance.delete_entry"),
         }
 
     def _attendance_page(self, items, total, query, actor):

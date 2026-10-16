@@ -19,6 +19,17 @@ export const attendanceApi = {
   get(eventId: number, listId: number) {
     return requestJson<AttendanceListDetail>(listPath(eventId, listId))
   },
+  rename(eventId: number, listId: number, name: string) {
+    return requestJson<AttendanceListItem>(listPath(eventId, listId), {
+      method: 'PUT', body: JSON.stringify({ name }),
+    })
+  },
+  deleteList(eventId: number, listId: number) {
+    return requestJson<{ id: number }>(listPath(eventId, listId), { method: 'DELETE' })
+  },
+  deleteEntry(eventId: number, listId: number, entryId: number) {
+    return requestJson<{ id: number }>(`${listPath(eventId, listId)}/entries/${entryId}`, { method: 'DELETE' })
+  },
   entries(eventId: number, listId: number, page: number, perPage: number) {
     return requestJson<AttendanceEntries>(`${listPath(eventId, listId)}/entries?${paginationQuery(page, perPage)}`)
   },

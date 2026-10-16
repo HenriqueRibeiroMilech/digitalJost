@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick } from 'vue'
 import Dialog from '@/volt/Dialog.vue'
 
 const props = withDefaults(defineProps<{
@@ -9,12 +10,20 @@ const props = withDefaults(defineProps<{
   icon?: string
   busy?: boolean
   descriptionId?: string
+  initialFocusId?: string
   tone?: 'brand' | 'success' | 'neutral' | 'danger'
 }>(), { busy: false, tone: 'brand', icon: 'pi pi-calendar' })
 const emit = defineEmits<{ 'update:visible': [visible: boolean]; closed: [] }>()
 
 function updateVisibility(visible: boolean) {
   if (!props.busy) emit('update:visible', visible)
+}
+
+async function focusInitial() {
+  const target = props.initialFocusId
+  if (!target) return
+  await nextTick()
+  if (props.visible) document.getElementById(target)?.focus()
 }
 </script>
 
@@ -29,6 +38,7 @@ function updateVisibility(visible: boolean) {
     pt:content:class="px-6 pt-6 pb-6"
     pt:footer:class="flex-wrap gap-3 border-t border-dj-border bg-dj-canvas px-6 py-4"
     pt:mask:class="p-modal:bg-dj-header/55 backdrop-blur-sm"
+    :pt:transition:onAfterEnter="focusInitial"
     @update:visible="updateVisibility" @after-hide="emit('closed')">
     <template #header>
       <div class="flex min-w-0 items-center gap-3.5">

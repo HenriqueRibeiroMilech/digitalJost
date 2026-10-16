@@ -103,6 +103,9 @@ class AttendanceCreate(BaseModel):
 class AttendanceCapabilities(BaseModel):
     can_create: bool
     can_register: bool
+    can_update: bool
+    can_delete: bool
+    can_delete_entry: bool
 
 
 class AttendanceListOut(BaseModel):
@@ -136,3 +139,7 @@ class AttendanceRegistered(BaseModel):
     item: AttendanceOut
     created: bool
     lookup_status: Literal["complete", "partial"]
+
+
+class AttendanceDeleted(BaseModel):
+    id: int

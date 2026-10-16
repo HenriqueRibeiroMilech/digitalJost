@@ -47,6 +47,9 @@ export interface EventsApi {
 export interface AttendanceCapabilities {
   can_create: boolean
   can_register: boolean
+  can_update: boolean
+  can_delete: boolean
+  can_delete_entry: boolean
 }
 
 export interface AttendanceListItem {
@@ -67,6 +70,11 @@ export interface AttendanceEntry {
   department: string | null
   company: string | null
 }
+
+export type AttendanceAction =
+  | { kind: 'rename' }
+  | { kind: 'delete-list' }
+  | { kind: 'delete-entry'; entry: AttendanceEntry }
 
 export interface AttendanceRegistered {
   item: AttendanceEntry
