@@ -65,6 +65,8 @@ export interface AttendanceEntry {
   registration: string
   name: string | null
   department: string | null
+  company: string | null
+  shift: string | null
 }
 
 export interface AttendanceRegistered {
@@ -73,7 +75,8 @@ export interface AttendanceRegistered {
   lookup_status: AttendanceLookupStatus
 }
 
-export type AttendanceLookupStatus = 'complete' | 'partial' | 'not_found' | 'unavailable' | 'ambiguous' | 'unsupported_badge'
+export type AttendanceLookupStatus = 'complete' | 'partial'
+export type AttendanceLookupFailure = 'not_found' | 'unavailable' | 'ambiguous' | 'unsupported_badge'
 
 export type AttendanceLists = PaginatedResponse<AttendanceListItem, AttendanceCapabilities>
 export type AttendanceEntries = PaginatedResponse<AttendanceEntry, AttendanceCapabilities>

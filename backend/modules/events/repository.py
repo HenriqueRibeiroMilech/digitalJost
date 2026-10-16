@@ -172,7 +172,7 @@ def list_attendance_entries(connection, list_id, *, page, per_page):
     ).scalar_one()
     rows = connection.execute(
         text("""
-            SELECT id, registration, name, department
+            SELECT id, registration, name, department, company, [shift]
             FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES
             WHERE list_id = :list_id
             ORDER BY id DESC
@@ -186,38 +186,43 @@ def list_attendance_entries(connection, list_id, *, page, per_page):
 def get_attendance_entry(connection, list_id, registration):
     row = connection.execute(
         text("""
-            SELECT id, registration, name, department
+            SELECT TOP (1) id, registration, name, department, company, [shift]
             FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES
-            WHERE list_id = :list_id AND registration = :registration
-        """), {"list_id": list_id, "registration": registration},
+            WHERE list_id = :list_id AND RIGHT(registration, 8) = :employee_registration
+            ORDER BY id
+        """), {"list_id": list_id, "employee_registration": registration[4:]},
     ).mappings().one_or_none()
     return dict(row) if row is not None else None
 
 
-def register_attendance(connection, list_id, *, registration, created_by, name, department):
-    # O serviço já travou a lista na transação; a constraint UNIQUE é a última defesa.
+def register_attendance(connection, list_id, *, registration, created_by, name, department, company, shift):
+    # O serviço já travou a lista. A matrícula é única no grupo, independentemente do prefixo.
     parameters = {
         "list_id": list_id, "registration": registration,
-        "name": name, "department": department,
+        "name": name, "department": department, "company": company, "shift": shift,
     }
     existing = get_attendance_entry(connection, list_id, registration)
     if existing is not None:
-        if (name and not existing["name"]) or (department and not existing["department"]):
+        if any(parameters[field] and not existing[field] for field in ("name", "department", "company", "shift")):
             existing = dict(connection.execute(
                 text("""
                     UPDATE dbo.DJ_EVENT_ATTENDANCE_ENTRIES
                     SET name = COALESCE(NULLIF(name, ''), :name),
-                        department = COALESCE(NULLIF(department, ''), :department)
-                    OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department
+                        department = COALESCE(NULLIF(department, ''), :department),
+                        company = COALESCE(NULLIF(company, ''), :company),
+                        [shift] = COALESCE(NULLIF([shift], ''), :shift)
+                    OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department,
+                        inserted.company, inserted.[shift]
                     WHERE id = :entry_id AND list_id = :list_id
                 """), {**parameters, "entry_id": existing["id"]},
             ).mappings().one())
         return {"item": existing, "created": False}
     row = connection.execute(
         text("""
-            INSERT INTO dbo.DJ_EVENT_ATTENDANCE_ENTRIES (list_id, registration, name, department, created_by)
-            OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department
-            VALUES (:list_id, :registration, :name, :department, :created_by)
+            INSERT INTO dbo.DJ_EVENT_ATTENDANCE_ENTRIES (list_id, registration, name, department, company, [shift], created_by)
+            OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department,
+                inserted.company, inserted.[shift]
+            VALUES (:list_id, :registration, :name, :department, :company, :shift, :created_by)
         """), {**parameters, "created_by": created_by},
     ).mappings().one()
     return {"item": dict(row), "created": True}

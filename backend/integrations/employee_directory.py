@@ -22,6 +22,8 @@ class EmployeeLookup:
     status: EmployeeLookupStatus
     name: str | None = None
     department: str | None = None
+    company: str | None = None
+    shift: str | None = None
 
 
 class EmployeeDirectory:
@@ -30,10 +32,11 @@ class EmployeeDirectory:
         self.config = config
 
     def find_by_badge(self, badge: str) -> EmployeeLookup:
-        if not isinstance(badge, str) or re.fullmatch(r"2300[0-9]{8}", badge) is None:
+        if not isinstance(badge, str) or re.fullmatch(r"[0-9]{12}", badge) is None:
             return EmployeeLookup("unsupported_badge")
         if self.config is None:
             return EmployeeLookup("unavailable")
+        # A matrícula é única no grupo; os quatro primeiros dígitos variam por empresa.
         registration = badge[4:]
         connection = None
         try:
@@ -56,7 +59,9 @@ class EmployeeDirectory:
                 self.config.search_base,
                 self._registration_filter(registration),
                 search_scope=SUBTREE,
-                attributes=["description", "displayName", "department"],
+                attributes=[
+                    "description", "displayName", "department", "physicalDeliveryOfficeName", "info",
+                ],
                 size_limit=2, time_limit=self.config.receive_timeout,
             )
             result_code = connection.result.get("result")
@@ -76,8 +81,10 @@ class EmployeeDirectory:
             entry = matches[0]
             name = self._text(entry, "displayName", max_length=200)
             department = self._text(entry, "department", max_length=200)
-            status: EmployeeLookupStatus = "complete" if name and department else "partial"
-            return EmployeeLookup(status, name=name, department=department)
+            company = self._text(entry, "physicalDeliveryOfficeName", max_length=200)
+            shift = self._text(entry, "info", max_length=200)
+            status: EmployeeLookupStatus = "complete" if all((name, department, company, shift)) else "partial"
+            return EmployeeLookup(status, name=name, department=department, company=company, shift=shift)
         except (LDAPException, OSError, ValueError):
             # Não propagar dados do diretório, credenciais ou erros internos à API.
             return EmployeeLookup("unavailable")

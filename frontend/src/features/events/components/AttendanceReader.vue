@@ -6,7 +6,7 @@ import Dialog from '@/volt/Dialog.vue'
 import InputText from '@/volt/InputText.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import { attendanceApi } from '../attendanceApi'
-import type { AttendanceLookupStatus, AttendanceRegistered } from '../types'
+import type { AttendanceLookupFailure, AttendanceRegistered } from '../types'
 
 const props = defineProps<{ eventId: number; eventName: string; listId: number; listName: string }>()
 const emit = defineEmits<{ registered: [result: AttendanceRegistered]; closed: [] }>()
@@ -20,13 +20,11 @@ const settling = ref(false)
 const readingDelay = 300
 let readingTimer: ReturnType<typeof setTimeout> | undefined
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined
-const lookupMessages: Record<AttendanceLookupStatus, string> = {
-  complete: '',
-  partial: 'Alguns dados do participante não estão disponíveis. Avise o responsável pelo evento.',
-  not_found: 'Os dados do participante não foram encontrados. Avise o responsável pelo evento.',
-  unavailable: 'Não foi possível consultar os dados do participante agora. Avise o responsável pelo evento.',
-  ambiguous: 'Não foi possível identificar os dados do participante com segurança. Avise o responsável pelo evento.',
-  unsupported_badge: 'Este crachá foi registrado sem identificação automática. Avise o responsável pelo evento.',
+const lookupMessages: Record<AttendanceLookupFailure, string> = {
+  not_found: 'Leitura não reconhecida. Mantenha o crachá encostado e tente novamente. Esta leitura não foi registrada.',
+  unavailable: 'Não foi possível consultar os participantes agora. Esta leitura não foi registrada. Tente novamente ou chame o responsável.',
+  ambiguous: 'Não foi possível identificar uma única pessoa. Esta leitura não foi registrada. Tente novamente ou chame o responsável.',
+  unsupported_badge: 'Leitura inválida. Mantenha o crachá encostado e tente novamente. Esta leitura não foi registrada.',
 }
 const { mutateAsync: register, isPending } = useMutation({
   mutationFn: (value: string) => attendanceApi.register(props.eventId, props.listId, value),
@@ -102,6 +100,13 @@ function blurInput() {
   registration.value = ''
 }
 
+function lookupFailure(error: unknown): AttendanceLookupFailure | undefined {
+  if (!(error instanceof ApiError) || ![422, 503].includes(error.status)
+    || typeof error.detail !== 'object' || error.detail === null) return
+  const status = (error.detail as { lookup_status?: unknown }).lookup_status
+  if (status === 'not_found' || status === 'unavailable' || status === 'ambiguous' || status === 'unsupported_badge') return status
+}
+
 async function confirmReading() {
   if (isPending.value || blocked.value || !visible.value || !registration.value) return
   const value = registration.value
@@ -122,8 +127,7 @@ async function confirmReading() {
         : 'Tudo certo. Você já está nesta lista.'
     } else {
       feedback.value = 'incomplete'
-      message.value = 'Sua presença foi salva. ' + (lookupMessages[result.lookup_status]
-        || 'Os dados do participante ainda estão incompletos. Avise o responsável pelo evento.')
+      message.value = 'Sua presença foi salva. Alguns dados do cadastro ainda não estão disponíveis.'
     }
     emit('registered', result)
     feedbackTimer = setTimeout(() => {
@@ -131,9 +135,11 @@ async function confirmReading() {
       message.value = ''
     }, 3500)
   } catch (error) {
-    feedback.value = 'error'
     blocked.value = error instanceof ApiError && [400, 401, 403, 404].includes(error.status)
-    message.value = blocked.value ? 'É necessário conferir a sessão ou esta lista. Chame o responsável pelo evento.'
+    const failure = lookupFailure(error)
+    feedback.value = failure && failure !== 'unavailable' ? 'invalid' : 'error'
+    message.value = failure ? lookupMessages[failure]
+      : blocked.value ? 'É necessário conferir a sessão ou esta lista. Chame o responsável pelo evento.'
       : 'Não recebemos a confirmação do servidor. Encoste o crachá novamente para conferir sua presença.'
   }
   // Nunca manter partes de uma próxima leitura que chegaram durante a gravação.

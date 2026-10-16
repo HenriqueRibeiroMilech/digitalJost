@@ -11,7 +11,9 @@ from .schemas import (
     AttendanceListOut, AttendanceLists, AttendanceRegistered,
     EventCreate, EventDeleted, EventDetail, EventList, EventOut, EventQuery,
 )
-from .services import AttendanceListNotFoundError, EventNotFoundError, InvalidEventScheduleError
+from .services import (
+    AttendanceIdentificationError, AttendanceListNotFoundError, EventNotFoundError, InvalidEventScheduleError,
+)
 
 
 events_bp = APIBlueprint("events", __name__, url_prefix="/api/v1/events")
@@ -34,6 +36,17 @@ def invalid_event_schedule(error):
 @events_bp.errorhandler(AttendanceListNotFoundError)
 def attendance_list_not_found(error):
     return api_error(404, message="Lista de presença não encontrada neste evento.")
+
+
+@events_bp.errorhandler(AttendanceIdentificationError)
+def attendance_identification_failed(error):
+    unavailable = error.status == "unavailable"
+    message = (
+        "Não foi possível consultar os participantes agora. Esta leitura não foi registrada."
+        if unavailable else
+        "Leitura não reconhecida. Mantenha o crachá encostado e tente novamente. Esta leitura não foi registrada."
+    )
+    return api_error(503 if unavailable else 422, message=message, detail={"lookup_status": error.status})
 
 
 @events_bp.get("")

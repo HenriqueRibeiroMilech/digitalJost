@@ -89,19 +89,25 @@ async function readerClosed() {
           <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
             label="Iniciar preenchimento por leitor" icon="pi pi-id-card" pt:root:class="rounded-xl" @click="readerOpen = true" />
         </div>
-        <p class="mt-4 text-xs leading-5 text-dj-muted">Nome e setor são preenchidos automaticamente quando encontrados. Dados ausentes aparecem como “Não informado”.</p>
+        <p class="mt-4 text-xs leading-5 text-dj-muted">A presença só é registrada após identificar o participante. Empresa, nome, setor e turno são preenchidos quando disponíveis.</p>
       </div>
       <RequestState :loading="entriesPending" :failed="entriesError" :error="entriesFailure" :empty="false"
         loading-label="Carregando presenças…" @retry="refetchEntries()">
         <div class="overflow-x-auto rounded-2xl border border-dj-border">
           <DataTable :value="entries?.items ?? []" data-key="id" :table-props="{ 'aria-label': 'Participantes da lista ' + list.name }"
-            :table-style="{ minWidth: '30rem' }">
+            :table-style="{ minWidth: '48rem' }">
+            <Column field="company" header="Empresa">
+              <template #body="{ data: entry }"><span :class="{ 'text-dj-muted': !entry.company }">{{ entry.company || 'Não informado' }}</span></template>
+            </Column>
             <Column field="registration" header="Matrícula" body-class="font-mono tabular-nums" />
             <Column field="name" header="Nome">
               <template #body="{ data: entry }"><span :class="{ 'text-dj-muted': !entry.name }">{{ entry.name || 'Não informado' }}</span></template>
             </Column>
             <Column field="department" header="Setor">
               <template #body="{ data: entry }"><span :class="{ 'text-dj-muted': !entry.department }">{{ entry.department || 'Não informado' }}</span></template>
+            </Column>
+            <Column field="shift" header="Turno">
+              <template #body="{ data: entry }"><span :class="{ 'text-dj-muted': !entry.shift }">{{ entry.shift || 'Não informado' }}</span></template>
             </Column>
             <template #empty><p class="py-6 text-center text-sm text-dj-muted">Nenhuma presença registrada. Inicie o leitor para receber os participantes.</p></template>
           </DataTable>
