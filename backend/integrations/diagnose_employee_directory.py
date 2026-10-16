@@ -100,7 +100,7 @@ def main():
 
         registration_filter = escape_filter_chars(badge[4:])
         queries = [
-            ("atual_contem", f"(&(objectCategory=Person)(description=*{registration_filter}*))"),
+            ("atual_contem", EmployeeDirectory._registration_filter(badge[4:])),
             ("legado_termina_com", f"(&(objectCategory=Person)(description=*{registration_filter}))"),
         ]
         if login is not None:

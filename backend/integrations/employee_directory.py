@@ -54,9 +54,7 @@ class EmployeeDirectory:
                 return EmployeeLookup("unavailable")
             connection.search(
                 self.config.search_base,
-                # O legado lê a matrícula do segundo campo de description, que
-                # pode ter outros campos depois. A busca não pode exigir um sufixo.
-                f"(&(objectCategory=Person)(description=*{escape_filter_chars(registration)}*))",
+                self._registration_filter(registration),
                 search_scope=SUBTREE,
                 attributes=["description", "displayName", "department"],
                 size_limit=2, time_limit=self.config.receive_timeout,
@@ -90,6 +88,13 @@ class EmployeeDirectory:
                 except (LDAPException, OSError):
                     pass
 
+    @staticmethod
+    def _registration_filter(registration):
+        # O LDAP pode guardar a matrícula sem os zeros de preenchimento do crachá.
+        # Mantém um dígito para que uma matrícula zerada não gere um filtro vazio.
+        value = registration.lstrip("0") or "0"
+        return f"(&(objectCategory=Person)(description=*{escape_filter_chars(value)}*))"
+
     @classmethod
     def _matches_registration(cls, entry, registration):
         description = cls._text(entry, "description")
@@ -97,9 +102,11 @@ class EmployeeDirectory:
             return False
         fields = description.split(";")
         # Mesmo campo usado em auth_routes/create_external_user, tolerando espaços.
-        # Mantém suporte ao atributo que contém somente os oito dígitos.
+        # Mantém suporte ao atributo contendo somente a matrícula.
         value = fields[1].strip() if len(fields) > 1 else description
-        return value == registration
+        # Aceita somente a diferença de zeros à esquerda, nunca uma substring,
+        # número maior, sinal ou dígitos Unicode. O crachá original não é alterado.
+        return re.fullmatch(r"[0-9]{1,8}", value) is not None and value.zfill(8) == registration
 
     @staticmethod
     def _text(entry, attribute, *, max_length=None):
