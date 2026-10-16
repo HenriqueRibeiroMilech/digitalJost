@@ -16,9 +16,9 @@ defineEmits<{ open: [] }>()
 
 <template>
   <article :aria-labelledby="titleId" class="group relative h-full min-w-0 rounded-dj-card motion-safe:transition-transform
-    motion-safe:duration-200 motion-safe:hover:-translate-y-1 motion-safe:focus-within:-translate-y-1" :class="'dj-tone-' + tone">
+    motion-safe:duration-200 motion-safe:hover:-translate-y-1" :class="'dj-tone-' + tone">
     <Card pt:root:class="dj-record-card-surface h-full overflow-hidden rounded-(--radius-dj-card) border border-t-4 border-dj-border bg-dj-surface shadow-(--shadow-dj-card) transition-shadow duration-200
-      group-hover:border-(--dj-tone-border) group-hover:shadow-(--shadow-dj-card-hover) group-focus-within:border-(--dj-tone-border) group-focus-within:shadow-(--shadow-dj-card-hover)"
+      group-hover:border-(--dj-tone-border) group-hover:shadow-(--shadow-dj-card-hover)"
       pt:body:class="flex h-full flex-1 flex-col gap-0 p-5"
       pt:content:class="flex flex-1 flex-col">
       <template #content>
@@ -43,7 +43,7 @@ defineEmits<{ open: [] }>()
           <div class="flex items-center justify-between gap-3 border-t border-dj-border pt-3 text-sm font-semibold text-(--dj-tone)" aria-hidden="true">
             <span>{{ actionLabel }}</span>
             <span class="inline-flex size-8 items-center justify-center rounded-full bg-(--dj-tone-soft) transition-colors
-              group-hover:bg-(--dj-tone) group-hover:text-white group-focus-within:bg-(--dj-tone) group-focus-within:text-white">
+              group-hover:bg-(--dj-tone) group-hover:text-white">
               <i class="pi pi-arrow-up-right text-xs" />
             </span>
           </div>

@@ -41,7 +41,7 @@ O espaço entre cards é de 20 px. As colunas usam `minmax(0, 1fr)` para permiti
 
 O card inteiro é acionável por um botão nativo, incluindo Enter e Espaço. O rótulo acessível contém a ação e o título completo. Essa variante possui uma única ação; não coloque links, botões ou campos nos slots cobertos pelo botão. Se uma tela precisar de ações independentes, componha uma variante apropriada antes de adicionar controles que não poderão ser acionados.
 
-O título reserva duas linhas e o resumo mantém uma altura mínima uniforme. A ação fica no rodapé. O foco usa um contorno visível, e a elevação por movimento respeita `prefers-reduced-motion`. Para superfícies apenas informativas, o `Card` Volt continua disponível.
+O título reserva duas linhas e o resumo mantém uma altura mínima uniforme. A ação fica no rodapé. Elevação, sombra e destaque da seta acompanham somente o hover; o foco de teclado usa o contorno `:focus-visible` do botão. Restaurar o foco ao fechar um modal não mantém o card elevado. A elevação por movimento respeita `prefers-reduced-motion`. Para superfícies apenas informativas, o `Card` Volt continua disponível.
 
 Em Eventos, `EventCard` continua responsável por selecionar os campos, formatar o período, apresentar dia/mês e o rótulo de status e emitir a abertura do evento. `RecordCard` não consulta a API, não conhece permissões e não calcula status ou regras de negócio.
 
