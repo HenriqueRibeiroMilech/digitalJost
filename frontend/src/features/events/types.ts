@@ -64,6 +64,7 @@ export interface EventTypes {
 }
 
 export interface AttendanceCapabilities {
+  can_export: boolean
   can_create: boolean
   can_register: boolean
   can_update: boolean

@@ -1,5 +1,5 @@
 from apiflask import APIBlueprint
-from flask import Blueprint, redirect, url_for
+from flask import Blueprint, redirect, send_file, url_for
 
 from backend.compatibility import identity
 from backend.platform.http import api_error, configure_api, get_service, page_access
@@ -14,6 +14,7 @@ from .schemas import (
 )
 from .services import (
     AttendanceEntryNotFoundError, AttendanceIdentificationError, AttendanceListNotFoundError,
+    AttendancePdfUnavailableError,
     EventNotFoundError, InvalidEventScheduleError, InvalidEventTypeError,
 )
 
@@ -74,6 +75,11 @@ def attendance_identification_failed(error):
         "Leitura não reconhecida. Mantenha o crachá encostado e tente novamente. Esta leitura não foi registrada."
     )
     return api_error(503 if unavailable else 422, message=message, detail={"lookup_status": error.status})
+
+
+@events_bp.errorhandler(AttendancePdfUnavailableError)
+def attendance_pdf_unavailable(error):
+    return api_error(503, message="Geração de PDF indisponível. Solicite ao responsável conferir os recursos no servidor.")
 
 
 @events_bp.get("")
@@ -147,6 +153,20 @@ def delete_attendance_list(event_id, list_id):
 @events_bp.output(AttendanceEntries)
 def list_attendance_entries(event_id, list_id, query_data):
     return get_service("events_service").list_attendance_entries(event_id, list_id, query_data, identity.current_actor())
+
+
+@events_bp.get("/<int:event_id>/attendance-lists/<int:list_id>/pdf")
+def export_attendance_pdf(event_id, list_id):
+    document = get_service("events_service").export_attendance_pdf(event_id, list_id, identity.current_actor())
+    response = send_file(
+        document, mimetype="application/pdf", as_attachment=True,
+        download_name=f"lista-presenca-evento-{event_id}-lista-{list_id}.pdf",
+        conditional=False, max_age=0,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @events_bp.post("/<int:event_id>/attendance-lists/<int:list_id>/entries")

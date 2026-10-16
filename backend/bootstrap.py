@@ -20,6 +20,7 @@ def init_backend(app, *, config):
             "events.delete": "GENERAL",
             "events.types.create": "GENERAL",
             "events.attendance.read": "GENERAL",
+            "events.attendance.export": "GENERAL",
             "events.attendance.create": "GENERAL",
             "events.attendance.register": "GENERAL",
             "events.attendance.update": "GENERAL",

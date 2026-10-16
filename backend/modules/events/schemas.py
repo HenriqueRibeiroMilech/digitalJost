@@ -124,6 +124,7 @@ class AttendanceCreate(BaseModel):
 
 
 class AttendanceCapabilities(BaseModel):
+    can_export: bool
     can_create: bool
     can_register: bool
     can_update: bool

@@ -21,6 +21,10 @@ class AttendanceEntryNotFoundError(LookupError):
     """O participante não está nesta lista."""
 
 
+class AttendancePdfUnavailableError(RuntimeError):
+    """Os recursos necessários para gerar o PDF não estão disponíveis."""
+
+
 class AttendanceIdentificationError(ValueError):
     """A consulta não identificou uma única pessoa; nenhuma presença deve ser gravada."""
 
@@ -196,6 +200,23 @@ class EventsService:
             )
         return self._attendance_page(items, total, query, actor)
 
+    def export_attendance_pdf(self, event_id, list_id, actor):
+        self.permissions.require(actor, "events.attendance.export")
+        with self.engine.begin() as connection:
+            # Mantém cabeçalho e presenças consistentes com as escritas do módulo.
+            if not repository.event_exists(connection, event_id, lock=True):
+                raise EventNotFoundError()
+            attendance_list = self._require_attendance_list(connection, event_id, list_id, lock=True)
+            now = repository.current_time(connection)
+            event = repository.get_event(connection, event_id, now=now)
+            entries = repository.export_attendance_entries(connection, list_id)
+        # Renderiza em memória, após liberar a conexão e as travas do TD.
+        try:
+            from .attendance_pdf import build_attendance_pdf
+            return build_attendance_pdf(event, attendance_list, entries, generated_at=now)
+        except (ImportError, OSError) as error:
+            raise AttendancePdfUnavailableError() from error
+
     def register_attendance(self, event_id, list_id, data, actor):
         self.permissions.require(actor, "events.attendance.register")
         # Autoriza o recurso antes da consulta externa; não retém conexão/trava SQL no LDAP.
@@ -221,6 +242,7 @@ class EventsService:
 
     def _attendance_capabilities(self, actor):
         return {
+            "can_export": self.permissions.can(actor, "events.attendance.export"),
             "can_create": self.permissions.can(actor, "events.attendance.create"),
             "can_register": self.permissions.can(actor, "events.attendance.register"),
             "can_update": self.permissions.can(actor, "events.attendance.update"),

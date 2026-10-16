@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import Column from 'primevue/column'
+import jostLogo from '@/assets/images/jost_logo.jpg'
+import { ApiError } from '@/shared/api/client'
 import ListPagination from '@/shared/components/ListPagination.vue'
 import RequestState from '@/shared/components/RequestState.vue'
 import Button from '@/volt/Button.vue'
 import DataTable from '@/volt/DataTable.vue'
+import Message from '@/volt/Message.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import { attendanceApi } from '../attendanceApi'
 import type { AttendanceAction, AttendanceEntries, AttendanceListDetail, AttendanceLists, AttendanceRegistered } from '../types'
@@ -16,7 +19,12 @@ const props = defineProps<{ eventId: number; eventName: string; listId: number }
 const emit = defineEmits<{ back: []; busy: [value: boolean] }>()
 const readerOpen = ref(false)
 const action = ref<AttendanceAction | null>(null)
-const managing = computed(() => readerOpen.value || action.value !== null)
+const exportError = ref('')
+const { mutateAsync: loadPdf, isPending: exporting } = useMutation({
+  mutationFn: () => attendanceApi.pdf(props.eventId, props.listId),
+  retry: false,
+})
+const managing = computed(() => readerOpen.value || action.value !== null || exporting.value)
 const page = ref(1)
 const perPage = 25
 const queryClient = useQueryClient()
@@ -84,6 +92,33 @@ function openAction(next: AttendanceAction) {
   if (!managing.value) action.value = next
 }
 
+async function exportPdf() {
+  if (managing.value || !list.value?.capabilities.can_export) return
+  exportError.value = ''
+  try {
+    const blob = await loadPdf()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    try {
+      link.href = url
+      link.download = `lista-presenca-evento-${props.eventId}-lista-${props.listId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+    } finally {
+      link.remove()
+      // Aguarda o navegador iniciar o download antes de liberar o Blob.
+      window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+    }
+  } catch (error) {
+    exportError.value = error instanceof ApiError && error.status === 503
+      ? 'A geração de PDF está indisponível. Tente novamente ou chame o responsável pelo sistema.'
+      : error instanceof Error ? error.message : 'Não foi possível baixar a lista em PDF.'
+  } finally {
+    await nextTick()
+    document.getElementById('attendance-download-pdf')?.focus()
+  }
+}
+
 async function actionClosed(changed: boolean) {
   const previous = action.value
   if (!previous) return
@@ -134,21 +169,26 @@ async function actionClosed(changed: boolean) {
             <h4 id="attendance-list-title" tabindex="-1" class="mt-2 break-words text-lg font-bold text-dj-ink">{{ list.name }}</h4>
             <p class="mt-2 text-sm text-dj-muted">{{ entries?.total ?? list.total }} {{ (entries?.total ?? list.total) === 1 ? 'participante registrado' : 'participantes registrados' }}</p>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <SecondaryButton v-if="list.capabilities.can_update" id="attendance-list-rename" type="button"
-              label="Editar nome" icon="pi pi-pencil" outlined :disabled="managing"
-              pt:root:class="rounded-xl" @click="openAction({ kind: 'rename' })" />
-            <SecondaryButton v-if="list.capabilities.can_delete" id="attendance-list-delete" type="button"
-              label="Excluir lista" icon="pi pi-trash" outlined :disabled="managing"
-              pt:root:class="rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft"
-              @click="openAction({ kind: 'delete-list' })" />
-            <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
-              label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
-              pt:root:class="rounded-xl" @click="readerOpen = true" />
-          </div>
+          <img :src="jostLogo" alt="JOST" class="h-10 w-28 shrink-0 object-contain object-right" />
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <SecondaryButton v-if="list.capabilities.can_export" id="attendance-download-pdf" type="button"
+            :label="exporting ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf" outlined :loading="exporting"
+            :disabled="managing" pt:root:class="rounded-xl" @click="exportPdf" />
+          <SecondaryButton v-if="list.capabilities.can_update" id="attendance-list-rename" type="button"
+            label="Editar nome" icon="pi pi-pencil" outlined :disabled="managing"
+            pt:root:class="rounded-xl" @click="openAction({ kind: 'rename' })" />
+          <SecondaryButton v-if="list.capabilities.can_delete" id="attendance-list-delete" type="button"
+            label="Excluir lista" icon="pi pi-trash" outlined :disabled="managing"
+            pt:root:class="rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft"
+            @click="openAction({ kind: 'delete-list' })" />
+          <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
+            label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
+            pt:root:class="rounded-xl" @click="readerOpen = true" />
         </div>
         <p class="mt-4 text-xs leading-5 text-dj-muted">A presença só é registrada após identificar o participante. Empresa, nome e setor são preenchidos quando disponíveis.</p>
       </div>
+      <Message v-if="exportError" severity="error" class="mb-4">{{ exportError }}</Message>
       <RequestState :loading="entriesPending" :failed="entriesError" :error="entriesFailure" :empty="false"
         loading-label="Carregando presenças…" @retry="refetchEntries()">
         <div class="overflow-x-auto rounded-2xl border border-dj-border">

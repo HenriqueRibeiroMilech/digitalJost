@@ -261,6 +261,19 @@ def list_attendance_entries(connection, list_id, *, page, per_page):
     return [dict(row) for row in rows], total
 
 
+def export_attendance_entries(connection, list_id):
+    # A exportação não é limitada à página atualmente aberta no navegador.
+    rows = connection.execute(
+        text("""
+            SELECT registration, name, department, company
+            FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES
+            WHERE list_id = :list_id
+            ORDER BY id DESC
+        """), {"list_id": list_id},
+    ).mappings().all()
+    return [dict(row) for row in rows]
+
+
 def get_attendance_entry(connection, list_id, registration):
     row = connection.execute(
         text("""

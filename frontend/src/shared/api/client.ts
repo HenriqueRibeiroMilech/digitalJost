@@ -9,14 +9,16 @@ export class ApiError extends Error {
   }
 }
 
-export async function requestJson<T>(
+async function requestBody(
   path: string,
   options: RequestInit = {},
-): Promise<T> {
+  format: 'json' | 'pdf' = 'json',
+  timeoutMs = 10000,
+): Promise<unknown> {
   const method = (options.method ?? 'GET').toUpperCase()
   const writing = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   const headers = new Headers(options.headers)
-  headers.set('Accept', 'application/json')
+  headers.set('Accept', format === 'pdf' ? 'application/pdf, application/json' : 'application/json')
   if (options.body) headers.set('Content-Type', 'application/json')
   if (writing) {
     const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content
@@ -25,7 +27,7 @@ export async function requestJson<T>(
   }
 
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 10000)
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs)
   let response: Response
   let body: unknown
   try {
@@ -39,14 +41,15 @@ export async function requestJson<T>(
       throw new ApiError('A sessão precisa ser renovada. Acesse novamente o portal.', 401)
     }
     const contentType = response.headers.get('content-type') ?? ''
-    if (!contentType.includes('application/json')) {
+    const pdf = response.ok && format === 'pdf'
+    if (!contentType.includes(pdf ? 'application/pdf' : 'application/json')) {
       throw new ApiError(
         writing ? 'Resposta inesperada. Confira os dados antes de repetir a operação.'
           : 'O servidor devolveu uma resposta inesperada.',
         response.status,
       )
     }
-    body = await response.json()
+    body = pdf ? await response.blob() : await response.json()
   } catch (error) {
     if (error instanceof ApiError) throw error
     throw new ApiError(
@@ -67,5 +70,13 @@ export async function requestJson<T>(
       : typeof value.message === 'string' ? value.message : 'Revise os dados enviados.'
     throw new ApiError(message, response.status, value.detail)
   }
-  return body as T
+  return body
+}
+
+export async function requestJson<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return await requestBody(path, options) as T
+}
+
+export async function requestPdf(path: string): Promise<Blob> {
+  return await requestBody(path, { cache: 'no-store' }, 'pdf', 30000) as Blob
 }

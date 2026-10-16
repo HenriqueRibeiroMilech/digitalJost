@@ -28,6 +28,30 @@ O foco volta ao campo após cada leitura e quando a janela recupera o foco. Se o
 
 Presenças confirmadas atualizam o cache da primeira página. A tabela consulta novamente ao sair da captura e, enquanto aberta sem captura e com a aba do navegador ativa, a cada cinco segundos. O total das listas é atualizado ao retornar à coleção. Falha nessa atualização não refaz uma presença já salva.
 
+## Exportar em PDF
+
+Dentro de uma lista, **Baixar PDF** gera e baixa um arquivo A4 com todos os participantes registrados, inclusive os que não estão na página atual. O início do documento apresenta título do evento, nome da lista, tipo, instrutor, início/fim, descrição e conteúdo programático. Campos ausentes aparecem como “Não informado”; textos longos e quebras de linha podem ocupar mais páginas, sem truncamento proposital. Abaixo vêm o total e a tabela **Empresa, Matrícula, Nome e Setor**, com os registros mais recentes primeiro e apenas os oito dígitos finais da matrícula, preservando zeros.
+
+O logo JOST aparece no canto superior direito da tela da lista e de cada página do PDF. O documento repete a identificação evento/lista e o cabeçalho da tabela quando ela continua em outra página, além de rodapé com número da página e emissão no horário local do TD. Lista vazia também gera um PDF, com total zero e mensagem própria.
+
+A exportação exige `events.attendance.export`, mapeada para GENERAL; `can_export` controla o botão, sem substituir a autorização do serviço. GET `/<list_id>/pdf` verifica o vínculo evento/lista e retorna `application/pdf` com `Content-Disposition: attachment`, nome formado somente por IDs e `Cache-Control: private, no-store`. Não usa o LDAP nem altera presença, cadastro ou schema. Enquanto o pedido está pendente, a tela bloqueia leitura, edição/exclusão, retorno à coleção e fechamento/troca de aba do evento. Falhas mostram mensagem na lista, sem baixar JSON/HTML como se fossem PDF nem repetir o pedido automaticamente.
+
+O serviço lê evento, lista e todas as presenças em uma transação curta: mantém o evento com HOLDLOCK e a lista com UPDLOCK/HOLDLOCK, como as escritas existentes, para obter dados consistentes com as operações do módulo. Libera conexão e travas antes de renderizar. `attendance_pdf.py` recebe somente dados, usa ReportLab/BytesIO e não conhece Flask ou banco. Textos são escapados antes dos Paragraphs; nenhum valor do request vira markup, URL, imagem ou caminho. O PDF é produzido em memória e não cria uploads ou arquivos operacionais. A consulta de exportação é única para os participantes, sem percorrer as páginas da API.
+
+`requestPdf`, no cliente HTTP compartilhado, mantém sessão, erros JSON e cancelamento por timeout; permite até 30 segundos para o download, sem mudar os dez segundos das consultas JSON. O componente baixa o Blob com nome determinístico e libera sua URL temporária após iniciar o download. Leituras e outras escritas não são repetidas como parte da exportação.
+
+### Dependência e publicação do PDF
+
+Foi acrescentado `reportlab==5.0.1` ao `requirements.txt`, preservando UTF-16. A biblioteca **não foi instalada nem executada pelo agente**. No Python que atende o IIS, em ambiente autorizado, o responsável precisa instalar essa versão antes de conferir o recurso; por exemplo, na raiz do projeto em Windows:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install reportlab==5.0.1
+```
+
+Se o IIS usar outro interpretador ou instalação offline, siga [Servidor e publicação](servidor-e-publicacao.md). Pillow e charset-normalizer, exigidos pela biblioteca, já constam nas dependências. Referências: [pacote e requisitos do ReportLab](https://pypi.org/project/reportlab/5.0.1/), [geração em memória e fluxo de páginas](https://docs.reportlab.com/reportlab/userguide/ch5_platypus/) e [tabelas paginadas](https://docs.reportlab.com/reportlab/userguide/ch7_tables/).
+
+O logo original permanece em `frontend/src/assets/images/jost_logo.jpg`, importado pela tela para o Vite publicar o asset. Sua cópia de publicação do PDF fica em `backend/modules/events/assets/jost_logo.jpg`: publique esse recurso junto ao backend e mantenha as duas imagens iguais ao atualizar a marca. Assim, o PDF independe de `frontend/src/` ou do manifest/build para ler a imagem. A importação da biblioteca ocorre apenas ao exportar; biblioteca ou imagem ausente/inacessível retorna 503, sem impedir o startup do módulo. Publique API e build compatíveis juntos para entregar o botão e a capacidade nova. Não há migration adicional para o PDF.
+
 ## API e responsabilidades
 
 Base: `/api/v1/events/<event_id>/attendance-lists`.
@@ -40,6 +64,7 @@ Base: `/api/v1/events/<event_id>/attendance-lists`.
 | PUT `/<list_id>` | `{name}`, mesmas regras da criação; HTTP 200 com `{id, event_id, name, total}`. |
 | DELETE `/<list_id>` | HTTP 200 com `{id}` após excluir a lista e suas presenças por cascata. |
 | GET `/<list_id>/entries` | `page` e `per_page`; itens `{id, registration, name, department, company}`, paginação e capacidades. |
+| GET `/<list_id>/pdf` | Download da lista completa em PDF, com informações do evento e logo; não recebe paginação. |
 | POST `/<list_id>/entries` | `{registration}` como string; após identificar a pessoa, HTTP 200 com `{item, created, lookup_status}` tanto na criação quanto na repetição. Empresa, nome e setor vêm exclusivamente do backend. |
 | DELETE `/<list_id>/entries/<entry_id>` | HTTP 200 com `{id}` após remover somente aquela presença da lista informada. |
 
@@ -49,7 +74,7 @@ Rejeições retornam o contrato de erro compartilhado `{message, detail}`, com `
 
 Paginação usa o contrato compartilhado: página mínima 1 e de 1 a 100 itens por página. JSON inválido retorna 422. Evento ausente na coleção ou lista ausente/no evento errado retorna 404. A listagem de registros é sempre restrita à lista cujo vínculo foi verificado pelo serviço.
 
-Todas as rotas usam a guarda de identidade, o perfil GENERAL e o CSRF compartilhados. Serviços exigem `events.attendance.read`, `.create`, `.register`, `.update` (renomear), `.delete` (excluir lista) ou `.delete_entry` (remover participante), mapeados explicitamente em `backend/bootstrap.py`. Capacidades `can_create`, `can_register`, `can_update`, `can_delete` e `can_delete_entry` orientam a interface; não substituem a autorização do backend.
+Todas as rotas usam a guarda de identidade, o perfil GENERAL e o CSRF compartilhados. Serviços exigem `events.attendance.read`, `.export` (baixar PDF), `.create`, `.register`, `.update` (renomear), `.delete` (excluir lista) ou `.delete_entry` (remover participante), mapeados explicitamente em `backend/bootstrap.py`. Capacidades `can_export`, `can_create`, `can_register`, `can_update`, `can_delete` e `can_delete_entry` orientam a interface; não substituem a autorização do backend.
 
 O serviço delimita transações na engine TD. A criação de lista mantém o evento existente com HOLDLOCK durante a escrita. O registro verifica permissão e vínculo antes do LDAP, encerra a leitura SQL e faz a consulta externa sem reter conexão/trava SQL. Se a identificação falhar, retorna o erro antes de abrir a transação de escrita. Se houver correspondência única, revalida a lista, trava-a com UPDLOCK/HOLDLOCK e procura a presença pelos oito dígitos finais para inserir ou completar campos nulos/vazios. Essa trava serializa inclusive leituras com prefixos diferentes para a mesma matrícula. A constraint UNIQUE existente continua protegendo o código completo de 12 dígitos; não é alterada pela nova migration. Consultas e escritas usam parâmetros SQL. Não há novos jobs, uploads, e-mails ou notificações.
 
@@ -69,7 +94,7 @@ Ele requer `dbo.DJ_EVENTS` e cria:
 
 As FKs têm exclusão em cascata: excluir um evento também exclui suas listas e presenças; excluir uma lista remove somente suas presenças. A confirmação na interface avisa esse efeito. Renomear a lista e remover uma presença usam as tabelas existentes, sem nova migration.
 
-Depois da revisão e aplicação do SQL, publique backend e build compatíveis juntos, conforme [Servidor e publicação](servidor-e-publicacao.md). Os componentes Volt necessários já estão no repositório; não há dependência nova. Em retorno de código, as tabelas podem ser mantidas sem remoção de dados. A exclusão de evento pelo código anterior também seguirá as novas cascatas do banco, caso sejam mantidas.
+Depois da revisão e aplicação do SQL, publique backend e build compatíveis juntos, conforme [Servidor e publicação](servidor-e-publicacao.md). Os componentes Volt necessários já estão no repositório; a dependência adicional da exportação está descrita na seção de PDF. Em retorno de código, as tabelas podem ser mantidas sem remoção de dados. A exclusão de evento pelo código anterior também seguirá as novas cascatas do banco, caso sejam mantidas.
 
 A coluna `company` foi adicionada pelo script histórico [20261016_add_dj_event_attendance_company_shift.sql](../database/migrations/20261016_add_dj_event_attendance_company_shift.sql), que também criava `shift`. Esse arquivo é preservado para manter a sequência de publicação. Registros antigos podem completar empresa em nova leitura validada; não há preenchimento em lote.
 
@@ -98,3 +123,5 @@ A entrega recebeu somente análise estática. Build, migração, navegador, leit
 13. Renomear uma lista; conferir o nome no cabeçalho e na coleção, preservando presenças e totais. Nome vazio, só espaços, maior que 120 caracteres ou campos extras devem ser rejeitados; falta de permissão e de CSRF também deve impedir a alteração.
 14. Em dados de conferência autorizados, cancelar e confirmar as exclusões. Excluir uma lista deve remover somente ela e suas presenças; remover uma pessoa deve afetar somente a presença naquela lista, permitindo nova leitura posterior. Conferir 404 para lista de outro evento e participante de outra lista, sem alteração dos alvos. Repetir uma exclusão já concluída não deve remover outro registro.
 15. Conferir totais, cache, foco e recuo de página ao excluir o último item da última página de listas ou de participantes. A captura e outras ações devem ficar bloqueadas enquanto o diálogo está aberto; durante a escrita, Cancelar/fechar/Escape e novos envios ficam bloqueados. Em falha ou resposta incerta, não deve haver repetição automática da escrita. Conferir também registro concorrente com exclusão da lista: a transação deve respeitar a trava e a revalidação do vínculo.
+16. Com a dependência instalada e o logo publicado, baixar PDF de uma lista vazia e de outra com mais de 25 participantes, estando em páginas diferentes da tela. Conferir todos os registros, total, zeros da matrícula, ordem das quatro colunas, acentos, campos ausentes, textos com `<`, `>` e `&`, descrições/conteúdos longos e quebra de páginas. Conferir logo no topo direito, cabeçalhos repetidos, rodapé e ausência de cortes/sobreposições em A4.
+17. Conferir PDF sem sessão/permissão e com lista de outro evento, além de falha de rede, timeout e recurso de PDF indisponível: deve apresentar erro e não baixar outro conteúdo como PDF. Conferir o bloqueio das ações durante o pedido, retorno de foco ao botão e geração concorrente com registro/edição/exclusão. O recurso não deve criar arquivos operacionais nem consultar LDAP.
