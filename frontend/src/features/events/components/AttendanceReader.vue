@@ -17,7 +17,7 @@ const message = ref('')
 const blocked = ref(false)
 const focused = ref(false)
 const settling = ref(false)
-const readingDelay = 2000
+const readingDelay = 300
 let readingTimer: ReturnType<typeof setTimeout> | undefined
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined
 const lookupMessages: Record<AttendanceLookupStatus, string> = {
