@@ -209,7 +209,7 @@ function submit() {
       </FormField>
       <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField id="event-type" v-slot="{ controlProps }" label="Tipo de evento" :error="typeError">
-          <div class="flex items-start gap-2">
+          <div class="flex items-stretch gap-2">
             <Select :key="typeSelectVersion" v-model="fields.event_type_id" input-id="event-type" :options="types?.items ?? []"
               option-label="name" option-value="id" filter :loading="typesLoading"
               placeholder="Selecione um tipo" empty-message="Nenhum tipo cadastrado" empty-filter-message="Nenhum tipo encontrado"
