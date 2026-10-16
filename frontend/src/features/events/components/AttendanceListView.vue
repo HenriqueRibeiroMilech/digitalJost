@@ -2,7 +2,6 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import Column from 'primevue/column'
-import jostLogo from '@/assets/images/jost_logo.jpg'
 import { ApiError } from '@/shared/api/client'
 import ListPagination from '@/shared/components/ListPagination.vue'
 import RequestState from '@/shared/components/RequestState.vue'
@@ -163,31 +162,31 @@ async function actionClosed(changed: boolean) {
     loading-label="Carregando lista…" not-found-message="Esta lista não existe neste evento." @retry="refetch()">
     <template v-if="list">
       <div class="mb-5 rounded-2xl border border-dj-border bg-dj-canvas p-5">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="min-w-0 flex-1">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="min-w-0 lg:flex-1">
             <p class="text-xs font-semibold tracking-wide text-dj-muted uppercase">Lista de presença</p>
             <h4 id="attendance-list-title" tabindex="-1" class="mt-2 break-words text-lg font-bold text-dj-ink">{{ list.name }}</h4>
             <p class="mt-2 text-sm text-dj-muted">{{ entries?.total ?? list.total }} {{ (entries?.total ?? list.total) === 1 ? 'participante registrado' : 'participantes registrados' }}</p>
           </div>
-          <img :src="jostLogo" alt="JOST" class="h-10 w-28 shrink-0 object-contain object-right" />
-        </div>
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-wrap gap-2">
-            <Button v-if="list.capabilities.can_export" id="attendance-download-pdf" type="button"
-              :label="exporting ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf" :loading="exporting"
-              :disabled="managing" class="dj-accent-action" pt:root:class="rounded-xl" @click="exportPdf" />
-            <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
-              label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
-              pt:root:class="rounded-xl" @click="readerOpen = true" />
-          </div>
-          <div class="flex items-center gap-2">
-            <SecondaryButton v-if="list.capabilities.can_update" id="attendance-list-rename" type="button"
-              aria-label="Editar nome da lista" title="Editar nome" icon="pi pi-pencil" outlined :disabled="managing"
-              pt:root:class="size-10 rounded-xl" @click="openAction({ kind: 'rename' })" />
-            <SecondaryButton v-if="list.capabilities.can_delete" id="attendance-list-delete" type="button"
-              aria-label="Excluir lista de presença" title="Excluir lista" icon="pi pi-trash" outlined :disabled="managing"
-              pt:root:class="size-10 rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft"
-              @click="openAction({ kind: 'delete-list' })" />
+          <div class="flex min-w-0 flex-wrap items-center gap-3 lg:shrink-0 lg:justify-end">
+            <div class="flex min-w-0 max-w-full flex-wrap gap-2">
+              <Button v-if="list.capabilities.can_export" id="attendance-download-pdf" type="button"
+                :label="exporting ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf" :loading="exporting"
+                :disabled="managing" class="dj-accent-action" pt:root:class="max-w-full rounded-xl"
+                pt:label:class="min-w-0 whitespace-normal" @click="exportPdf" />
+              <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
+                label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
+                pt:root:class="max-w-full rounded-xl" pt:label:class="min-w-0 whitespace-normal" @click="readerOpen = true" />
+            </div>
+            <div class="flex items-center gap-2">
+              <SecondaryButton v-if="list.capabilities.can_update" id="attendance-list-rename" type="button"
+                aria-label="Editar nome da lista" title="Editar nome" icon="pi pi-pencil" outlined :disabled="managing"
+                pt:root:class="size-10 rounded-xl" @click="openAction({ kind: 'rename' })" />
+              <SecondaryButton v-if="list.capabilities.can_delete" id="attendance-list-delete" type="button"
+                aria-label="Excluir lista de presença" title="Excluir lista" icon="pi pi-trash" outlined :disabled="managing"
+                pt:root:class="size-10 rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft"
+                @click="openAction({ kind: 'delete-list' })" />
+            </div>
           </div>
         </div>
         <p class="mt-4 text-xs leading-5 text-dj-muted">A presença só é registrada após identificar o participante. Empresa, nome e setor são preenchidos quando disponíveis.</p>
