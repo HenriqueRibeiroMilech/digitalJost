@@ -172,7 +172,7 @@ def list_attendance_entries(connection, list_id, *, page, per_page):
     ).scalar_one()
     rows = connection.execute(
         text("""
-            SELECT id, registration, name, department, company, [shift]
+            SELECT id, registration, name, department, company
             FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES
             WHERE list_id = :list_id
             ORDER BY id DESC
@@ -186,7 +186,7 @@ def list_attendance_entries(connection, list_id, *, page, per_page):
 def get_attendance_entry(connection, list_id, registration):
     row = connection.execute(
         text("""
-            SELECT TOP (1) id, registration, name, department, company, [shift]
+            SELECT TOP (1) id, registration, name, department, company
             FROM dbo.DJ_EVENT_ATTENDANCE_ENTRIES
             WHERE list_id = :list_id AND RIGHT(registration, 8) = :employee_registration
             ORDER BY id
@@ -195,34 +195,31 @@ def get_attendance_entry(connection, list_id, registration):
     return dict(row) if row is not None else None
 
 
-def register_attendance(connection, list_id, *, registration, created_by, name, department, company, shift):
+def register_attendance(connection, list_id, *, registration, created_by, name, department, company):
     # O serviço já travou a lista. A matrícula é única no grupo, independentemente do prefixo.
     parameters = {
         "list_id": list_id, "registration": registration,
-        "name": name, "department": department, "company": company, "shift": shift,
+        "name": name, "department": department, "company": company,
     }
     existing = get_attendance_entry(connection, list_id, registration)
     if existing is not None:
-        if any(parameters[field] and not existing[field] for field in ("name", "department", "company", "shift")):
+        if any(parameters[field] and not existing[field] for field in ("name", "department", "company")):
             existing = dict(connection.execute(
                 text("""
                     UPDATE dbo.DJ_EVENT_ATTENDANCE_ENTRIES
                     SET name = COALESCE(NULLIF(name, ''), :name),
                         department = COALESCE(NULLIF(department, ''), :department),
-                        company = COALESCE(NULLIF(company, ''), :company),
-                        [shift] = COALESCE(NULLIF([shift], ''), :shift)
-                    OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department,
-                        inserted.company, inserted.[shift]
+                        company = COALESCE(NULLIF(company, ''), :company)
+                    OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department, inserted.company
                     WHERE id = :entry_id AND list_id = :list_id
                 """), {**parameters, "entry_id": existing["id"]},
             ).mappings().one())
         return {"item": existing, "created": False}
     row = connection.execute(
         text("""
-            INSERT INTO dbo.DJ_EVENT_ATTENDANCE_ENTRIES (list_id, registration, name, department, company, [shift], created_by)
-            OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department,
-                inserted.company, inserted.[shift]
-            VALUES (:list_id, :registration, :name, :department, :company, :shift, :created_by)
+            INSERT INTO dbo.DJ_EVENT_ATTENDANCE_ENTRIES (list_id, registration, name, department, company, created_by)
+            OUTPUT inserted.id, inserted.registration, inserted.name, inserted.department, inserted.company
+            VALUES (:list_id, :registration, :name, :department, :company, :created_by)
         """), {**parameters, "created_by": created_by},
     ).mappings().one()
     return {"item": dict(row), "created": True}

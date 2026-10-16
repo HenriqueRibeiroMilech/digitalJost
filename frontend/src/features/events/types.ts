@@ -66,7 +66,6 @@ export interface AttendanceEntry {
   name: string | null
   department: string | null
   company: string | null
-  shift: string | null
 }
 
 export interface AttendanceRegistered {

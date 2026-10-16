@@ -23,7 +23,6 @@ class EmployeeLookup:
     name: str | None = None
     department: str | None = None
     company: str | None = None
-    shift: str | None = None
 
 
 class EmployeeDirectory:
@@ -60,7 +59,7 @@ class EmployeeDirectory:
                 self._registration_filter(registration),
                 search_scope=SUBTREE,
                 attributes=[
-                    "description", "displayName", "department", "physicalDeliveryOfficeName", "info",
+                    "description", "displayName", "department", "physicalDeliveryOfficeName",
                 ],
                 size_limit=2, time_limit=self.config.receive_timeout,
             )
@@ -82,9 +81,8 @@ class EmployeeDirectory:
             name = self._text(entry, "displayName", max_length=200)
             department = self._text(entry, "department", max_length=200)
             company = self._text(entry, "physicalDeliveryOfficeName", max_length=200)
-            shift = self._text(entry, "info", max_length=200)
-            status: EmployeeLookupStatus = "complete" if all((name, department, company, shift)) else "partial"
-            return EmployeeLookup(status, name=name, department=department, company=company, shift=shift)
+            status: EmployeeLookupStatus = "complete" if all((name, department, company)) else "partial"
+            return EmployeeLookup(status, name=name, department=department, company=company)
         except (LDAPException, OSError, ValueError):
             # Não propagar dados do diretório, credenciais ou erros internos à API.
             return EmployeeLookup("unavailable")

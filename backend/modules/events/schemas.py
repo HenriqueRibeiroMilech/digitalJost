@@ -126,7 +126,6 @@ class AttendanceOut(BaseModel):
     name: str | None
     department: str | None
     company: str | None
-    shift: str | None
 
 
 class AttendanceEntries(PaginatedResponse[AttendanceOut, AttendanceCapabilities]):

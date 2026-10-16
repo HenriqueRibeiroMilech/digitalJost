@@ -21,7 +21,7 @@ function updateVisibility(visible: boolean) {
 <template>
   <Dialog :id="id" :visible="visible" :header="title" modal :draggable="false"
     :closable="!busy" :close-on-escape="!busy" :dismissable-mask="false"
-    :style="{ width: '48rem', maxWidth: 'calc(100vw - 2rem)' }"
+    :style="{ width: '64rem', maxWidth: 'calc(100vw - 2rem)' }"
     :aria-labelledby="id + '-title'" :aria-describedby="descriptionId"
     :class="'dj-tone-' + tone"
     pt:root:class="max-h-[calc(100dvh_-_2rem)] overflow-hidden rounded-(--radius-dj-card) border-dj-border bg-dj-surface shadow-2xl"

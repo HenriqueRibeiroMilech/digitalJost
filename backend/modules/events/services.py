@@ -151,11 +151,11 @@ class EventsService:
             self._require_attendance_list(connection, event_id, list_id, lock=True)
             result = repository.register_attendance(
                 connection, list_id, registration=data.registration, created_by=str(actor.id),
-                name=employee.name, department=employee.department, company=employee.company, shift=employee.shift,
+                name=employee.name, department=employee.department, company=employee.company,
             )
         item = result["item"]
         lookup_status = (
-            "complete" if all(item[field] for field in ("name", "department", "company", "shift")) else "partial"
+            "complete" if all(item[field] for field in ("name", "department", "company")) else "partial"
         )
         return {**result, "lookup_status": lookup_status}
 
