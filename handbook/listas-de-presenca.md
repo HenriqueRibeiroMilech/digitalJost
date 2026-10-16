@@ -74,6 +74,16 @@ Informe o crachá completo de 12 dígitos com prefixo `2300` quando solicitado. 
 
 **Escopo:** uma execução, uma matrícula, uma conexão LDAP com no máximo um bind e duas buscas somente leitura. A primeira usa o filtro atual, que contém a matrícula; a segunda reproduz o filtro legado, que termina com a matrícula. Cada busca retorna no máximo dois candidatos e usa os tempos limite configurados. Ambas usam o parser atual para informar a correspondência exata. O diagnóstico não chama a rota antiga de login, não inicializa Flask, não importa `app`/`main`/`bootstrap`, não abre banco e não grava arquivos. A opção `-B` impede a geração de bytecode pelo Python. Não executa o fluxo HTTP ou de gravação da presença.
 
+Quando as duas buscas terminarem com código zero e nenhum candidato, compare também com o filtro usado pelo login do portal:
+
+```powershell
+.\.venv\Scripts\python.exe -B -m backend.integrations.diagnose_employee_directory --by-login
+```
+
+Esse modo pede o crachá e o **login Windows da mesma pessoa**, sem domínio nem sufixo de e-mail. Os dois valores ficam ocultos. Acrescenta uma terceira busca exata por `mailNickname`, mantendo uma única conexão/bind, modo somente leitura e limite de dois candidatos por busca. Não cria usuário, não faz login no portal e não grava presença. O login informado não é incluído no relatório.
+
+Se `por_login` retornar um candidato, os indicadores comparam o `description` dessa pessoa com o crachá informado. Por exemplo, `igual_sem_zeros_iniciais: true` com `igual_matricula: false` indica diferença de preenchimento com zeros, mas não autoriza alterar a regra da aplicação sem conferir a identidade. `resultado_pela_regra_atual` continua avaliando a correspondência com o crachá, mesmo na consulta por login; não indica se o login foi encontrado. Se as três buscas retornarem zero, é preciso conferir login, cadastro, base de busca e visibilidade de leitura com o responsável pelo diretório. Bind bem-sucedido, sozinho, não prova acesso de leitura a todos os usuários/atributos.
+
 A configuração é a mesma do cliente moderno: ambiente do processo tem prioridade sobre `.env` ou `DJ_ENV_FILE`. O comando importa somente a configuração e o cliente independente, além das bibliotecas já existentes; não instala dependências. Se o portal estiver no IIS com ambiente ou conta diferentes, um resultado positivo no terminal não prova que o processo do IIS recebeu a mesma configuração.
 
 O relatório JSON não inclui crachá, matrícula, nomes, setores, conteúdo de `description`, DN, host, usuário, senha ou mensagens brutas do LDAP. Mostra somente etapa, código numérico LDAP, duração, contagem, tamanhos e indicadores de correspondência/presença dos campos. Apenas os oito primeiros campos de `description` têm a estrutura detalhada. As comparações com crachá inteiro e sem zeros são **indicadores de diagnóstico**; não alteram as regras de identificação da aplicação.
@@ -88,7 +98,7 @@ O relatório JSON não inclui crachá, matrícula, nomes, setores, conteúdo de 
 | `resultado_pela_regra_atual: complete` | A busca isolada encontrou uma correspondência única com nome e setor utilizáveis. Conferir diferenças de ambiente/publicação se a tela continuar sem nome. |
 | `resultado_pela_regra_atual: partial` | Houve correspondência única, mas nome ou setor está ausente/inválido/acima do limite. |
 
-O código de saída zero significa que as duas consultas terminaram, mesmo que o resultado seja `not_found` ou `ambiguous`; 1 indica falha e 2 indica entrada inválida ou interrupção. Compartilhe somente o relatório sanitizado para análise.
+O código de saída zero significa que todas as consultas do modo escolhido terminaram, mesmo que o resultado seja `not_found` ou `ambiguous`; 1 indica falha e 2 indica entrada inválida ou interrupção. Compartilhe somente o relatório sanitizado para análise.
 
 O agente preparou este diagnóstico por análise estática e não o executou. Pelo [AGENTS.md](../AGENTS.md), a execução pelo agente exige autorização explícita com o comando acima, o ambiente e o escopo descrito; o pedido genérico para testar não autoriza conexão corporativa.
 

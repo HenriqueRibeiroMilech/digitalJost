@@ -1,5 +1,6 @@
 """Diagnóstico LDAP manual e somente leitura; não inicializa a aplicação."""
 
+import argparse
 import getpass
 import json
 import re
@@ -49,6 +50,12 @@ def _lookup_status(result_code, candidates):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--by-login", action="store_true",
+        help="Compara também com uma busca exata pelo login Windows da mesma pessoa.",
+    )
+    args = parser.parse_args()
     report = {"etapa": "dependencias"}
     connection = None
     try:
@@ -82,6 +89,26 @@ def main():
         if re.fullmatch(r"2300[0-9]{8}", badge) is None:
             report["erro"] = "Informe exatamente 12 dígitos com prefixo 2300; nenhuma consulta foi feita."
             return 2
+        login = None
+        if args.by_login:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", getpass.GetPassWarning)
+                login = getpass.getpass("Login Windows da MESMA pessoa, sem domínio ou @ (entrada oculta): ").strip()
+            if not login or len(login) > 128 or not login.isprintable():
+                report["erro"] = "Login vazio ou inválido; nenhuma consulta foi feita."
+                return 2
+
+        registration_filter = escape_filter_chars(badge[4:])
+        queries = [
+            ("atual_contem", f"(&(objectCategory=Person)(description=*{registration_filter}*))"),
+            ("legado_termina_com", f"(&(objectCategory=Person)(description=*{registration_filter}))"),
+        ]
+        if login is not None:
+            # Reproduz somente o filtro do login legado, sem importar sua rota.
+            queries.append((
+                "por_login",
+                f"(&(objectCategory=Person)(mailNickname={escape_filter_chars(login)}))",
+            ))
 
         report["etapa"] = "conexao_e_bind"
         server = Server(
@@ -105,12 +132,12 @@ def main():
             return 1
 
         report["consultas"] = {}
-        for label, suffix in (("atual_contem", "*"), ("legado_termina_com", "")):
+        for label, search_filter in queries:
             report["etapa"] = label
             started = perf_counter()
             connection.search(
                 config.search_base,
-                f"(&(objectCategory=Person)(description=*{escape_filter_chars(badge[4:])}{suffix}))",
+                search_filter,
                 search_scope=SUBTREE,
                 attributes=["description", "displayName", "department"],
                 size_limit=2, time_limit=config.receive_timeout,
