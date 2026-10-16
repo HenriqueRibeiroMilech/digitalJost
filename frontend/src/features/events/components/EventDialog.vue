@@ -151,7 +151,6 @@ async function deleteEvent() {
           <div v-else-if="view === 'delete'" :aria-busy="busy">
             <div class="rounded-2xl border border-dj-border bg-dj-canvas p-5">
               <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <span class="text-xs font-semibold text-dj-muted">Evento #{{ event.id }}</span>
                 <EventStatusBadge :status="event.status" />
               </div>
               <h3 class="break-words text-lg font-semibold text-dj-ink">{{ event.name }}</h3>
@@ -166,7 +165,6 @@ async function deleteEvent() {
           <div v-else>
             <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div class="flex flex-wrap items-center gap-3">
-                <span class="text-xs font-semibold tracking-wide text-dj-muted">EVENTO #{{ event.id }}</span>
                 <EventStatusBadge :status="event.status" />
               </div>
               <div class="flex flex-wrap gap-2">

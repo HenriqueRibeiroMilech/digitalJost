@@ -86,8 +86,8 @@ async function eventChanged(action: EventChange) {
 
 <template>
   <section ref="pageElement" tabindex="-1" aria-labelledby="events-title">
-    <PageHeader id="events-title" eyebrow="Agenda corporativa" title="Eventos"
-      description="Organize os eventos do Digital JOST e acompanhe os períodos de realização.">
+    <PageHeader id="events-title" title="Eventos"
+      description="Organize os eventos, acompanhe os períodos de realização e listas de presença.">
       <template #actions>
         <div v-if="canCreate" ref="newEventAction">
           <Button type="button" label="Novo evento" icon="pi pi-plus"

@@ -4,11 +4,13 @@ Esta é a base visual implementada no shell Vue e em Eventos. Ela orienta as pr�
 
 ## Identidade e estrutura
 
-O azul JOST identifica a navegação e as ações principais. O laranja aparece como detalhe da marca no cabeçalho. O conteúdo usa fundo claro, superfícies brancas, bordas suaves e sombras discretas. Cores, fonte, raio dos cards e sombras ficam em `frontend/src/shared/styles/tokens.css`; evite repetir valores específicos em cada feature.
+O azul JOST identifica a navegação e as ações principais. O laranja aparece como detalhe da marca no cabeçalho e destaca o download de PDF nas listas de presença. O conteúdo usa fundo claro, superfícies brancas, bordas suaves e sombras discretas. Cores, fonte, raio dos cards e sombras ficam em `frontend/src/shared/styles/tokens.css`; evite repetir valores específicos em cada feature.
 
 O `AppShell` mantém cabeçalho e conteúdo alinhados pelo mesmo `.dj-container`, com largura máxima de 110 rem (1.760 px na referência de 16 px/rem). As margens internas variam de 16 a 40 px conforme a janela. Isso aproveita a largura de notebooks e monitores e mantém um limite de leitura em telas muito grandes. Não adicione outro container de 1.200 px dentro das páginas de listagem.
 
 Cada página começa com `PageHeader`: identificação curta e opcional da área em `eyebrow`, título principal, descrição e ações. Use o botão Volt para a ação principal. A listagem pode apresentar seu título e o total retornado pela API antes da grade; não crie indicadores sem uma fonte real.
+
+Eventos usa somente o título **Eventos** e a descrição **Organize os eventos, acompanhe os períodos de realização e listas de presença.**, sem identificação de área acima do título.
 
 ## Grade de cards
 
@@ -54,7 +56,7 @@ O status vem da API e determina a identificação visual, sempre acompanhada de 
 | Concluído (`completed`) | Cinza | Fim atingido. |
 | Sem período (`unscheduled`) | Neutra, com rótulo próprio | Registro antigo sem período completo. |
 
-A faixa superior do card, o marcador da data e o rodapé acompanham o tom. `EventStatusBadge` usa Tag Volt e centraliza o rótulo e o ícone, tanto no card quanto nos detalhes e na confirmação de exclusão. O identificador do evento fica nos modais. Cores adicionais de outros domínios precisam ter um significado definido pela própria feature.
+A faixa superior do card, o marcador da data e o rodapé acompanham o tom. `EventStatusBadge` usa Tag Volt e centraliza o rótulo e o ícone, tanto no card quanto nos detalhes e na confirmação de exclusão. Os modais identificam o evento pelo título. Cores adicionais de outros domínios precisam ter um significado definido pela própria feature.
 
 `EventFilters` compõe InputText e MultiSelect Volt. A tela começa com Futuros e Em andamento selecionados. É possível combinar vários status, desmarcar todos para consultar todos ou usar “Restaurar padrão”. A pesquisa por título reage após uma pausa de 300 ms ou imediatamente ao pressionar Enter. Os filtros consultam a API; não se limitam aos 12 itens da página atual. O total exibido é o total filtrado.
 
@@ -72,9 +74,9 @@ O formulário também apresenta Tipo de evento com Select Volt pesquisável e bo
 
 Os detalhes de Eventos usam Tabs Volt para separar Informações e Listas de presença. Cada lista tem nome, total e uma ação explícita de abertura. Seus participantes aparecem no DataTable Volt, com paginação no servidor e quatro colunas de dados: Empresa, Matrícula, Nome e Setor. A matrícula mostra apenas os oito dígitos finais, preservando zeros e ocultando o prefixo da empresa na exibição. Os demais campos vazios aparecem como “Não informado”. Uma coluna Ações oferece Remover quando a sessão tem essa capacidade. As colunas vêm do `primevue/column`, pois recebem o estilo do DataTable Volt instalado.
 
-Dentro da lista, Editar nome e Excluir lista ficam no cabeçalho. `AttendanceActionDialog` compõe AppDialog, InputText, Message e botões Volt: edição usa o tom da marca e foco no nome; exclusões usam o tom vermelho e foco inicial em Cancelar. A confirmação da lista avisa que todas as presenças dela serão removidas; a de participante apresenta nome, matrícula de oito dígitos e empresa. Durante a escrita, não se pode fechar ou reenviar. O evento e a captura ficam bloqueados enquanto o diálogo está aberto. Após confirmar, totais e páginas são atualizados; excluir a lista retorna à coleção e remover a última linha pode recuar a página.
+Dentro da lista, Editar nome e Excluir lista usam somente os ícones de lápis e lixeira no cabeçalho, em um grupo separado das ações com texto. Esses botões e o de remover participante têm área de 40 px, título ao passar o mouse e nome acessível. `AttendanceActionDialog` compõe AppDialog, InputText, Message e botões Volt: edição usa o tom da marca e foco no nome; exclusões usam o tom vermelho e foco inicial em Cancelar. A confirmação da lista avisa que todas as presenças dela serão removidas; a de participante apresenta nome, matrícula de oito dígitos e empresa. Durante a escrita, não se pode fechar ou reenviar. O evento e a captura ficam bloqueados enquanto o diálogo está aberto. Após confirmar, totais e páginas são atualizados; excluir a lista retorna à coleção e remover a última linha pode recuar a página.
 
-O cabeçalho da lista apresenta o logo JOST no canto superior direito e agrupa as ações abaixo, com quebra de linha em telas menores. Baixar PDF usa SecondaryButton Volt, ícone de arquivo PDF, rótulo de progresso e mensagem de falha na própria lista. O documento A4 usa azul JOST no cabeçalho da tabela, linhas alternadas, dados do evento antes dos participantes, logo no alto à direita e rodapé numerado. A tabela repete seu cabeçalho nas continuações e mostra apenas os oito dígitos finais da matrícula.
+O cabeçalho da lista apresenta o logo JOST no canto superior direito e agrupa as ações abaixo, com quebra de linha em telas menores. Baixar PDF e Iniciar preenchimento por leitor usam Button Volt e ficam lado a lado no mesmo grupo: PDF em laranja JOST com texto escuro para leitura, pela classe compartilhada `dj-accent-action`, e captura em azul. O PDF mantém ícone, rótulo de progresso e mensagem de falha na própria lista. O documento A4 usa azul JOST no cabeçalho da tabela, linhas alternadas, nomes e dados do evento/lista antes dos participantes, logo no alto à direita e rodapé numerado, sem exibir IDs do evento/lista. A tabela repete seu cabeçalho nas continuações e mostra apenas os oito dígitos finais da matrícula.
 
 `initialFocusId`, opcional no AppDialog, escolhe o controle que recebe foco após a transição de abertura via Pass Through, pois o próprio Dialog também define foco nessa etapa. O diálogo de gestão usa o campo do nome ou Cancelar; outros chamadores mantêm o comportamento padrão enquanto não informarem essa propriedade. Referências oficiais: [ciclo de abertura do Dialog](https://github.com/primefaces/primevue/blob/4.5.5/packages/primevue/src/dialog/Dialog.vue) e [atributos Pass Through](https://github.com/primefaces/primevue/blob/4.5.5/packages/core/src/basecomponent/BaseComponent.vue).
 

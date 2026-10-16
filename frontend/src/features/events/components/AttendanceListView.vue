@@ -171,20 +171,24 @@ async function actionClosed(changed: boolean) {
           </div>
           <img :src="jostLogo" alt="JOST" class="h-10 w-28 shrink-0 object-contain object-right" />
         </div>
-        <div class="mt-4 flex flex-wrap gap-2">
-          <SecondaryButton v-if="list.capabilities.can_export" id="attendance-download-pdf" type="button"
-            :label="exporting ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf" outlined :loading="exporting"
-            :disabled="managing" pt:root:class="rounded-xl" @click="exportPdf" />
-          <SecondaryButton v-if="list.capabilities.can_update" id="attendance-list-rename" type="button"
-            label="Editar nome" icon="pi pi-pencil" outlined :disabled="managing"
-            pt:root:class="rounded-xl" @click="openAction({ kind: 'rename' })" />
-          <SecondaryButton v-if="list.capabilities.can_delete" id="attendance-list-delete" type="button"
-            label="Excluir lista" icon="pi pi-trash" outlined :disabled="managing"
-            pt:root:class="rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft"
-            @click="openAction({ kind: 'delete-list' })" />
-          <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
-            label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
-            pt:root:class="rounded-xl" @click="readerOpen = true" />
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap gap-2">
+            <Button v-if="list.capabilities.can_export" id="attendance-download-pdf" type="button"
+              :label="exporting ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf" :loading="exporting"
+              :disabled="managing" class="dj-accent-action" pt:root:class="rounded-xl" @click="exportPdf" />
+            <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
+              label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
+              pt:root:class="rounded-xl" @click="readerOpen = true" />
+          </div>
+          <div class="flex items-center gap-2">
+            <SecondaryButton v-if="list.capabilities.can_update" id="attendance-list-rename" type="button"
+              aria-label="Editar nome da lista" title="Editar nome" icon="pi pi-pencil" outlined :disabled="managing"
+              pt:root:class="size-10 rounded-xl" @click="openAction({ kind: 'rename' })" />
+            <SecondaryButton v-if="list.capabilities.can_delete" id="attendance-list-delete" type="button"
+              aria-label="Excluir lista de presença" title="Excluir lista" icon="pi pi-trash" outlined :disabled="managing"
+              pt:root:class="size-10 rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft"
+              @click="openAction({ kind: 'delete-list' })" />
+          </div>
         </div>
         <p class="mt-4 text-xs leading-5 text-dj-muted">A presença só é registrada após identificar o participante. Empresa, nome e setor são preenchidos quando disponíveis.</p>
       </div>
@@ -208,10 +212,10 @@ async function actionClosed(changed: boolean) {
             </Column>
             <Column v-if="list.capabilities.can_delete_entry" header="Ações" body-class="whitespace-nowrap">
               <template #body="{ data: entry }">
-                <SecondaryButton :id="'attendance-entry-delete-' + entry.id" type="button" label="Remover"
+                <SecondaryButton :id="'attendance-entry-delete-' + entry.id" type="button" title="Remover participante"
                   icon="pi pi-trash" text :disabled="managing"
                   :aria-label="'Remover ' + (entry.name || 'matrícula ' + entry.registration.slice(-8)) + ' desta lista'"
-                  pt:root:class="rounded-xl text-dj-danger enabled:hover:bg-dj-danger-soft"
+                  pt:root:class="size-10 rounded-xl text-dj-danger enabled:hover:bg-dj-danger-soft"
                   @click="openAction({ kind: 'delete-entry', entry })" />
               </template>
             </Column>

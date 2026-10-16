@@ -52,6 +52,18 @@
   background: var(--dj-tone-soft);
 }
 
+.dj-accent-action {
+  color: var(--color-dj-ink);
+  background: var(--color-dj-accent);
+  border-color: var(--color-dj-accent);
+}
+
+.dj-accent-action:enabled:hover,
+.dj-accent-action:enabled:active {
+  background: color-mix(in srgb, var(--color-dj-accent) 95%, black);
+  border-color: color-mix(in srgb, var(--color-dj-accent) 95%, black);
+}
+
 .dj-danger-action {
   color: white;
   background: var(--color-dj-danger);
