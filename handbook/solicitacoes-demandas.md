@@ -26,6 +26,8 @@ São aceitos Word, Excel, PowerPoint, TXT, PDF e imagens PNG/JPG/JPEG/GIF/BMP/We
 
 O cliente aguarda até 60 segundos no upload. As demais chamadas JSON mantêm o padrão compartilhado de dez segundos; o comportamento de Eventos permanece com seus limites anteriores.
 
+No cadastro de demanda, o exemplo de fluxo aparece como imagem ao lado dos documentos, em duas colunas de mesma largura em telas grandes. Em telas menores, fica abaixo dos anexos. A imagem mantém sua proporção e pode ser aberta em tamanho original ao clicar. No relato de erro, a seção de evidências ocupa a largura disponível, sem o exemplo de fluxo.
+
 Minhas solicitações inclui registros em que a pessoa é solicitante ou contribuinte. A busca por título é literal; também aceita o número, com ou sem `#`. Filtro de tipo, contagem e paginação são aplicados no servidor. A página usa 12 cards por página e apresenta os estados de carregamento, vazio e falha.
 
 O solicitante pode editar os dados enquanto o registro está em análise e sem classificação. O contribuinte pode consultar e baixar anexos, sem editar. A edição mantém os documentos existentes; substituição ou gestão de anexos após envio não faz parte desta etapa.

@@ -198,23 +198,33 @@ async function submit() {
     </fieldset>
     <fieldset v-if="!request" class="mt-6 min-w-0 rounded-2xl border border-dj-border p-4 sm:p-6">
       <legend class="px-2 text-xs font-semibold tracking-wide text-dj-muted uppercase">{{ isError ? 'Evidências do erro' : 'Documentos e fluxo' }}</legend>
-      <p class="mb-4 text-sm leading-6 text-dj-muted">{{ isError ? 'Anexe uma imagem ou documento que ajude a entender o erro.' : 'Anexe documentos que representem o fluxo e facilitem a análise da demanda.' }}</p>
-      <a v-if="!isError" href="/static/images/FLUXO.PNG" target="_blank" rel="noopener noreferrer"
-        class="mb-4 inline-block rounded-lg py-2 text-sm text-dj-brand underline underline-offset-4">Ver exemplo de fluxo (abre em outra aba)</a>
-      <FormField :id="formId + '-files'" label="Documentos *" :error="errors.files">
-        <input :id="formId + '-files'" ref="fileInput" type="file" multiple :accept="fileAccept" :disabled="locked"
-          :aria-invalid="Boolean(errors.files)" :aria-describedby="formId + '-file-help' + (errors.files ? ' ' + formId + '-files-error' : '')"
-          class="block w-full rounded-xl border border-dashed border-dj-border bg-dj-canvas p-4 text-sm text-dj-muted file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-dj-brand file:px-4 file:py-2 file:text-white"
-          @change="selectFiles" />
-      </FormField>
-      <p :id="formId + '-file-help'" class="mt-3 text-xs leading-5 text-dj-muted">Até 10 arquivos, 10 MB por arquivo e 40 MB no total. Word, Excel, PowerPoint, PDF, texto e imagens.</p>
-      <ul v-if="files.length" class="mt-4 divide-y divide-dj-border" aria-label="Documentos selecionados">
-        <li v-for="(file, index) in files" :key="index" class="flex items-center justify-between gap-3 py-2">
-          <span class="min-w-0 break-words text-sm">{{ file.name }} <span class="text-xs text-dj-muted">({{ fileSize(file.size) }})</span></span>
-          <SecondaryButton type="button" icon="pi pi-times" text :aria-label="'Remover ' + file.name" :disabled="locked"
-            pt:root:class="size-10 shrink-0 rounded-xl" @click="files.splice(index, 1); validateFiles()" />
-        </li>
-      </ul>
+      <div class="grid items-start gap-6" :class="{ 'lg:grid-cols-2': !isError }">
+        <div class="min-w-0">
+          <p class="mb-4 text-sm leading-6 text-dj-muted">{{ isError ? 'Anexe uma imagem ou documento que ajude a entender o erro.' : 'Anexe documentos que representem o fluxo e facilitem a análise da demanda.' }}</p>
+          <FormField :id="formId + '-files'" label="Documentos *" :error="errors.files">
+            <input :id="formId + '-files'" ref="fileInput" type="file" multiple :accept="fileAccept" :disabled="locked"
+              :aria-invalid="Boolean(errors.files)" :aria-describedby="formId + '-file-help' + (errors.files ? ' ' + formId + '-files-error' : '')"
+              class="block w-full rounded-xl border border-dashed border-dj-border bg-dj-canvas p-4 text-sm text-dj-muted file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-dj-brand file:px-4 file:py-2 file:text-white"
+              @change="selectFiles" />
+          </FormField>
+          <p :id="formId + '-file-help'" class="mt-3 text-xs leading-5 text-dj-muted">Até 10 arquivos, 10 MB por arquivo e 40 MB no total. Word, Excel, PowerPoint, PDF, texto e imagens.</p>
+          <ul v-if="files.length" class="mt-4 divide-y divide-dj-border" aria-label="Documentos selecionados">
+            <li v-for="(file, index) in files" :key="index" class="flex items-center justify-between gap-3 py-2">
+              <span class="min-w-0 break-words text-sm">{{ file.name }} <span class="text-xs text-dj-muted">({{ fileSize(file.size) }})</span></span>
+              <SecondaryButton type="button" icon="pi pi-times" text :aria-label="'Remover ' + file.name" :disabled="locked"
+                pt:root:class="size-10 shrink-0 rounded-xl" @click="files.splice(index, 1); validateFiles()" />
+            </li>
+          </ul>
+        </div>
+        <figure v-if="!isError" class="min-w-0 rounded-2xl border border-dj-border bg-dj-canvas p-3">
+          <a href="/static/images/FLUXO.PNG" target="_blank" rel="noopener noreferrer" class="block rounded-xl"
+            aria-label="Abrir exemplo de fluxo em tamanho original (abre em outra aba)">
+            <img src="/static/images/FLUXO.PNG" alt="Exemplo de fluxo para detalhar uma demanda"
+              class="block max-h-80 w-full rounded-xl object-contain" />
+          </a>
+          <figcaption class="mt-3 text-center text-xs leading-5 text-dj-muted">Exemplo de fluxo da demanda</figcaption>
+        </figure>
+      </div>
     </fieldset>
     <Message v-if="serverError" severity="error" class="mt-5" role="alert">{{ serverError }}</Message>
     <Message v-if="uncertain" severity="warn" class="mt-3">
