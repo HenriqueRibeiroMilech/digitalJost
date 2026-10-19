@@ -46,6 +46,8 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const formElement = ref<HTMLFormElement | null>(null)
 const submissionKey = ref(crypto.randomUUID())
 const formId = props.request ? `request-edit-${props.request.id}` : 'request-new'
+// URL servida pelo Flask; o binding evita convertê-la em import de asset pelo Vite.
+const flowExampleUrl = '/static/images/FLUXO.PNG'
 const isError = computed(() => fields.entry_kind === 'erro')
 const totalBytes = computed(() => files.value.reduce((sum, file) => sum + file.size, 0))
 const detailFields = [
@@ -217,9 +219,9 @@ async function submit() {
           </ul>
         </div>
         <figure v-if="!isError" class="min-w-0 rounded-2xl border border-dj-border bg-dj-canvas p-3">
-          <a href="/static/images/FLUXO.PNG" target="_blank" rel="noopener noreferrer" class="block rounded-xl"
+          <a :href="flowExampleUrl" target="_blank" rel="noopener noreferrer" class="block rounded-xl"
             aria-label="Abrir exemplo de fluxo em tamanho original (abre em outra aba)">
-            <img src="/static/images/FLUXO.PNG" alt="Exemplo de fluxo para detalhar uma demanda"
+            <img :src="flowExampleUrl" alt="Exemplo de fluxo para detalhar uma demanda"
               class="block max-h-80 w-full rounded-xl object-contain" />
           </a>
           <figcaption class="mt-3 text-center text-xs leading-5 text-dj-muted">Exemplo de fluxo da demanda</figcaption>
