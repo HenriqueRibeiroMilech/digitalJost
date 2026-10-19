@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { RouterLink } from 'vue-router'
+</script>
+
 <template>
   <div class="min-h-screen bg-dj-canvas">
     <header class="dj-app-header">
@@ -8,7 +12,11 @@
           </span>
           <span class="text-xl font-medium">Digital <strong class="font-bold">JOST</strong></span>
         </div>
-        <nav aria-label="Navegação principal">
+        <nav aria-label="Navegação principal" class="flex flex-wrap items-center gap-2">
+          <RouterLink to="/eventos" class="rounded-lg px-3 py-2 text-sm hover:bg-white/10"
+            active-class="bg-white/15" aria-current-value="page">Eventos</RouterLink>
+          <RouterLink to="/demandas/solicitacoes" class="rounded-lg px-3 py-2 text-sm hover:bg-white/10"
+            active-class="bg-white/15" aria-current-value="page">Solicitações</RouterLink>
           <a href="/" class="inline-flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-sm
             transition-colors hover:border-white/40 hover:bg-white/10 focus-visible:outline-white">
             <i class="pi pi-arrow-up-left text-xs" aria-hidden="true" />

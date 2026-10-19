@@ -10,6 +10,11 @@ export default createRouter({
       component: () => import('@/features/events/pages/EventsPage.vue'),
     },
     {
+      path: '/demandas/solicitacoes',
+      name: 'demand-requests',
+      component: () => import('@/features/demands/pages/RequestsPage.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       component: () => import('@/app/pages/NotFoundPage.vue'),
     },

@@ -8,6 +8,7 @@ Esta pasta reúne a documentação oficial do projeto. O nome `handbook` signifi
 | [Padrão visual](padrao-visual.md) | Identidade, largura das telas, grade de quatro cards no desktop e componentes compartilhados da modernização. |
 | [Campos e tipos de Eventos](eventos.md) | Cadastro de tipos pelo Select, instrutor/conteúdo opcionais, contratos e publicação. |
 | [Listas de presença](listas-de-presenca.md) | Listas de um evento, leitura de crachá, contratos, publicação e conferência em ambiente autorizado. |
+| [Solicitações de demandas](solicitacoes-demandas.md) | Nova solicitação e Minhas solicitações, tabelas novas, anexos privados e convivência com o gerenciador antigo. |
 | [Servidor e publicação](servidor-e-publicacao.md) | IIS, serviços Windows, dependências offline, publicação no servidor e retorno à versão anterior. |
 | [Publicação no Azure](publicacao-azure.md) | Passo a passo para gerar o ZIP filtrado, substituir o código preservando .git e publicar a versão oficial no Azure. |
 

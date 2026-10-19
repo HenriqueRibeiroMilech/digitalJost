@@ -2,6 +2,8 @@
 
 **Situação:** proposta de produto e arquitetura para discussão. Não descreve uma implementação pronta nem autoriza mudanças no banco.
 
+**Decisão posterior — primeira entrega em 19/10/2026:** o responsável escolheu tabelas novas e convivência com o sistema antigo. O cadastro moderno usa `DJ_DEMANDS`, com anexos e histórico próprios. Essa decisão substitui a alternativa de reaproveitar `JDT_REQUEST_IMPROVEMENTS_SMALL` e `JDT_DEMAND_MANAGEMENT` descrita nas seções 3.1, 10 e 11.2 abaixo. A primeira tela tem somente Nova solicitação e Minhas solicitações; a entrada permite Solicitar demanda ou Reportar erro, e a classificação fica para o futuro gerenciador. Não há migração de dados nem integração ao gerenciador antigo nesta etapa. A implementação e o SQL proposto estão descritos em [Solicitações de demandas](solicitacoes-demandas.md). As demais ideias deste documento continuam como propostas.
+
 O objetivo é criar um gerenciador que ajude a equipe a decidir o que fazer, executar com clareza e mostrar o que foi entregue. A experiência deve acompanhar a modernização de `/app/eventos`, com cadastro simples, informações confiáveis e histórico de decisões.
 
 ## 1. O que já foi definido e o que é sugestão

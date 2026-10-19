@@ -19,7 +19,8 @@ async function requestBody(
   const writing = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   const headers = new Headers(options.headers)
   headers.set('Accept', format === 'pdf' ? 'application/pdf, application/json' : 'application/json')
-  if (options.body) headers.set('Content-Type', 'application/json')
+  // FormData precisa do boundary multipart definido pelo próprio navegador.
+  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (writing) {
     const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content
     if (!token) throw new ApiError('Atualize a página para renovar a segurança da sessão.', 400)
@@ -73,8 +74,8 @@ async function requestBody(
   return body
 }
 
-export async function requestJson<T>(path: string, options: RequestInit = {}): Promise<T> {
-  return await requestBody(path, options) as T
+export async function requestJson<T>(path: string, options: RequestInit = {}, timeoutMs = 10000): Promise<T> {
+  return await requestBody(path, options, 'json', timeoutMs) as T
 }
 
 export async function requestPdf(path: string): Promise<Blob> {
