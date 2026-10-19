@@ -30,6 +30,8 @@ No cadastro de demanda, o exemplo de fluxo aparece como imagem ao lado dos docum
 
 Minhas solicitações inclui registros em que a pessoa é solicitante ou contribuinte. A busca por título é literal; também aceita o número, com ou sem `#`. Filtro de tipo, contagem e paginação são aplicados no servidor. A página usa 12 cards por página e apresenta os estados de carregamento, vazio e falha.
 
+Os cards usam a variante compacta do `RecordCard`, com número e tipo no cabeçalho, status ao lado, título/resumo de até duas linhas e urgência/data agrupadas. A identificação de contribuinte ocupa uma linha, com o nome completo também disponível nos detalhes. A largura, as colunas e a paginação permanecem iguais. Os skeletons acompanham a apresentação compacta; os cards de Eventos mantêm o padrão anterior.
+
 O solicitante pode editar os dados enquanto o registro está em análise e sem classificação. O contribuinte pode consultar e baixar anexos, sem editar. A edição mantém os documentos existentes; substituição ou gestão de anexos após envio não faz parte desta etapa.
 
 ## Banco novo

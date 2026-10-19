@@ -36,12 +36,13 @@ O espaço entre cards é de 20 px. As colunas usam `minmax(0, 1fr)` para permiti
 | Identificação visual | `icon` para um PrimeIcon ou slot `marker` para conteúdo específico, como a data do evento. |
 | Identificador ou etiqueta | Slot `badge`, usando Tag Volt quando adequado. O texto precisa explicar o significado, sem depender somente da cor. |
 | Cor de identificação | `tone`: `brand`, `success` ou `neutral`. Controla a faixa superior, o marcador, a ação e o destaque ao interagir. A feature escolhe o tom. |
+| Densidade | `compact`, opcional e falso por padrão. Reduz espaços internos e no rodapé e dispensa alturas mínimas no título/resumo, mantendo o limite de duas linhas e a largura definida pela grade. |
 | Informações do domínio | Slot padrão, com os campos necessários para reconhecer o registro. |
 | Ação | Rótulo obrigatório em `actionLabel`, evento `open` e, quando necessário, `actionId` para restaurar o foco. `opensDialog` informa que a ação abre um diálogo. |
 
 O card inteiro é acionável por um botão nativo, incluindo Enter e Espaço. O rótulo acessível contém a ação e o título completo. Essa variante possui uma única ação; não coloque links, botões ou campos nos slots cobertos pelo botão. Se uma tela precisar de ações independentes, componha uma variante apropriada antes de adicionar controles que não poderão ser acionados.
 
-O título reserva duas linhas e o resumo mantém uma altura mínima uniforme. A ação fica no rodapé. Elevação, sombra e destaque da seta acompanham somente o hover; o foco de teclado usa o contorno `:focus-visible` do botão. Restaurar o foco ao fechar um modal não mantém o card elevado. A elevação por movimento respeita `prefers-reduced-motion`. Para superfícies apenas informativas, o `Card` Volt continua disponível.
+Na densidade padrão, o título reserva duas linhas e o resumo mantém uma altura mínima uniforme. Minhas solicitações usa a variante compacta; Eventos mantém a densidade padrão. A ação fica no rodapé. Elevação, sombra e destaque da seta acompanham somente o hover; o foco de teclado usa o contorno `:focus-visible` do botão. Restaurar o foco ao fechar um modal não mantém o card elevado. A elevação por movimento respeita `prefers-reduced-motion`. Para superfícies apenas informativas, o `Card` Volt continua disponível.
 
 Em Eventos, `EventCard` continua responsável por selecionar os campos, formatar o período, apresentar dia/mês e o rótulo de status e emitir a abertura do evento. `RecordCard` não consulta a API, não conhece permissões e não calcula status ou regras de negócio.
 

@@ -130,11 +130,15 @@ async function detailClosed() {
         error-message="Não foi possível carregar suas solicitações." @retry="refetch()">
         <template #loading>
           <CardGrid>
-            <div v-for="index in 12" :key="index" class="rounded-dj-card border border-dj-border bg-dj-surface p-5 shadow-dj-card">
-              <Skeleton width="3rem" height="3rem" border-radius="0.75rem" />
-              <Skeleton width="85%" height="3rem" class="mt-4" />
-              <Skeleton width="100%" height="6rem" class="mt-4" />
-              <Skeleton width="100%" height="2rem" class="mt-4" />
+            <div v-for="index in 12" :key="index" class="rounded-dj-card border border-dj-border bg-dj-surface p-4 shadow-dj-card">
+              <div class="flex items-center justify-between gap-3">
+                <Skeleton width="7rem" height="1.5rem" />
+                <Skeleton width="4rem" height="1.5rem" border-radius="1rem" />
+              </div>
+              <Skeleton width="85%" height="2.5rem" class="mt-3" />
+              <Skeleton width="100%" height="2.5rem" class="mt-1.5" />
+              <Skeleton width="75%" height="1.25rem" class="mt-3" />
+              <Skeleton width="100%" height="1.75rem" class="mt-3" />
             </div>
           </CardGrid>
         </template>
