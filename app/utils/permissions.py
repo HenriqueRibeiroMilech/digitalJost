@@ -17,7 +17,7 @@ _DEVIATION = Permission(RoleNeed('Desvios'), _ADMIN)
 _T_ASSEMBLY = Permission(RoleNeed('Rastreabilidade - Montagem'), _ADMIN)
 _T_ASSEMBLY_PLATES = Permission(RoleNeed('Rastreabilidade - Montagem'), RoleNeed('Rastreabilidade - Montagem Plaqueta'), _ADMIN)
 _MATRIX = Permission(RoleNeed('Matriz'), _ADMIN)
-_GOAL_OP_M = Permission(RoleNeed('Metas - Operation Meeting'), _ADMIN)
+_GOAL_OP_M = Permission(RoleNeed('Metas - Operation Meeting'), RoleNeed('Engenharia de Processo'), _ADMIN)
 _COMMS = Permission(RoleNeed('Comunicação Interna'), _ADMIN)
 
 _SYSADMIN = Permission(_ADMIN)
