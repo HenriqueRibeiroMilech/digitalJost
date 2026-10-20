@@ -25,6 +25,13 @@ def _permissions():
     return RolePermissions(identity.can_access, ACTION_ROLES)
 
 
+def _service_deps():
+    return {
+        "engine": get_td_engine(),
+        "permissions": _permissions(),
+    }
+
+
 @demands_bp.before_request
 def validate_area_and_size():
     if request.args.get("area", AREA_NAME) != AREA_NAME:
@@ -78,7 +85,7 @@ def invalid_payload(error):
 @demands_bp.output(RequestList)
 def list_requests(query_data):
     return services.list_requests(
-        query_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        query_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -99,7 +106,7 @@ def create_request():
     data = RequestCreate.model_validate_json(request.form["payload"])
     return services.create_request(
         data, request.files.getlist("files"), identity.current_actor(),
-        engine=get_td_engine(), permissions=_permissions(),
+        **_service_deps(),
         storage=current_app.extensions["demands_attachment_storage"],
     )
 
@@ -108,7 +115,7 @@ def create_request():
 @demands_bp.output(RequestDetail)
 def get_request(demand_id):
     return services.get_request(
-        demand_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        demand_id, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -117,7 +124,7 @@ def get_request(demand_id):
 @demands_bp.output(RequestDetail)
 def update_request(demand_id, json_data):
     return services.update_request(
-        demand_id, json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        demand_id, json_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -125,7 +132,7 @@ def update_request(demand_id, json_data):
 def download_attachment(demand_id, attachment_id):
     path, name = services.get_attachment(
         demand_id, attachment_id, identity.current_actor(),
-        engine=get_td_engine(), permissions=_permissions(),
+        **_service_deps(),
         storage=current_app.extensions["demands_attachment_storage"],
     )
     response = send_file(path, as_attachment=True, download_name=name, mimetype="application/octet-stream",

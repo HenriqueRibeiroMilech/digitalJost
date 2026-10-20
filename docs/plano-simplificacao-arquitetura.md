@@ -151,6 +151,8 @@ def create_request(data, files, actor, *, engine, permissions, storage):
 
 As rotas obtêm o usuário autenticado e os recursos compostos pela aplicação. O Service recebe esses valores explicitamente; o Repository recebe a conexão que participa da operação.
 
+Eventos e Demandas usam um `_service_deps()` local em `routes.py` para reunir engine e permissões repetidos. `**_service_deps()` apenas expande o dicionário em argumentos nomeados; as assinaturas dos Services permanecem iguais. O usuário continua visível por `identity.current_actor()`, e LDAP e armazenamento são passados separadamente nas operações que os utilizam. O helper é opcional nas próximas features, criado somente quando reduzir repetição; não é uma infraestrutura compartilhada nem um executor de operações. Seu resultado não deve ser armazenado globalmente, e as consultas diretas ao Repository permanecem como estão.
+
 Não buscar `request`, `current_user`, `current_app` ou engines globais dentro dos Services e repositórios. O acesso ao contexto Flask deve ficar na entrada HTTP e na infraestrutura destinada a atendê-la.
 
 Manter classes que representam contratos ou adaptadores úteis, como modelos Pydantic, `Actor`, `RolePermissions`, `EmployeeDirectory` e `DemandAttachmentStorage`. Não convertê-las apenas para uniformizar a sintaxe.

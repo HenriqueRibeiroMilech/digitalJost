@@ -48,6 +48,13 @@ def _permissions():
     return RolePermissions(identity.can_access, ACTION_ROLES)
 
 
+def _service_deps():
+    return {
+        "engine": get_td_engine(),
+        "permissions": _permissions(),
+    }
+
+
 @events_bp.errorhandler(EventNotFoundError)
 def event_not_found(error):
     return api_error(404, message="Evento não encontrado ou já excluído.")
@@ -87,7 +94,7 @@ def list_event_types():
 @events_bp.output(EventTypeOut)
 def create_event_type(json_data):
     return services.create_event_type(
-        json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        json_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -105,7 +112,7 @@ def event_type_in_use(error):
 @events_bp.output(EventTypeDeleted)
 def delete_event_type(event_type_id):
     return services.delete_event_type(
-        event_type_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_type_id, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -140,7 +147,7 @@ def attendance_pdf_unavailable(error):
 @events_bp.output(EventList)
 def list_events(query_data):
     return services.list_events(
-        query_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        query_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -149,7 +156,7 @@ def list_events(query_data):
 @events_bp.output(EventOut, status_code=201)
 def create_event(json_data):
     return services.create_event(
-        json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        json_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -157,7 +164,7 @@ def create_event(json_data):
 @events_bp.output(EventDetail)
 def get_event(event_id):
     return services.get_event(
-        event_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -166,7 +173,7 @@ def get_event(event_id):
 @events_bp.output(EventOut)
 def update_event(event_id, json_data):
     return services.update_event(
-        event_id, json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, json_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -174,7 +181,7 @@ def update_event(event_id, json_data):
 @events_bp.output(EventDeleted)
 def delete_event(event_id):
     return services.delete_event(
-        event_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -183,7 +190,7 @@ def delete_event(event_id):
 @events_bp.output(AttendanceLists)
 def list_attendance_lists(event_id, query_data):
     return services.list_attendance_lists(
-        event_id, query_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, query_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -192,7 +199,7 @@ def list_attendance_lists(event_id, query_data):
 @events_bp.output(AttendanceListOut, status_code=201)
 def create_attendance_list(event_id, json_data):
     return services.create_attendance_list(
-        event_id, json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, json_data, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -200,7 +207,7 @@ def create_attendance_list(event_id, json_data):
 @events_bp.output(AttendanceListDetail)
 def get_attendance_list(event_id, list_id):
     return services.get_attendance_list(
-        event_id, list_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, list_id, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -210,7 +217,7 @@ def get_attendance_list(event_id, list_id):
 def update_attendance_list(event_id, list_id, json_data):
     return services.update_attendance_list(
         event_id, list_id, json_data, identity.current_actor(),
-        engine=get_td_engine(), permissions=_permissions(),
+        **_service_deps(),
     )
 
 
@@ -218,7 +225,7 @@ def update_attendance_list(event_id, list_id, json_data):
 @events_bp.output(AttendanceDeleted)
 def delete_attendance_list(event_id, list_id):
     return services.delete_attendance_list(
-        event_id, list_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, list_id, identity.current_actor(), **_service_deps(),
     )
 
 
@@ -228,14 +235,14 @@ def delete_attendance_list(event_id, list_id):
 def list_attendance_entries(event_id, list_id, query_data):
     return services.list_attendance_entries(
         event_id, list_id, query_data, identity.current_actor(),
-        engine=get_td_engine(), permissions=_permissions(),
+        **_service_deps(),
     )
 
 
 @events_bp.get("/<int:event_id>/attendance-lists/<int:list_id>/pdf")
 def export_attendance_pdf(event_id, list_id):
     document = services.export_attendance_pdf(
-        event_id, list_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        event_id, list_id, identity.current_actor(), **_service_deps(),
     )
     response = send_file(
         document, mimetype="application/pdf", as_attachment=True,
@@ -254,7 +261,7 @@ def export_attendance_pdf(event_id, list_id):
 def register_attendance(event_id, list_id, json_data):
     return services.register_attendance(
         event_id, list_id, json_data, identity.current_actor(),
-        engine=get_td_engine(), permissions=_permissions(),
+        **_service_deps(),
         employee_directory=current_app.extensions["backend_employee_directory"],
     )
 
@@ -264,7 +271,7 @@ def register_attendance(event_id, list_id, json_data):
 def delete_attendance_entry(event_id, list_id, entry_id):
     return services.delete_attendance_entry(
         event_id, list_id, entry_id, identity.current_actor(),
-        engine=get_td_engine(), permissions=_permissions(),
+        **_service_deps(),
     )
 
 

@@ -49,6 +49,8 @@ Gravação simples não coordena várias gravações, arquivos, integrações, t
 
 SQL fica sempre no Repository, recebendo a conexão da operação, sem Flask ou commit próprio. Não copiar `app/config.py`, credenciais, pool ou autenticação para a feature. Não criar classe base de CRUD, formulário gerado por schema ou arquivos vazios. Os componentes compartilhados cuidam da apresentação; as regras continuam explícitas.
 
+Quando várias rotas repetirem as mesmas dependências de Service, usar um helper local e opcional `_service_deps()` em `routes.py`. Ele retorna somente as dependências comuns daquele módulo; `**_service_deps()` as passa como argumentos nomeados. Manter `identity.current_actor()` visível na chamada e fornecer LDAP, armazenamento e outras dependências especiais separadamente, apenas onde necessários. Chamar o helper durante a requisição, sem guardar seu resultado globalmente. Consultas diretas ao Repository continuam usando seus recursos diretamente; não criar um helper compartilhado ou um executor genérico de Services.
+
 ## 4. Exemplo mínimo usando Eventos
 
 Estes trechos documentam uma parte da feature já existente. Não acrescentar outro registro de Eventos ou substituir o módulo completo por este recorte de leitura.
@@ -76,12 +78,15 @@ ACTION_ROLES = {
 def _permissions():
     return RolePermissions(identity.can_access, ACTION_ROLES)
 
+def _service_deps():
+    return {"engine": get_td_engine(), "permissions": _permissions()}
+
 @events_bp.get("")
 @events_bp.input(EventQuery, location="query")
 @events_bp.output(EventList)
 def list_events(query_data):
     return services.list_events(
-        query_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+        query_data, identity.current_actor(), **_service_deps(),
     )
 ```
 
@@ -340,11 +345,10 @@ Eventos já exemplifica esse caminho. O cadastro valida horário e existência d
 
 ```python
 return services.create_event(
-    json_data, identity.current_actor(),
-    engine=get_td_engine(), permissions=_permissions(),
+    json_data, identity.current_actor(), **_service_deps(),
 )
 ```
 
-Demandas acrescenta armazenamento somente à criação e ao download; Eventos acrescenta o diretório somente ao registro de presença. Essas dependências são compostas uma vez no bootstrap e recuperadas na entrada HTTP. Os Services não importam contexto Flask, e classes dos adaptadores continuam existindo.
+Eventos e Demandas reúnem engine e permissões em `_service_deps()` local. Demandas acrescenta armazenamento somente à criação e ao download; Eventos acrescenta o diretório somente ao registro de presença. Esses adaptadores são compostos uma vez no bootstrap e recuperados na entrada HTTP, sem entrar no dicionário de dependências comuns. Os Services não importam contexto Flask, e classes dos adaptadores continuam existindo.
 
 **O sistema não foi executado; a validação foi somente estática.**
