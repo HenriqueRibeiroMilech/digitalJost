@@ -478,6 +478,7 @@ def planning_area_post(areaId):
                 ).rename(columns={'Workcenter_Name': 'Label'})
 
                 df = pd.merge(df, s_goal, how='left', left_on=['Event_Code', 'Workcenter_Key'], right_on=['event', 'workcenter'])
+                df['Stop_Count'] = df['Log_Minutes_Count']
                 df['Log_Minutes_Sum'] = df['Log_Minutes_Sum'] / df['Log_Minutes_Count']
                 df['Log_Minutes_Count'] = df['goal'].fillna(0)
                 

@@ -2,10 +2,18 @@ function createBarChart(data, title, elementId) {
 
     const maxYValue = Math.max(...data.map(item => Math.max(item.Log_Minutes_Sum, item.Log_Minutes_Count)));
     const isGoalChart = title.toLowerCase().includes('meta x média');
-    const hover1 = isGoalChart ? 'Meta em minutos' : 'Quantidade de Paradas';
+    const hover1 = isGoalChart ? 'Meta (min)' : 'Quantidade de Paradas';
     const hover2 = isGoalChart ? 'Duração média das paradas (min)' : 'Minutos Parados';
+    const hoverData = isGoalChart ? data.map(item => {
+        const label = String(item.Label);
+        const separator = label.indexOf('-');
+        const center = separator >= 0 ? label.slice(0, separator).trim() : label;
+        const description = separator >= 0 ? label.slice(separator + 1).trim() : '';
+        return [center, description, item.Stop_Count];
+    }) : undefined;
     var trace1 = {
         name: hover1,
+        customdata: hoverData,
         x: data.map(item => item.Label),
         y: data.map(item => item.Log_Minutes_Count.toFixed(0)),
         type: 'bar',
@@ -20,12 +28,15 @@ function createBarChart(data, title, elementId) {
                         color: 'black'
                     },
         textposition: 'outside',
-        hovertemplate: `<b>%{x}</b><br>Valor: %{y}<br><b>${hover1}</b><extra></extra>`
+        hovertemplate: isGoalChart
+            ? '<b>%{customdata[0]}</b><br>%{customdata[1]}<br>Meta de tempo: %{y} min<extra></extra>'
+            : `<b>%{x}</b><br>Valor: %{y}<br><b>${hover1}</b><extra></extra>`
 
     };
 
     var trace2 = {
         name: hover2,
+        customdata: hoverData,
         x: data.map(item => item.Label),
         y: data.map(item => item.Log_Minutes_Sum.toFixed(0)),
         type: 'bar',
@@ -40,7 +51,9 @@ function createBarChart(data, title, elementId) {
                         color: 'black'
                     },
         textposition: 'outside',
-        hovertemplate: `<b>%{x}</b><br>Valor: %{y}<br><b>${hover2}</b><extra></extra>`
+        hovertemplate: isGoalChart
+            ? '<b>%{customdata[0]}</b><br>%{customdata[1]}<br>Tempo médio: %{y} min<br>Número de paradas: %{customdata[2]}<extra></extra>'
+            : `<b>%{x}</b><br>Valor: %{y}<br><b>${hover2}</b><extra></extra>`
     };
 
     var layout = {
