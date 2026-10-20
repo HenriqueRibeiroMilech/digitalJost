@@ -2,6 +2,11 @@
 
 AREA_NAME = "Transformação Digital"
 AREA_ID = 1
+ACTION_ROLES = {
+    "demands.read": "GENERAL",
+    "demands.create": "GENERAL",
+    "demands.update": "GENERAL",
+}
 MAX_FILES = 10
 MAX_FILE_BYTES = 10 * 1024 * 1024
 MAX_TOTAL_BYTES = 40 * 1024 * 1024

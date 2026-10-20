@@ -45,8 +45,8 @@ PowerShell e utilitários externos só podem tratar arquivos como texto. Não us
 
 ## 3. Contexto mínimo do projeto
 
-- Monólito Flask/Jinja hospedado em Windows/IIS.
-- `main.py` é a fonte de verdade para blueprints ativos.
+- Monólito Flask/APIFlask hospedado em Windows/IIS, com Jinja no legado e Vue 3 no frontend moderno.
+- `main.py` registra os blueprints legados; `app/config.py` chama `backend/bootstrap.py`, e `backend/modules/__init__.py` registra os modernos.
 - `app/config.py` cria o Flask e configura SQLAlchemy, login, permissões, e-mail e ciclo global.
 - `app/routes/` contém o backend por domínio.
 - `app/templates/` contém páginas Jinja, JavaScript incluído e templates de e-mail.
@@ -54,6 +54,8 @@ PowerShell e utilitários externos só podem tratar arquivos como texto. Não us
 - `app/static/js/operation.planning/` e `app/static/js/demand-management/` contêm scripts compartilhados.
 - `app/static/uploads/` contém dados operacionais, não fixtures.
 - `app/services/` contém quatro schedulers Windows e seus jobs.
+- `backend/modules/` contém as funcionalidades modernas; `backend/platform/` fornece a infraestrutura comum e `backend/compatibility/` concentra a ponte com o legado.
+- `frontend/src/features/` contém as telas Vue modernas; elas reutilizam o cliente HTTP e os componentes de `frontend/src/shared/`.
 - A maior parte do acesso a dados usa SQL textual, pandas, SQLAlchemy ou pyodbc.
 - Engines principais: `jdt`, `ftm`, `plex` e `trace_qr`.
 - Integrações: IIS/Windows Auth, LDAP, SMTP, SAP SOAP, Oracle, Microsoft Graph/Teams, Power BI, FTWeb e SSRS.
@@ -112,7 +114,7 @@ Rastreie a cadeia completa:
 
 ```text
 URL, menu ou botão
-  → blueprint registrado em main.py/create_app()
+  → blueprint registrado em main.py ou backend/modules/__init__.py via create_app()
   → before_request e decorators de permissão
   → handlers de todos os métodos HTTP
   → template, JSON, arquivo ou redirect retornado
@@ -130,7 +132,25 @@ Não analise apenas GET. O projeto concentra regras em POST, PATCH, PUT e DELETE
 
 ### Arquitetura de novas features Flask
 
-Para features novas, prefira uma organização autocontida por domínio, seguindo o padrão adotado no Gerenciador de Demandas:
+Funcionalidades modernas ficam em `backend/modules/<feature>/`, com frontend Vue em `frontend/src/features/<feature>/`. Preserve as pastas atuais de `app/` durante a transição.
+
+```text
+backend/modules/<feature>/
+├── __init__.py          # exporta blueprints; registro explícito em modules/__init__.py
+├── routes.py            # HTTP, schemas, autorização e composição
+├── schemas.py           # contratos Pydantic de entrada e saída
+├── repository.py        # SQL parametrizado; recebe conexão, sem Flask ou commit próprio
+├── services.py          # funções de caso de uso, quando necessárias
+└── domain.py            # definições e erros do domínio, quando necessários
+```
+
+Consultas simples podem ir da rota ao Repository. Gravações simples também podem dispensar Service quando não coordenam várias gravações, não envolvem arquivos ou integrações, não decidem regras de negócio ou transições, não exigem autorização por registro, concorrência especial ou idempotência e não precisam de reutilização por outra entrada. Nesses casos, a rota autoriza a ação e controla a transação com o engine compartilhado. Se algum critério não for atendido, use Service funcional; GET também pode exigir Service.
+
+Services recebem explicitamente identidade e dependências, controlam os casos de uso e suas transações e não acessam diretamente o contexto HTTP. Não registre um objeto de Service por feature no bootstrap. Reutilize `get_td_engine`, `configure_api`, `page_access` e a ponte de identidade. Preserve autorização por ação e registro, CSRF, schemas, rollback, auditoria e concorrência existentes. Os Repositories recebem a conexão da operação e não fazem commits independentes.
+
+Não crie camadas vazias, classes base de CRUD ou descoberta automática de módulos. Classes de contratos e adaptadores continuam adequadas. Consulte [a base compartilhada](docs/base-compartilhada-novas-features.md) para os exemplos e [o plano de simplificação](docs/plano-simplificacao-arquitetura.md) para critérios e cuidados.
+
+Nas alterações que permanecem no legado Flask/Jinja, preserve a organização autocontida já utilizada pelo Gerenciador de Demandas:
 
 ```text
 app/
@@ -149,13 +169,13 @@ app/
         └── pagina.js        # estado da tela, eventos, renderização e chamadas à API
 ```
 
-No backend, `routes.py` deve traduzir requisições e respostas sem conter SQL ou regras extensas; `services.py` coordena os casos de uso e os limites das transações; e `repository.py` concentra as consultas ao banco sem conhecer Flask. Use `domain.py` e `integration.py` somente quando essas responsabilidades realmente existirem. Não crie arquivos vazios ou camadas artificiais: uma feature pequena pode começar apenas com `__init__.py`, `routes.py`, `services.py` e `repository.py`.
+Nesse padrão legado, `routes.py` deve traduzir requisições e respostas sem conter SQL ou regras extensas; `services.py` coordena os casos de uso e os limites das transações; e `repository.py` concentra as consultas ao banco sem conhecer Flask. Use `domain.py` e `integration.py` somente quando essas responsabilidades realmente existirem. Não crie arquivos vazios ou camadas artificiais.
 
-No frontend, mantenha o HTML estrutural no template Jinja, o CSS em `app/static/CSS/` e o JavaScript em `app/static/js/`. Essa separação é o padrão correto do Flask: templates são renderizados no servidor, enquanto CSS e JavaScript são arquivos estáticos servidos diretamente. Use o mesmo nome ou prefixo da feature nessas pastas para que os arquivos continuem fáceis de localizar como uma unidade.
+No frontend legado, mantenha o HTML estrutural no template Jinja, o CSS em `app/static/CSS/` e o JavaScript em `app/static/js/`. Templates são renderizados no servidor, enquanto CSS e JavaScript são arquivos estáticos servidos diretamente. Use o mesmo nome ou prefixo da feature nessas pastas para que os arquivos continuem fáceis de localizar como uma unidade.
 
 O template pode expor para o JavaScript apenas uma configuração pequena gerada pelo Jinja, como URLs produzidas por `url_for`, área atual e token CSRF. A lógica de interação, estado, eventos, `fetch` e atualização da interface deve permanecer no arquivo `.js`; estilos e regras responsivas ficam no `.css`. Prefira classes CSS com prefixo da feature para evitar conflito com telas legadas. Regras de autorização e de negócio continuam obrigatoriamente no backend, mesmo quando a interface também faz validações.
 
-Arquivos JavaScript já existentes dentro de `templates` podem depender diretamente de variáveis Jinja e não devem ser movidos por estética. Para features novas, prefira JavaScript em `static` e passe os poucos valores dinâmicos necessários por um objeto de configuração no HTML, como feito no Gerenciador de Demandas.
+Arquivos JavaScript já existentes dentro de `templates` podem depender diretamente de variáveis Jinja e não devem ser movidos por estética. Ao ampliar uma tela legada, prefira JavaScript em `static` e passe os poucos valores dinâmicos necessários por um objeto de configuração no HTML. Novas telas modernas usam Vue e os contratos da API.
 
 ### Segurança e dados sensíveis
 

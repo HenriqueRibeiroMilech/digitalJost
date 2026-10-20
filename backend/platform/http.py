@@ -3,7 +3,7 @@
 from functools import wraps
 
 from apiflask import HTTPError
-from flask import abort, current_app, jsonify, redirect, request, url_for
+from flask import abort, jsonify, redirect, request, url_for
 
 from .csrf import has_valid_csrf
 
@@ -76,7 +76,3 @@ def page_access(*, identity, permission):
             return view(*args, **kwargs)
         return authorized
     return decorate
-
-
-def get_service(name):
-    return current_app.extensions[name]

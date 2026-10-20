@@ -1,11 +1,14 @@
 from apiflask import APIBlueprint
-from flask import Blueprint, redirect, send_file, url_for
+from flask import Blueprint, current_app, redirect, send_file, url_for
 
 from backend.compatibility import identity
-from backend.platform.http import api_error, configure_api, get_service, page_access
+from backend.platform.database import get_td_engine
+from backend.platform.http import api_error, configure_api, page_access
+from backend.platform.identity import RolePermissions
 from backend.platform.schemas import PaginationQuery
 from backend.platform.vue_shell import render_vue_shell
 
+from . import repository, services
 from .schemas import (
     AttendanceCreate, AttendanceDeleted, AttendanceEntries, AttendanceListCreate, AttendanceListDetail,
     AttendanceListOut, AttendanceLists, AttendanceRegistered,
@@ -20,9 +23,29 @@ from .services import (
 )
 
 
+ACTION_ROLES = {
+    "events.read": "GENERAL",
+    "events.create": "GENERAL",
+    "events.update": "GENERAL",
+    "events.delete": "GENERAL",
+    "events.types.create": "GENERAL",
+    "events.types.delete": "GENERAL",
+    "events.attendance.read": "GENERAL",
+    "events.attendance.export": "GENERAL",
+    "events.attendance.create": "GENERAL",
+    "events.attendance.register": "GENERAL",
+    "events.attendance.update": "GENERAL",
+    "events.attendance.delete": "GENERAL",
+    "events.attendance.delete_entry": "GENERAL",
+}
+
 events_bp = APIBlueprint("events", __name__, url_prefix="/api/v1/events")
 events_shell_bp = Blueprint("events_shell", __name__)
 configure_api(events_bp, identity=identity, permission="GENERAL")
+
+
+def _permissions():
+    return RolePermissions(identity.can_access, ACTION_ROLES)
 
 
 @events_bp.errorhandler(EventNotFoundError)
@@ -47,14 +70,25 @@ def invalid_event_type(error):
 @events_bp.get("/types")
 @events_bp.output(EventTypes)
 def list_event_types():
-    return get_service("events_service").list_event_types(identity.current_actor())
+    actor = identity.current_actor()
+    permissions = _permissions()
+    permissions.require(actor, "events.read")
+    with get_td_engine().connect() as connection:
+        items = repository.list_event_types(connection)
+    return {
+        "items": items,
+        "can_create": permissions.can(actor, "events.types.create"),
+        "can_delete": permissions.can(actor, "events.types.delete"),
+    }
 
 
 @events_bp.post("/types")
 @events_bp.input(EventTypeCreate)
 @events_bp.output(EventTypeOut)
 def create_event_type(json_data):
-    return get_service("events_service").create_event_type(json_data, identity.current_actor())
+    return services.create_event_type(
+        json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.errorhandler(EventTypeNotFoundError)
@@ -70,7 +104,9 @@ def event_type_in_use(error):
 @events_bp.delete("/types/<int:event_type_id>")
 @events_bp.output(EventTypeDeleted)
 def delete_event_type(event_type_id):
-    return get_service("events_service").delete_event_type(event_type_id, identity.current_actor())
+    return services.delete_event_type(
+        event_type_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.errorhandler(AttendanceListNotFoundError)
@@ -103,78 +139,104 @@ def attendance_pdf_unavailable(error):
 @events_bp.input(EventQuery, location="query")
 @events_bp.output(EventList)
 def list_events(query_data):
-    return get_service("events_service").list(query_data, identity.current_actor())
+    return services.list_events(
+        query_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.post("")
 @events_bp.input(EventCreate)
 @events_bp.output(EventOut, status_code=201)
 def create_event(json_data):
-    return get_service("events_service").create(json_data, identity.current_actor())
+    return services.create_event(
+        json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.get("/<int:event_id>")
 @events_bp.output(EventDetail)
 def get_event(event_id):
-    return get_service("events_service").get(event_id, identity.current_actor())
+    return services.get_event(
+        event_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.put("/<int:event_id>")
 @events_bp.input(EventCreate)
 @events_bp.output(EventOut)
 def update_event(event_id, json_data):
-    return get_service("events_service").update(event_id, json_data, identity.current_actor())
+    return services.update_event(
+        event_id, json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.delete("/<int:event_id>")
 @events_bp.output(EventDeleted)
 def delete_event(event_id):
-    return get_service("events_service").delete(event_id, identity.current_actor())
+    return services.delete_event(
+        event_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.get("/<int:event_id>/attendance-lists")
 @events_bp.input(PaginationQuery, location="query")
 @events_bp.output(AttendanceLists)
 def list_attendance_lists(event_id, query_data):
-    return get_service("events_service").list_attendance_lists(event_id, query_data, identity.current_actor())
+    return services.list_attendance_lists(
+        event_id, query_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.post("/<int:event_id>/attendance-lists")
 @events_bp.input(AttendanceListCreate)
 @events_bp.output(AttendanceListOut, status_code=201)
 def create_attendance_list(event_id, json_data):
-    return get_service("events_service").create_attendance_list(event_id, json_data, identity.current_actor())
+    return services.create_attendance_list(
+        event_id, json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.get("/<int:event_id>/attendance-lists/<int:list_id>")
 @events_bp.output(AttendanceListDetail)
 def get_attendance_list(event_id, list_id):
-    return get_service("events_service").get_attendance_list(event_id, list_id, identity.current_actor())
+    return services.get_attendance_list(
+        event_id, list_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.put("/<int:event_id>/attendance-lists/<int:list_id>")
 @events_bp.input(AttendanceListCreate)
 @events_bp.output(AttendanceListOut)
 def update_attendance_list(event_id, list_id, json_data):
-    return get_service("events_service").update_attendance_list(event_id, list_id, json_data, identity.current_actor())
+    return services.update_attendance_list(
+        event_id, list_id, json_data, identity.current_actor(),
+        engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.delete("/<int:event_id>/attendance-lists/<int:list_id>")
 @events_bp.output(AttendanceDeleted)
 def delete_attendance_list(event_id, list_id):
-    return get_service("events_service").delete_attendance_list(event_id, list_id, identity.current_actor())
+    return services.delete_attendance_list(
+        event_id, list_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.get("/<int:event_id>/attendance-lists/<int:list_id>/entries")
 @events_bp.input(PaginationQuery, location="query")
 @events_bp.output(AttendanceEntries)
 def list_attendance_entries(event_id, list_id, query_data):
-    return get_service("events_service").list_attendance_entries(event_id, list_id, query_data, identity.current_actor())
+    return services.list_attendance_entries(
+        event_id, list_id, query_data, identity.current_actor(),
+        engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_bp.get("/<int:event_id>/attendance-lists/<int:list_id>/pdf")
 def export_attendance_pdf(event_id, list_id):
-    document = get_service("events_service").export_attendance_pdf(event_id, list_id, identity.current_actor())
+    document = services.export_attendance_pdf(
+        event_id, list_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
     response = send_file(
         document, mimetype="application/pdf", as_attachment=True,
         download_name=f"lista-presenca-evento-{event_id}-lista-{list_id}.pdf",
@@ -190,13 +252,20 @@ def export_attendance_pdf(event_id, list_id):
 @events_bp.input(AttendanceCreate)
 @events_bp.output(AttendanceRegistered)
 def register_attendance(event_id, list_id, json_data):
-    return get_service("events_service").register_attendance(event_id, list_id, json_data, identity.current_actor())
+    return services.register_attendance(
+        event_id, list_id, json_data, identity.current_actor(),
+        engine=get_td_engine(), permissions=_permissions(),
+        employee_directory=current_app.extensions["backend_employee_directory"],
+    )
 
 
 @events_bp.delete("/<int:event_id>/attendance-lists/<int:list_id>/entries/<int:entry_id>")
 @events_bp.output(AttendanceDeleted)
 def delete_attendance_entry(event_id, list_id, entry_id):
-    return get_service("events_service").delete_attendance_entry(event_id, list_id, entry_id, identity.current_actor())
+    return services.delete_attendance_entry(
+        event_id, list_id, entry_id, identity.current_actor(),
+        engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @events_shell_bp.get("/app/")

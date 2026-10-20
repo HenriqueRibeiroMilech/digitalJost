@@ -34,7 +34,7 @@ Base: `/api/v1/events`. As rotas mantêm identidade, GENERAL e CSRF compartilhad
 | Operação | Contrato |
 |---|---|
 | GET `/types` | HTTP 200 com `{items: [{id, name}], can_create, can_delete}`; exige `events.read`. |
-| POST `/types` | `{name}`; HTTP 200 com `{id, name}`, tanto na criação quanto ao reutilizar nome existente. Exige `events.types.create`, mapeada para GENERAL no bootstrap. |
+| POST `/types` | `{name}`; HTTP 200 com `{id, name}`, tanto na criação quanto ao reutilizar nome existente. Exige `events.types.create`, mapeada para GENERAL em `backend/modules/events/routes.py`. |
 | DELETE `/types/<id>` | HTTP 200 com `{id}` após o commit; exige `events.types.delete`, mapeada para GENERAL. 404 se ausente e 409 se usado por algum evento. |
 | POST na base e PUT `/<id>` | Mantêm o contrato anterior e passam a exigir `event_type_id`; aceitam `instructor` e `syllabus` opcionais. |
 | GET na base e GET `/<id>`, retorno de POST/PUT | Acrescentam `event_type_id`, `event_type_name`, `instructor` e `syllabus`, anuláveis para registros antigos. |

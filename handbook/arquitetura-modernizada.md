@@ -26,7 +26,9 @@ Navegador
   → aplicação Flask criada por app/config.py
       ├─ app/: rotas e páginas antigas, usuários, integrações e jobs
       └─ backend/: shell Vue e APIs modernas
-          → serviço da feature → repositório → banco TD
+          → Repository em operações simples
+          → Service funcional → Repository nos casos de uso
+          → banco TD pela conexão compartilhada da operação
 
 frontend/: código Vue → build → backend/static/app/
 ```
@@ -36,8 +38,8 @@ Ainda existe **uma aplicação Flask compartilhada**. A separação em pastas pe
 | Área | Estado implementado |
 |---|---|
 | Entrada e aplicação | `main.py` e `app/config.py` continuam responsáveis pelo app e pelo ciclo global. A factory chama `backend/bootstrap.py`. |
-| Backend moderno | `backend/modules/` reúne os módulos; Eventos é o primeiro. O registro dos blueprints é explícito. |
-| Integrações modernas | `backend/integrations/employee_directory.py` consulta nome/setor no LDAP por matrícula. A composição injeta o cliente no serviço de Eventos, sem conexão no startup. |
+| Backend moderno | `backend/modules/` reúne Eventos e Demandas; registro dos blueprints explícito, Services funcionais e consultas simples diretamente nas rotas. |
+| Integrações modernas | `backend/integrations/employee_directory.py` consulta nome/setor no LDAP por matrícula. O bootstrap compõe o cliente sem conexão no startup; a rota fornece o adaptador somente ao registro de presença. |
 | Frontend moderno | Vue/TypeScript com Vue Router, TanStack Query, Tailwind e componentes PrimeVue/Volt. |
 | Shell compartilhado | `backend/platform/vue_shell.py` carrega o manifest do build e entrega o template base com o token CSRF. O layout visual fica em `frontend/src/app/layouts/AppShell.vue`. |
 | Banco | Engine/pool geral do TD em `backend/platform/database.py`, separado dos mecanismos antigos. |
@@ -94,9 +96,9 @@ Estrutura inicial recomendada para uma feature moderna:
 ```text
 backend/modules/<feature>/
 ├── __init__.py              # Exporta os blueprints
-├── routes.py                # HTTP, schemas, acesso e chamada do serviço
+├── routes.py                # HTTP, schemas, acesso e operações simples ou chamada do Service
 ├── schemas.py               # Contratos de entrada e saída
-├── services.py              # Casos de uso, regras, autorização e transações
+├── services.py              # Funções de caso de uso, quando necessárias
 └── repository.py            # SQL e acesso aos dados
 
 frontend/src/features/<feature>/
@@ -108,15 +110,17 @@ frontend/src/features/<feature>/
 
 | Responsabilidade | Onde fica e como deve funcionar |
 |---|---|
-| Receber uma requisição | `routes.py` traduz HTTP, aplica os recursos comuns e chama o serviço. Não concentra SQL ou regras extensas. |
+| Receber uma requisição | `routes.py` aplica os recursos comuns e executa operações simples ou chama o Service. Pode controlar a transação de uma gravação simples; não contém SQL ou regras extensas. |
 | Validar o contrato | `schemas.py` define tipos, campos, limites e formatos. Regras dependentes do estado do negócio ficam no serviço. |
-| Executar uma ação | `services.py` decide o que pode acontecer, exige a permissão da ação e controla a transação. Recebe dependências pela composição. |
+| Executar um caso de uso | Funções de `services.py` decidem o que pode acontecer, exigem a permissão e controlam a transação. Recebem identidade e dependências explicitamente da entrada HTTP. |
 | Consultar ou gravar | `repository.py` recebe a conexão, usa SQL parametrizado e devolve dados. Não conhece Flask, sessão ou interface. |
 | Mostrar a tela | A página Vue coordena consulta, formulário e feedback. Componentes locais representam partes específicas do domínio. |
 | Compartilhar infraestrutura | `backend/platform/`, `frontend/src/shared/`, layout e componentes Volt existentes. |
 | Adaptar o legado | `backend/compatibility/`, com uma dependência delimitada e visível. |
 
 Crie `domain.py`, `integration.py` ou composables locais somente quando houver conteúdo que justifique essa separação. Não é necessário criar arquivos vazios, classes para toda função ou uma camada adicional para apenas repassar argumentos.
+
+Consultas simples podem ir da rota ao Repository. Uma gravação também pode seguir esse caminho se não coordenar várias gravações, arquivos, integrações, regras de negócio ou transições; não exigir autorização por registro, idempotência ou concorrência especial; e não precisar de reutilização por outra entrada. A rota exige a ação e abre a transação. Se algum critério não for atendido, usar Service funcional, inclusive em GET. Os [exemplos completos da base compartilhada](../docs/base-compartilhada-novas-features.md) mostram os dois caminhos.
 
 ## 4. O que já podemos reutilizar
 
@@ -203,17 +207,17 @@ Escolha as URLs da página e da API, os schemas e o formato das respostas. No pa
 
 Para listas paginadas, use `page` e `per_page`, com resposta `items`, `page`, `per_page`, `total` e `capabilities`. O padrão atual começa na página 1, usa 12 itens e limita `per_page` a 100. Defina uma ordenação estável e aplique os mesmos filtros e limites de acesso na contagem e nos itens.
 
-As capacidades, como `can_create`, orientam os botões da interface. Elas não substituem a verificação no serviço. O autor de uma gravação vem da identidade validada no servidor, não de um identificador enviado pelo navegador.
+As capacidades, como `can_create`, orientam os botões da interface. Elas não substituem a autorização na rota simples ou no Service. O autor de uma gravação vem da identidade validada no servidor, não de um identificador enviado pelo navegador.
 
 ### 3. Implementar dados e regras
 
-Crie o módulo seguindo a divisão da seção 3. Use a conexão entregue ao repositório e parâmetros para os valores SQL. No serviço, uma escrita pode usar o padrão atual `with engine.begin()`: a transação agrupa a operação e é revertida se ocorrer exceção.
+Crie o módulo seguindo a divisão da seção 3. Use a conexão entregue ao repositório e parâmetros para os valores SQL. A escrita usa `with engine.begin()` no Service ou, se atender aos critérios de simplicidade, na rota. O Repository não faz commit próprio. Preservar o tratamento de falhas e de resultado incerto; uma falha de resposta depois do commit não desfaz a gravação.
 
 Quando houver várias gravações que precisem ser atômicas, mantenha-as na mesma conexão/transação. E-mail ou chamada externa não fazem parte da transação SQL; defina o tratamento de falha e repetição antes de automatizá-los. Alterações de tabela exigem planejamento e autorização próprios, sem DDL durante imports.
 
 ### 4. Compor e registrar o backend
 
-Em `backend/bootstrap.py`, construa o serviço com a engine geral e o mapa de ações/perfis; registre-o em `app.extensions` com nome próprio. Em `routes.py`, reutilize `configure_api`, os schemas, `get_service` e a ponte de identidade.
+Em `routes.py`, reutilize `configure_api`, os schemas, `get_td_engine()` e a ponte de identidade. Mantenha o mapa de ações junto do módulo, componha `RolePermissions` na entrada HTTP e forneça engine, permissões e adaptadores às funções de Service que precisarem deles. Não construir ou registrar objetos de Service no bootstrap. O bootstrap continua compondo engine e adaptadores por aplicação; uma integração nova pode exigir composição explícita adicional.
 
 Exporte os blueprints em `__init__.py` e registre-os em `backend/modules/__init__.py`. Para a página, use `page_access` e `render_vue_shell`. Não crie outro shell, login ou seletor de ambiente para cada módulo.
 

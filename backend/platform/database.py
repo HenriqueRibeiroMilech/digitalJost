@@ -26,3 +26,10 @@ def init_td_database(app, config: BackendConfig):
     # O pool vive com a aplicação; não descartá-lo no teardown de cada request.
     atexit.register(engine.dispose)
     return engine
+
+
+def get_td_engine():
+    """Obtém o engine já inicializado para a entrada HTTP, sem criar outro pool."""
+    from flask import current_app
+
+    return current_app.extensions["backend_td_engine"]

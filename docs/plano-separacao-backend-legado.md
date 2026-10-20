@@ -1,5 +1,7 @@
 # Plano de separação gradual entre backend moderno e legado
 
+**Composição atual:** após a simplificação da seção 17, Eventos e Demandas usam funções de Service, sem objetos de Service registrados no bootstrap. As rotas obtêm `get_td_engine()`, compõem a política do módulo e fornecem adaptadores quando necessários. Consultas e gravações simples podem dispensar Service pelos critérios do [plano consolidado](plano-simplificacao-arquitetura.md). As entregas anteriores abaixo preservam seu caráter histórico; novos módulos devem seguir a [base compartilhada atual](base-compartilhada-novas-features.md).
+
 ## 1. Objetivo
 
 Simplificar o desenvolvimento de novas funcionalidades e a revisão das existentes, separando o Python moderno em `backend/` e mantendo o código antigo em `app/` durante a transição. A migração deve preservar os fluxos operacionais do Digital JOST e acontecer em entregas pequenas, com critérios de passagem e retorno definidos.
@@ -594,5 +596,40 @@ Revisão do diff, imports, registros, schemas, contratos HTTP/TypeScript, índic
 Conferir primeiro a entrega completa no PC/IIS. Depois escolher uma segunda feature pequena para comprovar a reutilização da base. Antes de migrar um domínio, rastrear todos os métodos, SQL, arquivos, notificações e jobs que gravam seus dados. A autorização por registro depende do domínio; não está implícita no mapa geral de perfis.
 
 As correções de autenticação/fallback, flags textuais, CSRF legado, SQL/eval, arquivos, segredos históricos, correlação e filtragem da auditoria seguem no documento de segurança. A ponte não corrige essas políticas automaticamente nem torna a aplicação independente de `app/`.
+
+**O sistema não foi executado; a validação foi somente estática.**
+
+## 17. Simplificação de Services e desenvolvimento de funcionalidades
+
+Eventos e Demandas foram adaptados para Services funcionais. O bootstrap inicializa o engine geral, `EmployeeDirectory`, `DemandAttachmentStorage`, shell e módulos; não monta objetos de Service. Os mapas de ações foram transferidos para `events/routes.py` e `demands/domain.py`, preservando seus mapeamentos para GENERAL.
+
+As rotas recuperam o engine por `get_td_engine()` e passam identidade e dependências explicitamente. `backend_employee_directory` e `demands_attachment_storage` continuam sendo recursos por aplicação, usados apenas pelas operações que precisam deles. O acesso genérico `get_service` foi retirado depois de atualizar seus consumidores.
+
+GET de tipos de Eventos e de colaboradores de Demandas acessa diretamente o Repository, preservando respectivamente `events.read` e `demands.create`. Todas as gravações dos dois módulos e as demais consultas continuam em funções de Service, com as verificações, conexões, travas e transações anteriores.
+
+AGENTS.md e o documento arquitetural passaram a permitir transação na rota somente em gravações simples, pelos critérios do plano. A base compartilhada oferece um exemplo completo, somente documentado, sem novo módulo ativo ou tabela. Os manuais de arquitetura, Eventos e presença foram alinhados. Registros de entregas anteriores continuam históricos.
+
+### Publicação e retorno
+
+Publicar como um conjunto compatível estes oito arquivos Python, preservando as dependências já existentes e a configuração privada:
+
+- `backend/bootstrap.py`
+- `backend/platform/database.py`
+- `backend/platform/http.py`
+- `backend/modules/events/routes.py`
+- `backend/modules/events/services.py`
+- `backend/modules/demands/domain.py`
+- `backend/modules/demands/routes.py`
+- `backend/modules/demands/services.py`
+
+Esta adaptação não altera frontend, schemas ou SQL e não exige novo build Vue, instalação de dependências ou mudança de banco por si só. O build compatível já existente deve continuar disponível. Não misturar bootstrap e rotas de versões diferentes: as chaves de Service anteriores foram retiradas.
+
+Para retornar, restaurar os oito arquivos Python do pacote anterior compatível. Não há conversão de dados ou anexos. A publicação e o retorno não foram executados.
+
+### Validação e limites
+
+Foi feita revisão estática do diff, referências, assinaturas, contratos HTTP/frontend, mapas de ações e limites de transação. Repositórios, schemas, proteção CSRF, shell, armazenamento, cliente LDAP e geração do PDF foram preservados. Demandas mantém visibilidade por usuário, idempotência, histórico e rowversion; presença mantém a liberação da conexão durante LDAP e a revalidação com trava.
+
+Ainda é necessário verificar em ambiente autorizado autenticação, ações negadas, CSRF, validação, listagens, criação e edição, concorrência, repetição de envio, anexos e falhas de commit, LDAP, PDF e convivência com o legado. A revisão textual não comprova equivalência em execução.
 
 **O sistema não foi executado; a validação foi somente estática.**

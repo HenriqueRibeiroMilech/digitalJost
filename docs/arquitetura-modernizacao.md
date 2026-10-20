@@ -4,6 +4,8 @@
 
 **Situação:** proposta para orientar a implementação progressiva
 
+**Atualização da simplificação:** o padrão atual usa `backend/modules/`, Services funcionais e acesso direto ao Repository para operações simples, inclusive gravações que atendam à seção 4.4. Eventos e Demandas foram adaptados por análise estática. O [plano consolidado](plano-simplificacao-arquitetura.md) registra a adaptação e a [base compartilhada](base-compartilhada-novas-features.md) contém os exemplos atuais. Roteiros de pilotos anteriores, especialmente a seção 17, são históricos e não determinam a composição vigente.
+
 **Público:** desenvolvimento e manutenção do Digital JOST
 
 A arquitetura principal será um **monólito modular organizado em fatias verticais, com complexidade progressiva e uma pequena camada de plataforma**. Flask permanece no backend, enquanto o frontend novo usa Vue 3, Tailwind CSS 4 e Volt sobre o PrimeVue em modo unstyled. Contratos de API explícitos e recursos compartilhados reduzem as tarefas repetitivas. A modernização deve facilitar a criação de funcionalidades e permitir que as existentes sejam migradas por partes, preservando suas regras e os processos industriais atendidos pelo sistema.
@@ -120,7 +122,7 @@ Vue ou Jinja    →    routes.py      →    services.py  →   repository.py e 
                    schemas.py
 ```
 
-O diagrama representa o caminho completo de um caso de uso. Leituras triviais podem omitir o serviço conforme os critérios da seção 4.4.
+O diagrama representa o caminho completo de um caso de uso. Consultas e gravações simples podem omitir o serviço conforme os critérios da seção 4.4. Schemas validam os contratos de entrada e saída; não são uma etapa linear entre rota e serviço.
 
 O termo MVC não identifica a arquitetura nem determina três pastas globais chamadas `models`, `views` e `controllers`. Esse formato espalharia uma funcionalidade por todo o projeto e faria as pastas crescerem sem um limite claro. A unidade principal de organização e raciocínio será o módulo de negócio, como demandas, laboratório ou desvios.
 
@@ -132,50 +134,49 @@ DigitalJost/
 ├── web.config                      # configuração de hospedagem no IIS
 ├── requirements.txt                # dependências Python de produção
 ├── requirements-dev.txt            # ferramentas locais, quando criado
-├── app/
-│   ├── __init__.py                 # factory configurável
-│   ├── config.py                   # configuração por ambiente
-│   ├── extensions.py               # extensões sem efeitos externos no import
+├── app/                            # legado e factory atual, preservados durante a transição
+├── backend/
+│   ├── __init__.py
+│   ├── bootstrap.py                # engine, adaptadores, shell e registro dos módulos
+│   ├── config.py                   # configuração moderna pelo ambiente
+│   ├── compatibility/              # ponte explícita com o legado
+│   ├── integrations/               # adaptadores corporativos modernos
 │   ├── platform/
-│   │   ├── __init__.py             # inicialização explícita do que já existe
-│   │   ├── auth/                   # identidade e autenticação
-│   │   ├── permissions/            # mecanismos comuns de autorização
-│   │   ├── database/               # conexões e sessões configuráveis
-│   │   ├── errors/                 # tradução de erros
-│   │   ├── pagination/             # contrato comum de listagens
-│   │   ├── files/                  # armazenamento e acesso seguro
-│   │   ├── audit/                  # registro padronizado de alterações
-│   │   ├── notifications/          # mecanismo comum de notificações
-│   │   └── integrations/           # adaptadores corporativos compartilhados
+│   │   ├── database.py            # engine geral e get_td_engine para a entrada HTTP
+│   │   ├── identity.py            # Actor e mecanismo de permissões
+│   │   ├── http.py                # guardas e erros JSON
+│   │   ├── csrf.py
+│   │   ├── schemas.py             # contratos comuns de paginação
+│   │   ├── environment.py
+│   │   └── vue_shell.py
 │   ├── modules/
 │   │   ├── __init__.py             # registro explícito dos módulos modernos
 │   │   └── <feature>/
 │   │       ├── __init__.py
 │   │       ├── routes.py
 │   │       ├── schemas.py
-│   │       ├── services.py         # quando houver escrita, regras ou transações
+│   │       ├── services.py         # funções de caso de uso, quando necessárias
 │   │       ├── repository.py       # quando o acesso a dados justificar
 │   │       ├── models.py           # somente quando houver entidades ORM
 │   │       ├── domain.py           # estados e regras complexas, quando existirem
 │   │       └── integrations.py     # integrações específicas da feature
-│   ├── jobs/
-│   ├── templates/                  # páginas legadas e e-mails
-│   └── static/                     # assets públicos
+│   ├── templates/app/              # shell Vue
+│   └── static/app/                 # build gerado do Vue
 ├── frontend/
 ├── tests/
 ├── migrations/
 └── docs/
 ```
 
-A árvore representa uma estrutura de chegada. Não determina movimentações imediatas nem exige criar todos os arquivos antecipadamente. Os schedulers atuais permanecem em `app/services/` até sua migração explícita. O legado também permanece fisicamente em suas pastas atuais: criar uma grande pasta `legacy/` e mover tudo de uma vez aumentaria o risco sem melhorar o comportamento. Cada arquivo só deve ser movido quando sua fatia for migrada e suas referências forem conhecidas.
+A árvore representa responsabilidades de chegada, não uma lista de pastas a criar. A factory atual permanece em `app/config.py`; configuração, plataforma e módulos modernos ficam em `backend/`, cuja estrutura efetiva está no plano consolidado. Os schedulers atuais permanecem em `app/services/` até sua migração explícita. O legado permanece em suas pastas atuais: criar uma grande pasta `legacy/` e mover tudo de uma vez aumentaria o risco sem melhorar o comportamento. Cada arquivo só deve ser movido quando sua fatia for migrada e suas referências forem conhecidas.
 
 ### 4.3 Responsabilidades
 
 | Parte | Responsabilidade | Limite |
 | --- | --- | --- |
-| Rotas | Interpretar HTTP, aplicar validação e autorização, chamar o caso de uso ou executar uma leitura trivial e devolver respostas. | Não conter mutações, transações, SQL complexo ou regras de negócio. |
+| Rotas | Interpretar HTTP, aplicar schemas e autorização, chamar o caso de uso ou executar operação simples; controlar a transação das gravações simples. | Não conter SQL, regras extensas, coordenação de integrações ou autorização por registro. |
 | Schemas | Declarar entradas, saídas, tipos, limites e campos permitidos. | Não substituir regras de negócio ou autorização. |
-| Serviços | Executar casos de uso e controlar transações e dependências. | Não depender diretamente de `request`, sessão HTTP ou renderização de páginas. |
+| Serviços | Funções que executam casos de uso e controlam transações e dependências explícitas. | Não depender diretamente de `request`, sessão HTTP ou renderização de páginas. |
 | Repositório | Encapsular consultas e persistência. | Não conhecer Flask nem realizar commits ocultos. |
 | Modelos | Representar entidades ORM controladas pela funcionalidade. | Não expor automaticamente todos os campos na API nem acumular regras de fluxo. |
 | Integrações | Adaptar e-mail, SAP, Plex, Teams e outros serviços. | Não iniciar conexões, threads ou envios durante import. |
@@ -187,16 +188,17 @@ Serviço e repositório são uma boa base para o legado com SQL extenso. Uma fun
 
 ### 4.4 Complexidade progressiva
 
-Cada feature começa pelo menor caminho que preserve segurança, clareza e consistência. Existem dois caminhos oficiais:
+Cada feature começa pelo menor caminho que preserve segurança, clareza e consistência. A classificação é por operação, não por módulo ou verbo HTTP:
 
 | Caminho | Quando usar | Fluxo típico |
 | --- | --- | --- |
-| Leitura simples | Endpoint somente de leitura, sem regra relevante, efeito colateral, transação ou autorização por registro. | `route → schema → query/repository → response` |
-| Caso de uso | Qualquer criação, alteração, exclusão, transição, transação, auditoria, autorização por registro ou integração. | `route → schema → service/use case → repository/integration` |
+| Consulta simples | Sem regra relevante, integração, coordenação especial de concorrência ou autorização por registro. | `route → repository → response` |
+| Gravação simples | Atende a todos os critérios abaixo; a rota autoriza e abre a transação. | `route → repository → commit → response` |
+| Caso de uso | Regras, múltiplas gravações coordenadas, auditoria transacional, autorização por registro, integração, concorrência especial ou reutilização. | `route → service funcional → repository/integration` |
 
-O caminho simples não autoriza SQL interpolado, acesso sem limite, retorno de colunas indiscriminadas ou decisão de negócio na rota. Se uma leitura crescer, ela ganha repositório ou serviço sem exigir a reestruturação do restante do módulo.
+Uma gravação pode dispensar Service somente se não coordenar várias gravações; não envolver arquivos ou integrações; não decidir regras de negócio ou transições além da validação declarativa dos campos e da permissão da ação; não exigir autorização por registro, idempotência ou concorrência especial; e não precisar ser reutilizada por outra entrada. A sequência deve permanecer clara na rota. Se algum critério não for atendido, usar Service funcional, inclusive em GET.
 
-Toda mutação passa por uma função de serviço ou caso de uso, mesmo quando ela for curta. Isso fornece um ponto estável para autorização, transação, auditoria e reaproveitamento por API, página legada ou job. `services.py` e `repository.py` continuam opcionais quando essas responsabilidades realmente não existem; arquivos vazios e classes cerimoniais não devem ser criados.
+O caminho simples preserva autenticação, autorização, CSRF, schemas de entrada e saída, SQL parametrizado, transação e tratamento de erros. Não autoriza acesso sem limite, retorno indiscriminado de colunas ou regras escondidas no Repository. Se crescer, a operação ganha Service sem duplicar a implementação. `services.py` é opcional; arquivos vazios e classes cerimoniais não devem ser criados.
 
 ### 4.5 Regras da plataforma
 
@@ -210,7 +212,7 @@ Cada pacote da plataforma deve possuir responsabilidade, API e dependências cla
 
 Uma operação de negócio deve ter um responsável. API nova, página antiga e job convergem para essa operação. Um módulo não deve importar os handlers HTTP de outro nem espalhar alterações diretas nas tabelas controladas por ele.
 
-Os serviços recebem explicitamente as dependências de que precisam, como repositório, armazenamento e notificações. A composição ocorre perto da inicialização ou da entrada da aplicação, de forma legível. Não é necessário começar com um framework de injeção de dependências.
+Os Services são funções que recebem explicitamente identidade e dependências, como engine, permissões, diretório e armazenamento, somente quando necessários. As rotas usam `get_td_engine()` e os adaptadores inicializados pela aplicação. Não registrar objetos de Service por funcionalidade nem introduzir um framework de injeção de dependências.
 
 O módulo de permissões fornece o mecanismo comum; as regras específicas, como quem pode aprovar uma solicitação de determinada área, permanecem junto da funcionalidade.
 
@@ -218,7 +220,7 @@ Código novo não deve importar diretamente handlers, variáveis globais ou deta
 
 ### 4.7 Composição da aplicação e registro de módulos
 
-A primeira fatia moderna deve estabelecer um ponto único e explícito para registrar os módulos novos. `app/modules/__init__.py` exporta uma função como `register_modules(app)`, que conhece os blueprints modernos autorizados. Cada módulo exporta seu blueprint ou uma função pequena de registro. Não usar descoberta automática de pacotes, imports dinâmicos ou efeitos colaterais no import.
+O registro moderno é explícito em `backend/modules/__init__.py`, por `register_modules(app)`. O bootstrap inicializa engine, adaptadores e shell e chama esse registro. Os mapas de ações ficam junto da funcionalidade. Cada módulo exporta seus blueprints; não usar descoberta automática de pacotes, imports dinâmicos ou efeitos colaterais no import.
 
 O fluxo conceitual da factory será:
 
@@ -292,13 +294,15 @@ class DemandCreate(BaseModel):
 @bp.input(DemandCreate)
 @bp.output(DemandDetail, status_code=201)
 def create_demand(json_data: DemandCreate):
-    return get_service().create(
+    return services.create_demand(
         data=json_data,
-        actor=current_actor(),
+        actor=identity.current_actor(),
+        engine=get_td_engine(),
+        permissions=_permissions(),
     )
 ```
 
-`require_permission`, `current_actor` e `get_service` representam recursos a implementar na base. A autenticação e a proteção CSRF precisam estar configuradas. O serviço verifica as regras por área e registro, executa a transação e produz a saída apropriada.
+`require_permission` representa a guarda ilustrativa desse exemplo conceitual. No código atual, `configure_api` aplica autenticação, perfil e CSRF; `_permissions()` compõe `RolePermissions` com o mapa do módulo, e o Service exige a ação e as regras por área/registro. Consulte a base compartilhada para exemplos completos com os recursos existentes.
 
 O schema valida o formato e os limites dos campos. A existência de um responsável, seu vínculo com a área e a permissão para uma transição são regras do serviço e de suas políticas.
 
@@ -328,7 +332,7 @@ Consultas simples podem permanecer como SQL parametrizado no repositório. Uma p
 
 ### 7.2 Transações e concorrência
 
-O serviço define o limite da transação. Todas as gravações que precisam ocorrer juntas usam a mesma conexão ou sessão. O repositório não executa commits independentes que possam deixar uma operação parcialmente concluída.
+O Service define o limite da transação nos casos de uso; a rota o define nas gravações simples da seção 4.4. Todas as gravações que precisam ocorrer juntas usam a mesma conexão ou sessão. O repositório não executa commits independentes que possam deixar uma operação parcialmente concluída.
 
 Em aplicações que carregam a identidade usando uma sessão ORM, é necessário considerar a transação já iniciada antes de abrir outra. O padrão de sessão e transação deve ser demonstrado no piloto, evitando misturar inadvertidamente Flask-SQLAlchemy, conexões Core e pyodbc na mesma operação lógica.
 

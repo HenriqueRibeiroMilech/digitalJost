@@ -25,6 +25,8 @@ Navegador → IIS / autenticação Windows → aplicação Flask
 
 **Identidade:** a nova arquitetura reaproveita o login, a sessão e os perfis antigos por uma ponte em `backend/compatibility/`. Ela ainda não é uma aplicação independente de `app/`.
 
+**Novas funcionalidades:** consultas e gravações simples podem usar Rota → Repository; regras, autorização por registro e integrações usam Services funcionais com dependências explícitas. Não há registro de objetos de Service por módulo. A [base compartilhada](docs/base-compartilhada-novas-features.md) contém critérios e exemplos, e o [plano de simplificação](docs/plano-simplificacao-arquitetura.md) registra a adaptação de Eventos e Demandas.
+
 ## 2. Onde encontrar cada coisa
 
 ```text

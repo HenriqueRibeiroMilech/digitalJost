@@ -1,13 +1,16 @@
 from apiflask import APIBlueprint
-from flask import Blueprint, abort, request, send_file
+from flask import Blueprint, abort, current_app, request, send_file
 from pydantic import ValidationError
 
 from backend.compatibility import identity
-from backend.platform.http import api_error, configure_api, get_service, page_access
+from backend.platform.database import get_td_engine
+from backend.platform.http import api_error, configure_api, page_access
+from backend.platform.identity import RolePermissions
 from backend.platform.vue_shell import render_vue_shell
 
+from . import repository, services
 from .domain import (
-    AREA_NAME, MAX_REQUEST_BYTES, DemandConflictError, DemandNotFoundError,
+    ACTION_ROLES, AREA_NAME, MAX_REQUEST_BYTES, DemandConflictError, DemandNotFoundError,
     DemandStorageError, DemandValidationError,
 )
 from .schemas import ContributorsOut, RequestCreate, RequestDetail, RequestList, RequestQuery, RequestUpdate
@@ -16,6 +19,10 @@ from .schemas import ContributorsOut, RequestCreate, RequestDetail, RequestList,
 demands_bp = APIBlueprint("modern_demands", __name__, url_prefix="/api/v1/demands")
 demands_shell_bp = Blueprint("demands_shell", __name__)
 configure_api(demands_bp, identity=identity, permission="GENERAL")
+
+
+def _permissions():
+    return RolePermissions(identity.can_access, ACTION_ROLES)
 
 
 @demands_bp.before_request
@@ -70,13 +77,18 @@ def invalid_payload(error):
 @demands_bp.input(RequestQuery, location="query")
 @demands_bp.output(RequestList)
 def list_requests(query_data):
-    return get_service("demands_service").list(query_data, identity.current_actor())
+    return services.list_requests(
+        query_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @demands_bp.get("/contributors")
 @demands_bp.output(ContributorsOut)
 def contributors():
-    return get_service("demands_service").contributors(identity.current_actor())
+    actor = identity.current_actor()
+    _permissions().require(actor, "demands.create")
+    with get_td_engine().connect() as connection:
+        return {"items": repository.list_contributors(connection, str(actor.id))}
 
 
 @demands_bp.post("")
@@ -85,25 +97,37 @@ def create_request():
     if request.mimetype != "multipart/form-data" or set(request.form) != {"payload"} or set(request.files) != {"files"}:
         return api_error(400, message="Envie os dados da solicitação e seus documentos.")
     data = RequestCreate.model_validate_json(request.form["payload"])
-    return get_service("demands_service").create(data, request.files.getlist("files"), identity.current_actor())
+    return services.create_request(
+        data, request.files.getlist("files"), identity.current_actor(),
+        engine=get_td_engine(), permissions=_permissions(),
+        storage=current_app.extensions["demands_attachment_storage"],
+    )
 
 
 @demands_bp.get("/<int:demand_id>")
 @demands_bp.output(RequestDetail)
 def get_request(demand_id):
-    return get_service("demands_service").get(demand_id, identity.current_actor())
+    return services.get_request(
+        demand_id, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @demands_bp.put("/<int:demand_id>")
 @demands_bp.input(RequestUpdate)
 @demands_bp.output(RequestDetail)
 def update_request(demand_id, json_data):
-    return get_service("demands_service").update(demand_id, json_data, identity.current_actor())
+    return services.update_request(
+        demand_id, json_data, identity.current_actor(), engine=get_td_engine(), permissions=_permissions(),
+    )
 
 
 @demands_bp.get("/<int:demand_id>/attachments/<int:attachment_id>")
 def download_attachment(demand_id, attachment_id):
-    path, name = get_service("demands_service").attachment(demand_id, attachment_id, identity.current_actor())
+    path, name = services.get_attachment(
+        demand_id, attachment_id, identity.current_actor(),
+        engine=get_td_engine(), permissions=_permissions(),
+        storage=current_app.extensions["demands_attachment_storage"],
+    )
     response = send_file(path, as_attachment=True, download_name=name, mimetype="application/octet-stream",
                          conditional=False, max_age=0)
     response.headers["Cache-Control"] = "private, no-store"

@@ -1,10 +1,10 @@
 # Plano de simplificação da arquitetura do Digital JOST
 
-**Situação:** base consolidada para implementação futura; mudanças ainda não implementadas.
+**Situação:** simplificação aplicada ao código e à documentação; validação somente estática. Verificação funcional e publicação permanecem pendentes.
 
 Este documento reúne a direção discutida para facilitar a criação de funcionalidades no backend moderno. O objetivo é reduzir configuração, navegação entre arquivos e decisões repetitivas, preservando contratos, regras de negócio e segurança.
 
-A entrega deste documento não altera o código, as regras operacionais do repositório ou o banco. A implementação será uma tarefa posterior. Execução, instalação, build, publicação e acesso corporativo continuam sujeitos às regras de [AGENTS.md](../AGENTS.md).
+Este documento começou como plano e agora também registra sua implementação. Services, rotas, composição e orientações foram adaptados sem alterar banco, contratos ou frontend. Execução, instalação, build, publicação e acesso corporativo continuam sujeitos às regras de [AGENTS.md](../AGENTS.md).
 
 ## 1. Resultado esperado
 
@@ -34,9 +34,9 @@ O sucesso será medido pela facilidade de criar, explicar e alterar uma funciona
 
 Não faz parte desta mudança trocar tecnologias, introduzir ORM nos módulos atuais, criar um framework de CRUD, implantar descoberta automática de módulos ou adicionar um contêiner de injeção de dependências.
 
-## 3. Mudanças planejadas
+## 3. Mudanças adotadas
 
-| Estado atual observado | Direção planejada |
+| Estado anterior | Direção aplicada |
 |---|---|
 | `EventsService` e `DemandsService` agrupam operações e guardam dependências | Converter seus métodos em funções de caso de uso |
 | O bootstrap compõe e registra um objeto de Service por módulo | Retirar esses registros e manter a inicialização dos recursos necessários |
@@ -130,9 +130,9 @@ Schemas não constituem uma camada linear de execução entre rota e Service. El
 
 ## 6. Services funcionais e dependências
 
-Os métodos dos dois Services serão convertidos em funções com nomes específicos da operação. Cada função receberá somente as dependências que utiliza, preferencialmente por argumentos nomeados.
+Os métodos dos dois Services foram convertidos em funções com nomes específicos da operação. Cada função recebe somente as dependências que utiliza, por argumentos nomeados.
 
-Assinaturas ilustrativas, ainda não implementadas:
+Assinaturas usadas pelas funções atuais:
 
 ```python
 def create_event(data, actor, *, engine, permissions):
@@ -196,7 +196,7 @@ Transações SQL não tornam atômicos filesystem e serviços externos. A refato
 
 ## 9. Adaptação de Eventos
 
-| Operação | Destino planejado |
+| Operação | Destino aplicado |
 |---|---|
 | Listar tipos | Rota → Repository |
 | Listar e detalhar eventos | Manter funções de Service nesta adaptação |
@@ -225,7 +225,7 @@ Esta mudança não introduz automaticamente auditoria detalhada ou controle de v
 
 ## 10. Adaptação de Demandas
 
-| Operação | Destino planejado |
+| Operação | Destino aplicado |
 |---|---|
 | Listar colaboradores elegíveis | Rota → Repository, exigindo `demands.create` |
 | Listar solicitações | Service funcional com escopo do usuário |
@@ -271,48 +271,48 @@ O roteiro mínimo será:
 6. Quando houver tela, criar a feature Vue, reutilizar o cliente HTTP e registrar a navegação e a entrada Flask.
 7. Conferir contratos, referências, regras e diff por análise estática.
 
-Preparar um exemplo didático completo de consulta e cadastro simples, com comentários sobre o caminho de cada dado e os pontos de segurança. O exemplo deve deixar claro o que é reutilizado e o que o desenvolvedor precisa escrever.
+O exemplo didático completo de consulta e cadastro simples está na seção 7 da [base compartilhada](base-compartilhada-novas-features.md). Ele documenta os quatro arquivos mínimos, segurança, transação e registro do módulo; não foi criado como módulo ativo.
 
 Um exemplo de equipamentos pode ser apresentado como código documentado. Não criar tabela, módulo ativo ou funcionalidade artificial em produção apenas para demonstrar a arquitetura. Se o exemplo exigir persistência nova, sua implementação e seu schema terão escopo próprio.
 
 Não exigir configuração de autenticação, CSRF, pool ou objeto de Service para cada nova funcionalidade comum. As permissões específicas e os contratos continuam sendo responsabilidade explícita do módulo.
 
-## 13. Etapas de implementação futura
+## 13. Etapas da adaptação
 
-### Etapa 1 — alinhar as regras e os guias
+### Etapa 1 — regras e guias alinhados
 
-Atualizar de forma localizada:
+Foram atualizados de forma localizada:
 
 - [AGENTS.md](../AGENTS.md), para reconhecer a arquitetura moderna em `backend/`, o frontend Vue e a exceção de transação na rota para gravações simples.
 - [Arquitetura e modernização](arquitetura-modernizacao.md), principalmente responsabilidades e critérios de complexidade progressiva.
 - [Plano de separação do legado](plano-separacao-backend-legado.md), para atualizar a orientação de composição sem apagar o histórico das entregas.
 - [Base compartilhada](base-compartilhada-novas-features.md), para oferecer o roteiro mínimo e exemplos atuais.
 
-As regras atuais atribuem transações aos Services, e o documento arquitetural exige Service em toda mutação. Essa diferença deve ser resolvida na documentação antes de introduzir gravações diretas nas rotas. Este plano registra a direção futura; não substitui silenciosamente as regras vigentes.
+As orientações anteriores atribuíam transações aos Services e exigiam Service em toda mutação. AGENTS.md e o documento arquitetural agora admitem a exceção para gravações simples pelos critérios da seção 4. Não foi deslocada nenhuma gravação complexa de Eventos ou Demandas para as rotas.
 
-Preservar integralmente a proibição de executar o sistema e as demais restrições operacionais. As duas análises anteriores são registros da discussão; este plano será a referência consolidada para preparar a adaptação.
+A proibição de executar o sistema e as demais restrições operacionais foram preservadas. As duas análises anteriores são registros da discussão; este documento consolida a direção adotada e o resultado da adaptação.
 
-### Etapa 2 — simplificar a composição e converter os Services
+### Etapa 2 — composição simplificada e Services convertidos
 
-Criar os acessos mínimos aos recursos já inicializados, localizar os mapas de ações nos módulos, converter os métodos em funções e atualizar as rotas. Retirar os registros de Service do bootstrap somente depois de atualizar todas as referências.
+`get_td_engine()` recupera o engine já inicializado. Os mapas de ações ficam em `events/routes.py` e `demands/domain.py`; as rotas compõem `RolePermissions` por chamada. Os métodos foram convertidos em funções e os registros `events_service` e `demands_service`, junto do acesso `get_service`, foram retirados após atualizar seus consumidores.
 
-Manter o engine, os adaptadores e o registro explícito dos módulos. Não criar inicializações externas no import.
+Engine, adaptadores e registro explícito dos módulos foram mantidos. O diretório permanece em `app.extensions["backend_employee_directory"]`, e o armazenamento em `app.extensions["demands_attachment_storage"]`; somente as rotas que os utilizam os fornecem aos Services. Não foram acrescentadas inicializações externas no import.
 
-### Etapa 3 — aplicar o caminho direto às consultas escolhidas
+### Etapa 3 — consultas escolhidas adaptadas
 
-Adaptar a listagem de tipos de Eventos e de colaboradores de Demandas, preservando permissões, schemas e respostas. Não mover outras operações por estética.
+As listagens de tipos de Eventos e de colaboradores de Demandas passaram às rotas, preservando permissões, schemas e respostas. As demais operações permanecem em Services funcionais.
 
-A permissão para gravações simples será documentada e demonstrada no exemplo mínimo; não será usada para reclassificar operações complexas já existentes.
+A permissão para gravações simples foi documentada e demonstrada no exemplo mínimo; não foi usada para reclassificar operações complexas já existentes.
 
-### Etapa 4 — entregar a referência de desenvolvimento
+### Etapa 4 — referência de desenvolvimento documentada
 
-Publicar no guia um exemplo mínimo coerente com os recursos finais, a lista de arquivos e o registro do módulo. Explicar quando extrair uma operação para Service.
+A base compartilhada mostra consulta, cadastro simples, schemas, SQL parametrizado, registro e critérios para extrair Service, utilizando os recursos finais. A tabela e o módulo do exemplo são fictícios e não foram criados ou registrados.
 
-### Etapa 5 — revisar e preparar a verificação autorizada
+### Etapa 5 — revisão estática e verificação funcional pendente
 
-Conferir a adaptação estaticamente e registrar os cenários funcionais pendentes. Qualquer execução ou publicação dependerá do comando, ambiente e escopo explicitamente autorizados pelo responsável.
+A adaptação foi revisada estaticamente; a seção 14 registra os cenários funcionais pendentes. Qualquer execução ou publicação depende do comando, ambiente e escopo explicitamente autorizados pelo responsável. O registro da seção 17 do plano de separação lista os arquivos do backend que devem acompanhar a publicação e o retorno.
 
-As etapas organizam o trabalho e não determinam quantidade de commits. Em uma futura tarefa de implementação, seguir o fluxo Git vigente; não criar branches, PRs, commits adicionais ou fazer push por iniciativa própria.
+As etapas organizam o trabalho e não determinam quantidade de commits. Seguir o fluxo Git vigente; não criar branches, PRs, commits adicionais ou fazer push por iniciativa própria.
 
 ## 14. Verificação e critérios de aceite
 
@@ -354,6 +354,6 @@ O ganho esperado é reduzir o esforço de começar uma feature e tornar o caminh
 - [Composição atual do backend](../backend/bootstrap.py).
 - [Eventos](../backend/modules/events/services.py) e [Demandas](../backend/modules/demands/services.py).
 
-Nesta entrega foi criado somente este documento de planejamento. Nenhuma das etapas de implementação foi executada, e não houve alteração do banco, do código da aplicação ou dos arquivos operacionais.
+Nesta entrega foram adaptados os dois módulos modernos, a composição e os guias. Os repositórios, schemas, frontend, banco e arquivos operacionais foram preservados. Não foram executados imports, testes, builds, consultas, migrations, integrações ou publicação. A equivalência funcional depende das verificações autorizadas da seção 14.
 
 **O sistema não foi executado; a validação foi somente estática.**

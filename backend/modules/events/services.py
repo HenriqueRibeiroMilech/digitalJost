@@ -41,253 +41,255 @@ class AttendanceIdentificationError(ValueError):
         self.status = status
 
 
-class EventsService:
-    def __init__(self, engine, permissions, employee_directory):
-        self.engine = engine
-        self.permissions = permissions
-        self.employee_directory = employee_directory
+def list_events(query, actor, *, engine, permissions):
+    permissions.require(actor, "events.read")
+    with engine.connect() as connection:
+        now = repository.current_time(connection)
+        items, total = repository.list_events(
+            connection,
+            page=query.page,
+            per_page=query.per_page,
+            search=query.search,
+            statuses=query.status.split(","),
+            now=now,
+        )
+    return {
+        "items": items,
+        "page": query.page,
+        "per_page": query.per_page,
+        "total": total,
+        "capabilities": _capabilities(actor, permissions),
+    }
 
-    def list(self, query, actor):
-        self.permissions.require(actor, "events.read")
-        with self.engine.connect() as connection:
-            now = repository.current_time(connection)
-            items, total = repository.list_events(
-                connection,
-                page=query.page,
-                per_page=query.per_page,
-                search=query.search,
-                statuses=query.status.split(","),
-                now=now,
-            )
-        return {
-            "items": items,
-            "page": query.page,
-            "per_page": query.per_page,
-            "total": total,
-            "capabilities": self._capabilities(actor),
-        }
 
-    def get(self, event_id, actor):
-        self.permissions.require(actor, "events.read")
-        with self.engine.connect() as connection:
-            event = repository.get_event(connection, event_id, now=repository.current_time(connection))
+def get_event(event_id, actor, *, engine, permissions):
+    permissions.require(actor, "events.read")
+    with engine.connect() as connection:
+        event = repository.get_event(connection, event_id, now=repository.current_time(connection))
+    if event is None:
+        raise EventNotFoundError()
+    return {**event, "capabilities": _capabilities(actor, permissions)}
+
+
+def create_event(data, actor, *, engine, permissions):
+    permissions.require(actor, "events.create")
+    _validate_schedule(data)
+    with engine.begin() as connection:
+        _require_event_type(connection, data.event_type_id)
+        event = repository.create_event(
+            connection,
+            name=data.name,
+            description=data.description,
+            event_type_id=data.event_type_id,
+            instructor=data.instructor or None,
+            syllabus=data.syllabus or None,
+            starts_at=data.starts_at,
+            ends_at=data.ends_at,
+            created_by=str(actor.id),
+            now=repository.current_time(connection),
+        )
+    return event
+
+
+def update_event(event_id, data, actor, *, engine, permissions):
+    permissions.require(actor, "events.update")
+    _validate_schedule(data)
+    with engine.begin() as connection:
+        _require_event_type(connection, data.event_type_id)
+        event = repository.update_event(
+            connection,
+            event_id,
+            name=data.name,
+            description=data.description,
+            event_type_id=data.event_type_id,
+            instructor=data.instructor or None,
+            syllabus=data.syllabus or None,
+            starts_at=data.starts_at,
+            ends_at=data.ends_at,
+            now=repository.current_time(connection),
+        )
         if event is None:
             raise EventNotFoundError()
-        return {**event, "capabilities": self._capabilities(actor)}
+    return event
 
-    def create(self, data, actor):
-        self.permissions.require(actor, "events.create")
-        self._validate_schedule(data)
-        with self.engine.begin() as connection:
-            self._require_event_type(connection, data.event_type_id)
-            event = repository.create_event(
-                connection,
-                name=data.name,
-                description=data.description,
-                event_type_id=data.event_type_id,
-                instructor=data.instructor or None,
-                syllabus=data.syllabus or None,
-                starts_at=data.starts_at,
-                ends_at=data.ends_at,
-                created_by=str(actor.id),
-                now=repository.current_time(connection),
-            )
-        return event
 
-    def update(self, event_id, data, actor):
-        self.permissions.require(actor, "events.update")
-        self._validate_schedule(data)
-        with self.engine.begin() as connection:
-            self._require_event_type(connection, data.event_type_id)
-            event = repository.update_event(
-                connection,
-                event_id,
-                name=data.name,
-                description=data.description,
-                event_type_id=data.event_type_id,
-                instructor=data.instructor or None,
-                syllabus=data.syllabus or None,
-                starts_at=data.starts_at,
-                ends_at=data.ends_at,
-                now=repository.current_time(connection),
-            )
-            if event is None:
-                raise EventNotFoundError()
-        return event
+def delete_event(event_id, actor, *, engine, permissions):
+    permissions.require(actor, "events.delete")
+    with engine.begin() as connection:
+        deleted_id = repository.delete_event(connection, event_id)
+        if deleted_id is None:
+            raise EventNotFoundError()
+    return {"id": deleted_id}
 
-    def delete(self, event_id, actor):
-        self.permissions.require(actor, "events.delete")
-        with self.engine.begin() as connection:
-            deleted_id = repository.delete_event(connection, event_id)
-            if deleted_id is None:
-                raise EventNotFoundError()
-        return {"id": deleted_id}
 
-    def _capabilities(self, actor):
-        return {
-            "can_create": self.permissions.can(actor, "events.create"),
-            "can_update": self.permissions.can(actor, "events.update"),
-            "can_delete": self.permissions.can(actor, "events.delete"),
-        }
+def _capabilities(actor, permissions):
+    return {
+        "can_create": permissions.can(actor, "events.create"),
+        "can_update": permissions.can(actor, "events.update"),
+        "can_delete": permissions.can(actor, "events.delete"),
+    }
 
-    def list_event_types(self, actor):
-        self.permissions.require(actor, "events.read")
-        with self.engine.connect() as connection:
-            items = repository.list_event_types(connection)
-        return {
-            "items": items,
-            "can_create": self.permissions.can(actor, "events.types.create"),
-            "can_delete": self.permissions.can(actor, "events.types.delete"),
-        }
 
-    def create_event_type(self, data, actor):
-        self.permissions.require(actor, "events.types.create")
-        with self.engine.begin() as connection:
-            event_type = repository.create_event_type(connection, name=data.name, created_by=str(actor.id))
-        return event_type
+def create_event_type(data, actor, *, engine, permissions):
+    permissions.require(actor, "events.types.create")
+    with engine.begin() as connection:
+        event_type = repository.create_event_type(connection, name=data.name, created_by=str(actor.id))
+    return event_type
 
-    def delete_event_type(self, event_type_id, actor):
-        self.permissions.require(actor, "events.types.delete")
-        with self.engine.begin() as connection:
-            if repository.lock_event_type(connection, event_type_id) is None:
-                raise EventTypeNotFoundError()
-            if repository.event_type_in_use(connection, event_type_id):
-                raise EventTypeInUseError()
-            deleted_id = repository.delete_event_type(connection, event_type_id)
-            if deleted_id is None:
-                raise EventTypeNotFoundError()
-        return {"id": deleted_id}
 
-    @staticmethod
-    def _require_event_type(connection, event_type_id):
-        if not repository.event_type_exists(connection, event_type_id):
-            raise InvalidEventTypeError()
+def delete_event_type(event_type_id, actor, *, engine, permissions):
+    permissions.require(actor, "events.types.delete")
+    with engine.begin() as connection:
+        if repository.lock_event_type(connection, event_type_id) is None:
+            raise EventTypeNotFoundError()
+        if repository.event_type_in_use(connection, event_type_id):
+            raise EventTypeInUseError()
+        deleted_id = repository.delete_event_type(connection, event_type_id)
+        if deleted_id is None:
+            raise EventTypeNotFoundError()
+    return {"id": deleted_id}
 
-    def list_attendance_lists(self, event_id, query, actor):
-        self.permissions.require(actor, "events.attendance.read")
-        with self.engine.connect() as connection:
-            if not repository.event_exists(connection, event_id):
-                raise EventNotFoundError()
-            items, total = repository.list_attendance_lists(
-                connection, event_id, page=query.page, per_page=query.per_page,
-            )
-        return self._attendance_page(items, total, query, actor)
 
-    def create_attendance_list(self, event_id, data, actor):
-        self.permissions.require(actor, "events.attendance.create")
-        with self.engine.begin() as connection:
-            if not repository.event_exists(connection, event_id, lock=True):
-                raise EventNotFoundError()
-            return repository.create_attendance_list(
-                connection, event_id, name=data.name, created_by=str(actor.id),
-            )
+def _require_event_type(connection, event_type_id):
+    if not repository.event_type_exists(connection, event_type_id):
+        raise InvalidEventTypeError()
 
-    def get_attendance_list(self, event_id, list_id, actor):
-        self.permissions.require(actor, "events.attendance.read")
-        with self.engine.connect() as connection:
-            attendance_list = self._require_attendance_list(connection, event_id, list_id)
-        return {**attendance_list, "capabilities": self._attendance_capabilities(actor)}
 
-    def update_attendance_list(self, event_id, list_id, data, actor):
-        self.permissions.require(actor, "events.attendance.update")
-        with self.engine.begin() as connection:
-            self._require_attendance_list(connection, event_id, list_id, lock=True)
-            updated = repository.update_attendance_list(connection, event_id, list_id, name=data.name)
-            if updated is None:
-                raise AttendanceListNotFoundError()
-        return updated
-
-    def delete_attendance_list(self, event_id, list_id, actor):
-        self.permissions.require(actor, "events.attendance.delete")
-        with self.engine.begin() as connection:
-            self._require_attendance_list(connection, event_id, list_id, lock=True)
-            deleted_id = repository.delete_attendance_list(connection, event_id, list_id)
-            if deleted_id is None:
-                raise AttendanceListNotFoundError()
-        return {"id": deleted_id}
-
-    def delete_attendance_entry(self, event_id, list_id, entry_id, actor):
-        self.permissions.require(actor, "events.attendance.delete_entry")
-        with self.engine.begin() as connection:
-            self._require_attendance_list(connection, event_id, list_id, lock=True)
-            deleted_id = repository.delete_attendance_entry(connection, list_id, entry_id)
-            if deleted_id is None:
-                raise AttendanceEntryNotFoundError()
-        return {"id": deleted_id}
-
-    def list_attendance_entries(self, event_id, list_id, query, actor):
-        self.permissions.require(actor, "events.attendance.read")
-        with self.engine.connect() as connection:
-            self._require_attendance_list(connection, event_id, list_id)
-            items, total = repository.list_attendance_entries(
-                connection, list_id, page=query.page, per_page=query.per_page,
-            )
-        return self._attendance_page(items, total, query, actor)
-
-    def export_attendance_pdf(self, event_id, list_id, actor):
-        self.permissions.require(actor, "events.attendance.export")
-        with self.engine.begin() as connection:
-            # Mantém cabeçalho e presenças consistentes com as escritas do módulo.
-            if not repository.event_exists(connection, event_id, lock=True):
-                raise EventNotFoundError()
-            attendance_list = self._require_attendance_list(connection, event_id, list_id, lock=True)
-            now = repository.current_time(connection)
-            event = repository.get_event(connection, event_id, now=now)
-            entries = repository.export_attendance_entries(connection, list_id)
-        # Renderiza em memória, após liberar a conexão e as travas do TD.
-        try:
-            from .attendance_pdf import build_attendance_pdf
-            return build_attendance_pdf(event, attendance_list, entries, generated_at=now)
-        except (ImportError, OSError) as error:
-            raise AttendancePdfUnavailableError() from error
-
-    def register_attendance(self, event_id, list_id, data, actor):
-        self.permissions.require(actor, "events.attendance.register")
-        # Autoriza o recurso antes da consulta externa; não retém conexão/trava SQL no LDAP.
-        with self.engine.connect() as connection:
-            self._require_attendance_list(connection, event_id, list_id)
-
-        # Revalidar também as repetições: registros antigos não comprovam a leitura atual.
-        employee = self.employee_directory.find_by_badge(data.registration)
-        if employee.status not in ("complete", "partial"):
-            raise AttendanceIdentificationError(employee.status)
-        with self.engine.begin() as connection:
-            # Revalidar após o LDAP: a lista pode ter sido excluída durante a consulta.
-            self._require_attendance_list(connection, event_id, list_id, lock=True)
-            result = repository.register_attendance(
-                connection, list_id, registration=data.registration, created_by=str(actor.id),
-                name=employee.name, department=employee.department, company=employee.company,
-            )
-        item = result["item"]
-        lookup_status = (
-            "complete" if all(item[field] for field in ("name", "department", "company")) else "partial"
+def list_attendance_lists(event_id, query, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.read")
+    with engine.connect() as connection:
+        if not repository.event_exists(connection, event_id):
+            raise EventNotFoundError()
+        items, total = repository.list_attendance_lists(
+            connection, event_id, page=query.page, per_page=query.per_page,
         )
-        return {**result, "lookup_status": lookup_status}
+    return _attendance_page(items, total, query, actor, permissions)
 
-    def _attendance_capabilities(self, actor):
-        return {
-            "can_export": self.permissions.can(actor, "events.attendance.export"),
-            "can_create": self.permissions.can(actor, "events.attendance.create"),
-            "can_register": self.permissions.can(actor, "events.attendance.register"),
-            "can_update": self.permissions.can(actor, "events.attendance.update"),
-            "can_delete": self.permissions.can(actor, "events.attendance.delete"),
-            "can_delete_entry": self.permissions.can(actor, "events.attendance.delete_entry"),
-        }
 
-    def _attendance_page(self, items, total, query, actor):
-        return {
-            "items": items, "total": total, "page": query.page, "per_page": query.per_page,
-            "capabilities": self._attendance_capabilities(actor),
-        }
+def create_attendance_list(event_id, data, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.create")
+    with engine.begin() as connection:
+        if not repository.event_exists(connection, event_id, lock=True):
+            raise EventNotFoundError()
+        return repository.create_attendance_list(
+            connection, event_id, name=data.name, created_by=str(actor.id),
+        )
 
-    @staticmethod
-    def _require_attendance_list(connection, event_id, list_id, *, lock=False):
-        attendance_list = repository.get_attendance_list(connection, event_id, list_id, lock=lock)
-        if attendance_list is None:
+
+def get_attendance_list(event_id, list_id, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.read")
+    with engine.connect() as connection:
+        attendance_list = _require_attendance_list(connection, event_id, list_id)
+    return {**attendance_list, "capabilities": _attendance_capabilities(actor, permissions)}
+
+
+def update_attendance_list(event_id, list_id, data, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.update")
+    with engine.begin() as connection:
+        _require_attendance_list(connection, event_id, list_id, lock=True)
+        updated = repository.update_attendance_list(connection, event_id, list_id, name=data.name)
+        if updated is None:
             raise AttendanceListNotFoundError()
-        return attendance_list
+    return updated
 
-    @staticmethod
-    def _validate_schedule(data):
-        if data.ends_at <= data.starts_at:
-            raise InvalidEventScheduleError()
+
+def delete_attendance_list(event_id, list_id, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.delete")
+    with engine.begin() as connection:
+        _require_attendance_list(connection, event_id, list_id, lock=True)
+        deleted_id = repository.delete_attendance_list(connection, event_id, list_id)
+        if deleted_id is None:
+            raise AttendanceListNotFoundError()
+    return {"id": deleted_id}
+
+
+def delete_attendance_entry(event_id, list_id, entry_id, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.delete_entry")
+    with engine.begin() as connection:
+        _require_attendance_list(connection, event_id, list_id, lock=True)
+        deleted_id = repository.delete_attendance_entry(connection, list_id, entry_id)
+        if deleted_id is None:
+            raise AttendanceEntryNotFoundError()
+    return {"id": deleted_id}
+
+
+def list_attendance_entries(event_id, list_id, query, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.read")
+    with engine.connect() as connection:
+        _require_attendance_list(connection, event_id, list_id)
+        items, total = repository.list_attendance_entries(
+            connection, list_id, page=query.page, per_page=query.per_page,
+        )
+    return _attendance_page(items, total, query, actor, permissions)
+
+
+def export_attendance_pdf(event_id, list_id, actor, *, engine, permissions):
+    permissions.require(actor, "events.attendance.export")
+    with engine.begin() as connection:
+        # Mantém cabeçalho e presenças consistentes com as escritas do módulo.
+        if not repository.event_exists(connection, event_id, lock=True):
+            raise EventNotFoundError()
+        attendance_list = _require_attendance_list(connection, event_id, list_id, lock=True)
+        now = repository.current_time(connection)
+        event = repository.get_event(connection, event_id, now=now)
+        entries = repository.export_attendance_entries(connection, list_id)
+    # Renderiza em memória, após liberar a conexão e as travas do TD.
+    try:
+        from .attendance_pdf import build_attendance_pdf
+        return build_attendance_pdf(event, attendance_list, entries, generated_at=now)
+    except (ImportError, OSError) as error:
+        raise AttendancePdfUnavailableError() from error
+
+
+def register_attendance(event_id, list_id, data, actor, *, engine, permissions, employee_directory):
+    permissions.require(actor, "events.attendance.register")
+    # Autoriza o recurso antes da consulta externa; não retém conexão/trava SQL no LDAP.
+    with engine.connect() as connection:
+        _require_attendance_list(connection, event_id, list_id)
+
+    # Revalidar também as repetições: registros antigos não comprovam a leitura atual.
+    employee = employee_directory.find_by_badge(data.registration)
+    if employee.status not in ("complete", "partial"):
+        raise AttendanceIdentificationError(employee.status)
+    with engine.begin() as connection:
+        # Revalidar após o LDAP: a lista pode ter sido excluída durante a consulta.
+        _require_attendance_list(connection, event_id, list_id, lock=True)
+        result = repository.register_attendance(
+            connection, list_id, registration=data.registration, created_by=str(actor.id),
+            name=employee.name, department=employee.department, company=employee.company,
+        )
+    item = result["item"]
+    lookup_status = (
+        "complete" if all(item[field] for field in ("name", "department", "company")) else "partial"
+    )
+    return {**result, "lookup_status": lookup_status}
+
+
+def _attendance_capabilities(actor, permissions):
+    return {
+        "can_export": permissions.can(actor, "events.attendance.export"),
+        "can_create": permissions.can(actor, "events.attendance.create"),
+        "can_register": permissions.can(actor, "events.attendance.register"),
+        "can_update": permissions.can(actor, "events.attendance.update"),
+        "can_delete": permissions.can(actor, "events.attendance.delete"),
+        "can_delete_entry": permissions.can(actor, "events.attendance.delete_entry"),
+    }
+
+
+def _attendance_page(items, total, query, actor, permissions):
+    return {
+        "items": items, "total": total, "page": query.page, "per_page": query.per_page,
+        "capabilities": _attendance_capabilities(actor, permissions),
+    }
+
+
+def _require_attendance_list(connection, event_id, list_id, *, lock=False):
+    attendance_list = repository.get_attendance_list(connection, event_id, list_id, lock=lock)
+    if attendance_list is None:
+        raise AttendanceListNotFoundError()
+    return attendance_list
+
+
+def _validate_schedule(data):
+    if data.ends_at <= data.starts_at:
+        raise InvalidEventScheduleError()
