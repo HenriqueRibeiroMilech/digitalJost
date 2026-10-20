@@ -355,7 +355,7 @@
                     <h2>Metas Especificas</h2>
                     <input type="text" id="filter1" placeholder="Filtrar - Motivo de Parada" onkeyup="filterTable()">
                     <input type="text" id="filter2" placeholder="Filtrar - Centro de Trabalho" onkeyup="filterTable()">
-                    <button onclick="openModal('modalAddSpecificGoal')" id="addSpecificGoal">Adicionar Nova Meta</button>
+                    <button onclick="openSpecificGoal()" id="addSpecificGoal">Adicionar Nova Meta</button>
                 </div>
                 <div style="height: 80%;overflow-y: auto;">
                     <table id="specificTable">
@@ -420,7 +420,7 @@
     <div id="modalAddSpecificGoal" class="modal">
         <div class="modal-content" style="max-width: 700px;">
             <span onclick="closeModal('modalAddSpecificGoal')" class="close">&times;</span>
-            <h1 style="margin-top: 0;color: white;">Adicionar Meta Especifica</h1>
+            <h1 style="margin-top: 0;color: white;" id="specificGoalTitle">Adicionar Meta Específica</h1>
 
             <form id="specific-goal-form">
                 <div class="form-row">
@@ -581,39 +581,6 @@
 
         // FUNÇÕES PARA GERENCIAS AS METAS ESPECIFICAS
 
-        document.getElementById('specific-goal-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-            
-            document.getElementById('addSpecificGoalForm').disabled = true
-            document.getElementById('addSpecificGoalForm').style.opacity = '0.7'
-            
-            const data = {
-                type: document.getElementById('specific-type').value,
-                event: document.getElementById('specific-event').value,
-                workcenter: document.getElementById('specific-workcenter').value,
-                goal: document.getElementById('specific-goal').value
-            };
-
-            fetch(`/op/plano/metas/${motive}?type=specific`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    return response.json().then(err => {
-                        infoAlert(`Erro ${response.status}: ${err.error || 'Erro desconhecido'}`)
-                        throw new Error(err.error || 'Erro desconhecido');
-                    });
-                }
-            })
-            .then(data => {
-                window.location.href = `/op/plano/metas/${motive}`
-            })
-            });
-
         function displaySpecificGoals(data) {
 
             const tableBody = document.querySelector("#specificTable tbody");
@@ -640,7 +607,7 @@
                     const button = document.createElement('button');
                     button.textContent = 'Acessar';
 
-                    button.addEventListener('click', () => openModal('modalAction'));
+                    button.addEventListener('click', () => openSpecificGoal(row));
                     actionCell.appendChild(button);
                 }
 
@@ -744,7 +711,11 @@
             openModal('badFill', null);
         }
 
+        const planningGoalsConfig = {
+            saveUrl: {{ url_for('operation_planning.planning_goals_post', motiveId=motiveId) | tojson }}
+        };
     </script>
+    <script src="{{ url_for('static', filename='js/operation.planning/planningGoals.js') }}"></script>
 
 </body>
 </html>

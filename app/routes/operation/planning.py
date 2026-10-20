@@ -30,6 +30,7 @@ AREA FABRIL:
 import json
 import os
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 
@@ -530,7 +531,7 @@ def planning_area_post(areaId):
         return jsonify(data)
 
 
-# PAGINA PARA CADASTRO E VISUALIZAÇÃO DAS METAS - FALTA EDITAR METAS ESPECIFICAS
+# PAGINA PARA CADASTRO E VISUALIZAÇÃO DAS METAS
 @operation_planning_bp.route('/op/plano/metas/<int:motiveId>', methods=['GET'])
 def planning_goals_get(motiveId):
 
@@ -555,6 +556,7 @@ def planning_goals_get(motiveId):
         query = f"""SELECT 
                         T1.*,
                         T2.name AS userName
+                        , CONVERT(VARCHAR(33), T1.changeDate, 126) AS revision
                     FROM JDT_OPE_PLANNING_GOAL_SPECIFIC T1
                         JOIN JDT_USER_DETAILS T2 ON T1.userId = T2.id
                     
@@ -611,6 +613,55 @@ def planning_goals_post(motiveId):
 
             last_goals.apply(insertNewGoal, axis=1) 
         
+        elif request.args['type'] == 'edit_specific':
+
+            def parse_specific_goal(values):
+                parsed = {
+                    'type': int(str(values['type'])),
+                    'event': int(str(values['event'])),
+                    'workcenter': str(int(str(values['workcenter']))),
+                    'goal': Decimal(str(values['goal']))
+                }
+                if (
+                    parsed['type'] not in (0, 1) or parsed['event'] < 0
+                    or int(parsed['workcenter']) <= 0
+                    or not parsed['goal'].is_finite() or parsed['goal'] < 0
+                ):
+                    raise ValueError
+                return parsed
+
+            try:
+                edited = parse_specific_goal(payload)
+                original = parse_specific_goal(payload['original'])
+                revision = payload['original']['revision']
+                if not isinstance(revision, str) or not revision or len(revision) > 33:
+                    raise ValueError
+            except (KeyError, TypeError, ValueError, InvalidOperation):
+                return jsonify({'error': 'Informe uma meta válida e o registro original.'}), 400
+
+            params = {
+                **edited,
+                **{f'original_{key}': value for key, value in original.items()},
+                'revision': revision,
+                'motive': motiveId,
+                'user_id': str(current_user.id)
+            }
+            result = cnnx.execute(text("""
+                UPDATE JDT_OPE_PLANNING_GOAL_SPECIFIC
+                SET [type] = :type, [event] = :event, workcenter = :workcenter,
+                    goal = :goal, changeDate = GETDATE(), userId = :user_id
+                WHERE presentationMotive = :motive
+                    AND [type] = :original_type AND [event] = :original_event
+                    AND workcenter = :original_workcenter AND goal = :original_goal
+                    AND CONVERT(VARCHAR(33), changeDate, 126) = :revision
+            """), params)
+            if result.rowcount != 1:
+                cnnx.rollback()
+                return jsonify({
+                    'error': 'A meta foi alterada, removida ou possui registros duplicados. '
+                             'Atualize a página antes de editar novamente.'
+                }), 409
+
         elif request.args['type'] == 'specific':
 
             query = f"""INSERT INTO JDT_OPE_PLANNING_GOAL_SPECIFIC VALUES (
