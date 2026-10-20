@@ -148,7 +148,9 @@ Consultas simples podem ir da rota ao Repository. Gravações simples também po
 
 Services recebem explicitamente identidade e dependências, controlam os casos de uso e suas transações e não acessam diretamente o contexto HTTP. Não registre um objeto de Service por feature no bootstrap. Reutilize `get_td_engine`, `configure_api`, `page_access` e a ponte de identidade. Preserve autorização por ação e registro, CSRF, schemas, rollback, auditoria e concorrência existentes. Os Repositories recebem a conexão da operação e não fazem commits independentes.
 
-Não crie camadas vazias, classes base de CRUD ou descoberta automática de módulos. Classes de contratos e adaptadores continuam adequadas. Consulte [a base compartilhada](docs/base-compartilhada-novas-features.md) para os exemplos e [o plano de simplificação](docs/plano-simplificacao-arquitetura.md) para critérios e cuidados.
+Não crie camadas vazias, classes base de CRUD ou descoberta automática de módulos. Classes de contratos e adaptadores continuam adequadas. Consulte [a base compartilhada](handbook/features/base-compartilhada.md) para recursos e exemplos e [a arquitetura oficial](handbook/docs/arquitetura-modernizada.md) para critérios e cuidados.
+
+A documentação oficial fica em `handbook/docs/` (guias gerais) e `handbook/features/` (funcionalidades e recursos comuns), indexada por `handbook/README.md`. Atualize o arquivo do assunto; não crie um documento por tarefa ou replique o manual no README principal. Planos e textos anteriores ficam em `handbook/historico/`, identificados como históricos, sem substituir as orientações atuais. As regras operacionais deste AGENTS.md permanecem obrigatórias.
 
 Nas alterações que permanecem no legado Flask/Jinja, preserve a organização autocontida já utilizada pelo Gerenciador de Demandas:
 

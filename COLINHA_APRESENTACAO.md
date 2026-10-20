@@ -74,8 +74,9 @@ Em paralelo: serviços Windows → jobs automáticos
 | `database/` | Scripts SQL de migração, procedures, diagnóstico e orientações de reversão. |
 | `scripts/` | Utilitários de manutenção, como tratamento de arquivos do laboratório. |
 | `logs/` | Registros operacionais. Os serviços também têm configuração própria de logs. |
-| `handbook/` | Manual atual: arquitetura, padrão visual, presenças, servidor e publicação. |
-| `docs/` | Guias e análises complementares sobre funcionalidades e modernização. |
+| `handbook/docs/` | Guias oficiais de arquitetura, padrão visual, ambiente/servidor e publicação no Azure. |
+| `handbook/features/` | Documentação atual de Eventos, Demandas, base compartilhada e disponibilidade operacional. |
+| `handbook/historico/` | Planos, estudos e versões anteriores dos guias, sem substituir o manual atual. |
 
 Pastas de controle como `.git/` guardam o histórico do repositório. Não fazem parte das funcionalidades do portal.
 
@@ -276,11 +277,11 @@ Para uma apresentação curta, priorize as seções 1, 3, 5 e um dos exemplos da
 
 ## 14. Referências para aprofundar
 
-- [README principal](README.md): ambiente, configuração e dependências.
+- [README principal](README.md): apresentação do projeto e acesso ao manual oficial.
 - [Manual do projeto](handbook/README.md): índice da documentação atual.
-- [Arquitetura modernizada](handbook/arquitetura-modernizada.md): organização da parte nova e convivência com o legado.
-- [Listas de presença](handbook/listas-de-presenca.md): funcionamento das presenças de eventos.
-- [Servidor e publicação](handbook/servidor-e-publicacao.md): IIS e serviços Windows.
+- [Arquitetura modernizada](handbook/docs/arquitetura-modernizada.md): organização da parte nova e convivência com o legado.
+- [Eventos e listas de presença](handbook/features/eventos.md): funcionamento dos eventos e da identificação dos participantes.
+- [Servidor e publicação](handbook/docs/servidor-e-publicacao.md): IIS e serviços Windows.
 
 **Limite desta colinha:** descreve o que foi identificado nos arquivos. Conectividade, permissões reais, conteúdo dos bancos e funcionamento das telas precisam ser conferidos em ambiente autorizado.
 
