@@ -1,0 +1,16 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+</head>
+
+<body onload="changeNav()">
+    <div class="iframe_container">
+        <iframe id="dash_iframe" title="Analise IA - Pino Rei" src="https://app.powerbi.com/reportEmbed?reportId=6e3114ce-2d7b-407f-969d-07db7b20d19e&autoAuth=true&ctid=812a6bd0-5829-4196-b2be-d0580b7bd0cb" frameborder="0"></iframe>
+    </div>
+</body>
+{% endblock %}
+
+<!-- V1 -->

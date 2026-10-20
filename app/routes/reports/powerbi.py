@@ -34,4 +34,9 @@ def eficiencia():
 def sistemas_indisponiveis():
     return render_template('reports.powerbi/powerbi_sistemas_indisponiveis.html')
 
-# V1
+# DASHBOARD - PROCESSOS - IA
+@reports_powerbi_bp.route('/dashboards/ia')
+def ia():
+    return render_template('reports.powerbi/powerbi_ia.html')
+
+# V2
