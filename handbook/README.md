@@ -8,6 +8,7 @@ Os oito guias foram aprofundados em **20/10/2026**, comparando código e versõe
 
 | Documento | Quando consultar |
 |---|---|
+| [Colinha do projeto](docs/colinha-do-projeto.md) | Entender o projeto com explicações simples, localizar pastas e arquivos e preparar uma apresentação. |
 | [Arquitetura e modernização](docs/arquitetura-modernizada.md) | Entender a organização, escolher camadas e criar ou migrar uma feature. |
 | [Ambiente, servidor e publicação](docs/servidor-e-publicacao.md) | Preparar computador/configuração/build, atualizar IIS e serviços ou retornar uma versão. |
 | [Publicação no Azure DevOps](docs/publicacao-azure.md) | Exportar e enviar uma versão aprovada ao repositório Azure; não implanta o sistema. |

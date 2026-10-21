@@ -6,6 +6,7 @@ Esta pasta contém as referências gerais do Digital JOST. O [índice do manual]
 
 | Documento | Conteúdo |
 |---|---|
+| [Colinha do projeto](colinha-do-projeto.md) | Introdução simples à arquitetura, pastas, arquivos e fluxos, com roteiro de apresentação. |
 | [Arquitetura e modernização](arquitetura-modernizada.md) | Organização do sistema, responsabilidades, escolha das camadas e migração do legado. |
 | [Ambiente, servidor e publicação](servidor-e-publicacao.md) | Preparação, configuração privada, dependências, build, IIS, serviços Windows e retorno de versão. |
 | [Publicação no Azure DevOps](publicacao-azure.md) | Exportação filtrada e envio de uma versão de código ao repositório Azure. |
