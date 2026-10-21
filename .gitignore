@@ -57,9 +57,3 @@ logs/
 
 /app/static/uploads/library/*
 !app/static/uploads/library/
-
-# Temporario
-AGENTS.md
-handbook
-database
-scripts
