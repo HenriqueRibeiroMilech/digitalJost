@@ -1,5 +1,0 @@
-REGISTRO HISTÓRICO: comandos e caminhos de uma entrega anterior.
-Consulte handbook/README.md e handbook/docs/servidor-e-publicacao.md para o procedimento atual.
-Este arquivo não autoriza execução pelo agente.
-
-".venv\Scripts\python.exe" -m pip download --dest "pacotes-eventos" --only-binary=:all: --platform win_amd64 --python-version 3.13 --implementation cp --abi cp313 "APIFlask==3.1.2" "pydantic==2.13.5" "Flask==3.1.1" "Werkzeug==3.1.3" "python-dotenv==1.2.4"
