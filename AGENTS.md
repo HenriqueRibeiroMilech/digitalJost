@@ -150,7 +150,7 @@ Services recebem explicitamente identidade e dependências, controlam os casos d
 
 Não crie camadas vazias, classes base de CRUD ou descoberta automática de módulos. Classes de contratos e adaptadores continuam adequadas. Consulte [a base compartilhada](handbook/features/base-compartilhada.md) para recursos e exemplos e [a arquitetura oficial](handbook/docs/arquitetura-modernizada.md) para critérios e cuidados.
 
-A documentação oficial fica em `handbook/docs/` (guias gerais) e `handbook/features/` (funcionalidades e recursos comuns), indexada por `handbook/README.md`. Atualize o arquivo do assunto; não crie um documento por tarefa ou replique o manual no README principal. Planos e textos anteriores ficam em `handbook/historico/`, identificados como históricos, sem substituir as orientações atuais. As regras operacionais deste AGENTS.md permanecem obrigatórias.
+A documentação oficial fica em `handbook/docs/` (guias gerais) e `handbook/features/` (funcionalidades e recursos comuns), indexada por `handbook/README.md`. Siga os critérios de [manutenção da documentação](handbook/docs/README.md): atualize somente quando uma mudança relevante ou uma informação incorreta tornar o documento inadequado; refatorações internas e ajustes pequenos não exigem edição se as orientações continuarem corretas. Atualize o arquivo do assunto e somente as seções afetadas; não crie um documento por tarefa ou replique o manual no README principal. Planos e textos anteriores ficam em `handbook/historico/`, identificados como históricos, sem substituir as orientações atuais. As regras operacionais deste AGENTS.md permanecem obrigatórias.
 
 Nas alterações que permanecem no legado Flask/Jinja, preserve a organização autocontida já utilizada pelo Gerenciador de Demandas:
 

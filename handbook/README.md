@@ -24,14 +24,9 @@ Os oito guias foram aprofundados em **20/10/2026**, comparando código e versõe
 
 ## Como manter o manual
 
-- Atualizar o documento do assunto quando mudar seu comportamento. Não criar um arquivo por tarefa, correção ou commit.
-- Arquitetura contém padrões gerais; features contêm regras, API, arquivos, dados e verificações específicas.
-- Manter textos objetivos e links para a fonte de verdade; evitar copiar listas extensas de código ou repetir procedimentos.
-- Ao revisar, rastrear o fluxo no código e confrontar o histórico para recuperar decisões relevantes. Se houver divergência, descrever o estado implementado e identificar a proposta superada, sem tratá-la como entrega.
-- Detalhar contratos, permissões, transações, dados, integrações, falhas e publicação quando fizerem parte do assunto. Não reduzir informação necessária apenas para atingir um limite de linhas.
-- Identificar propostas como planejadas. Um script SQL versionado não comprova execução, e um recurso implementado não comprova publicação.
-- Criar documento novo somente para um assunto distinto que precise ser mantido; acrescentá-lo a este índice.
-- Ao mover arquivos, corrigir referências internas, README principal e AGENTS.md.
+As regras de inclusão e manutenção estão em [Guias gerais e manutenção da documentação](docs/README.md), junto do índice de `docs/`.
+
+Atualizar somente quando uma mudança relevante ou uma informação incorreta afetar a utilidade do documento. Refatorações internas e ajustes pequenos não exigem atualizar o manual se suas orientações continuarem corretas. Preferir o arquivo do assunto; não criar um documento por tarefa, correção ou commit.
 
 O [histórico](historico/README.md) preserva estudos, planos e versões anteriores dos documentos. Ele não define a arquitetura vigente nem autoriza executar comandos antigos. O [README principal](../README.md) apresenta o projeto; [AGENTS.md](../AGENTS.md) continua definindo as restrições operacionais.
 
