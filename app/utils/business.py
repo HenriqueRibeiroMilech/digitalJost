@@ -117,7 +117,11 @@ def _apply_approved_stop_changes(event, workcenters, received_data):
             AND T1.finalDate IS NOT NULL
             AND T1.deniedText IS NULL
             AND T2.startDate < :end_date
-            AND T2.endDate > :start_date
+            AND (
+                T2.endDate > :start_date
+                OR (T2.endDate = T2.startDate
+                    AND T2.startDate >= :start_date)
+            )
         ORDER BY T1.finalDate, T1.requestId
     """
     params = {
@@ -230,7 +234,11 @@ def _apply_approved_stop_changes_by_event_id(event, received_data):
             AND T1.finalDate IS NOT NULL
             AND T1.deniedText IS NULL
             AND T2.startDate < :end_date
-            AND T2.endDate > :start_date
+            AND (
+                T2.endDate > :start_date
+                OR (T2.endDate = T2.startDate
+                    AND T2.startDate >= :start_date)
+            )
         ORDER BY T1.finalDate, T1.requestId
     """
     approved_changes = _run_query_with_deadlock_retry(

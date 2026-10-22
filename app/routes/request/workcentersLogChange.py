@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from math import isfinite
 from requests.auth import HTTPBasicAuth
 
 import pandas as pd
@@ -273,9 +274,29 @@ def _find_current_status_stop(check_request, events):
     start_date = pd.to_datetime(check_request['startDate'])
     end_date = pd.to_datetime(check_request['endDate'])
 
-    if pd.isna(start_date) or pd.isna(end_date) or end_date <= start_date:
+    if pd.isna(start_date) or pd.isna(end_date) or end_date < start_date:
         raise _CurrentStatusMatchError(
             'PERIODO DA PARADA DO PLEX NAO FOI ENCONTRADO.'
+        )
+
+    if end_date == start_date:
+        # Sem duracao nao ha intervalo que identifique uma parada no Current
+        # Status. So dispensamos a atualizacao quando nao existe linha no instante.
+        status_at_start = engine_run_query("""
+            SELECT TOP (1) ID
+            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
+            WHERE Workcenter = :workcenter
+                AND StatusBegin <= :start_date
+                AND COALESCE(StatusEnd, GETDATE()) >= :start_date
+        """, 'plex', {
+            'workcenter': str(matching_workcenters.iloc[0]['Workcenter_Code']),
+            'start_date': start_date.to_pydatetime()
+        })
+        if status_at_start.empty:
+            return None, new_motive
+
+        raise _CurrentStatusMatchError(
+            'EXISTE REGISTRO NO CURRENT STATUS NO INSTANTE DA PARADA; VERIFIQUE A SOLICITACAO.'
         )
 
     query = """
@@ -344,6 +365,81 @@ def _find_current_status_stop(check_request, events):
         )
 
     return int(closest_candidates.iloc[0]['ID']), new_motive
+
+
+def _restore_plex_stop_period(cnnx, check_request):
+    try:
+        event_id = int(check_request['eventId'])
+    except (TypeError, ValueError):
+        raise _CurrentStatusMatchError('PARADA DO PLEX NAO FOI ENCONTRADA.')
+
+    # OPENQUERY nao aceita parametros dentro da consulta remota. event_id ja foi
+    # convertido para inteiro antes de ser incluido no SQL.
+    plex_log = engine_run_query(f"""
+        SELECT Log_Date, Log_Hours, Workcenter_Key
+        FROM OPENQUERY([PLEX_DSN_JOST], '
+            SELECT Log_Date, Log_Hours, Workcenter_Key
+            FROM Part_v_Workcenter_Log
+            WHERE Log_Key = {event_id}
+        ')
+    """, 'jdt')
+    if len(plex_log) != 1:
+        raise _CurrentStatusMatchError('PARADA DO PLEX NAO FOI ENCONTRADA.')
+
+    plex_log = plex_log.iloc[0]
+    start_date = pd.to_datetime(plex_log['Log_Date'], errors='coerce')
+    log_hours = pd.to_numeric(
+        pd.Series([plex_log['Log_Hours']]), errors='coerce'
+    ).iloc[0]
+    workcenter = _normalize_catalog_id(plex_log['Workcenter_Key'])
+    try:
+        workcenter_id = int(workcenter)
+    except (TypeError, ValueError):
+        raise _CurrentStatusMatchError('DADOS DA PARADA NO PLEX SAO INVALIDOS.')
+
+    if (pd.isna(start_date) or pd.isna(log_hours)
+            or not isfinite(float(log_hours)) or log_hours < 0):
+        raise _CurrentStatusMatchError('DADOS DA PARADA NO PLEX SAO INVALIDOS.')
+
+    saved_start = pd.to_datetime(check_request['startDate'], errors='coerce')
+    saved_workcenter = _normalize_catalog_id(check_request['workcenter'])
+    if ((pd.notna(saved_start) and abs(saved_start - start_date) > timedelta(seconds=1))
+            or (saved_workcenter is not None and saved_workcenter != workcenter)):
+        raise _CurrentStatusMatchError(
+            'DADOS DA SOLICITACAO NAO CORRESPONDEM A PARADA DO PLEX.'
+        )
+
+    end_date = start_date + pd.to_timedelta(float(log_hours), unit='h')
+    cnnx.execute(text("""
+        IF EXISTS (
+            SELECT 1 FROM JDT_REQUEST_STOPCHANGES_PLEX WITH (UPDLOCK, HOLDLOCK)
+            WHERE eventId = :event_id
+        )
+            UPDATE JDT_REQUEST_STOPCHANGES_PLEX
+            SET workcenter = :workcenter,
+                startDate = :start_date,
+                endDate = :end_date,
+                logMinutes = CAST(ROUND(:log_hours * 60, 0) AS INT)
+            WHERE eventId = :event_id
+        ELSE
+            INSERT INTO JDT_REQUEST_STOPCHANGES_PLEX (
+                eventId, workcenter, startDate, endDate, logMinutes
+            ) VALUES (
+                :event_id, :workcenter, :start_date, :end_date,
+                CAST(ROUND(:log_hours * 60, 0) AS INT)
+            )
+    """), {
+        'event_id': event_id,
+        'workcenter': workcenter_id,
+        'start_date': start_date.to_pydatetime(),
+        'end_date': end_date.to_pydatetime(),
+        'log_hours': float(log_hours)
+    })
+
+    check_request['workcenter'] = workcenter_id
+    check_request['startDate'] = start_date
+    check_request['endDate'] = end_date
+    check_request['logHours'] = float(log_hours)
 
 
 def _update_current_status_stop(current_status_id, new_motive):
@@ -484,7 +580,7 @@ def stopChanges_main():
                                 Workcenter_Key
                                 , CONCAT(Workcenter_Code, '-', Workcenter_Name) AS Workcenter_Name
                                 , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-                                , FORMAT(DATEADD(MINUTE, Log_Hours * 60.0, Log_Date), 'dd/MM/yyyy HH:mm:ss') AS End_Date
+                                , FORMAT(DATEADD(SECOND, CAST(ROUND(Log_Hours * 3600.0, 0) AS INT), Log_Date), 'dd/MM/yyyy HH:mm:ss') AS End_Date
                                 , CAST(ROUND(Log_Hours * 60, 0) AS INT) AS Log_Minutes
                                 , Code
                                 , MotiveEventKey
@@ -1270,6 +1366,7 @@ def stopChanges_manage():
                     events = getPlex('events')
 
                     try:
+                        _restore_plex_stop_period(cnnx, check_request)
                         current_status_id, newMotivePlex = _find_current_status_stop(
                             check_request,
                             events
