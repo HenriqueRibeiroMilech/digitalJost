@@ -280,24 +280,12 @@ def _find_current_status_stop(check_request, events):
         )
 
     if end_date == start_date:
-        # Sem duracao nao ha intervalo que identifique uma parada no Current
-        # Status. So dispensamos a atualizacao quando nao existe linha no instante.
-        status_at_start = engine_run_query("""
-            SELECT TOP (1) ID
-            FROM [JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]
-            WHERE Workcenter = :workcenter
-                AND StatusBegin <= :start_date
-                AND COALESCE(StatusEnd, GETDATE()) >= :start_date
-        """, 'plex', {
-            'workcenter': str(matching_workcenters.iloc[0]['Workcenter_Code']),
-            'start_date': start_date.to_pydatetime()
-        })
-        if status_at_start.empty:
-            return None, new_motive
-
-        raise _CurrentStatusMatchError(
-            'EXISTE REGISTRO NO CURRENT STATUS NO INSTANTE DA PARADA; VERIFIQUE A SOLICITACAO.'
-        )
+        if check_request['logHours'] != 0:
+            raise _CurrentStatusMatchError(
+                'PERIODO DA PARADA DO PLEX NAO FOI ENCONTRADO.'
+            )
+        # Uma parada Plex sem duracao nao identifica um intervalo no Current Status.
+        return None, new_motive
 
     query = """
         SELECT
