@@ -149,3 +149,16 @@ def requests_page():
         abort(400)
     return render_vue_shell(title="Solicitações de demandas | Digital JOST",
                             unavailable_message="Solicitações de demandas indisponível.")
+
+
+@demands_bp.post("/<int:demand_id>/information-reply")
+def information_reply(demand_id):
+    from flask import url_for
+    from backend.compatibility.demand_notifications import send_notification
+    from . import management
+    from .management_schemas import InformationReply
+
+    data = InformationReply.model_validate_json(request.form.get("payload", ""))
+    return management.reply_information(demand_id, data, request.files.getlist("files"), identity.current_actor(),
+        **_service_deps(), storage=current_app.extensions["demands_attachment_storage"], sender=send_notification,
+        portal_url=url_for("demands_shell.management_page", demand=demand_id, _external=True))

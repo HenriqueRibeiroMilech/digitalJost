@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -92,6 +92,7 @@ class HistoryOut(BaseModel):
     event_type: str
     actor_name: str | None
     created_at: datetime
+    changes: dict[str, Any] | None = None
 
 
 class RequestDetail(RequestItem):
@@ -105,6 +106,8 @@ class RequestDetail(RequestItem):
     can_update: bool
     attachments: list[AttachmentOut]
     history: list[HistoryOut]
+    information_requests: list[dict[str, Any]] = Field(default_factory=list)
+    can_reply: bool = False
 
 
 class RequestList(PaginatedResponse[RequestItem, RequestCapabilities]):

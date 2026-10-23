@@ -29,4 +29,10 @@ export const demandsApi = {
   attachmentUrl(id: number, attachmentId: number) {
     return `${base}/${id}/attachments/${attachmentId}`
   },
+  reply(id: number, payload: { row_version: string; information_id: number; reply: string }, files: File[]) {
+    const body = new FormData()
+    body.append('payload', JSON.stringify(payload))
+    files.forEach(file => body.append('files', file))
+    return requestJson<{ saved: boolean; notification_warning?: string }>(`${base}/${id}/information-reply`, { method: 'POST', body }, 60000)
+  },
 }

@@ -2,6 +2,8 @@
 
 AREA_NAME = "Transformação Digital"
 AREA_ID = 1
+ACTIVE_STATUSES = ("a_fazer", "em_andamento", "em_validacao", "pausado", "aguardando_terceiros", "aguardando_informacoes")
+MANAGEMENT_ROLES = {action: AREA_NAME for action in ("management.read", "management.create", "management.review", "management.edit")}
 ACTION_ROLES = {
     "demands.read": "GENERAL",
     "demands.create": "GENERAL",

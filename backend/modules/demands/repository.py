@@ -23,7 +23,8 @@ _SELECT = """
 
 def list_requests(connection, area_id, actor_id, query):
     parameters = {"area_id": area_id, "actor_id": actor_id}
-    where = _VISIBLE
+    where = _VISIBLE + """ AND (D.origin = N'solicitacao' OR EXISTS (
+        SELECT 1 FROM dbo.DJ_DEMAND_INFORMATION_REQUESTS I WHERE I.demand_id = D.id))"""
     if query.entry_kind != "todos":
         where += " AND D.entry_kind = :entry_kind"
         parameters["entry_kind"] = query.entry_kind
@@ -108,7 +109,7 @@ def add_attachment(connection, demand_id, actor_id, item):
 def list_attachments(connection, demand_id):
     rows = connection.execute(text("""
         SELECT id, original_name, size_bytes FROM dbo.DJ_DEMAND_ATTACHMENTS
-        WHERE demand_id = :demand_id ORDER BY id
+        WHERE demand_id = :demand_id AND deleted_at IS NULL ORDER BY id
     """), {"demand_id": demand_id}).mappings().all()
     return [dict(row) for row in rows]
 
@@ -116,23 +117,24 @@ def list_attachments(connection, demand_id):
 def get_attachment(connection, demand_id, attachment_id):
     return connection.execute(text("""
         SELECT original_name, storage_key FROM dbo.DJ_DEMAND_ATTACHMENTS
-        WHERE demand_id = :demand_id AND id = :attachment_id
+        WHERE demand_id = :demand_id AND id = :attachment_id AND deleted_at IS NULL
     """), {"demand_id": demand_id, "attachment_id": attachment_id}).mappings().one_or_none()
 
 
 def add_history(connection, demand_id, actor_id, event_type, changes=None):
-    connection.execute(text("""
+    return connection.execute(text("""
         INSERT INTO dbo.DJ_DEMAND_HISTORY (demand_id, event_type, actor_id, changes)
+        OUTPUT inserted.id
         VALUES (:demand_id, :event_type, :actor_id, :changes)
     """), {"demand_id": demand_id, "actor_id": actor_id, "event_type": event_type,
-           "changes": json.dumps(changes, ensure_ascii=False) if changes else None})
+           "changes": json.dumps(changes, ensure_ascii=False, default=str) if changes else None}).scalar_one()
 
 
 def list_history(connection, demand_id):
     rows = connection.execute(text("""
-        SELECT H.id, H.event_type, U.name AS actor_name, H.created_at
+        SELECT H.id, H.event_type, U.name AS actor_name, H.created_at, H.changes
         FROM dbo.DJ_DEMAND_HISTORY AS H
         LEFT JOIN dbo.JDT_USER_DETAILS AS U ON U.id = H.actor_id
         WHERE H.demand_id = :demand_id ORDER BY H.id DESC
     """), {"demand_id": demand_id}).mappings().all()
-    return [dict(row) for row in rows]
+    return [{**row, "changes": json.loads(row["changes"]) if row["changes"] else None} for row in rows]

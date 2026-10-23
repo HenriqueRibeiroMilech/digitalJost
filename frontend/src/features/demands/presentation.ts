@@ -8,6 +8,7 @@ export const fileAccept = '.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.pdf,.png,.jpg,
 const statuses: Record<string, string> = {
   em_analise: 'Em análise', a_fazer: 'A fazer', em_andamento: 'Em andamento',
   pausado: 'Pausado', concluido: 'Concluído', cancelado: 'Cancelado', recusado: 'Recusado',
+  em_validacao: 'Em validação', aguardando_terceiros: 'Aguardando terceiros', aguardando_informacoes: 'Aguardando informações',
 }
 export function statusLabel(status: string) { return statuses[status] ?? status }
 export function kindLabel(kind: string) { return kind === 'erro' ? 'Relato de erro' : 'Demanda' }

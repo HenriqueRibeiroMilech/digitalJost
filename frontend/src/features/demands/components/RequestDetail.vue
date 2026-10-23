@@ -10,6 +10,8 @@ import { demandsApi } from '../api'
 import { displayDate, fileSize, kindLabel, statusLabel } from '../presentation'
 import type { RequestDetail } from '../types'
 import RequestForm from './RequestForm.vue'
+import DemandInformation from './DemandInformation.vue'
+import DemandHistory from './DemandHistory.vue'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{ closed: []; changed: []; busy: [value: boolean] }>()
@@ -57,6 +59,8 @@ function saved(request: RequestDetail) {
           <div><dt class="text-xs text-dj-muted">Urgência</dt><dd class="mt-1">{{ data.urgency }}</dd></div>
           <div><dt class="text-xs text-dj-muted">Enviada em</dt><dd class="mt-1">{{ displayDate(data.created_at) }}</dd></div>
         </dl>
+        <DemandInformation :demand-id="id" :version="data.row_version" :items="data.information_requests ?? []" :can-reply="data.can_reply"
+          class="mt-5" @changed="refetch(); emit('changed')" @busy="busy = $event" />
         <section class="mt-6" :aria-labelledby="'request-description-' + id">
           <h4 :id="'request-description-' + id" class="mb-2 text-sm font-semibold">{{ data.entry_kind === 'erro' ? 'Descrição do erro' : 'Objetivo da demanda' }}</h4>
           <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-muted">{{ data.description }}</p>
@@ -81,18 +85,13 @@ function saved(request: RequestDetail) {
         </section>
         <section class="mt-6 border-t border-dj-border pt-5" :aria-labelledby="'request-history-' + id">
           <h4 :id="'request-history-' + id" class="mb-3 text-sm font-semibold">Histórico</h4>
-          <ol class="space-y-3 text-sm">
-            <li v-for="event in data.history" :key="event.id" class="border-l-2 border-dj-border pl-3">
-              <p>{{ event.event_type === 'created' ? 'Solicitação enviada' : event.event_type === 'updated' ? 'Dados atualizados' : 'Atualização registrada' }}</p>
-              <p class="mt-1 text-xs text-dj-muted">{{ event.actor_name ?? 'Usuário indisponível' }} · {{ displayDate(event.created_at) }}</p>
-            </li>
-          </ol>
+          <DemandHistory :events="data.history" />
         </section>
       </div>
     </RequestState>
     <template v-if="!editing" #footer>
       <SecondaryButton type="button" label="Fechar" outlined @click="close" />
-      <Button v-if="data?.can_update && !isError" type="button" label="Editar solicitação" icon="pi pi-pencil" @click="editing = true" />
+      <Button v-if="data?.can_update && !isError" type="button" label="Editar solicitação" icon="pi pi-pencil" :disabled="busy" @click="editing = true" />
     </template>
   </AppDialog>
 </template>

@@ -2,6 +2,7 @@ import json
 from hashlib import sha256
 
 from . import repository
+from . import management_repository
 from .domain import (
     AREA_ID, DemandConflictError, DemandNotFoundError, DemandValidationError,
 )
@@ -100,6 +101,8 @@ def _detail(connection, demand_id, actor, permissions):
     row["row_version"] = bytes(row["row_version"]).hex()
     row["attachments"] = repository.list_attachments(connection, demand_id)
     row["history"] = repository.list_history(connection, demand_id)
+    row["information_requests"] = management_repository.information(connection, demand_id)
+    row["can_reply"] = row["relationship"] == "requester" and row["status"] == "aguardando_informacoes"
     return row
 
 
