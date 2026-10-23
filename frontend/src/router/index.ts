@@ -15,11 +15,6 @@ export default createRouter({
       component: () => import('@/features/demands/pages/RequestsPage.vue'),
     },
     {
-      path: '/demandas/gerenciador',
-      name: 'demand-management',
-      component: () => import('@/features/demands/pages/ManagementPage.vue'),
-    },
-    {
       path: '/:pathMatch(.*)*',
       component: () => import('@/app/pages/NotFoundPage.vue'),
     },

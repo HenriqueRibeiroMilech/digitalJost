@@ -1,8 +1,8 @@
 # Demandas
 
-**Estado atual:** a arquitetura moderna entrega **Nova solicitação** e **Minhas solicitações**, em `/app/demandas/solicitacoes`, e **Gestão de demandas**, em `/app/demandas/gerenciador`, somente para Transformação Digital (`area_id = 1`). O painel trabalha apenas com registros das tabelas novas; o gerenciador antigo continua separado. Código implementado não comprova schema aplicado ou publicação no servidor.
+**Estado atual:** a arquitetura moderna entrega **Nova solicitação** e **Minhas solicitações**, em `/app/demandas/solicitacoes`, somente para Transformação Digital (`area_id = 1`). O gerenciador antigo continua separado. Código implementado não comprova schema aplicado ou publicação no servidor.
 
-Revisão em **23/10/2026**, por análise estática de rotas, contratos, serviços, SQL, armazenamento, Vue e job automático. Os antigos documentos de [solicitações](../historico/handbook/solicitacoes-demandas.md) e [proposta do gerenciador](../historico/handbook/proposta-gerenciador-demandas.md) são históricos. O escopo deste arquivo é o módulo moderno; os fluxos antigos são citados para explicar a convivência.
+Revisão em **20/10/2026**, confrontando rotas, schemas, Services, SQL, armazenamento, Vue, migration e os antigos documentos de [solicitações](../historico/handbook/solicitacoes-demandas.md) e [proposta do gerenciador](../historico/handbook/proposta-gerenciador-demandas.md). O escopo deste arquivo é o módulo moderno; os fluxos antigos são citados para explicar a convivência.
 
 ## 1. Escopo e uso
 
@@ -10,13 +10,13 @@ O usuário escolhe **Solicitar demanda** (`demanda`) ou **Reportar erro** (`erro
 
 Minhas solicitações mostra registros em que o usuário é solicitante ou contribuinte. Busca literal por título ou número, com ou sem `#`, filtro de tipo, contagem e paginação acontecem no servidor. A página usa 12 cards compactos; detalhes incluem conteúdo, anexos, histórico e capacidade de edição. O formulário de demanda mostra uma imagem ilustrativa de fluxo; o relato de erro usa a área de evidências sem essa imagem.
 
-Solicitações modernas aparecem na aba Solicitações do painel novo. Não há importação, sincronização ou migração automática de tabelas legadas. O link de solicitações anteriores mantém o acesso ao fluxo antigo. Demandas internas só entram em Minhas solicitações quando houver pedido de informações, respeitando o vínculo de solicitante/contribuinte.
+Solicitações modernas não aparecem no gerenciador antigo: não há importação, sincronização ou migração automática de tabelas legadas. O link de solicitações anteriores mantém o acesso ao fluxo antigo.
 
 ### Navegação e estados da página
 
 - Sem seletor, a página abre Nova solicitação. `?tab=minhas` abre a listagem; `?request=<id>` também seleciona Minhas solicitações e tenta abrir o detalhe autorizado.
 - `area`, quando fornecida, deve ser exatamente `Transformação Digital`; outra área recebe 400. O backend usa `AREA_ID = 1`, sem confiar em um ID de área recebido no payload.
-- A navegação moderna tem Eventos, Solicitações, Gestão de demandas e retorno ao portal. O link **Consultar solicitações anteriores** aponta para `/demandas/solicitacoes?area=Transformação%20Digital&tab=minhas` no legado. A gestão exige também o perfil da área ou administração no backend.
+- A navegação moderna tem Eventos, Solicitações e retorno ao portal. O link **Consultar solicitações anteriores** aponta para `/demandas/solicitacoes?area=Transformação%20Digital&tab=minhas` no legado.
 - O formulário permanece montado ao trocar Nova/Minhas, preservando o rascunho na mesma página. Recarregar ou sair não persiste rascunho, arquivos ou chave de envio.
 - Durante gravação, a página bloqueia troca de seção/rota interna; o diálogo bloqueia fechamento enquanto salva. Isso não impede fechamento do navegador nem prova cancelamento no servidor.
 
@@ -68,7 +68,7 @@ Para erro, `assumptions`, `current_problems` e `expected_benefits` são normaliz
 
 Todas as rotas exigem sessão e GENERAL. As ações `demands.read/create/update` ficam em `domain.py`; o backend restringe registros à área e ao vínculo de solicitante/contribuinte. Recurso inacessível retorna 404. Escritas exigem o CSRF compartilhado.
 
-Somente o solicitante edita a solicitação, enquanto o registro está em análise e sem classificação. O contribuinte consulta e baixa anexos. A edição revalida vínculo, estado e classificação sob trava e compara `row_version`; conflito retorna 409. Histórico e alteração usam a mesma transação. O PUT preserva anexos. A gestão permite inclusão e remoção lógica de anexos; o solicitante pode anexar documentos ao responder a um pedido de informações.
+Somente o solicitante edita, enquanto o registro está em análise e sem classificação. O contribuinte consulta e baixa anexos. A edição revalida vínculo, estado e classificação sob trava e compara `row_version`; conflito retorna 409. Histórico e alteração usam a mesma transação. A edição preserva os anexos existentes; gestão posterior de arquivos não está implementada.
 
 Na criação, `submission_key` e fingerprint do conteúdo/arquivos permitem reconhecer repetições: mesma chave/conteúdo devolve o registro; conteúdo diferente retorna 409. A verificação é serializada e depende da restrição única no banco. O browser conserva o mesmo envio após falha, sem repetição automática. Depois de abandonar ou recarregar o formulário, conferir a lista antes de iniciar outro cadastro: a chave não é persistida no navegador.
 
@@ -83,7 +83,7 @@ Uma falha na renovação da lista não desfaz a gravação. Resultado incerto ex
 | Outro usuário com GENERAL | Não vê o registro; detalhe/anexo retorna 404. | Não. |
 | Sem sessão / sem GENERAL | 401 / 403 na API. | Negado antes da operação. |
 
-As três ações da API de solicitações são mapeadas para GENERAL, mas esse perfil sozinho não concede acesso a todas as solicitações. A condição SQL inclui área e `(requester_id = actor_id OR contributor_id = actor_id)`. Não existe exceção administrativa nessa API pessoal; a API de gestão tem autorização própria por área. Alterar o contribuinte pode retirar o acesso da pessoa anterior; o serviço revalida a elegibilidade da pessoa selecionada ao salvar.
+As três ações são mapeadas para GENERAL, mas esse perfil sozinho não concede acesso a todas as solicitações. A condição SQL inclui área e `(requester_id = actor_id OR contributor_id = actor_id)`. Não existe exceção administrativa global nesse módulo. Alterar o contribuinte pode retirar o acesso da pessoa anterior; o Service revalida a elegibilidade da pessoa selecionada ao salvar.
 
 A lista de contribuintes consulta `JDT_USER_DETAILS`: `active = 1`, `generic = 0`, ID diferente do solicitante, nome não nulo e e-mail corporativo não vazio. Não cria usuários, envia convites ou consulta LDAP. A mesma condição é aplicada na gravação; não confiar apenas nas opções do Select. Se o colaborador antigo deixar de ser elegível, a interface ainda pode mostrá-lo como atual, mas o backend exige uma escolha válida ou sua remoção.
 
@@ -110,7 +110,7 @@ O frontend mantém chave e conteúdo após falha de envio. Em rede/timeout, 5xx 
 
 O Service abre transação, lê a solicitação visível com UPDLOCK/HOLDLOCK, exige vínculo de solicitante e confere status/classificação. O UPDATE repete essas condições e compara a versão recebida. Se nenhuma linha for atualizada, retorna 409 para reabrir os dados; não sobrescreve deliberadamente outra edição.
 
-Os campos são comparados com a linha atual. Se houver mudanças, grava evento `updated` com valores anteriores/posteriores em JSON na mesma transação. Na criação, grava `created`. Um PUT sem mudança de conteúdo pode atualizar data/ROWVERSION sem gerar evento de mudança. O campo `history` expõe evento, autor, data e `changes`; o detalhe mostra justificativas, respostas e alterações anteriores/posteriores. Ações de gestão também geram histórico.
+Os campos são comparados com a linha atual. Se houver mudanças, grava evento `updated` com valores anteriores/posteriores em JSON na mesma transação. Na criação, grava `created`. Um PUT sem mudança de conteúdo pode atualizar data/ROWVERSION sem gerar evento de mudança. O campo `history` do detalhe expõe evento, autor e data; os valores de `changes` ficam no banco e não são devolvidos/exibidos no detalhe atual.
 
 A capacidade `can_update` orienta o botão, mas é recalculada e não substitui as condições na escrita. Não há inclusão, troca ou exclusão de anexos pelo PUT.
 
@@ -126,7 +126,6 @@ Base `/api/v1/demands`; IDs são inteiros nas rotas Flask. `area`, quando inform
 | GET `/<demand_id>` | Detalhe, anexos, histórico, versão e `can_update`. |
 | PUT `/<demand_id>` | JSON completo de `RequestUpdate`; detalhe após commit. |
 | GET `/<demand_id>/attachments/<attachment_id>` | Download autorizado, privado, sem cache e com `nosniff`. |
-| POST `/<demand_id>/information-reply` | Multipart `payload` com `row_version`, `information_id` e `reply`; arquivos opcionais. Somente o solicitante responde ao pedido aberto. |
 
 Erros seguem `{message, detail}`: campos inválidos 422, conflito 409, tamanho HTTP 413 e armazenamento indisponível 503. A área e o limite de request são conferidos antes do parsing do formulário.
 
@@ -139,49 +138,14 @@ O POST aceita somente a chave de formulário `payload` e a chave de arquivos `fi
 | Resposta | Conteúdo público |
 |---|---|
 | Lista | ID, entrada, título, descrição, urgência, status, data, nome do solicitante e relação (`requester`/`contributor`), paginação e capacidade de criar. |
-| Detalhe | Campos da lista, contribuinte, contexto, atualização, versão, `can_update`, anexos, histórico, `information_requests` e `can_reply`. |
+| Detalhe | Campos da lista, contribuinte, campos de contexto, atualização, versão, `can_update`, anexos e histórico. |
 | Anexo no detalhe | Somente ID, nome e tamanho; sem caminho/chave privada ou digest. |
-| Histórico no detalhe | ID, tipo do evento, nome do autor, data e mudanças em JSON. |
+| Histórico no detalhe | ID, tipo do evento, nome do autor e data. |
 | Contribuintes | `{items: [{id, name}]}`, sem e-mail/cadastro completo. |
 
 O módulo aplica `Cache-Control: private, no-store` a suas respostas. Downloads são links autenticados para a rota de anexo; o servidor responde como `application/octet-stream`, attachment, sem resposta condicional e com `X-Content-Type-Options: nosniff`. Não servir o armazenamento por uma URL estática.
 
-### Painel de gestão
-
-O painel tem abas **Demandas** e **Solicitações**, sem gráficos. Cards agrupados por responsável são de consulta; gerenciamento, anexos, tarefas e histórico ficam no diálogo, em três abas. A aba Solicitações mostra entradas ainda sem responsável, em análise ou aguardando informações.
-
-Na análise, aceitar exige responsável elegível e classificação **Melhoria** ou **Projeto**; um relato de erro mantém **Erro**. Recusar exige justificativa. Pedir informações permite escolher complemento ou agendamento de reunião e exige uma descrição. O solicitante recebe e-mail e responde em Minhas solicitações, com anexos opcionais; a resposta restaura o estado anterior e notifica quem pediu. Aceitar, recusar ou cancelar encerra um pedido de informações ainda aberto.
-
-**Nova demanda ou aviso** pede primeiro Projeto, Melhoria, Erro, Atividade ou Aviso. Os quatro primeiros usam a mesma `DJ_DEMANDS`: origem `interna`, responsável obrigatório e status `a_fazer`. Projeto/melhoria exigem os campos de contexto e evidências; erro exige descrição/evidências; atividade admite anexos opcionais e os campos de tempo/dificuldade/observações. Não há recorrência moderna. Avisos têm título, descrição, início/fim locais opcionais e finalização automática após o fim; ficam em tabela própria.
-
-| Estado | Ações de andamento |
-|---|---|
-| A fazer | Iniciar, cancelar; outras ações: agendar início, cancelar agendamento existente, solicitar informações/reunião. |
-| Em andamento | Concluir, cancelar; outras ações: solicitar informações/reunião, iniciar validação, pausar, aguardar terceiros. |
-| Em validação | Concluir, retomar execução, cancelar e solicitar informações. |
-| Pausado / aguardando terceiros | Retomar, cancelar e solicitar informações. |
-| Aguardando informações | Resposta pelo solicitante; cancelamento pelo responsável. |
-| Concluído / cancelado / recusado | Consulta, sem edição operacional. |
-
-Cancelamento, pausa e espera por terceiros exigem justificativa; pausa também exige previsão de retorno. O prazo inicial pode ser definido ao iniciar/agendar; demandas diferentes de atividade precisam dele. Alterar prazo já existente usa exclusivamente a ação própria com justificativa. O editor de gerenciamento e as demais ações não aceitam campo de prazo. Agendamento exige início futuro e prazo compatível; o card exibe início agendado, prazo e tag **Demanda agendada**.
-
-O filtro começa com fim igual à data de hoje do SQL Server e início vazio, exibindo ativas. Informar o início acrescenta as concluídas entre as duas datas, inclusive, por `completed_on`; a criação das demandas ativas não é limitada pelo período. Responsável, tipo, dificuldade, status e busca continuam aplicados ao conjunto. Selecionar explicitamente um status restringe esse resultado.
-
-Todas as rotas `/api/v1/demand-management` exigem sessão, GENERAL e perfil Transformação Digital ou administração normalizada. A consulta abrange a área; alterações operacionais exigem responsável atual ou administrador, estado compatível e versão. A análise de solicitações é permitida aos gestores da área. As ações são mapeadas em `MANAGEMENT_ROLES`. Avisos são editáveis/finalizáveis pelo autor ou administrador. Tarefas também verificam a versão da demanda; atualizações de tarefa verificam sua própria versão.
-
-| Método/caminho relativo | Finalidade |
-|---|---|
-| GET `/options`, GET `""`, GET `/requests`, GET `/<id>` | Opções, painel filtrado, fila de análise e detalhe. |
-| POST `""` | Criar demanda interna com multipart e chave de envio. |
-| POST `/<id>/review` | Aceitar, recusar ou pedir complemento/reunião. |
-| PUT `/<id>`, POST `/<id>/actions`, PATCH `/<id>/deadline` | Gerenciamento, transição e prazo com justificativa. |
-| POST `/<id>/tasks`, PUT/DELETE `/<id>/tasks/<task_id>` | Criar, atualizar ou remover tarefa. |
-| POST `/<id>/attachments`, GET/DELETE `/<id>/attachments/<attachment_id>` | Adicionar, baixar ou remover logicamente anexo. |
-| POST `/notices`, PUT/DELETE `/notices/<notice_id>` | Criar, editar ou finalizar aviso. |
-
-Demandas internas e avisos usam chave/fingerprint para repetição segura da criação. O envio de e-mail é enfileirado junto da mudança e ocorre após commit. Falha de transporte não desfaz a gravação; a API retorna aviso de e-mail pendente. O Auto tenta novamente após cinco minutos, até cinco tentativas. Se houver interrupção com estado `sending`, o resultado é incerto: exige conciliação manual, sem reenvio automático que possa duplicar e-mail. O destinatário é consultado no cadastro compartilhado; responsável/contribuinte ativos podem receber cópia.
-
-`/app/demandas/gerenciador?view=requests` abre a análise; `?demand=<id>` abre o detalhe autorizado a partir de uma notificação de resposta. A solicitação enviada ao usuário mantém o link de Minhas solicitações.
+Não há DELETE moderno, endpoint de classificação, transição ou execução de demanda. Rótulos futuros em `presentation.ts` não significam operações implementadas.
 
 ## 5. Arquivos, transações e dados
 
@@ -204,26 +168,19 @@ Se `save()` falhar com erro de filesystem, tenta remover apenas os arquivos novo
 | `DJ_DEMANDS` | Solicitação, participantes, estado, datas, ROWVERSION, chave e fingerprint do envio. |
 | `DJ_DEMAND_ATTACHMENTS` | Metadados, tamanho, SHA-256 e chave privada dos arquivos. |
 | `DJ_DEMAND_HISTORY` | Criação e edição; autor, data e mudanças em JSON. |
-| `DJ_DEMAND_TASKS` | Tarefas vinculadas à demanda, versão e conclusão. |
-| `DJ_DEMAND_INFORMATION_REQUESTS` | Perguntas/reuniões, estado anterior e respostas; somente um pedido aberto por demanda. |
-| `DJ_DEMAND_NOTICES` | Avisos independentes com período e finalização. |
-| `DJ_DEMAND_NOTIFICATIONS` | Fila persistente de e-mail por evento do histórico. |
 | `JDT_USER_DETAILS` | Consulta compartilhada de nomes e colaboradores; não substitui as tabelas modernas. |
 
 O [script de criação](../../database/migrations/20261019_create_dj_demands.sql) prevê IDENTITY, índices, FKs dos anexos/histórico e unicidade de `(area_id, requester_id, submission_key)`. É sujeito a revisão/aplicação explícita; esta documentação não comprova sua execução. A API depende desses objetos e não aplica o script automaticamente.
 
 A migration inclui checks de área positiva, participantes, entrada/classificação, texto obrigatório, urgência e detalhes de demanda. Anexos/histórico possuem FK para a solicitação **sem cascade de exclusão**. IDs de usuário são referências lógicas ao cadastro compartilhado: nenhuma FK foi presumida sem confirmar tipo/chave reais. Não substituir IDENTITY por `MAX(id) + 1`.
 
-A coluna `classification` recebe `melhoria`, `projeto` ou `atividade` para entrada demanda; erro mantém classificação NULL. O [script de gestão](../../database/migrations/20261023_add_dj_demand_management.sql), aplicado depois do script inicial, acrescenta as colunas operacionais e tabelas auxiliares. Ele adapta o check de contexto para atividade, mantém as solicitações já cadastradas e não copia nem altera tabelas JDT. Não é um script de reaplicação idempotente. A máquina de estados é validada no serviço, com travas, versão e histórico.
-
-Criação/atualização/início/conclusão/histórico usam UTC; `completed_on`, prazos, início agendado e previsões usam datas do calendário local do SQL Server. Períodos de avisos usam horário local sem fuso. Remoção de anexo preenche `deleted_at`, sem apagar o arquivo físico; até 30 anexos ativos por demanda, mantendo o limite de dez por envio.
+A coluna `classification` permite futuramente `melhoria`, `projeto` ou `atividade` para entrada demanda, mas não há operação que a preencha nesta etapa. `status` tem default `em_analise` e check de texto não vazio; a tabela não define sozinha uma máquina completa de estados. Novas transições precisam de regras no backend, autorização, concorrência e histórico.
 
 ## 6. Onde alterar e publicar
 
 - [Backend](../../backend/modules/demands/): rotas/schemas, Services funcionais, Repository, definições de domínio e `storage.py`.
 - [Frontend](../../frontend/src/features/demands/): página, formulário, detalhe, cards, tipos e cliente HTTP.
-- [Bootstrap](../../backend/bootstrap.py): inicializa o adaptador de armazenamento; rotas fornecem engine, identidade, permissões e demais dependências aos serviços funcionais.
-- [Auto moderno](../../app/services/jobs/mon_mon_auto_modernDemands.py): job explícito a cada minuto no Auto, separado do job legado; inicia agendamentos vencidos em `a_fazer` e processa a fila de e-mails. Antes da migration, retorna sem trabalho se a tabela da fila não existir.
+- [Bootstrap](../../backend/bootstrap.py): inicializa o armazenamento; as rotas o fornecem somente à criação e ao download.
 
 Seguir [Servidor e publicação](../docs/servidor-e-publicacao.md), com backend/build compatíveis, schema revisado, limites de upload, ACLs e backup de tabelas **e** arquivos. Retorno de código não remove solicitações ou documentos nem os torna visíveis ao legado.
 
@@ -235,24 +192,24 @@ Seguir [Servidor e publicação](../docs/servidor-e-publicacao.md), com backend/
 | Rascunho/envio incerto | `RequestForm.vue`, `RequestsPage.vue`, `api.ts` e o contrato de idempotência no Service. |
 | Apresentação | `RequestCard.vue`, `presentation.ts` e componentes comuns; datas UTC diferem do período local de Eventos. |
 
-Publicação: revisar/aplicar o script inicial, se ainda ausente, e depois o script de gestão **antes de publicar este backend**, pois também as consultas de Minhas solicitações passam a depender das novas colunas/tabelas. Conferir armazenamento/limites; publicar backend e build compatíveis e atualizar/reiniciar o Auto em janela autorizada para os agendamentos e retentativas. Validar acessos de solicitante/contribuinte/gestor e convivência com o legado. O build também depende da imagem pública `app/static/images/FLUXO.PNG` usada no formulário; ela não é um anexo de usuário.
+Publicação inicial: revisar/aplicar o script autorizado antes de usar a API; conferir armazenamento/limites; publicar código e build juntos; verificar acessos de solicitante/contribuinte e legado. O build também depende da imagem pública `app/static/images/FLUXO.PNG` usada no formulário; ela não é um anexo de usuário.
 
 ## 7. Limites e verificações pendentes
 
-Não estão incluídos gráficos, recorrências modernas ou migração dos registros antigos. A decisão atual é começar somente com dados das tabelas novas. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias históricas; não substitui os contratos atuais nem comprova schema aplicado.
+Ainda não estão implementados no gerenciador moderno: classificação operacional, aprovação, atribuição, execução de atividades/projetos, indicadores, notificações e migração das demandas antigas. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias e decisões pendentes; não deve ser tratada como funcionalidade pronta ou schema aprovado.
 
 ### O que permanece da proposta e o que mudou
 
 | Assunto | Situação correta para próximas entregas |
 |---|---|
 | Armazenamento | A decisão posterior escolheu tabelas `DJ_*` novas. A antiga ideia de unificar tudo em `JDT_REQUEST_IMPROVEMENTS_SMALL` foi superada. |
-| Entrada/classificação | Solicitante escolhe demanda ou erro; gestão classifica demanda como melhoria/projeto. O cadastro interno também admite atividade. |
-| Atividades e execução | Mesma tabela de demandas, gerenciamento, tarefas, anexos e histórico; avisos mantêm tabela própria. |
-| Recorrências | Ausentes no moderno; nenhuma automação recorrente antiga foi desligada. Agendamento inicia uma demanda já existente. |
+| Entrada/classificação | Solicitante escolhe demanda ou erro; classificação de demanda fica para o gerenciamento futuro. Não oferecer quatro tipos como se o contrato atual os aceitasse. |
+| Atividades e execução | Reformulação prevista; tarefas, atribuição, pausas, prazos, aprovação e validação precisam de desenho/implementação próprios. |
+| Recorrências | Retirá-las é direção do novo produto, não autorização para desligar a automação antiga. Agendamento e recorrência precisam ser separados. |
 | Migração | Não realizada. Exige levantamento do schema real, mapeamento de IDs/participantes/status, anexos, histórico e plano de conciliação/retorno. |
-| Indicadores/notificações | Sem gráficos; e-mail implementado com fila pós-commit, consulta e resposta em Minhas solicitações. |
+| Indicadores/notificações | Propostas, sem efeito nas solicitações modernas de hoje. |
 
-Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demandManagement](../../app/routes/demandManagement/) e o [job automático legado](../../app/services/jobs/mon_mon_auto_demandManagement.py) continuam ligados às tabelas legadas. Somente o novo job moderno usa `DJ_DEMAND*`; o registro dele no Auto preserva os jobs anteriores.
+Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demandManagement](../../app/routes/demandManagement/) e o [job automático](../../app/services/jobs/mon_mon_auto_demandManagement.py) continuam ligados às tabelas legadas. Não foram encontradas referências aos `DJ_DEMAND*` nos jobs pesquisados. Isso não desativa jobs antigos nem elimina seus efeitos sobre as demandas antigas.
 
 ### Cenários essenciais para validação autorizada
 
@@ -265,10 +222,6 @@ Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demand
 | Arquivos | Zero/11 arquivos, vazio, limites exatos, nome/caminho malicioso, extensão rejeitada e arquivo privado ausente. |
 | Falhas | Erro ao salvar arquivo, inserir metadados, montar resposta e confirmar transação; conferir SQL e arquivos juntos. |
 | Interface | Rascunho entre seções, envio incerto bloqueado, foco, URL do detalhe, volta da página e sucesso com falha de renovação. |
-| Gestão | Aceitar melhoria/projeto/erro, recusar com motivo, responsáveis/perfil/admin, versão antiga, tarefas e alterações somente dentro do detalhe. |
-| Informação | Pergunta/reunião, e-mail, resposta apenas pelo solicitante, arquivos opcionais, retorno ao estado anterior e concorrência com aceite/cancelamento. |
-| Datas e prazo | Ativas antigas mais conclusões inclusivas no período; ação própria exige motivo; início agendado/card/job sem recorrência. |
-| Avisos/e-mail | Período, finalização, repetição de cadastro, falha após commit, cinco tentativas e resultado incerto em `sending`. |
 
 Nenhum desses cenários foi executado nesta revisão documental. Não existe evidência aqui de ACL efetiva, aplicação do SQL, ausência de órfãos ou operação correta sob concorrência real.
 

@@ -22,22 +22,3 @@ def can_access(role):
         and callable(getattr(permission, "can", None))
         and permission.can()
     )
-
-
-def is_admin():
-    return str(getattr(current_user, "admin", "")).strip().lower() in ("1", "true", "sim")
-
-
-def can_access_area(area):
-    import json
-    from app.utils.permissions import user_has_role
-
-    roles = getattr(current_user, "role", [])
-    if isinstance(roles, str):
-        try:
-            roles = json.loads(roles)
-        except (ValueError, TypeError):
-            roles = [roles]
-    return can_access("GENERAL") and (
-        is_admin() or (isinstance(roles, (list, tuple, set)) and user_has_role(roles, area))
-    )

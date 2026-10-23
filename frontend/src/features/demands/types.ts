@@ -35,15 +35,7 @@ export interface RequestDetail extends RequestItem {
   row_version: string
   can_update: boolean
   attachments: { id: number; original_name: string; size_bytes: number }[]
-  history: HistoryEvent[]
-  information_requests: InformationRequest[]
-  can_reply: boolean
-}
-
-export interface HistoryEvent { id: number; event_type: string; actor_name: string | null; created_at: string; changes?: Record<string, unknown> | null }
-export interface InformationRequest {
-  id: number; kind: 'informacoes' | 'reuniao'; question: string; requested_by_name: string | null
-  requested_at: string; reply: string | null; replied_by_name: string | null; closed_at: string | null
+  history: { id: number; event_type: string; actor_name: string | null; created_at: string }[]
 }
 
 export interface RequestFilters {
