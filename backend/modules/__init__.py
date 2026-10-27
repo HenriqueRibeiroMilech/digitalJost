@@ -1,4 +1,5 @@
 def register_modules(app):
+    # Cada feature expõe a API JSON e a entrada HTML que carrega sua tela Vue.
     from .events import events_bp, events_shell_bp
     from .demands import demands_bp, demands_shell_bp
     app.register_blueprint(events_bp)

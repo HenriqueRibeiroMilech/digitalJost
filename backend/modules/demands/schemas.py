@@ -7,6 +7,7 @@ from backend.shared.schemas import PaginatedResponse, PaginationQuery
 
 
 class RequestFields(BaseModel):
+    # Valida defaults para cobrar os detalhes da demanda mesmo quando forem omitidos.
     model_config = ConfigDict(
         extra="forbid", str_strip_whitespace=True, strict=True, validate_default=True,
     )
@@ -27,6 +28,7 @@ class RequestFields(BaseModel):
             return None
         limit = 250 if info.field_name == "title" else 128 if info.field_name == "contributor_id" else 4000
         try:
+            # O limite de NVARCHAR conta unidades UTF-16; alguns símbolos ocupam duas.
             units = len(value.encode("utf-16-le")) // 2
         except UnicodeEncodeError:
             raise ValueError("Informe um texto válido.") from None
@@ -37,6 +39,7 @@ class RequestFields(BaseModel):
     @field_validator("assumptions", "current_problems", "expected_benefits")
     @classmethod
     def require_demand_details(cls, value, info: ValidationInfo):
+        # Relatos de erro descartam os detalhes exclusivos de uma solicitação de demanda.
         if info.data.get("entry_kind") == "erro":
             return None
         if info.data.get("entry_kind") == "demanda" and not value:

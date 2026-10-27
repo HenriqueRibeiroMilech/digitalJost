@@ -71,6 +71,7 @@ class EventOut(BaseModel):
     event_type_name: str | None
     instructor: str | None
     syllabus: str | None
+    # A resposta também atende registros sem período, embora o cadastro atual o exija.
     starts_at: datetime | None
     ends_at: datetime | None
     status: EventStatus

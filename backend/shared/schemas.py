@@ -10,6 +10,7 @@ Capabilities = TypeVar("Capabilities")
 
 
 class PaginationQuery(BaseModel):
+    # A query string traz números como texto; a conversão do Pydantic é intencional.
     model_config = ConfigDict(extra="forbid")
 
     page: int = Field(default=1, ge=1)

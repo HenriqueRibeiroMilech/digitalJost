@@ -61,6 +61,7 @@ class LdapDirectoryConfig:
 
 @dataclass(frozen=True)
 class BackendConfig:
+    # Estes valores descrevem os recursos; init_backend faz a composição dos clientes.
     td_database_uri: str | URL = field(repr=False)
     td_pool_size: int = 5
     td_max_overflow: int = 0

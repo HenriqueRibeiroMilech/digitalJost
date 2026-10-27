@@ -42,6 +42,7 @@ def validate_area_and_size():
 
 @demands_bp.after_request
 def private_response(response):
+    # Solicitações e anexos são pessoais; o navegador não deve guardar essas respostas.
     response.headers["Cache-Control"] = "private, no-store"
     return response
 
@@ -92,12 +93,14 @@ def create_request():
     actor_id = str(identity.current_actor().id)
     storage = current_app.extensions["demands_attachment_storage"]
     prepared = storage.prepare(request.files.getlist("files"))
+    # A impressão reúne dados normalizados e arquivos para reconhecer uma repetição do envio.
     fingerprint = sha256(json.dumps({
         "data": data.model_dump(),
         "files": [{"name": item.name, "sha256": item.digest} for item in prepared],
     }, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
     sessions = get_td_session_factory()
     with sessions.begin() as session:
+        # A trava e a chave única do banco coordenam requisições com a mesma chave de envio.
         existing = session.execute(select(Demand.id, Demand.submission_fingerprint).where(
             Demand.area_id == AREA_ID, Demand.requester_id == actor_id, Demand.submission_key == data.submission_key,
         ).with_hint(Demand, "WITH (UPDLOCK, HOLDLOCK)", "mssql")).mappings().one_or_none()
@@ -110,6 +113,7 @@ def create_request():
             demand = Demand(area_id=AREA_ID, requester_id=actor_id,
                             submission_fingerprint=fingerprint, **data.model_dump())
             session.add(demand)
+            # Obtém o ID sem commit; solicitação, anexos e histórico serão confirmados juntos.
             session.flush()
             saved = storage.save(prepared)
             try:
@@ -153,6 +157,7 @@ def update_request(demand_id, json_data):
         values = json_data.model_dump(exclude={"row_version"})
         changes = {field: {"before": current[field], "after": value}
                    for field, value in values.items() if current[field] != value}
+        # A trava protege a leitura; a versão também rejeita dados antigos enviados pela tela.
         updated_id = session.scalar(update(Demand).where(
             Demand.id == demand_id, Demand.area_id == AREA_ID, Demand.requester_id == actor_id,
             Demand.status == "em_analise", Demand.classification.is_(None),
@@ -161,6 +166,7 @@ def update_request(demand_id, json_data):
         if updated_id is None:
             raise ApiProblem(409, "A solicitação mudou. Reabra os detalhes antes de salvar novamente.")
         if changes:
+            # O histórico usa a mesma transação da alteração para manter os dois consistentes.
             session.add(DemandHistory(demand_id=demand_id, actor_id=actor_id, event_type="updated",
                                       changes=json.dumps(changes, ensure_ascii=False)))
         session.flush()
@@ -181,6 +187,7 @@ def download_attachment(demand_id, attachment_id):
         if item is None:
             raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         name, storage_key = item["original_name"], item["storage_key"]
+    # A sessão SQL já fechou; o storage ainda valida o caminho antes de entregar o arquivo.
     path = current_app.extensions["demands_attachment_storage"].resolve(storage_key)
     if not path.is_file():
         raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
@@ -192,10 +199,12 @@ def download_attachment(demand_id, attachment_id):
 
 
 def _visible(actor_id):
+    # O perfil libera a ação; este filtro limita os registros por área e participação.
     return and_(Demand.area_id == AREA_ID, or_(Demand.requester_id == actor_id, Demand.contributor_id == actor_id))
 
 
 def _request_query(actor_id):
+    # A mesma tabela fornece os nomes de duas pessoas, usando um alias para cada papel.
     requester = aliased(SharedUser, name="requester")
     contributor = aliased(SharedUser, name="contributor")
     relationship = case((Demand.requester_id == actor_id, "requester"), else_="contributor")
@@ -223,9 +232,11 @@ def _detail(session, demand_id, actor_id):
     row = _get_request(session, demand_id, actor_id)
     if row is None:
         raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
+    # A capacidade orienta o botão da tela; o PUT refaz as verificações antes de salvar.
     row["can_update"] = (permissions.can(identity.current_actor(), "demands.update")
                          and row["relationship"] == "requester"
                          and row["status"] == "em_analise" and row["classification"] is None)
+    # O JSON transporta os oito bytes da versão como 16 caracteres hexadecimais.
     row["row_version"] = bytes(row["row_version"]).hex()
     row["attachments"] = [dict(item) for item in session.execute(select(
         DemandAttachment.id, DemandAttachment.original_name, DemandAttachment.size_bytes,
@@ -238,6 +249,7 @@ def _detail(session, demand_id, actor_id):
 
 
 def _contributors_query(actor_id):
+    # Flags nulas também ficam fora: é preciso estar ativo e explicitamente não ser genérico.
     return select(cast(SharedUser.id, NVARCHAR(128)).label("id"), SharedUser.name).where(
         SharedUser.active == 1, SharedUser.generic == 0, SharedUser.id != actor_id,
         SharedUser.name.is_not(None), func.nullif(func.ltrim(func.rtrim(SharedUser.company_email)), "").is_not(None),

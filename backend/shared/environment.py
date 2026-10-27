@@ -19,6 +19,7 @@ def load_environment() -> None:
             raise RuntimeError("DJ_ENV_FILE deve indicar um caminho absoluto não vazio.")
         dotenv_path = Path(configured_path)
     else:
+        # O arquivo padrão é relativo ao repositório, não à pasta de execução do IIS.
         dotenv_path = Path(__file__).resolve().parents[2] / ".env"
 
     try:

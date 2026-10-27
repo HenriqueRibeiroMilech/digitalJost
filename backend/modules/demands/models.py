@@ -39,10 +39,12 @@ class Demand(Base):
     assumptions: Mapped[str | None] = mapped_column(NVARCHAR(4000))
     current_problems: Mapped[str | None] = mapped_column(NVARCHAR(4000))
     expected_benefits: Mapped[str | None] = mapped_column(NVARCHAR(4000))
+    # A chave identifica o envio; a impressão permite conferir se seu conteúdo é o mesmo.
     submission_key: Mapped[str] = mapped_column(CHAR(36))
     submission_fingerprint: Mapped[str] = mapped_column(CHAR(64))
     created_at: Mapped[datetime] = mapped_column(DATETIME2(precision=3), server_default=func.sysutcdatetime())
     updated_at: Mapped[datetime] = mapped_column(DATETIME2(precision=3), server_default=func.sysutcdatetime())
+    # O SQL Server gera esta versão binária; a rota a compara ao editar o registro.
     row_version: Mapped[bytes] = mapped_column(
         ROWVERSION, server_default=FetchedValue(), server_onupdate=FetchedValue(),
     )

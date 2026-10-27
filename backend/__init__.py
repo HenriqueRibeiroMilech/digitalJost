@@ -2,6 +2,7 @@
 
 
 def init_backend(app, *, config):
+    # Importar o pacote backend não deve montar recursos; a factory chama esta função.
     from .shared.database import init_td_database
     from .shared.vue_shell import init_vue_shell
     from .modules import register_modules

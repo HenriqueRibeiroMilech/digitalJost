@@ -28,6 +28,7 @@ class Event(Base):
     description: Mapped[str] = mapped_column(NVARCHAR(2000))
     created_by: Mapped[str] = mapped_column(NVARCHAR(128))
     created_at: Mapped[datetime] = mapped_column(DATETIME2(precision=3), server_default=func.sysutcdatetime())
+    # O período do evento usa horário local; a data de criação acima é registrada em UTC.
     starts_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     ends_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     event_type_id: Mapped[int | None] = mapped_column(ForeignKey("dbo.DJ_EVENT_TYPES.id"))
@@ -40,6 +41,7 @@ class AttendanceList(Base):
     __table_args__ = {"schema": "dbo"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # A cascata é executada pelo banco ao excluir o evento, incluindo suas listas.
     event_id: Mapped[int] = mapped_column(ForeignKey("dbo.DJ_EVENTS.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(NVARCHAR(120))
     created_by: Mapped[str] = mapped_column(NVARCHAR(128))

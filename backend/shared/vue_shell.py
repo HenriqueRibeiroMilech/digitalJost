@@ -10,6 +10,7 @@ from .http import get_csrf_token
 
 
 def init_vue_shell(app):
+    # As pastas são relativas ao pacote backend; a URL pública independe desse caminho.
     resources = Blueprint(
         "backend_vue",
         "backend",
@@ -31,6 +32,7 @@ def _manifest_assets():
     visited = set()
 
     def collect(chunk):
+        # O CSS pode estar nos chunks importados, além do arquivo de entrada do Vue.
         for filename in chunk.get("css", []):
             stylesheet = url_for("backend_vue.static", filename=filename)
             if stylesheet not in stylesheets:

@@ -47,6 +47,7 @@ class DemandAttachmentStorage:
                 }})
             stem = name.rsplit(".", 1)[0]
             name = f"{stem[:180]}.{extension}"
+            # Um byte extra detecta o excesso sem carregar um arquivo inteiro acima do limite.
             content = uploaded.stream.read(MAX_FILE_BYTES + 1)
             total += len(content)
             if not content or len(content) > MAX_FILE_BYTES or total > MAX_TOTAL_BYTES:
@@ -63,6 +64,7 @@ class DemandAttachmentStorage:
             for item in prepared:
                 key = uuid4().hex
                 # O nome original nunca compõe o caminho de armazenamento.
+                # O modo xb falha se a chave já existir, sem sobrescrever outro anexo.
                 with (self.base / key).open("xb") as target:
                     saved.append({"original_name": item.name, "storage_key": key,
                                   "size_bytes": len(item.content), "sha256": item.digest})
@@ -85,6 +87,7 @@ class DemandAttachmentStorage:
             raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         base = self.base.resolve()
         candidate = base / storage_key
+        # Mesmo uma chave válida não pode resolver para um destino fora da pasta privada.
         if candidate.is_symlink() or candidate.resolve().parent != base:
             raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         return candidate

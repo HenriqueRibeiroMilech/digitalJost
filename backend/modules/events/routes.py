@@ -47,6 +47,7 @@ def list_event_types():
     sessions = get_td_session_factory()
     with sessions() as session:
         items = session.execute(select(EventType.id, EventType.name).order_by(EventType.name, EventType.id))
+        # Copia os campos públicos antes de fechar a sessão usada pela consulta.
         result = {"items": [dict(row) for row in items.mappings()]}
     actor = identity.current_actor()
     return {
@@ -84,6 +85,7 @@ def create_event_type(json_data):
 def delete_event_type(event_type_id):
     sessions = get_td_session_factory()
     with sessions.begin() as session:
+        # A trava coordena a exclusão com as rotas que vinculam eventos a este tipo.
         existing = session.scalar(
             select(EventType.id).where(EventType.id == event_type_id)
             .with_hint(EventType, "WITH (XLOCK, HOLDLOCK)", "mssql"),
@@ -105,6 +107,7 @@ def delete_event_type(event_type_id):
 def list_events(query_data):
     sessions = get_td_session_factory()
     with sessions() as session:
+        # Filtros e status usam o relógio do banco, evitando depender do horário do navegador.
         events = _event_query(session.scalar(select(func.sysdatetime()))).subquery()
         statement = select(events).where(
             events.c.status.in_(query_data.status.split(",")),
@@ -125,6 +128,7 @@ def create_event(json_data):
         now = session.scalar(select(func.sysdatetime()))
         event = Event(**_event_values(json_data), created_by=str(identity.current_actor().id))
         session.add(event)
+        # flush obtém o ID; o bloco begin confirma a gravação antes do retorno de sucesso.
         session.flush()
         result = _event(session, event.id, now=now)
     return result
@@ -262,6 +266,7 @@ def export_attendance_pdf(event_id, list_id):
         attendance_list = _attendance_list(session, event_id, list_id, lock=True)
         now = session.scalar(select(func.sysdatetime()))
         event = _event(session, event_id, now=now)
+        # A exportação inclui a lista inteira, independentemente da página aberta na tela.
         entries = [dict(row) for row in session.execute(
             _entries_query().where(AttendanceEntry.list_id == list_id).order_by(AttendanceEntry.id.desc()),
         ).mappings()]
@@ -298,7 +303,9 @@ def register_attendance(event_id, list_id, json_data):
                    "Leitura não reconhecida. Mantenha o crachá encostado e tente novamente. Esta leitura não foi registrada.")
         raise ApiProblem(503 if unavailable else 422, message, detail={"lookup_status": employee.status})
     with sessions.begin() as session:
+        # O estado pode ter mudado durante o LDAP; revalida a lista e coordena suas escritas.
         _attendance_list(session, event_id, list_id, lock=True)
+        # Os quatro primeiros dígitos variam por empresa; a comparação usa os oito finais.
         existing = session.execute(_entries_query().where(
             AttendanceEntry.list_id == list_id,
             func.right(AttendanceEntry.registration, 8) == json_data.registration[4:],
@@ -306,6 +313,7 @@ def register_attendance(event_id, list_id, json_data):
         values = {"name": employee.name, "department": employee.department, "company": employee.company}
         if existing is not None:
             item = dict(existing)
+            # Releituras só completam campos vazios, preservando os dados já registrados.
             if any(values[field] and not item[field] for field in values):
                 item = dict(session.execute(update(AttendanceEntry).where(
                     AttendanceEntry.id == item["id"], AttendanceEntry.list_id == list_id,
@@ -341,6 +349,7 @@ def delete_attendance_entry(event_id, list_id, entry_id):
 
 
 def _event_query(now):
+    # O status é calculado pelo período; não existe uma gravação só para avançá-lo com o tempo.
     status = case(
         (or_(Event.starts_at.is_(None), Event.ends_at.is_(None)), "unscheduled"),
         (Event.ends_at <= now, "completed"),
@@ -384,6 +393,7 @@ def _require_event(session, event_id, *, lock=False):
 
 
 def _lists_query():
+    # O total de presenças vem na mesma consulta das listas, sem outra chamada por item.
     total = select(func.count()).select_from(AttendanceEntry).where(
         AttendanceEntry.list_id == AttendanceList.id,
     ).correlate(AttendanceList).scalar_subquery()

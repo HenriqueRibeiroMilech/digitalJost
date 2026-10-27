@@ -28,6 +28,7 @@ def _date(value):
 
 
 def build_attendance_pdf(event, attendance_list, entries, *, generated_at):
+    # O arquivo é montado em memória e devolvido à rota, sem gravar um PDF no servidor.
     output = BytesIO()
     document = SimpleDocTemplate(
         output, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=86, bottomMargin=42,
@@ -84,6 +85,7 @@ def build_attendance_pdf(event, attendance_list, entries, *, generated_at):
         rows.append([Paragraph("Nenhuma presença registrada nesta lista.", cell), "", "", ""])
     # O Frame do SimpleDocTemplate reserva 6 pontos de padding em cada lado.
     width = document.width - 12
+    # Repetir o cabeçalho mantém listas longas legíveis nas páginas seguintes.
     table = LongTable(rows, colWidths=[width * ratio for ratio in (0.22, 0.14, 0.38, 0.26)],
                       repeatRows=1, hAlign="LEFT", splitByRow=1, splitInRow=1)
     commands = [

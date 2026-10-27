@@ -50,10 +50,12 @@ def get_td_session_factory():
 
 def paginate(session, statement, query):
     """Pagina uma projeção de campos públicos, com contagem da mesma consulta."""
+    # A rota fornece os filtros de acesso e uma ordenação estável antes de paginar.
     total = session.scalar(select(func.count()).select_from(statement.order_by(None).subquery()))
     rows = session.execute(
         statement.offset((query.page - 1) * query.per_page).limit(query.per_page),
     ).mappings()
+    # Materializa as linhas aqui para a resposta não depender de uma sessão já fechada.
     return {
         "items": [dict(row) for row in rows],
         "total": total,

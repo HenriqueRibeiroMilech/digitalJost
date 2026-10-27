@@ -38,6 +38,7 @@ class RolePermissions:
         self._action_roles = dict(action_roles)
 
     def can(self, actor, action):
+        # O acesso vem da sessão atual; passar outro Actor não consulta outro usuário.
         role = self._action_roles.get(action)
         return bool(role is not None and self._can_access(role))
 

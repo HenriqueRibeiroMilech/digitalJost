@@ -93,6 +93,7 @@ def http_exception_response(error):
 
 
 def configure_api(blueprint, *, identity, permission):
+    # Esta guarda protege o módulo; ação e acesso ao registro são conferidos nas rotas.
     @blueprint.before_request
     def authorize_api():
         if not identity.is_authenticated():
@@ -113,6 +114,7 @@ def configure_api(blueprint, *, identity, permission):
 
     @blueprint.errorhandler(ValidationError)
     def invalid_payload(error):
+        # Inclui o JSON validado manualmente no multipart, mantendo os erros por campo.
         fields = {}
         for item in error.errors(include_url=False, include_context=False, include_input=False):
             field = str(item["loc"][0]) if item["loc"] else "payload"
@@ -131,6 +133,7 @@ def configure_api(blueprint, *, identity, permission):
 
 
 def page_access(*, identity, permission):
+    # A página pode redirecionar ao login; a API usa JSON com status 401.
     def decorate(view):
         @wraps(view)
         def authorized(*args, **kwargs):
