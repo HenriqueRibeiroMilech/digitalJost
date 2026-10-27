@@ -7,6 +7,7 @@ Esta pasta contém as referências gerais do Digital JOST. O [índice do manual]
 | Documento | Conteúdo |
 |---|---|
 | [Colinha do projeto](colinha-do-projeto.md) | Introdução simples à arquitetura, pastas, arquivos e fluxos, com roteiro de apresentação. |
+| [Backend Flask na prática](guia-pratico-backend-flask.md) | Guia didático no formato do curso: entender a implementação, ler rotas ORM e acrescentar funcionalidades passo a passo. |
 | [Arquitetura e modernização](arquitetura-modernizada.md) | Organização do sistema, responsabilidades, escolha das camadas e migração do legado. |
 | [Proposta de aproximação ao curso de Flask](proposta-arquitetura-proxima-ao-curso.md) | Decisões adotadas no backend por feature, com ORM nas rotas e quatro arquivos básicos; validação funcional pendente. |
 | [Ambiente, servidor e publicação](servidor-e-publicacao.md) | Preparação, configuração privada, dependências, build, IIS, serviços Windows e retorno de versão. |

@@ -74,7 +74,7 @@ require_action = action_access(identity=identity, permissions=permissions)
 
 Usar `@require_action("events.create")`, por exemplo, além de `configure_api`. A ação fica visível na rota; vínculos, área e estado do registro continuam sendo verificados na operação. O mapa não armazena usuários nem resultados de permissão. `RolePermissions` consulta a sessão corrente; jobs precisam de política apropriada.
 
-`ApiProblem(status, message=None, detail=None)` representa uma falha esperada e é traduzido por `configure_api` para `{message, detail}`. O argumento `detail` é nomeado. Erros de domínio de Demandas herdam desse contrato. A plataforma também traduz `ValidationError` explícito do multipart, sem expor a entrada ou detalhes internos.
+`ApiProblem(status, message=None, detail=None)` representa uma falha esperada e é traduzido por `configure_api` para `{message, detail}`. O argumento `detail` é nomeado. Demandas usa esse contrato diretamente nas rotas e no armazenamento. A plataforma também traduz `ValidationError` explícito do multipart, sem expor a entrada ou detalhes internos.
 
 ## 4. Modelos e consultas ORM
 

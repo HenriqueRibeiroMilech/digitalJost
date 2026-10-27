@@ -9,6 +9,7 @@ Os oito guias foram aprofundados em **20/10/2026**, comparando código e versõe
 | Documento | Quando consultar |
 |---|---|
 | [Colinha do projeto](docs/colinha-do-projeto.md) | Entender o projeto com explicações simples, localizar pastas e arquivos e preparar uma apresentação. |
+| [Backend Flask na prática](docs/guia-pratico-backend-flask.md) | Estudar a implementação atual e aprender a acrescentar funcionalidades, com exemplos explicados no formato do curso. |
 | [Arquitetura e modernização](docs/arquitetura-modernizada.md) | Entender a organização, escolher camadas e criar ou migrar uma feature. |
 | [Proposta de aproximação ao curso de Flask](docs/proposta-arquitetura-proxima-ao-curso.md) | Decisões implementadas em Eventos e Solicitações: ORM nas rotas e menos arquivos obrigatórios; validação funcional pendente. |
 | [Ambiente, servidor e publicação](docs/servidor-e-publicacao.md) | Preparar computador/configuração/build, atualizar IIS e serviços ou retornar uma versão. |
