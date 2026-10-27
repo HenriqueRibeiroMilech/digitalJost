@@ -8,6 +8,7 @@ Esta pasta contém as referências gerais do Digital JOST. O [índice do manual]
 |---|---|
 | [Colinha do projeto](colinha-do-projeto.md) | Introdução simples à arquitetura, pastas, arquivos e fluxos, com roteiro de apresentação. |
 | [Arquitetura e modernização](arquitetura-modernizada.md) | Organização do sistema, responsabilidades, escolha das camadas e migração do legado. |
+| [Proposta de aproximação ao curso de Flask](proposta-arquitetura-proxima-ao-curso.md) | Backend por feature, ORM nas rotas e quatro arquivos básicos, sem Service ou Repository obrigatórios; implementação pendente. |
 | [Ambiente, servidor e publicação](servidor-e-publicacao.md) | Preparação, configuração privada, dependências, build, IIS, serviços Windows e retorno de versão. |
 | [Publicação no Azure DevOps](publicacao-azure.md) | Exportação filtrada e envio de uma versão de código ao repositório Azure. |
 | [Padrão visual](padrao-visual.md) | Identidade, layout, componentes, formulários, diálogos, estados e acessibilidade. |
