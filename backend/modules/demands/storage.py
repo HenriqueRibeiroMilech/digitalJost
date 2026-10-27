@@ -7,10 +7,17 @@ from uuid import uuid4
 
 from werkzeug.utils import secure_filename
 
-from .domain import (
-    ALLOWED_EXTENSIONS, MAX_FILES, MAX_FILE_BYTES, MAX_TOTAL_BYTES,
-    DemandNotFoundError, DemandStorageError, DemandValidationError,
-)
+from backend.platform.http import ApiProblem
+
+
+MAX_FILES = 10
+MAX_FILE_BYTES = 10 * 1024 * 1024
+MAX_TOTAL_BYTES = 40 * 1024 * 1024
+MAX_REQUEST_BYTES = 45 * 1024 * 1024
+ALLOWED_EXTENSIONS = frozenset({
+    "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "pdf",
+    "png", "jpg", "jpeg", "gif", "bmp", "webp",
+})
 
 
 @dataclass(frozen=True)
@@ -28,20 +35,24 @@ class DemandAttachmentStorage:
     @staticmethod
     def prepare(files):
         if not 1 <= len(files) <= MAX_FILES:
-            raise DemandValidationError("files", "Adicione entre 1 e 10 documentos ou evidências.")
+            raise ApiProblem(422, detail={"json": {"files": ["Adicione entre 1 e 10 documentos ou evidências."]}})
         prepared = []
         total = 0
         for uploaded in files:
             name = secure_filename(uploaded.filename or "")
             extension = name.rsplit(".", 1)[-1].lower() if "." in name else ""
             if not name or extension not in ALLOWED_EXTENSIONS:
-                raise DemandValidationError("files", "Use documentos Word, Excel, PowerPoint, PDF, texto ou imagens permitidas.")
+                raise ApiProblem(422, detail={"json": {
+                    "files": ["Use documentos Word, Excel, PowerPoint, PDF, texto ou imagens permitidas."],
+                }})
             stem = name.rsplit(".", 1)[0]
             name = f"{stem[:180]}.{extension}"
             content = uploaded.stream.read(MAX_FILE_BYTES + 1)
             total += len(content)
             if not content or len(content) > MAX_FILE_BYTES or total > MAX_TOTAL_BYTES:
-                raise DemandValidationError("files", "Cada arquivo deve ter conteúdo e até 10 MB; o total deve ser de até 40 MB.")
+                raise ApiProblem(422, detail={"json": {
+                    "files": ["Cada arquivo deve ter conteúdo e até 10 MB; o total deve ser de até 40 MB."],
+                }})
             prepared.append(PreparedFile(name, content, sha256(content).hexdigest()))
         return prepared
 
@@ -58,7 +69,7 @@ class DemandAttachmentStorage:
                     target.write(item.content)
         except OSError as error:
             self.remove_new(saved)
-            raise DemandStorageError() from error
+            raise ApiProblem(503, "Não foi possível guardar os documentos. Tente novamente mais tarde.") from error
         return saved
 
     def remove_new(self, items):
@@ -66,14 +77,14 @@ class DemandAttachmentStorage:
         for item in items:
             try:
                 self.resolve(item["storage_key"]).unlink(missing_ok=True)
-            except (OSError, DemandNotFoundError):
+            except (OSError, ApiProblem):
                 pass
 
     def resolve(self, storage_key):
         if len(storage_key) != 32 or any(character not in "0123456789abcdef" for character in storage_key):
-            raise DemandNotFoundError()
+            raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         base = self.base.resolve()
         candidate = base / storage_key
         if candidate.is_symlink() or candidate.resolve().parent != base:
-            raise DemandNotFoundError()
+            raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         return candidate

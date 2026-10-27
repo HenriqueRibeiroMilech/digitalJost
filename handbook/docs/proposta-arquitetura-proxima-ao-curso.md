@@ -66,7 +66,7 @@ backend/
         └── storage.py
 ```
 
-Essa árvore representa a organização implementada; o módulo de Demandas também mantém `domain.py` para erros e limites. Features sem persistência não precisam de `models.py`. Arquivos de PDF, armazenamento ou integração existem porque cumprem responsabilidades específicas.
+Essa árvore representa a organização implementada. Em Demandas, a área e as permissões ficam nas rotas, os limites de anexos ficam em `storage.py` e os erros usam o `ApiProblem` compartilhado, sem precisar de `domain.py`. Features sem persistência não precisam de `models.py`. Arquivos de PDF, armazenamento ou integração existem porque cumprem responsabilidades específicas.
 
 `services.py` e `repository.py` não fazem parte da estrutura mínima. Os quatro arquivos desses nomes em Eventos e Demandas foram retirados após transferir as operações para rotas/auxiliares ORM e conferir referências. Em futuras migrações, retirar um arquivo somente depois de transferir todas as responsabilidades.
 

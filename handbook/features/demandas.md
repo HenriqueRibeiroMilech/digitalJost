@@ -38,7 +38,7 @@ Após criação confirmada, a interface limpa o formulário, gera nova chave, at
 
 Campos extras e caracteres inválidos são rejeitados; espaços externos são retirados. Os limites de texto consideram a representação do SQL Server. Não aceitar responsável, classificação ou status arbitrários do navegador.
 
-Extensões: Word, Excel, PowerPoint, TXT, PDF e imagens PNG/JPG/JPEG/GIF/BMP/WebP previstas em `domain.py`. O limite HTTP é 45 MiB, incluindo multipart; IIS/proxy também precisam comportar o envio. Upload aguarda até 60 segundos; outras chamadas usam o cliente comum.
+Extensões: Word, Excel, PowerPoint, TXT, PDF e imagens PNG/JPG/JPEG/GIF/BMP/WebP previstas em `storage.py`. O limite HTTP é 45 MiB, incluindo multipart; IIS/proxy também precisam comportar o envio. Upload aguarda até 60 segundos; outras chamadas usam o cliente comum.
 
 ### Normalização e exemplo de entrada
 
@@ -66,7 +66,7 @@ Para erro, `assumptions`, `current_problems` e `expected_benefits` são normaliz
 
 ## 3. Autorização, edição e repetição
 
-Todas as rotas exigem sessão e GENERAL. As ações `demands.read/create/update` ficam em `domain.py`; o backend restringe registros à área e ao vínculo de solicitante/contribuinte. Recurso inacessível retorna 404. Escritas exigem o CSRF compartilhado.
+Todas as rotas exigem sessão e GENERAL. As ações `demands.read/create/update` ficam em `routes.py`; o backend restringe registros à área e ao vínculo de solicitante/contribuinte. Recurso inacessível retorna 404. Escritas exigem o CSRF compartilhado.
 
 Somente o solicitante edita, enquanto o registro está em análise e sem classificação. O contribuinte consulta e baixa anexos. A edição revalida vínculo, estado e classificação sob trava e compara `row_version`; conflito retorna 409. Histórico e alteração usam a mesma transação. A edição preserva os anexos existentes; gestão posterior de arquivos não está implementada.
 
@@ -178,7 +178,7 @@ A coluna `classification` permite futuramente `melhoria`, `projeto` ou `atividad
 
 ## 6. Onde alterar e publicar
 
-- [Backend](../../backend/modules/demands/): operações e auxiliares ORM em `routes.py`, contratos em `schemas.py`, mapeamentos em `models.py`, erros/limites em `domain.py` e armazenamento em `storage.py`.
+- [Backend](../../backend/modules/demands/): operações, permissões e auxiliares ORM em `routes.py`, contratos em `schemas.py`, mapeamentos em `models.py` e armazenamento/limites dos anexos em `storage.py`. Os erros usam o `ApiProblem` compartilhado.
 - [Frontend](../../frontend/src/features/demands/): página, formulário, detalhe, cards, tipos e cliente HTTP.
 - [Bootstrap](../../backend/bootstrap.py): inicializa o armazenamento; as rotas o utilizam na criação e no download. A factory ORM reutiliza o engine moderno do TD.
 
@@ -188,7 +188,7 @@ Seguir [Servidor e publicação](../docs/servidor-e-publicacao.md), com backend/
 |---|---|
 | Campo ou regra de cadastro | `schemas.py`, `models.py`, rota/auxiliar, migration quando necessária, tipos e `RequestForm.vue`/`RequestDetail.vue`. |
 | Visibilidade/edição | `_visible` e auxiliares em `routes.py`, ações/capacidades, condição de versão e consultas de anexo; não alterar só o card. |
-| Arquivo/limites | `domain.py`, `storage.py`, request/IIS, formulário e contrato de download; preservar compensação. |
+| Arquivo/limites | `storage.py`, `routes.py`, request/IIS, formulário e contrato de download; preservar compensação. |
 | Rascunho/envio incerto | `RequestForm.vue`, `RequestsPage.vue`, `api.ts` e o contrato de idempotência na rota de criação. |
 | Apresentação | `RequestCard.vue`, `presentation.ts` e componentes comuns; datas UTC diferem do período local de Eventos. |
 

@@ -9,17 +9,22 @@ from sqlalchemy.orm import aliased
 
 from backend.compatibility import identity
 from backend.platform.database import get_td_session_factory, literal_contains, paginate
-from backend.platform.http import action_access, api_error, configure_api, page_access
+from backend.platform.http import ApiProblem, action_access, api_error, configure_api, page_access
 from backend.platform.identity import RolePermissions
 from backend.platform.vue_shell import render_vue_shell
 
-from .domain import (
-    ACTION_ROLES, AREA_ID, AREA_NAME, MAX_REQUEST_BYTES, DemandConflictError,
-    DemandNotFoundError, DemandValidationError,
-)
 from .models import Demand, DemandAttachment, DemandHistory, SharedUser
 from .schemas import ContributorsOut, RequestCreate, RequestDetail, RequestList, RequestQuery, RequestUpdate
+from .storage import MAX_REQUEST_BYTES
 
+
+AREA_NAME = "Transformação Digital"
+AREA_ID = 1
+ACTION_ROLES = {
+    "demands.read": "GENERAL",
+    "demands.create": "GENERAL",
+    "demands.update": "GENERAL",
+}
 
 permissions = RolePermissions(identity.can_access, ACTION_ROLES)
 require_action = action_access(identity=identity, permissions=permissions)
@@ -98,7 +103,7 @@ def create_request():
         ).with_hint(Demand, "WITH (UPDLOCK, HOLDLOCK)", "mssql")).mappings().one_or_none()
         if existing is not None:
             if existing["submission_fingerprint"] != fingerprint:
-                raise DemandConflictError("Este envio já foi utilizado com outros dados. Confira Minhas solicitações.")
+                raise ApiProblem(409, "Este envio já foi utilizado com outros dados. Confira Minhas solicitações.")
             result = _detail(session, existing["id"], actor_id)
         else:
             _validate_contributor(session, data.contributor_id, actor_id)
@@ -141,9 +146,9 @@ def update_request(demand_id, json_data):
     with sessions.begin() as session:
         current = _get_request(session, demand_id, actor_id, lock=True)
         if current is None or current["relationship"] != "requester":
-            raise DemandNotFoundError()
+            raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         if current["status"] != "em_analise" or current["classification"] is not None:
-            raise DemandConflictError("Esta solicitação já foi analisada e não pode mais ser editada.")
+            raise ApiProblem(409, "Esta solicitação já foi analisada e não pode mais ser editada.")
         _validate_contributor(session, json_data.contributor_id, actor_id)
         values = json_data.model_dump(exclude={"row_version"})
         changes = {field: {"before": current[field], "after": value}
@@ -154,7 +159,7 @@ def update_request(demand_id, json_data):
             Demand.row_version == bytes.fromhex(json_data.row_version),
         ).values(**values, updated_at=func.sysutcdatetime()).returning(Demand.id))
         if updated_id is None:
-            raise DemandConflictError("A solicitação mudou. Reabra os detalhes antes de salvar novamente.")
+            raise ApiProblem(409, "A solicitação mudou. Reabra os detalhes antes de salvar novamente.")
         if changes:
             session.add(DemandHistory(demand_id=demand_id, actor_id=actor_id, event_type="updated",
                                       changes=json.dumps(changes, ensure_ascii=False)))
@@ -169,16 +174,16 @@ def download_attachment(demand_id, attachment_id):
     sessions = get_td_session_factory()
     with sessions() as session:
         if _get_request(session, demand_id, str(identity.current_actor().id)) is None:
-            raise DemandNotFoundError()
+            raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         item = session.execute(select(DemandAttachment.original_name, DemandAttachment.storage_key).where(
             DemandAttachment.id == attachment_id, DemandAttachment.demand_id == demand_id,
         )).mappings().one_or_none()
         if item is None:
-            raise DemandNotFoundError()
+            raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
         name, storage_key = item["original_name"], item["storage_key"]
     path = current_app.extensions["demands_attachment_storage"].resolve(storage_key)
     if not path.is_file():
-        raise DemandNotFoundError()
+        raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
     response = send_file(path, as_attachment=True, download_name=name, mimetype="application/octet-stream",
                          conditional=False, max_age=0)
     response.headers["Cache-Control"] = "private, no-store"
@@ -217,7 +222,7 @@ def _get_request(session, demand_id, actor_id, *, lock=False):
 def _detail(session, demand_id, actor_id):
     row = _get_request(session, demand_id, actor_id)
     if row is None:
-        raise DemandNotFoundError()
+        raise ApiProblem(404, "Solicitação ou anexo não encontrado para seu acesso.")
     row["can_update"] = (permissions.can(identity.current_actor(), "demands.update")
                          and row["relationship"] == "requester"
                          and row["status"] == "em_analise" and row["classification"] is None)
@@ -245,7 +250,9 @@ def _validate_contributor(session, contributor_id, actor_id):
     if contributor_id == actor_id or session.execute(
         _contributors_query(actor_id).where(SharedUser.id == contributor_id),
     ).first() is None:
-        raise DemandValidationError("contributor_id", "Selecione outra pessoa ativa com e-mail corporativo.")
+        raise ApiProblem(422, detail={"json": {
+            "contributor_id": ["Selecione outra pessoa ativa com e-mail corporativo."],
+        }})
 
 
 @demands_shell_bp.get("/app/demandas/solicitacoes")
