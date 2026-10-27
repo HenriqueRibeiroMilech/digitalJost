@@ -6,7 +6,7 @@ from sqlalchemy import FetchedValue, ForeignKey, Integer, func
 from sqlalchemy.dialects.mssql import BIT, CHAR, DATETIME2, NVARCHAR, ROWVERSION, VARCHAR
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.platform.database import Base
+from backend.shared.database import Base
 
 
 class SharedUser(Base):

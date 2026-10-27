@@ -54,19 +54,19 @@ Uma classe Pydantic não grava no banco. Uma classe ORM não define sozinha o qu
 
 ```text
 backend/
-├── bootstrap.py             # prepara recursos e registra os módulos
+├── __init__.py              # prepara recursos e registra os módulos
 ├── config.py                # contratos de configuração do backend
-├── compatibility/
-│   └── identity.py          # ponte com a identidade do portal
-├── platform/
+├── shared/
 │   ├── database.py          # Base ORM, sessões, paginação e pesquisa
-│   ├── http.py              # permissões HTTP e respostas de erro
-│   ├── identity.py          # Actor e RolePermissions
+│   ├── http.py              # permissões HTTP, CSRF e respostas de erro
+│   ├── identity.py          # sessão do portal, Actor e RolePermissions
 │   ├── schemas.py           # contratos comuns de paginação
-│   ├── csrf.py              # proteção das escritas
+│   ├── environment.py       # leitura da configuração privada
+│   ├── employee_directory.py # consulta de funcionários
 │   └── vue_shell.py         # entrega a página que carrega o Vue
-├── integrations/
-│   └── employee_directory.py
+├── web/
+│   ├── templates/app/shell.html # HTML processado pelo Flask
+│   └── static/app/          # destino do build Vue; ignorado pelo Git
 └── modules/
     ├── events/
     │   ├── __init__.py
@@ -83,6 +83,8 @@ backend/
 ```
 
 **Feature** é uma funcionalidade ou área do sistema, como Eventos ou Demandas. A ideia é encontrar os arquivos relacionados dentro da mesma pasta.
+
+A regra para localizar o código é: funcionalidades em `modules/`, recursos comuns em `shared/` e arquivos para entregar a interface em `web/`. `__init__.py` e `config.py` ficam na raiz como pontos de inicialização e configuração. As funções de identidade reutilizam a sessão do portal, e as funções de CSRF ficam junto da proteção HTTP.
 
 | Arquivo de uma feature | Responsabilidade |
 |---|---|
@@ -102,7 +104,7 @@ O fluxo de composição pode ser lido assim:
 ```text
 main.py
   → create_app(), em app/config.py
-    → init_backend(), em backend/bootstrap.py
+    → init_backend(), em backend/__init__.py
       → prepara banco, integrações e shell Vue
       → register_modules(), em backend/modules/__init__.py
         → registra os blueprints modernos
@@ -197,7 +199,7 @@ from sqlalchemy import Integer, func
 from sqlalchemy.dialects.mssql import DATETIME2, NVARCHAR
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.platform.database import Base
+from backend.shared.database import Base
 
 
 class EventType(Base):
@@ -244,9 +246,9 @@ Este é um **recorte da implementação atual** de [events/routes.py](../../back
 ```python
 from apiflask import APIBlueprint
 
-from backend.compatibility import identity
-from backend.platform.http import action_access, configure_api
-from backend.platform.identity import RolePermissions
+from backend.shared import identity
+from backend.shared.http import action_access, configure_api
+from backend.shared.identity import RolePermissions
 
 
 ACTION_ROLES = {
@@ -283,7 +285,7 @@ O perfil responde “pode usar esta ação?”. A regra por registro responde �
 ```python
 from sqlalchemy import select
 
-from backend.platform.database import get_td_session_factory
+from backend.shared.database import get_td_session_factory
 
 from .models import EventType
 from .schemas import EventTypes
@@ -340,7 +342,7 @@ As capacidades `can_create` e `can_delete` ajudam a tela a mostrar suas ações.
 
 ### 6.3. Pesquisa e paginação
 
-Nas listagens paginadas, reutilizamos os recursos de [platform/database.py](../../backend/platform/database.py):
+Nas listagens paginadas, reutilizamos os recursos de [shared/database.py](../../backend/shared/database.py):
 
 ```python
 # Fragmento para uma consulta de tipos: pressupõe session e query_data.
@@ -464,7 +466,7 @@ Não basta trocar uma consulta por `delete()`: é necessário conservar os vínc
 ### 8.3. Erros esperados com ApiProblem
 
 ```python
-from backend.platform.http import ApiProblem
+from backend.shared.http import ApiProblem
 
 # Exemplos de falhas esperadas dentro de uma operação.
 raise ApiProblem(404, "Tipo de evento não encontrado.")
@@ -682,7 +684,7 @@ O backend moderno de Demandas cobre **solicitações**. A existência de colunas
 | Ajustar anexos de Demandas | `storage.py` e os pontos de composição na rota. |
 | Ajustar o PDF de presença | `events/attendance_pdf.py` e a rota de exportação. |
 | Acrescentar uma tela | Feature Vue, Router, shell Flask e menu quando necessário. |
-| Reutilizar algo entre features | Conferir primeiro os recursos de `backend/platform/`. |
+| Reutilizar algo entre features | Conferir primeiro os recursos de `backend/shared/`. |
 
 ### Referências para continuar
 

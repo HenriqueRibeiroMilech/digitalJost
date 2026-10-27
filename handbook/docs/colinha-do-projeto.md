@@ -89,11 +89,9 @@ Os caminhos abaixo partem da raiz do repositório.
 | `app/services/` | Agendadores Windows e recursos de automação, incluindo recorrência de demandas. |
 | `app/services/jobs/` | Tarefas chamadas pelos agendadores. |
 | `backend/modules/` | Funcionalidades modernas: Eventos e Demandas. |
-| `backend/platform/` | Recursos modernos compartilhados: banco, identidade, HTTP, CSRF e carregamento do Vue. |
-| `backend/compatibility/` | Ponte para a parte moderna reutilizar a sessão e os perfis antigos. |
-| `backend/integrations/` | Integrações modernas, como identificação de funcionários pelo LDAP. |
-| `backend/templates/` | HTML base que carrega a aplicação Vue. |
-| `backend/static/app/` | Destino dos arquivos gerados pelo build do Vue; o build é ignorado pelo Git. |
+| `backend/shared/` | Recursos modernos compartilhados: banco, HTTP/CSRF, identidade do portal, carregamento do Vue e consulta de funcionários. |
+| `backend/web/templates/` | HTML base que carrega a aplicação Vue. |
+| `backend/web/static/app/` | Destino dos arquivos gerados pelo build do Vue; o build é ignorado pelo Git. |
 | `frontend/src/features/` | Páginas e componentes de cada funcionalidade moderna. |
 | `frontend/src/shared/` | Componentes, estilos e comunicação HTTP compartilhados. |
 | `frontend/src/router/` | Define qual página Vue corresponde a cada endereço. |
@@ -121,7 +119,7 @@ Os caminhos abaixo partem da raiz do repositório.
 | [app/utils/db_utils.py](../../app/utils/db_utils.py) | “Reúne engines e funções de banco compartilhadas pelo legado.” |
 | [app/utils/constants.py](../../app/utils/constants.py) | “Reúne constantes e referências de configuração do legado.” |
 | [app/errors.py](../../app/errors.py) | “Trata erros, como acesso negado e página inexistente.” |
-| [backend/bootstrap.py](../../backend/bootstrap.py) | “Prepara os recursos compartilhados e inicializa a parte moderna.” |
+| [backend/__init__.py](../../backend/__init__.py) | “Prepara os recursos compartilhados e inicializa a parte moderna.” |
 | [backend/modules/__init__.py](../../backend/modules/__init__.py) | “Registra os módulos modernos na aplicação.” |
 | [backend/config.py](../../backend/config.py) | “Define configurações modernas de banco e diretório de funcionários.” |
 | [frontend/src/main.ts](../../frontend/src/main.ts) | “Inicializa o Vue e suas ferramentas.” |
@@ -227,7 +225,7 @@ Para saber se um módulo está registrado, confira `main.py` e `backend/modules/
 
 ## 9. Login, dados e integrações
 
-**Login:** o IIS fornece a identidade Windows. O fluxo de autenticação consulta o cadastro e usa o LDAP quando necessário. O Flask-Login mantém a sessão, e os perfis determinam o acesso. A parte moderna reutiliza essa identidade pela ponte em `backend/compatibility/`.
+**Login:** o IIS fornece a identidade Windows. O fluxo de autenticação consulta o cadastro e usa o LDAP quando necessário. O Flask-Login mantém a sessão, e os perfis determinam o acesso. A parte moderna reutiliza essa identidade pela ponte em `backend/shared/`.
 
 > “Autenticação identifica quem é a pessoa. Autorização define o que ela pode fazer.”
 
@@ -235,7 +233,7 @@ Para saber se um módulo está registrado, confira `main.py` e `backend/modules/
 
 **Integrações:** conforme a funcionalidade, o código utiliza LDAP, e-mail SMTP, Microsoft Graph/Teams, SAP e ferramentas como Power BI, FTWeb e SSRS. Alguns itens do menu encaminham para outros sistemas.
 
-**Publicação:** o Vue é preparado em arquivos dentro de `backend/static/app/`, que a aplicação disponibiliza ao navegador. Atualizar o código no Git não gera esse build automaticamente. Os scripts SQL em `database/` dependem de revisão e aplicação explícita. Consulte o [guia de servidor e publicação](servidor-e-publicacao.md).
+**Publicação:** o Vue é preparado em arquivos dentro de `backend/web/static/app/`, que a aplicação disponibiliza ao navegador. Atualizar o código no Git não gera esse build automaticamente. Os scripts SQL em `database/` dependem de revisão e aplicação explícita. Consulte o [guia de servidor e publicação](servidor-e-publicacao.md).
 
 ## 10. Tarefas automáticas
 

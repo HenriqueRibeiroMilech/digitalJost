@@ -180,7 +180,7 @@ A coluna `classification` permite futuramente `melhoria`, `projeto` ou `atividad
 
 - [Backend](../../backend/modules/demands/): operações, permissões e auxiliares ORM em `routes.py`, contratos em `schemas.py`, mapeamentos em `models.py` e armazenamento/limites dos anexos em `storage.py`. Os erros usam o `ApiProblem` compartilhado.
 - [Frontend](../../frontend/src/features/demands/): página, formulário, detalhe, cards, tipos e cliente HTTP.
-- [Bootstrap](../../backend/bootstrap.py): inicializa o armazenamento; as rotas o utilizam na criação e no download. A factory ORM reutiliza o engine moderno do TD.
+- [Inicialização do backend](../../backend/__init__.py): prepara o armazenamento; as rotas o utilizam na criação e no download. A factory ORM reutiliza o engine moderno do TD.
 
 Seguir [Servidor e publicação](../docs/servidor-e-publicacao.md), com backend/build compatíveis, schema revisado, limites de upload, ACLs e backup de tabelas **e** arquivos. Retorno de código não remove solicitações ou documentos nem os torna visíveis ao legado.
 

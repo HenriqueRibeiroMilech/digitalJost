@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Integer, func
 from sqlalchemy.dialects.mssql import DATETIME2, NVARCHAR, VARCHAR
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.platform.database import Base
+from backend.shared.database import Base
 
 
 class EventType(Base):

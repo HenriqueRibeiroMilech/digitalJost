@@ -85,6 +85,7 @@ $excluir = @(
     ':(top,glob,exclude)**/coverage/**'
     ':(top,glob,exclude)**/htmlcov/**'
     ':(top,exclude)frontend/dist'
+    ':(top,exclude)backend/web/static/app'
     ':(top,exclude)backend/static/app'
     ':(top,exclude)app/static/app'
 )

@@ -6,17 +6,17 @@ Referência prática dos recursos que Eventos, Demandas e próximas funcionalida
 
 | Necessidade | Fonte e uso |
 |---|---|
-| Identidade atual | [compatibility/identity.py](../../backend/compatibility/identity.py): sessão autenticada e `current_actor()`. |
-| Permissões por ação | [platform/identity.py](../../backend/platform/identity.py): `RolePermissions`; mapa junto da feature, ação desconhecida negada. |
-| Segurança HTTP e erros | [http.py](../../backend/platform/http.py): `configure_api`, `action_access`, `page_access`, `ApiProblem` e `api_error`. |
-| CSRF | [csrf.py](../../backend/platform/csrf.py): token comum e validação das escritas. |
-| Banco TD e modelos | [database.py](../../backend/platform/database.py): `Base`, engine e factory de sessões por aplicação; acesso por `get_td_session_factory()`. |
+| Identidade atual | [shared/identity.py](../../backend/shared/identity.py): sessão autenticada e `current_actor()`. |
+| Permissões por ação | [shared/identity.py](../../backend/shared/identity.py): `RolePermissions`; mapa junto da feature, ação desconhecida negada. |
+| Segurança HTTP e erros | [http.py](../../backend/shared/http.py): `configure_api`, `action_access`, `page_access`, `ApiProblem` e `api_error`. |
+| CSRF | [http.py](../../backend/shared/http.py): `get_csrf_token` e `has_valid_csrf`, com token comum e validação das escritas. |
+| Banco TD e modelos | [database.py](../../backend/shared/database.py): `Base`, engine e factory de sessões por aplicação; acesso por `get_td_session_factory()`. |
 | Consultas comuns | `paginate(session, statement, query)` e `literal_contains(value)` no mesmo módulo de banco. |
-| Contratos paginados | [schemas.py](../../backend/platform/schemas.py): `PaginationQuery` e `PaginatedResponse`. |
-| Shell Vue | [vue_shell.py](../../backend/platform/vue_shell.py): manifest, assets, título e token após autorizar a página. |
+| Contratos paginados | [schemas.py](../../backend/shared/schemas.py): `PaginationQuery` e `PaginatedResponse`. |
+| Shell Vue | [vue_shell.py](../../backend/shared/vue_shell.py): manifest, assets, título e token após autorizar a página. |
 | Cliente e apresentação | [shared](../../frontend/src/shared/): HTTP, paginação, validação, componentes e estilos. |
 
-O bootstrap compõe os recursos com ciclo de vida da aplicação. As chaves atuais são `backend_td_engine`, `backend_td_sessions`, `backend_employee_directory` e `demands_attachment_storage`. Uma integração nova pode precisar de composição explícita, sem recriar banco/login por módulo.
+A função `init_backend` em [backend/__init__.py](../../backend/__init__.py) compõe os recursos com ciclo de vida da aplicação e imports locais. `shared/` concentra os recursos comuns; `identity.py` inclui a ponte com o legado, e `http.py` inclui o CSRF. As chaves atuais são `backend_td_engine`, `backend_td_sessions`, `backend_employee_directory` e `demands_attachment_storage`. Uma integração nova pode precisar de composição explícita, sem recriar banco/login por módulo.
 
 `Actor` é um contrato mínimo, imutável, contendo `id`; não carrega perfis, área ou e-mail. A ponte obtém o ID de Flask-Login e consulta os perfis via Flask-Principal. `RolePermissions.can(actor, action)` nega ações fora do mapa; a implementação atual consulta a sessão e não utiliza o ID para resolver outro usuário. A política por registro pertence ao caso de uso/SQL, não ao helper de dependências.
 
@@ -157,7 +157,7 @@ Paginação comum: página inicial 1, tamanho padrão 12, limite de 100; retorno
 
 ### Shell e build
 
-`vue_shell.py` procura `.vite/manifest.json` em `backend/static/app/`, lê a entrada `index.html`, coleta CSS dela e dos imports e gera URLs por `backend_vue.static`. O template é `backend/app/shell.html`, fornecido com prefixo para não colidir com o legado.
+`shared/vue_shell.py` procura `.vite/manifest.json` em `backend/web/static/app/`, lê a entrada `index.html`, coleta CSS dela e dos imports e gera URLs por `backend_vue.static`, preservando `/static/app/`. O template físico está em `backend/web/templates/app/shell.html`; seu nome Jinja continua `backend/app/shell.html`, fornecido com prefixo para não colidir com o legado.
 
 Manifest ausente, inválido ou sem as chaves esperadas resulta em 503 com a mensagem da feature. O token só é obtido depois de localizar o build. O shell válido retorna `Cache-Control: private, no-store`; não cachear HTML que contém token de sessão. O manifesto existir não garante que todos os assets estejam presentes: publicar o build inteiro e conferir no ambiente autorizado.
 

@@ -1,4 +1,4 @@
-"""Consulta de funcionários por matrícula, independente do login e do legado."""
+"""Consulta compartilhada de funcionários por matrícula, independente do login."""
 
 import re
 import ssl

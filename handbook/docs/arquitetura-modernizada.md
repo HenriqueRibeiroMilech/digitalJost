@@ -12,15 +12,20 @@ O Digital JOST é um monólito Flask/APIFlask no Windows/IIS. O legado Jinja e a
 Navegador → IIS / autenticação Windows → main.py → app/config.py
     ├── app/                  rotas, páginas, integrações e jobs legados
     └── backend/              APIs modernas e shell que carrega o Vue
+          ├── __init__.py     composição dos recursos e registro dos módulos
+          ├── config.py       configuração do backend
           ├── modules/        funcionalidades
-          ├── platform/       banco, HTTP, identidade, CSRF, paginação e shell
-          ├── compatibility/  ponte com a identidade do legado
-          └── integrations/   adaptadores modernos, como o diretório de funcionários
+          ├── shared/         banco, HTTP/CSRF, identidade, paginação, shell e LDAP
+          └── web/            templates e arquivos públicos compilados
 
-frontend/src/ → build → backend/static/app/ → /static/app/
+frontend/src/ → build → backend/web/static/app/ → /static/app/
 ```
 
-`main.py` registra os blueprints antigos. A factory chama `backend/bootstrap.py`, que inicializa recursos e usa `backend/modules/__init__.py` para registrar explicitamente os módulos modernos. Não há descoberta automática de funcionalidades.
+`main.py` registra os blueprints antigos. A factory chama `backend/__init__.py`, que inicializa recursos e usa `backend/modules/__init__.py` para registrar explicitamente os módulos modernos. Não há descoberta automática de funcionalidades.
+
+`shared/identity.py` reúne a ponte com a sessão legada, o contrato Actor e as permissões por ação; a consulta aos perfis mantém o import legado dentro da função. `shared/http.py` reúne proteção HTTP, CSRF e erros. `shared/environment.py` continua lendo a configuração privada da raiz, sem carregar banco ou identidade. A inicialização em `backend/__init__.py` mantém os imports de composição dentro de `init_backend`, sem inicializar recursos ao importar o pacote.
+
+`web/templates/` contém o HTML processado pelo servidor; `web/static/app/` recebe o build público. O blueprint usa esses caminhos físicos com a mesma URL `/static/app/` e o mesmo prefixo Jinja `backend/`.
 
 ### Inicialização e entradas
 
@@ -71,7 +76,7 @@ Uma feature com persistência ORM começa com quatro arquivos: `__init__.py`, `r
 | Página Vue | Coordenar navegação, consultas, mutações e feedback. | Ser a única barreira de autorização ou recalcular a verdade persistida. |
 | Componente Vue | Apresentar/interagir com uma parte da feature; receber dados e emitir ações. | Buscar dados de vários domínios sem responsabilidade definida. |
 
-Modelos herdam de `backend.platform.database.Base`. A projeção de usuários em Demandas contém somente os campos consultados de `JDT_USER_DETAILS`, sem importar o modelo legado ou gravar no cadastro. Não executar `Base.metadata.create_all()` nem reflexão automática. As tabelas e seus índices/constraints continuam sob manutenção explícita do banco.
+Modelos herdam de `backend.shared.database.Base`. A projeção de usuários em Demandas contém somente os campos consultados de `JDT_USER_DETAILS`, sem importar o modelo legado ou gravar no cadastro. Não executar `Base.metadata.create_all()` nem reflexão automática. As tabelas e seus índices/constraints continuam sob manutenção explícita do banco.
 
 ## 3. Qual caminho usar
 
@@ -186,7 +191,7 @@ Separar totalmente o backend de `app/`, migrar o gerenciador completo ou trocar 
 
 Atualizar este arquivo quando mudar uma regra geral. Campos, endpoints e detalhes de uma funcionalidade ficam no documento dela. Planos e estudos anteriores estão no [histórico](../historico/README.md), sem substituir esta referência.
 
-Fontes principais: [entrada](../../main.py), [bootstrap](../../backend/bootstrap.py), [registro dos módulos](../../backend/modules/__init__.py) e [roteador Vue](../../frontend/src/router/index.ts). As restrições de execução permanecem em [AGENTS.md](../../AGENTS.md).
+Fontes principais: [entrada](../../main.py), [inicialização do backend](../../backend/__init__.py), [registro dos módulos](../../backend/modules/__init__.py) e [roteador Vue](../../frontend/src/router/index.ts). As restrições de execução permanecem em [AGENTS.md](../../AGENTS.md).
 
 Foram confrontados também a [arquitetura anterior](../historico/handbook/arquitetura-modernizada.md), o [plano de separação](../historico/docs/plano-separacao-backend-legado.md) e o [plano de simplificação](../historico/docs/plano-simplificacao-arquitetura.md). Instruções antigas sobre `app/modules`, `EVENTS_ENABLED`, Services registrados no bootstrap e engine recebido de `db.engine` não descrevem o estado atual.
 

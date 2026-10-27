@@ -4,7 +4,7 @@ from flask_login import current_user
 import ldap3
 from sqlalchemy import text
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 from app.utils.db_utils import get_engine
 from app.utils.permissions import get_permission

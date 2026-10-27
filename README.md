@@ -19,9 +19,9 @@ Regras operacionais para agentes ficam em [AGENTS.md](AGENTS.md). Planos, análi
 |---|---|
 | `main.py`, `app/config.py` | Entrada, factory, extensões, sessão e ciclo global da aplicação. |
 | `app/` | Backend Flask/Jinja legado, integrações, arquivos e schedulers. |
-| `backend/` | APIs Flask/APIFlask, plataforma compartilhada, módulos modernos e shell Vue. |
+| `backend/` | Inicialização e configuração na raiz, funcionalidades em `modules/`, recursos comuns em `shared/` e entrega do Vue em `web/`. |
 | `frontend/` | Código Vue/TypeScript, navegação e componentes. |
-| `backend/static/app/` | Build Vue gerado; ignorado pelo Git, precisa acompanhar a publicação quando necessário. |
+| `backend/web/static/app/` | Build Vue gerado; ignorado pelo Git, precisa acompanhar a publicação quando necessário. |
 | `database/` | Scripts SQL sujeitos a revisão e aplicação explícita. |
 | `handbook/docs/` | Guias gerais oficiais. |
 | `handbook/features/` | Documentação atual de funcionalidades e recursos compartilhados. |
@@ -33,6 +33,6 @@ Há uma aplicação Flask no Windows/IIS: `main.py` registra o legado, e a facto
 
 Módulos modernos compartilham um engine/pool do TD por instância da aplicação. O legado mantém acessos próprios, inclusive a outras fontes; conexões diferentes não formam uma transação conjunta.
 
-O frontend gera os assets em `backend/static/app/`. Fazer pull não gera build nem instala dependências. Seguir o guia de servidor para preparar e publicar uma versão compatível, preservando configuração privada e dados operacionais.
+O frontend gera os assets em `backend/web/static/app/`. Fazer pull não gera build nem instala dependências. Seguir o guia de servidor para preparar e publicar uma versão compatível, preservando configuração privada e dados operacionais.
 
 A inicialização ainda contém efeitos do legado. Não iniciar, importar, testar ou conectar o sistema por iniciativa do agente; autorizações precisam indicar comando, ambiente e escopo conforme AGENTS.md.

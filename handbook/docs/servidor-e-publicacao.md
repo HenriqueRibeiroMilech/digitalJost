@@ -47,7 +47,7 @@ npm run build:local
 cd ..
 ```
 
-O build verifica tipos e gera `backend/static/app/`, com `.vite/manifest.json` e assets. Publicar a pasta inteira, sempre da mesma compilação; ela é ignorada pelo Git e não surge com um pull. Produção não precisa de Node, Vite ou `node_modules` em execução.
+O build verifica tipos e gera `backend/web/static/app/`, com `.vite/manifest.json` e assets. Publicar a pasta inteira, sempre da mesma compilação; ela é ignorada pelo Git e não surge com um pull. Produção não precisa de Node, Vite ou `node_modules` em execução.
 
 ### Dependências e pré-requisitos
 
@@ -65,7 +65,9 @@ Essas são versões declaradas em `requirements.txt`, não resultado de instala�
 
 `npm ci` usa `package-lock.json`; publicar alterações de dependências com seu lockfile. `build:local` executa `vue-tsc --build` e Vite. Não confundir com `dev`/`preview`, que iniciam processos e não fazem parte da hospedagem IIS atual. Não foi identificada configuração de proxy de API no `vite.config.ts`; abrir Vite sozinho não reproduz a sessão Windows/Flask do portal.
 
-O build usa base `/static/app/` e entrada de manifest `index.html`. A pasta antiga `app/static/app/` não é o destino atual. Incluir `.vite`, JavaScript, CSS e todos os assets referenciados, mesmo que a interface pareça carregar parcialmente com uma cópia incompleta.
+O build usa base `/static/app/` e entrada de manifest `index.html`. As pastas anteriores `backend/static/app/` e `app/static/app/` não são o destino atual. Incluir `.vite`, JavaScript, CSS e todos os assets referenciados, mesmo que a interface pareça carregar parcialmente com uma cópia incompleta.
+
+Na reorganização para `backend/web/`, publicar o build completo em `backend/web/static/app/` junto da versão correspondente do backend. O Flask usa esse caminho físico e preserva a URL `/static/app/`; não procura o manifest no destino anterior. O template acompanha o código em `backend/web/templates/app/shell.html`. O `web.config` versionado encaminha as requisições ao Flask, sem um mapeamento físico específico para esses assets; conferir eventuais configurações externas do IIS antes de publicar. A reorganização do código não gera nem transfere os assets automaticamente.
 
 ## 3. Configuração privada
 
@@ -78,7 +80,7 @@ Usar [`.env.example`](../../.env.example) como lista de nomes, sem copiar valore
 | Integrações | Pares e opções de MES, LDAP, Microsoft e SAP conforme os consumidores; Oracle permanece ligado ao módulo desativado correspondente. |
 | LDAP moderno | `DJ_LDAP_USER`/`DJ_LDAP_PASSWORD`; host, base, porta, SSL e timeouts são opções de `backend/config.py`. |
 
-O leitor [environment.py](../../backend/platform/environment.py) procura `.env` na raiz ou usa o caminho absoluto de `DJ_ENV_FILE`. O ambiente do processo tem prioridade, inclusive valores vazios; não há interpolação de credenciais. O carregamento ocorre uma vez por processo: mudanças exigem reinício do processo afetado.
+O leitor [environment.py](../../backend/shared/environment.py) procura `.env` na raiz ou usa o caminho absoluto de `DJ_ENV_FILE`. O ambiente do processo tem prioridade, inclusive valores vazios; não há interpolação de credenciais. O carregamento ocorre uma vez por processo: mudanças exigem reinício do processo afetado.
 
 Quando `DJ_ENV_FILE` é definido, ausência do arquivo, caminho inválido ou falta de acesso causam falha. O leitor usa `python-dotenv` para arquivo privado. Vários consumidores antigos carregam configuração durante imports: preencher só TD e sessão pode não bastar para iniciar o portal.
 
@@ -147,7 +149,7 @@ O `FLASK_SKIP_DOTENV` deve existir **antes** de o Flask CLI carregar a aplicaç�
 
 A sessão atual usa a chave privada e prazo configurado de 60 minutos. Trocar a chave pode invalidar sessões; não fazê-lo como efeito colateral de publicação. O token CSRF moderno está nessa sessão e é entregue pelo shell. Fora do IIS existe fallback de identidade no legado; não usar localhost como comprovação de autenticação de produção.
 
-O caminho `instance_path` deve ser confirmado no ambiente efetivo. Anexos modernos não ficam em `app/static/uploads` nem em `backend/static/app`. Fazer backup coordenado do SQL/metadados e dos arquivos privados. Não publicar o diretório como conteúdo estático ou copiar dados reais para o pacote de código.
+O caminho `instance_path` deve ser confirmado no ambiente efetivo. Anexos modernos não ficam em `app/static/uploads` nem em `backend/web/static/app`. Fazer backup coordenado do SQL/metadados e dos arquivos privados. Não publicar o diretório como conteúdo estático ou copiar dados reais para o pacote de código.
 
 ## 5. Dependências offline
 

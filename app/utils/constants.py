@@ -3,7 +3,7 @@
 
 import os
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 
 ENV = 'prod'

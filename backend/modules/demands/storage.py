@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from werkzeug.utils import secure_filename
 
-from backend.platform.http import ApiProblem
+from backend.shared.http import ApiProblem
 
 
 MAX_FILES = 10

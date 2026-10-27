@@ -13,7 +13,7 @@ from datetime import time
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 from app.utils.maintenance_availability import get_maintenance_availability_data, maintenance_event_catalog
 from app.utils.planning_availability import WORKCENTER_GROUPS, get_planning_month_range

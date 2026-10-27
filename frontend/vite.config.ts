@@ -9,7 +9,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ command }) => ({
   base: command === 'serve' ? '/app/' : '/static/app/',
   build: {
-    outDir: '../backend/static/app',
+    outDir: '../backend/web/static/app',
     manifest: true,
   },
   plugins: [

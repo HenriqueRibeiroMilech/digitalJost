@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from flask import Blueprint, abort, redirect, render_template, request, url_for
 from flask_login import current_user
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 from app.utils.constants import APP_PATH
 from app.utils.data_utils import get_current_shift, return_options

@@ -6,16 +6,16 @@ from pathlib import Path
 from flask import Blueprint, current_app, make_response, render_template, url_for
 from jinja2 import PrefixLoader
 
-from .csrf import get_csrf_token
+from .http import get_csrf_token
 
 
 def init_vue_shell(app):
     resources = Blueprint(
         "backend_vue",
         "backend",
-        static_folder="static/app",
+        static_folder="web/static/app",
         static_url_path="/static/app",
-        template_folder="templates",
+        template_folder="web/templates",
     )
     # O prefixo distingue o shell moderno de eventuais cópias no legado.
     resources.jinja_loader = PrefixLoader({"backend": resources.jinja_loader})

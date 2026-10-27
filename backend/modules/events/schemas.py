@@ -3,7 +3,7 @@ from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from backend.platform.schemas import PaginatedResponse, PaginationQuery
+from backend.shared.schemas import PaginatedResponse, PaginationQuery
 
 
 EventStatus = Literal["upcoming", "ongoing", "completed", "unscheduled"]

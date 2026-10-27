@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from backend.platform.schemas import PaginatedResponse, PaginationQuery
+from backend.shared.schemas import PaginatedResponse, PaginationQuery
 
 
 class RequestFields(BaseModel):

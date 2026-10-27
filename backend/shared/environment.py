@@ -1,4 +1,4 @@
-"""Configuração externa: ambiente do processo e arquivo privado opcional."""
+"""Leitura da configuração externa: ambiente e arquivo privado opcional."""
 
 import os
 from pathlib import Path

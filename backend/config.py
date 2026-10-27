@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from sqlalchemy.engine import URL
 
-from .platform.environment import load_environment, required_env
+from .shared.environment import load_environment, required_env
 
 
 def _env_int(name, default):

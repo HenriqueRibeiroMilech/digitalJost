@@ -46,7 +46,7 @@ PowerShell e utilitários externos só podem tratar arquivos como texto. Não us
 ## 3. Contexto mínimo do projeto
 
 - Monólito Flask/APIFlask hospedado em Windows/IIS, com Jinja no legado e Vue 3 no frontend moderno.
-- `main.py` registra os blueprints legados; `app/config.py` chama `backend/bootstrap.py`, e `backend/modules/__init__.py` registra os modernos.
+- `main.py` registra os blueprints legados; `app/config.py` chama `backend/__init__.py`, e `backend/modules/__init__.py` registra os modernos.
 - `app/config.py` cria o Flask e configura SQLAlchemy, login, permissões, e-mail e ciclo global.
 - `app/routes/` contém o backend por domínio.
 - `app/templates/` contém páginas Jinja, JavaScript incluído e templates de e-mail.
@@ -54,7 +54,7 @@ PowerShell e utilitários externos só podem tratar arquivos como texto. Não us
 - `app/static/js/operation.planning/` e `app/static/js/demand-management/` contêm scripts compartilhados.
 - `app/static/uploads/` contém dados operacionais, não fixtures.
 - `app/services/` contém quatro schedulers Windows e seus jobs.
-- `backend/modules/` contém as funcionalidades modernas; `backend/platform/` fornece a infraestrutura comum e `backend/compatibility/` concentra a ponte com o legado.
+- `backend/modules/` contém as funcionalidades modernas; `backend/shared/` reúne banco, HTTP/CSRF, identidade e integrações comuns; `backend/web/` contém templates e o destino do build Vue.
 - `frontend/src/features/` contém as telas Vue modernas; elas reutilizam o cliente HTTP e os componentes de `frontend/src/shared/`.
 - A maior parte do acesso a dados usa SQL textual, pandas, SQLAlchemy ou pyodbc.
 - Engines principais: `jdt`, `ftm`, `plex` e `trace_qr`.
@@ -147,7 +147,7 @@ No backend moderno, consultas, gravações, regras e autorização por registro 
 
 Reutilize `get_td_session_factory`, `configure_api`, `action_access`, `page_access` e a ponte de identidade. Leituras abrem `with sessions() as session`; escritas usam `with sessions.begin() as session`. A rota ou função coordenadora controla a transação, e auxiliares recebem a mesma sessão sem commits próprios. Funções extraídas para outras entradas recebem identidade e dependências explicitamente. Preserve autorização por ação e registro, CSRF, schemas, rollback, auditoria e concorrência existentes. Não registre objetos de Service por feature no bootstrap.
 
-Modelos modernos herdam de `backend.platform.database.Base`, separada dos metadados legados. Não chamar `create_all`, importar modelos de `app/` como atalho ou descobrir o banco por reflexão. Usar os tipos e defaults reais das tabelas; a projeção de `JDT_USER_DETAILS` é somente para leitura. ORM é a primeira opção; SQL excepcional continua parametrizado e usa a mesma transação. Reutilize `paginate` e `literal_contains` quando adequados e preserve os hints de trava do SQL Server. Modelos não fazem commits nem integram sistemas.
+Modelos modernos herdam de `backend.shared.database.Base`, separada dos metadados legados. Não chamar `create_all`, importar modelos de `app/` como atalho ou descobrir o banco por reflexão. Usar os tipos e defaults reais das tabelas; a projeção de `JDT_USER_DETAILS` é somente para leitura. ORM é a primeira opção; SQL excepcional continua parametrizado e usa a mesma transação. Reutilize `paginate` e `literal_contains` quando adequados e preserve os hints de trava do SQL Server. Modelos não fazem commits nem integram sistemas.
 
 Não crie camadas vazias, classes base de CRUD ou descoberta automática de módulos. Classes de contratos e adaptadores continuam adequadas. Consulte [a base compartilhada](handbook/features/base-compartilhada.md) para recursos e exemplos e [a arquitetura oficial](handbook/docs/arquitetura-modernizada.md) para critérios e cuidados.
 

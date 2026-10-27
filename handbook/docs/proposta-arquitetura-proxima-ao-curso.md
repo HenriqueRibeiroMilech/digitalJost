@@ -46,11 +46,12 @@ Os dois tipos de modelo continuam distintos: **Pydantic define os dados aceitos 
 
 ```text
 backend/
-├── bootstrap.py          # prepara recursos e registra o backend na aplicação
+├── __init__.py           # prepara recursos e registra o backend na aplicação
 ├── config.py             # configuração do backend
-├── platform/             # banco, HTTP, CSRF, identidade e recursos comuns
-├── compatibility/        # ponte com a sessão e as permissões existentes
-├── integrations/         # adaptadores externos, como LDAP
+├── shared/               # banco, HTTP/CSRF, identidade, shell e LDAP
+├── web/
+│   ├── templates/        # HTML que carrega o Vue
+│   └── static/app/       # build Vue; URL pública /static/app/
 └── modules/
     ├── events/
     │   ├── __init__.py
@@ -67,6 +68,8 @@ backend/
 ```
 
 Essa árvore representa a organização implementada. Em Demandas, a área e as permissões ficam nas rotas, os limites de anexos ficam em `storage.py` e os erros usam o `ApiProblem` compartilhado, sem precisar de `domain.py`. Features sem persistência não precisam de `models.py`. Arquivos de PDF, armazenamento ou integração existem porque cumprem responsabilidades específicas.
+
+Os recursos comuns ficam em uma única pasta `shared/`. A identidade inclui a ponte com o portal, e a proteção CSRF fica em `http.py`. A raiz mantém a inicialização e a configuração; os arquivos da interface ficam agrupados em `web/`, sem alterar as URLs públicas.
 
 `services.py` e `repository.py` não fazem parte da estrutura mínima. Os quatro arquivos desses nomes em Eventos e Demandas foram retirados após transferir as operações para rotas/auxiliares ORM e conferir referências. Em futuras migrações, retirar um arquivo somente depois de transferir todas as responsabilidades.
 
@@ -265,7 +268,7 @@ Cada entrega precisa preservar uma forma de retorno da versão sem apagar dados.
 - [Arquitetura vigente](arquitetura-modernizada.md), [base compartilhada](../features/base-compartilhada.md) e [anotações do curso](../../curso_notion/).
 - [Rotas](../../backend/modules/events/routes.py), [modelos](../../backend/modules/events/models.py) e [schemas de Eventos](../../backend/modules/events/schemas.py).
 - [Rotas](../../backend/modules/demands/routes.py), [modelos](../../backend/modules/demands/models.py) e [armazenamento de Demandas](../../backend/modules/demands/storage.py).
-- [Banco compartilhado](../../backend/platform/database.py), [segurança HTTP](../../backend/platform/http.py) e [bootstrap atual](../../backend/bootstrap.py).
+- [Banco compartilhado](../../backend/shared/database.py), [segurança HTTP](../../backend/shared/http.py) e [inicialização atual](../../backend/__init__.py).
 - [Sessões SQLAlchemy](https://docs.sqlalchemy.org/en/20/orm/session_basics.html), [particularidades do SQL Server](https://docs.sqlalchemy.org/en/20/dialects/mssql.html) e [APIFlask com Pydantic](https://apiflask.com/usage/).
 
 Os mapeamentos consideram os metadados de banco fornecidos pelo responsável: tipos, defaults, chaves, índices, constraints e ausência de triggers nas oito tabelas. Isso não substitui validar consultas geradas, concorrência, rollback e integrações no ambiente autorizado. **O sistema não foi executado; a validação foi somente estática.**

@@ -19,7 +19,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_principal import Principal, RoleNeed, UserNeed, Identity, identity_loaded
 from flask_mail import Mail
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 from app.utils.security_utils import access_register
 from app.utils.constants import CNNX_JDT
@@ -236,7 +236,7 @@ def create_app():
     # REGISTRA OS HANDLERS DE ERRO
     register_error_handlers(app)
 
-    from backend.bootstrap import init_backend
+    from backend import init_backend
     from backend.config import BackendConfig
     init_backend(
         app,

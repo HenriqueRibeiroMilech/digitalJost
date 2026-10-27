@@ -3,7 +3,7 @@ import json
 
 from sqlalchemy import text
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 from app.utils.db_utils import get_engine
 

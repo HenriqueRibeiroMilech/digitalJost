@@ -11,7 +11,8 @@ __pycache__/
 .env.*
 !.env.example
 
-# Builds Vue gerados, incluindo o destino anterior da transição
+# Builds Vue gerados, incluindo os destinos anteriores da transição
+/backend/web/static/app/
 /backend/static/app/
 /app/static/app/
 

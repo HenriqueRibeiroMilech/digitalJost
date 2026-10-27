@@ -1,4 +1,4 @@
-"""Contrato comum de paginação; modelos e capacidades continuam por domínio."""
+"""Contratos comuns de paginação; modelos e capacidades continuam por domínio."""
 
 from typing import Generic, TypeVar
 

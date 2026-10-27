@@ -8,7 +8,7 @@ from flask import render_template, request
 from flask_login import current_user
 from werkzeug.exceptions import HTTPException
 
-from backend.platform.http import http_exception_response, is_api_request
+from backend.shared.http import http_exception_response, is_api_request
 
 from app.utils.teams_utils import send_system_teams_alert
 from app.utils.security_utils import access_register

@@ -2,12 +2,12 @@ from apiflask import APIBlueprint
 from flask import Blueprint, current_app, redirect, send_file, url_for
 from sqlalchemy import case, delete, func, or_, select, update
 
-from backend.compatibility import identity
-from backend.platform.database import get_td_session_factory, literal_contains, paginate
-from backend.platform.http import ApiProblem, action_access, configure_api, page_access
-from backend.platform.identity import RolePermissions
-from backend.platform.schemas import PaginationQuery
-from backend.platform.vue_shell import render_vue_shell
+from backend.shared import identity
+from backend.shared.database import get_td_session_factory, literal_contains, paginate
+from backend.shared.http import ApiProblem, action_access, configure_api, page_access
+from backend.shared.identity import RolePermissions
+from backend.shared.schemas import PaginationQuery
+from backend.shared.vue_shell import render_vue_shell
 
 from .models import AttendanceEntry, AttendanceList, Event, EventType
 from .schemas import (

@@ -7,7 +7,7 @@ import ldap3
 import win32security
 import win32api
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 from app.config import mail, db
 from app.models.user import User

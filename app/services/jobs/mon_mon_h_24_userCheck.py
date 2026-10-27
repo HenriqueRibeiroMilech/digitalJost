@@ -2,7 +2,7 @@ import pyodbc
 import ldap3
 import pandas as pd
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 from app.services.run_h_24_scheduler import env
 from app.utils.constants import CNNX_JDT, COORD, LEADER

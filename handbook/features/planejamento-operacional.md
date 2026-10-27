@@ -42,7 +42,7 @@ Filtros/semana → rotas legadas
     → classificar e recortar → consolidar → JSON/tela ou Excel
 ```
 
-Os utilitários acessam essas fontes pelo mecanismo legado `engine_run_query`, inclusive engine denominada `plex` para objetos qualificados em `JOST_INTEGRATION_PRD`. O nome “fonte TD” do indicador não significa que ele usa o engine moderno de `backend/platform/database.py`. Cadastro/classificação também depende do cache Plex, mesmo sem usar sua disponibilidade antiga.
+Os utilitários acessam essas fontes pelo mecanismo legado `engine_run_query`, inclusive engine denominada `plex` para objetos qualificados em `JOST_INTEGRATION_PRD`. O nome “fonte TD” do indicador não significa que ele usa o engine moderno de `backend/shared/database.py`. Cadastro/classificação também depende do cache Plex, mesmo sem usar sua disponibilidade antiga.
 
 `get_planned_availability` parte dos centros das áreas Montagem, Usinagem, Soldagem e Pré-Fabricação, aplica filtros e cruza pelos códigos normalizados. Centro com mais de um nome/área no catálogo gera erro; não escolher arbitrariamente um vínculo. Valores negativos/não finitos da base são tratados como ausência.
 

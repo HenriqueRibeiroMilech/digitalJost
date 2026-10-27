@@ -7,11 +7,11 @@ from sqlalchemy import and_, case, cast, func, or_, select, update
 from sqlalchemy.dialects.mssql import NVARCHAR
 from sqlalchemy.orm import aliased
 
-from backend.compatibility import identity
-from backend.platform.database import get_td_session_factory, literal_contains, paginate
-from backend.platform.http import ApiProblem, action_access, api_error, configure_api, page_access
-from backend.platform.identity import RolePermissions
-from backend.platform.vue_shell import render_vue_shell
+from backend.shared import identity
+from backend.shared.database import get_td_session_factory, literal_contains, paginate
+from backend.shared.http import ApiProblem, action_access, api_error, configure_api, page_access
+from backend.shared.identity import RolePermissions
+from backend.shared.vue_shell import render_vue_shell
 
 from .models import Demand, DemandAttachment, DemandHistory, SharedUser
 from .schemas import ContributorsOut, RequestCreate, RequestDetail, RequestList, RequestQuery, RequestUpdate

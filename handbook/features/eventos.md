@@ -159,7 +159,7 @@ Schema inválido retorna 422; período/tipo inválido também usa `detail.json`.
 |---|---|
 | [Módulo backend](../../backend/modules/events/) | `routes.py` com operações/auxiliares ORM, `schemas.py`, `models.py` e apresentação PDF específica. |
 | [Feature Vue](../../frontend/src/features/events/) | Página, filtros, formulários, tipos, listas, leitor e clientes da API. |
-| [Diretório](../../backend/integrations/employee_directory.py) | Consulta LDAP somente leitura, configuração separada do login antigo. |
+| [Diretório](../../backend/shared/employee_directory.py) | Consulta LDAP somente leitura, configuração separada do login antigo. |
 | [PDF](../../backend/modules/events/attendance_pdf.py) | Renderização em memória; depende de ReportLab e do logo em `assets/`. |
 
 Tabelas: `DJ_EVENTS`, `DJ_EVENT_TYPES`, `DJ_EVENT_ATTENDANCE_LISTS` e `DJ_EVENT_ATTENDANCE_ENTRIES`. Types usa chave única; presença tem vínculos/FKs e proteção por lista/matrícula. O período, o tipo e o uso de um tipo são validados nas transações correspondentes. A edição do evento não possui o mesmo controle `row_version` de Demandas; não presumir essa proteção.

@@ -1,4 +1,4 @@
-"""Engine, modelos e sessões do TD, sem criação automática de tabelas."""
+"""Base ORM, engine e sessões do TD, sem criação automática de tabelas."""
 
 import atexit
 

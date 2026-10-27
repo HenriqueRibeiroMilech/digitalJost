@@ -26,7 +26,7 @@ import time
 import msal
 import threading
 
-from backend.platform.environment import required_env
+from backend.shared.environment import required_env
 
 class _TokenManager:
 
