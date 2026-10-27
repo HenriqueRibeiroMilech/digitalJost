@@ -10,7 +10,7 @@ Os oito guias foram aprofundados em **20/10/2026**, comparando código e versõe
 |---|---|
 | [Colinha do projeto](docs/colinha-do-projeto.md) | Entender o projeto com explicações simples, localizar pastas e arquivos e preparar uma apresentação. |
 | [Arquitetura e modernização](docs/arquitetura-modernizada.md) | Entender a organização, escolher camadas e criar ou migrar uma feature. |
-| [Proposta de aproximação ao curso de Flask](docs/proposta-arquitetura-proxima-ao-curso.md) | Direção consolidada para o backend novo: features com ORM nas rotas, menos arquivos e adoção gradual; implementação pendente. |
+| [Proposta de aproximação ao curso de Flask](docs/proposta-arquitetura-proxima-ao-curso.md) | Decisões implementadas em Eventos e Solicitações: ORM nas rotas e menos arquivos obrigatórios; validação funcional pendente. |
 | [Ambiente, servidor e publicação](docs/servidor-e-publicacao.md) | Preparar computador/configuração/build, atualizar IIS e serviços ou retornar uma versão. |
 | [Publicação no Azure DevOps](docs/publicacao-azure.md) | Exportar e enviar uma versão aprovada ao repositório Azure; não implanta o sistema. |
 | [Padrão visual](docs/padrao-visual.md) | Reutilizar layout, cards, campos, diálogos e estados acessíveis. |

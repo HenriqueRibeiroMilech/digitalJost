@@ -1,4 +1,6 @@
-"""Regras e limites das solicitações; sem acesso a Flask ou ao banco."""
+"""Limites e erros públicos das solicitações; sem acesso a contexto ou banco."""
+
+from backend.platform.http import ApiProblem
 
 AREA_NAME = "Transformação Digital"
 AREA_ID = 1
@@ -17,19 +19,22 @@ ALLOWED_EXTENSIONS = frozenset({
 })
 
 
-class DemandNotFoundError(Exception):
-    pass
+class DemandNotFoundError(ApiProblem):
+    def __init__(self):
+        super().__init__(404, "Solicitação ou anexo não encontrado para seu acesso.")
 
 
-class DemandConflictError(Exception):
-    pass
+class DemandConflictError(ApiProblem):
+    def __init__(self, message):
+        super().__init__(409, message)
 
 
-class DemandValidationError(Exception):
+class DemandValidationError(ApiProblem):
     def __init__(self, field, message):
-        super().__init__(message)
+        super().__init__(422, detail={"json": {field: [message]}})
         self.field = field
 
 
-class DemandStorageError(Exception):
-    pass
+class DemandStorageError(ApiProblem):
+    def __init__(self):
+        super().__init__(503, "Não foi possível guardar os documentos. Tente novamente mais tarde.")

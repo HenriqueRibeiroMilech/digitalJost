@@ -1,6 +1,6 @@
 # Base compartilhada da arquitetura moderna
 
-Referência prática dos recursos que Eventos, Demandas e próximas funcionalidades podem reutilizar. Revisada em **20/10/2026** contra os arquivos citados e a [base anterior](../historico/docs/base-compartilhada-novas-features.md). As regras de organização ficam em [Arquitetura](../docs/arquitetura-modernizada.md); comportamento de negócio pertence à feature.
+Referência prática dos recursos que Eventos, Demandas e próximas funcionalidades reutilizam. As regras de organização ficam em [Arquitetura](../docs/arquitetura-modernizada.md); comportamento de negócio pertence à feature.
 
 ## 1. Recursos existentes
 
@@ -8,14 +8,15 @@ Referência prática dos recursos que Eventos, Demandas e próximas funcionalida
 |---|---|
 | Identidade atual | [compatibility/identity.py](../../backend/compatibility/identity.py): sessão autenticada e `current_actor()`. |
 | Permissões por ação | [platform/identity.py](../../backend/platform/identity.py): `RolePermissions`; mapa junto da feature, ação desconhecida negada. |
-| Segurança HTTP e erros | [http.py](../../backend/platform/http.py): `configure_api`, `page_access` e `api_error`. |
+| Segurança HTTP e erros | [http.py](../../backend/platform/http.py): `configure_api`, `action_access`, `page_access`, `ApiProblem` e `api_error`. |
 | CSRF | [csrf.py](../../backend/platform/csrf.py): token comum e validação das escritas. |
-| Banco TD | [database.py](../../backend/platform/database.py): engine por aplicação, recuperado por `get_td_engine()` na rota. |
+| Banco TD e modelos | [database.py](../../backend/platform/database.py): `Base`, engine e factory de sessões por aplicação; acesso por `get_td_session_factory()`. |
+| Consultas comuns | `paginate(session, statement, query)` e `literal_contains(value)` no mesmo módulo de banco. |
 | Contratos paginados | [schemas.py](../../backend/platform/schemas.py): `PaginationQuery` e `PaginatedResponse`. |
 | Shell Vue | [vue_shell.py](../../backend/platform/vue_shell.py): manifest, assets, título e token após autorizar a página. |
 | Cliente e apresentação | [shared](../../frontend/src/shared/): HTTP, paginação, validação, componentes e estilos. |
 
-O bootstrap compõe os recursos com ciclo de vida da aplicação; não registra objetos de Service. As chaves atuais são `backend_td_engine`, `backend_employee_directory` e `demands_attachment_storage`. Uma integração nova pode precisar de composição explícita, sem recriar banco/login por módulo.
+O bootstrap compõe os recursos com ciclo de vida da aplicação. As chaves atuais são `backend_td_engine`, `backend_td_sessions`, `backend_employee_directory` e `demands_attachment_storage`. Uma integração nova pode precisar de composição explícita, sem recriar banco/login por módulo.
 
 `Actor` é um contrato mínimo, imutável, contendo `id`; não carrega perfis, área ou e-mail. A ponte obtém o ID de Flask-Login e consulta os perfis via Flask-Principal. `RolePermissions.can(actor, action)` nega ações fora do mapa; a implementação atual consulta a sessão e não utiliza o ID para resolver outro usuário. A política por registro pertence ao caso de uso/SQL, não ao helper de dependências.
 
@@ -24,14 +25,14 @@ Os construtores de `EmployeeDirectory` e `DemandAttachmentStorage` guardam confi
 ## 2. Criar uma funcionalidade
 
 1. Definir URL, métodos, entradas/saídas, ação, escopo dos registros e fontes; considerar integrações, anexos e jobs.
-2. Criar `backend/modules/<feature>/` com `__init__.py`, `routes.py`, schemas e Repository necessários. Acrescentar Service somente pelos critérios de complexidade da arquitetura.
-3. Aplicar `configure_api` no blueprint de API e `page_access` na entrada da página; definir mapa de ações e schemas públicos.
+2. Criar `backend/modules/<feature>/` com `__init__.py`, `routes.py`, `schemas.py` e `models.py` quando houver persistência ORM. Extrair auxiliares conforme a responsabilidade, sem camadas obrigatórias.
+3. Aplicar `configure_api` no blueprint de API e `page_access` na página; definir mapa de ações, decorator de ação e schemas públicos.
 4. Exportar os blueprints em `__init__.py` e registrá-los em `backend/modules/__init__.py`. Não copiar o bootstrap ou criar engine por request.
 5. Criar `frontend/src/features/<feature>/` com API, tipos, página e componentes locais. Registrar Vue Router e a rota Flask para entrada direta/F5.
 6. Usar o cliente comum, estados de consulta, validação e componentes do [padrão visual](../docs/padrao-visual.md).
 7. Revisar referências, contratos e diff; preparar verificações e publicação conforme [Servidor](../docs/servidor-e-publicacao.md).
 
-Uma feature simples pode ter quatro arquivos Python; uma feature sem persistência não precisa inventar Repository. Não criar tabela, camada, classe ou componente para preencher uma estrutura.
+Uma feature simples pode ter quatro arquivos Python; uma feature sem persistência não precisa de modelo ORM. Não criar tabela, camada, classe ou componente para preencher uma estrutura.
 
 ### Registro e entrada direta
 
@@ -62,117 +63,66 @@ def events_page():
 
 Os imports e a criação de `events_shell_bp = Blueprint(...)` permanecem no módulo. No Vue, a rota correspondente é `/eventos`, pois `createWebHistory('/app/')` fornece a base. Atualizar a navegação em `frontend/src/app/layouts/AppShell.vue` quando a tela precisar de acesso pelo menu. Não copiar os nomes de blueprint dos exemplos para uma segunda feature.
 
-## 3. Dependências dos Services
+## 3. Permissões e erros nas rotas
 
-Services são funções com dependências explícitas. Nas rotas que repetem engine e permissões, usar o helper local e opcional abaixo; `ACTION_ROLES` é o mapa específico do módulo:
+Cada módulo mantém seu mapa de ações e uma política sem estado de requisição. O decorator obtém o usuário a cada chamada:
 
 ```python
-def _permissions():
-    return RolePermissions(identity.can_access, ACTION_ROLES)
-
-
-def _service_deps():
-    return {"engine": get_td_engine(), "permissions": _permissions()}
-
-
-@events_bp.post("")
-@events_bp.input(EventCreate)
-@events_bp.output(EventOut, status_code=201)
-def create_event(json_data):
-    return services.create_event(
-        json_data, identity.current_actor(), **_service_deps(),
-    )
+permissions = RolePermissions(identity.can_access, ACTION_ROLES)
+require_action = action_access(identity=identity, permissions=permissions)
 ```
 
-É um recorte de [Eventos](../../backend/modules/events/routes.py), cujos imports, schemas e guardas completam o módulo. `**` expande o dicionário em argumentos nomeados. O usuário permanece visível; o resultado do helper não é global nem cacheado. Não criar um executor genérico ou helper compartilhado obrigatório.
+Usar `@require_action("events.create")`, por exemplo, além de `configure_api`. A ação fica visível na rota; vínculos, área e estado do registro continuam sendo verificados na operação. O mapa não armazena usuários nem resultados de permissão. `RolePermissions` consulta a sessão corrente; jobs precisam de política apropriada.
 
-LDAP é fornecido separadamente somente a `register_attendance`; armazenamento, somente à criação e ao download de Demandas. Services não buscam contexto Flask internamente. `RolePermissions` usa a sessão corrente, mesmo recebendo um `Actor`; reutilização em jobs exige política adequada.
+`ApiProblem(status, message=None, detail=None)` representa uma falha esperada e é traduzido por `configure_api` para `{message, detail}`. O argumento `detail` é nomeado. Erros de domínio de Demandas herdam desse contrato. A plataforma também traduz `ValidationError` explícito do multipart, sem expor a entrada ou detalhes internos.
 
-Exemplos de dependências especiais nas [rotas reais](../../backend/modules/events/routes.py):
+## 4. Modelos e consultas ORM
 
-```python
-return services.register_attendance(
-    event_id, list_id, json_data, identity.current_actor(),
-    **_service_deps(),
-    employee_directory=current_app.extensions["backend_employee_directory"],
-)
-```
+Modelos herdam de `Base`, com metadados separados do `db.Model` legado. Mapear tabelas existentes com tipos, tamanhos, nulabilidade, defaults e FKs reais. Não chamar `create_all()` nem refletir o banco. A projeção `SharedUser` de Demandas é somente de leitura e não importa o modelo legado.
 
-O acesso ao contexto está na entrada HTTP; a função recebe o adaptador pronto. Em Demandas, a mesma composição usa `storage=current_app.extensions["demands_attachment_storage"]`. Não incluir LDAP e armazenamento no helper de todas as features ou em operações que não os utilizam. As chaves extras não podem repetir argumentos já fornecidos pelo helper.
-
-## 4. Consultas e gravações simples
-
-Uma consulta simples pode chamar o Repository diretamente. Exemplo existente, com `configure_api` e schema de saída no blueprint:
+Exemplo de consulta, extraído da listagem de tipos; a resposta completa também inclui capacidades:
 
 ```python
+@events_bp.get("/types")
+@require_action("events.read")
+@events_bp.output(EventTypes)
 def list_event_types():
+    sessions = get_td_session_factory()
+    with sessions() as session:
+        items = session.execute(
+            select(EventType.id, EventType.name).order_by(EventType.name, EventType.id),
+        )
+        result = {"items": [dict(row) for row in items.mappings()]}
     actor = identity.current_actor()
-    permissions = _permissions()
-    permissions.require(actor, "events.read")
-    with get_td_engine().connect() as connection:
-        items = repository.list_event_types(connection)
     return {
-        "items": items,
+        **result,
         "can_create": permissions.can(actor, "events.types.create"),
         "can_delete": permissions.can(actor, "events.types.delete"),
     }
 ```
 
-Gravações simples podem abrir `get_td_engine().begin()` na rota, após exigir a ação, e fornecer a conexão ao Repository. Isso só vale sem várias gravações coordenadas, arquivos/integrações, transições/regras de negócio além dos campos e da ação, autorização por registro, idempotência, concorrência especial ou reutilização por outra entrada. Caso contrário, usar Service funcional, inclusive em GET.
+Os imports e a configuração do blueprint estão nas [rotas de Eventos](../../backend/modules/events/routes.py). A consulta projeta campos públicos e os materializa antes de fechar a sessão. Modelos Pydantic continuam delimitando o contrato; `model_validate(objeto, from_attributes=True)` é usado quando convém obter os campos públicos de uma entidade carregada.
 
-O Repository usa parâmetros SQL, retorna os campos necessários e não faz commit próprio. O responsável pela operação define autoria, área e metadados; o cliente não escolhe seus privilégios. Escrever menos linhas não justifica retirar verificações.
+`paginate(session, statement, query)` recebe uma projeção já filtrada/ordenada, conta sua subconsulta sem ordenação e retorna `items`, `total`, `page` e `per_page`. Capacidades são acrescentadas pela feature. `literal_contains(value)` escapa `~`, `%`, `_` e `[`; usar o padrão com `.like(..., escape="~")` para pesquisa literal no SQL Server.
 
-Na consulta acima, a sequência é: guarda do blueprint → ação `events.read` → conexão emprestada → SQL → fechamento → modelo de saída. Acrescentar autorização por registro ou coordenação de outras fontes pode justificar transferir a composição para Service.
+## 5. Escritas, integrações e transações
 
-Para uma gravação trivial, o limite da transação é `with get_td_engine().begin() as connection:` na rota. O retorno de sucesso deve depender da saída bem-sucedida desse contexto. É uma opção do padrão; os exemplos atuais de cadastro de Eventos e Demandas têm regras que justificam Service.
+A mesma factory oferece `with sessions.begin() as session:`. A rota aplica as regras e prepara o resultado antes de sair; o retorno de sucesso acontece depois do commit. Auxiliares recebem a mesma sessão e não confirmam gravações próprias. `session.flush()` envia alterações e obtém IDs/defaults, sem confirmar a transação.
 
-## 5. Casos de uso e transações
+Criar tipo de evento continua verificando o nome com `UPDLOCK, HOLDLOCK` e reutilizando a opção existente. Excluir tipo usa `XLOCK, HOLDLOCK` e confere vínculos. As rotas usam `.with_hint(..., "mssql")` para manter as travas específicas. Um `add()` isolado não substitui essas regras.
 
-O Service exige a ação, aplica regras e abre `with engine.begin()`. Todas as gravações que precisam confirmar juntas usam essa conexão, inclusive histórico. Preservar travas e condições de versão no SQL; não substituir controle de concorrência por uma conferência apenas no navegador.
+Eventos usa funções locais para projeções, vínculos e período. Demandas mantém auxiliares para visibilidade, detalhe e elegibilidade de contribuintes. A presença consulta LDAP fora da sessão SQL e revalida a lista sob trava. PDF é renderizado em memória depois de liberar conexão e travas. Ver [Eventos](../../backend/modules/events/routes.py) e [Demandas](../../backend/modules/demands/routes.py).
 
-Eventos verifica período/tipo, vínculos e presença; Demandas coordena visibilidade, idempotência, arquivos, edição e histórico. Consultar [Services de Eventos](../../backend/modules/events/services.py) e [Services de Demandas](../../backend/modules/demands/services.py) antes de reutilizar um fluxo.
-
-Filesystem e integrações não entram automaticamente no rollback SQL. Falha depois do commit não desfaz dados; falha durante commit pode deixar resultado incerto. Manter a estratégia do caso de uso, sem repetir escritas ou excluir arquivos automaticamente por suposição.
-
-### Exemplo de Service com regra e transação
-
-Este é o fluxo real de criação de tipo, separado da rota que recebe `EventTypeCreate`:
-
-```python
-def create_event_type(data, actor, *, engine, permissions):
-    permissions.require(actor, "events.types.create")
-    with engine.begin() as connection:
-        event_type = repository.create_event_type(
-            connection, name=data.name, created_by=str(actor.id),
-        )
-    return event_type
-```
-
-O Repository verifica nome existente com `UPDLOCK, HOLDLOCK`, protegido pela chave única, e cadastra ou reutiliza a opção. Valores de nome/autor são parâmetros; a transação continua pertencendo ao Service. Esse cadastro não é um INSERT irrestrito: remover o caso de uso só para economizar uma função não é objetivo da arquitetura.
-
-No [Repository](../../backend/modules/events/repository.py), uma consulta simples ilustra o contrato:
-
-```python
-from sqlalchemy import text
-
-
-def list_event_types(connection):
-    rows = connection.execute(
-        text("SELECT id, name FROM dbo.DJ_EVENT_TYPES ORDER BY name, id"),
-    ).mappings().all()
-    return [dict(row) for row in rows]
-```
-
-Quando houver entrada, usar parâmetros como `WHERE id = :event_id` com o dicionário separado. A composição de fragmentos SQL constantes observada em alguns repositórios não autoriza interpolar valores de request ou nomes arbitrários de coluna/tabela.
+Filesystem e integrações não entram no rollback SQL. Demandas compensa arquivos novos nas falhas previstas durante a gravação dos metadados/histórico e preparação do detalhe; falha no commit preserva arquivos para conciliação. Manter essa distinção ao alterar a operação.
 
 ### Garantias e limites
 
-- Exceção dentro de `engine.begin()` provoca rollback SQL; confirmar o contexto antes de devolver sucesso.
-- `connect()` não confirma gravações automaticamente. Não usar uma conexão de leitura para esconder escrita sem commit.
-- Várias conexões/engines não pertencem à mesma transação. Não abrir outra no Repository.
-- Verificar e gravar em comandos separados exige constraint/trava/versão quando houver disputa; uma validação prévia sozinha pode ficar desatualizada.
-- Demandas compensa arquivos novos em falhas específicas, preservando-os se o commit for incerto. Eventos consulta LDAP sem segurar conexão SQL e revalida o vínculo depois.
-- Auditoria de acesso global e histórico de negócio são responsabilidades distintas. Acrescentar o histórico necessário dentro da mesma transação do caso de uso.
+- Exceção dentro de `sessions.begin()` provoca rollback SQL; confirmar o contexto antes de devolver sucesso.
+- Uma sessão de leitura não deve esconder gravações sem commit.
+- Sessões/conexões diferentes não pertencem à mesma transação. Não misturar o `db.session` legado com a sessão moderna.
+- SQL excepcional, se necessário, usa parâmetros e a própria sessão. Fazer `flush()` se ele depender de alterações ORM pendentes.
+- Preservar constraints, hints, autoria, área, estado e versão recebida do cliente; uma validação prévia sozinha pode ficar desatualizada.
+- Auditoria de acesso global e histórico de negócio são responsabilidades distintas. Histórico usa a mesma transação da alteração.
 
 ## 6. Contratos HTTP, sessão e CSRF
 
@@ -244,8 +194,8 @@ Depois de uma escrita confirmada, invalidar as chaves afetadas ou atualizar o de
 
 | Mudança | Arquivos a conferir |
 |---|---|
-| Nova ação ou regra por registro | Mapa do módulo, rota/Service, SQL do escopo e capacidades de saída. |
-| Novo campo | Schema, Service, SQL, migration revisada quando necessária, tipos/clientes/formulário e documento da feature. |
+| Nova ação ou regra por registro | Mapa do módulo, decorator, rota/auxiliar, filtros ORM e capacidades de saída. |
+| Novo campo | Schema, modelo, rota/auxiliar, migration revisada quando necessária, tipos/clientes/formulário e documento da feature. |
 | Nova entrada Vue | Router, shell Flask, registro de blueprints e navegação. |
 | Mudança HTTP/CSRF | Plataforma, erros globais, shell, cliente e ambos os módulos consumidores. |
 | Novo adaptador | Contrato e configuração, composição quando necessária, fluxo de falhas e operações que o recebem. |
@@ -253,6 +203,6 @@ Depois de uma escrita confirmada, invalidar as chaves afetadas ou atualizar o de
 
 Conferir também quem usa as mesmas tabelas e arquivos, inclusive jobs legados. Não executar o portal para validar um exemplo. Scripts SQL, build, integrações e testes dependem de autorização específica conforme AGENTS.md.
 
-Na revisão estática, conferir guardas, mapa de ações, argumentos do Service, parâmetros SQL, transação e contrato TypeScript. Em ambiente autorizado, verificar acesso negado, CSRF, validação, limites, conflitos, rollback e integração. **O sistema não foi executado; a validação foi somente estática.**
+Na revisão estática, conferir guardas, mapa de ações, modelos, filtros e hints ORM, parâmetros, sessão/transação e contrato TypeScript. Em ambiente autorizado, verificar acesso negado, CSRF, validação, limites, conflitos, rollback e integração. **O sistema não foi executado; a validação foi somente estática.**
 
 Os exemplos são recortes dos módulos existentes ou do padrão indicado, não arquivos completos para substituir as implementações. A antiga base continha um módulo de Equipamentos ilustrativo; ele não foi registrado como uma feature real e não deve aparecer no manual como entrega pronta.

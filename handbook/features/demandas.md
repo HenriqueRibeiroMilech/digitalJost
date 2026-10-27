@@ -2,7 +2,7 @@
 
 **Estado atual:** a arquitetura moderna entrega **Nova solicitação** e **Minhas solicitações**, em `/app/demandas/solicitacoes`, somente para Transformação Digital (`area_id = 1`). O gerenciador antigo continua separado. Código implementado não comprova schema aplicado ou publicação no servidor.
 
-Revisão em **20/10/2026**, confrontando rotas, schemas, Services, SQL, armazenamento, Vue, migration e os antigos documentos de [solicitações](../historico/handbook/solicitacoes-demandas.md) e [proposta do gerenciador](../historico/handbook/proposta-gerenciador-demandas.md). O escopo deste arquivo é o módulo moderno; os fluxos antigos são citados para explicar a convivência.
+Referência confrontada com rotas, schemas, modelos ORM, armazenamento, Vue, migration e os antigos documentos de [solicitações](../historico/handbook/solicitacoes-demandas.md) e [proposta do gerenciador](../historico/handbook/proposta-gerenciador-demandas.md). O escopo deste arquivo é o módulo moderno; os fluxos antigos são citados para explicar a convivência.
 
 ## 1. Escopo e uso
 
@@ -83,7 +83,7 @@ Uma falha na renovação da lista não desfaz a gravação. Resultado incerto ex
 | Outro usuário com GENERAL | Não vê o registro; detalhe/anexo retorna 404. | Não. |
 | Sem sessão / sem GENERAL | 401 / 403 na API. | Negado antes da operação. |
 
-As três ações são mapeadas para GENERAL, mas esse perfil sozinho não concede acesso a todas as solicitações. A condição SQL inclui área e `(requester_id = actor_id OR contributor_id = actor_id)`. Não existe exceção administrativa global nesse módulo. Alterar o contribuinte pode retirar o acesso da pessoa anterior; o Service revalida a elegibilidade da pessoa selecionada ao salvar.
+As três ações são mapeadas para GENERAL, mas esse perfil sozinho não concede acesso a todas as solicitações. O filtro ORM inclui área e `(requester_id = actor_id OR contributor_id = actor_id)`. Não existe exceção administrativa global nesse módulo. Alterar o contribuinte pode retirar o acesso da pessoa anterior; a rota revalida a elegibilidade da pessoa selecionada ao salvar.
 
 A lista de contribuintes consulta `JDT_USER_DETAILS`: `active = 1`, `generic = 0`, ID diferente do solicitante, nome não nulo e e-mail corporativo não vazio. Não cria usuários, envia convites ou consulta LDAP. A mesma condição é aplicada na gravação; não confiar apenas nas opções do Select. Se o colaborador antigo deixar de ser elegível, a interface ainda pode mostrá-lo como atual, mas o backend exige uma escolha válida ou sua remoção.
 
@@ -108,7 +108,7 @@ O frontend mantém chave e conteúdo após falha de envio. Em rede/timeout, 5xx 
 
 ### Fluxo de edição e histórico
 
-O Service abre transação, lê a solicitação visível com UPDLOCK/HOLDLOCK, exige vínculo de solicitante e confere status/classificação. O UPDATE repete essas condições e compara a versão recebida. Se nenhuma linha for atualizada, retorna 409 para reabrir os dados; não sobrescreve deliberadamente outra edição.
+A rota abre transação ORM, lê a solicitação visível com UPDLOCK/HOLDLOCK, exige vínculo de solicitante e confere status/classificação. O UPDATE repete essas condições e compara a versão recebida. Se nenhuma linha for atualizada, retorna 409 para reabrir os dados; não sobrescreve deliberadamente outra edição. `row_version` é mapeada como `ROWVERSION` gerada pelo banco; a resposta continua usando hexadecimal.
 
 Os campos são comparados com a linha atual. Se houver mudanças, grava evento `updated` com valores anteriores/posteriores em JSON na mesma transação. Na criação, grava `created`. Um PUT sem mudança de conteúdo pode atualizar data/ROWVERSION sem gerar evento de mudança. O campo `history` do detalhe expõe evento, autor e data; os valores de `changes` ficam no banco e não são devolvidos/exibidos no detalhe atual.
 
@@ -121,7 +121,7 @@ Base `/api/v1/demands`; IDs são inteiros nas rotas Flask. `area`, quando inform
 | Método e caminho relativo | Entrada e retorno |
 |---|---|
 | GET `""` | `page`, `per_page`, `search`, `entry_kind`; lista paginada e capacidade de criar. |
-| GET `/contributors` | IDs/nomes elegíveis; consulta direta ao Repository, exige `demands.create`. |
+| GET `/contributors` | IDs/nomes elegíveis; consulta ORM direta na rota, exige `demands.create`. |
 | POST `""` | Multipart com somente `payload` (JSON de `RequestCreate`) e `files`; detalhe, HTTP 201 após commit. |
 | GET `/<demand_id>` | Detalhe, anexos, histórico, versão e `can_update`. |
 | PUT `/<demand_id>` | JSON completo de `RequestUpdate`; detalhe após commit. |
@@ -161,7 +161,7 @@ Os bytes preparados ficam em memória antes da transação. `save()` cria o dire
 
 Esses controles não são antivírus nem validação de assinatura/MIME do conteúdo. SHA-256 identifica conteúdo para integridade/fingerprint; não certifica que um documento é seguro. A aplicação não implementa quarentena ou preview dos anexos. Uma evolução nessa área exige análise própria.
 
-Se `save()` falhar com erro de filesystem, tenta remover apenas os arquivos novos daquela execução. Se falhar a inserção de metadados/histórico ou a montagem do detalhe depois de salvar, o Service solicita essa compensação e relança para rollback SQL. A remoção é uma tentativa e pode falhar; não há promessa de ausência de órfãos. Falha ao sair da transação, inclusive durante commit, preserva arquivos para conciliação por resultado incerto.
+Se `save()` falhar com erro de filesystem, tenta remover apenas os arquivos novos daquela execução. Se falhar o flush de metadados/histórico ou a montagem do detalhe depois de salvar, a rota solicita essa compensação e relança para rollback SQL. A remoção é uma tentativa e pode falhar; não há promessa de ausência de órfãos. Falha ao sair da transação, inclusive durante commit, preserva arquivos para conciliação por resultado incerto.
 
 | Fonte | Responsabilidade |
 |---|---|
@@ -178,18 +178,18 @@ A coluna `classification` permite futuramente `melhoria`, `projeto` ou `atividad
 
 ## 6. Onde alterar e publicar
 
-- [Backend](../../backend/modules/demands/): rotas/schemas, Services funcionais, Repository, definições de domínio e `storage.py`.
+- [Backend](../../backend/modules/demands/): operações e auxiliares ORM em `routes.py`, contratos em `schemas.py`, mapeamentos em `models.py`, erros/limites em `domain.py` e armazenamento em `storage.py`.
 - [Frontend](../../frontend/src/features/demands/): página, formulário, detalhe, cards, tipos e cliente HTTP.
-- [Bootstrap](../../backend/bootstrap.py): inicializa o armazenamento; as rotas o fornecem somente à criação e ao download.
+- [Bootstrap](../../backend/bootstrap.py): inicializa o armazenamento; as rotas o utilizam na criação e no download. A factory ORM reutiliza o engine moderno do TD.
 
 Seguir [Servidor e publicação](../docs/servidor-e-publicacao.md), com backend/build compatíveis, schema revisado, limites de upload, ACLs e backup de tabelas **e** arquivos. Retorno de código não remove solicitações ou documentos nem os torna visíveis ao legado.
 
 | Mudança desejada | Onde começar e o que acompanhar |
 |---|---|
-| Campo ou regra de cadastro | `schemas.py`, Services, Repository, migration quando necessária, tipos e `RequestForm.vue`/`RequestDetail.vue`. |
-| Visibilidade/edição | `_VISIBLE` no Repository, Services, ações/capacidades e consultas de anexo; não alterar só o card. |
+| Campo ou regra de cadastro | `schemas.py`, `models.py`, rota/auxiliar, migration quando necessária, tipos e `RequestForm.vue`/`RequestDetail.vue`. |
+| Visibilidade/edição | `_visible` e auxiliares em `routes.py`, ações/capacidades, condição de versão e consultas de anexo; não alterar só o card. |
 | Arquivo/limites | `domain.py`, `storage.py`, request/IIS, formulário e contrato de download; preservar compensação. |
-| Rascunho/envio incerto | `RequestForm.vue`, `RequestsPage.vue`, `api.ts` e o contrato de idempotência no Service. |
+| Rascunho/envio incerto | `RequestForm.vue`, `RequestsPage.vue`, `api.ts` e o contrato de idempotência na rota de criação. |
 | Apresentação | `RequestCard.vue`, `presentation.ts` e componentes comuns; datas UTC diferem do período local de Eventos. |
 
 Publicação inicial: revisar/aplicar o script autorizado antes de usar a API; conferir armazenamento/limites; publicar código e build juntos; verificar acessos de solicitante/contribuinte e legado. O build também depende da imagem pública `app/static/images/FLUXO.PNG` usada no formulário; ela não é um anexo de usuário.

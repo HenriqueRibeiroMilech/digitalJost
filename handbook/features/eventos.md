@@ -30,7 +30,7 @@ O Select de tipos permite pesquisar, cadastrar pelo **+** e excluir pela lixeira
 | `ongoing` | Início atingido e fim ainda não atingido. | Em andamento, verde. |
 | `upcoming` | Início ainda não atingido. | Futuro, azul. |
 
-O Service obtém `SYSDATETIME()` e usa a mesma referência no cálculo da consulta. O Vue apresenta o resultado; não decide status por seu próprio relógio. Períodos são locais e não recebem conversão com `toISOString()`. Datas de autoria criadas por defaults SQL usam UTC; não confundir com o período do evento.
+A rota obtém `SYSDATETIME()` e usa a mesma referência no cálculo da consulta ORM. O Vue apresenta o resultado; não decide status por seu próprio relógio. Períodos são locais e não recebem conversão com `toISOString()`. Datas de autoria criadas por defaults SQL usam UTC; não confundir com o período do evento.
 
 A pesquisa de título espera 300 ms sem digitação ou é aplicada imediatamente com Enter. Status podem ser combinados; desmarcar todos faz o cliente enviar os quatro estados. O parâmetro `status` vazio não é válido na API. Busca escapa `%`, `_`, `[` e `~`, mantendo a entrada literal. Ordenação: ID decrescente. Busca/estado/contagem/paginação são de servidor; trocar filtros volta à primeira página.
 
@@ -73,7 +73,7 @@ O registro consulta o LDAP em toda tentativa, inclusive repetida. A identificaç
 | Diretório indisponível, bind ou timeout | 503, sem gravar nessa tentativa. |
 | Crachá ou campo inválido | 422 com os detalhes dos campos; JSON malformado pode retornar 400. |
 
-O Service valida o vínculo antes do LDAP, libera a conexão SQL durante a consulta externa e revalida a lista com trava antes de gravar. A conexão LDAP é encerrada ao final. As mesmas travas coordenam registro, renomeação e exclusão; preservá-las em futuras alterações.
+A rota valida o vínculo antes do LDAP, fecha a sessão SQL durante a consulta externa e revalida a lista com trava antes de gravar. A conexão LDAP é encerrada ao final. As mesmas travas coordenam registro, renomeação e exclusão; preservá-las em futuras alterações.
 
 O PDF contém o evento e a lista completa, independentemente da página aberta. É gerado em memória após liberar conexão/travas, com logo, quatro colunas e páginas A4. Não consulta LDAP nem cria arquivo operacional.
 
@@ -116,7 +116,7 @@ Remover o último participante de uma página pode recuar a página. Excluir lis
 
 O PDF inclui nome/tipo/instrutor/período/descrição/conteúdo programático, total e todos os participantes. Tem logo em cada página, cabeçalho da tabela repetido e emissão pelo horário TD; campos ausentes mostram “Não informado”. Não exibe IDs de evento/lista no conteúdo, e gera documento vazio com total zero quando necessário.
 
-O Service trava evento e lista enquanto captura os dados; renderiza depois de liberar SQL. Textos são escapados antes de entrar no markup do ReportLab. Retorna attachment `lista-presenca-evento-<id>-lista-<id>.pdf`, MIME PDF, `Cache-Control: private, no-store`, `Pragma: no-cache` e `nosniff`. O cliente aguarda 30 segundos, exige conteúdo PDF em sucesso e não baixa HTML/JSON como documento. Falta de biblioteca/logo tratada pelo Service gera 503.
+A rota trava evento e lista enquanto captura os dados; renderiza depois de liberar SQL. Textos são escapados antes de entrar no markup do ReportLab. Retorna attachment `lista-presenca-evento-<id>-lista-<id>.pdf`, MIME PDF, `Cache-Control: private, no-store`, `Pragma: no-cache` e `nosniff`. O cliente aguarda 30 segundos, exige conteúdo PDF em sucesso e não baixa HTML/JSON como documento. Falta de biblioteca/logo tratada pela rota gera 503.
 
 ## 3. API e autorização
 
@@ -129,7 +129,7 @@ Todas as ações atuais são mapeadas para GENERAL, inclusive editar/excluir. N�
 | GET `""` | Lista paginada; `page`, `per_page`, `search`, `status` separados por vírgula; `events.read`. |
 | POST `""` | Evento criado, 201; `events.create`. |
 | GET / PUT / DELETE `/<event_id>` | Detalhe / edição completa / `{id}` excluído; `events.read/update/delete`. |
-| GET `/types` | `{items, can_create, can_delete}`; consulta direta ao Repository, `events.read`. |
+| GET `/types` | `{items, can_create, can_delete}`; consulta ORM direta na rota, `events.read`. |
 | POST `/types` | Cadastro/reutilização, 200; `events.types.create`. |
 | DELETE `/types/<event_type_id>` | Exclusão; `events.types.delete`. |
 | GET / POST `/<event_id>/attendance-lists` | Listar / criar lista (201); `events.attendance.read/create`. |
@@ -157,7 +157,7 @@ Schema inválido retorna 422; período/tipo inválido também usa `detail.json`.
 
 | Local | Responsabilidade |
 |---|---|
-| [Módulo backend](../../backend/modules/events/) | `routes.py`, `schemas.py`, Services funcionais e SQL parametrizado no Repository. |
+| [Módulo backend](../../backend/modules/events/) | `routes.py` com operações/auxiliares ORM, `schemas.py`, `models.py` e apresentação PDF específica. |
 | [Feature Vue](../../frontend/src/features/events/) | Página, filtros, formulários, tipos, listas, leitor e clientes da API. |
 | [Diretório](../../backend/integrations/employee_directory.py) | Consulta LDAP somente leitura, configuração separada do login antigo. |
 | [PDF](../../backend/modules/events/attendance_pdf.py) | Renderização em memória; depende de ReportLab e do logo em `assets/`. |
@@ -203,6 +203,6 @@ No ambiente autorizado, conferir campos/limites e registros antigos; filtros/sta
 | Interface | Enter tardio, perda de foco, leitura longa, partes durante envio e fechamento durante estabilização/API. |
 | PDF | Lista vazia, várias páginas, textos longos, caracteres de markup, logo e MIME/cabeçalhos privados. |
 
-Ao mudar um campo, revisar schemas, Services, Repository, tipos TypeScript, formulário/detalhe/PDF e SQL correspondente. Ao mudar captura, revisar também LDAP, mensagens, cache e atalhos. Uma mudança geral de grade/diálogo vai para o [padrão visual](../docs/padrao-visual.md), sem copiar regras de presença para componentes comuns.
+Ao mudar um campo, revisar schemas, modelos e rotas ORM, tipos TypeScript, formulário/detalhe/PDF e schema correspondente. Ao mudar captura, revisar também LDAP, mensagens, cache e atalhos. Uma mudança geral de grade/diálogo vai para o [padrão visual](../docs/padrao-visual.md), sem copiar regras de presença para componentes comuns.
 
 Não há nova autenticação, notificações ou jobs específicos neste módulo. Mudanças futuras devem atualizar este documento e preservar a [base compartilhada](base-compartilhada.md). **O sistema não foi executado; a validação foi somente estática.**

@@ -4,6 +4,7 @@ from functools import wraps
 
 from apiflask import HTTPError
 from flask import abort, jsonify, redirect, request, url_for
+from pydantic import ValidationError
 
 from .csrf import has_valid_csrf
 
@@ -17,6 +18,29 @@ _MESSAGES = {
     422: "Dados inválidos.",
     500: "Não foi possível concluir a operação.",
 }
+
+
+class ApiProblem(Exception):
+    """Falha esperada da operação, com contrato público e sem detalhes internos."""
+
+    def __init__(self, status, message=None, *, detail=None):
+        super().__init__(message or _MESSAGES.get(status, "Não foi possível concluir a operação."))
+        self.status = status
+        self.message = message
+        self.detail = detail
+
+
+def action_access(*, identity, permissions):
+    """Produz o decorator de ações do módulo, consultando a identidade por chamada."""
+    def require_action(action):
+        def decorate(view):
+            @wraps(view)
+            def authorized(*args, **kwargs):
+                permissions.require(identity.current_actor(), action)
+                return view(*args, **kwargs)
+            return authorized
+        return decorate
+    return require_action
 
 
 def is_api_request():
@@ -54,6 +78,19 @@ def configure_api(blueprint, *, identity, permission):
         return api_error(403)
 
     blueprint.register_error_handler(PermissionError, access_denied)
+
+    @blueprint.errorhandler(ApiProblem)
+    def operation_error(error):
+        return api_error(error.status, message=error.message, detail=error.detail)
+
+    @blueprint.errorhandler(ValidationError)
+    def invalid_payload(error):
+        fields = {}
+        for item in error.errors(include_url=False, include_context=False, include_input=False):
+            field = str(item["loc"][0]) if item["loc"] else "payload"
+            fields.setdefault(field, []).append(item["msg"])
+        return api_error(422, detail={"json": fields})
+
     for status in (400, 401, 403, 404, 405, 500):
         blueprint.register_error_handler(status, http_exception_response)
 

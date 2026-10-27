@@ -144,18 +144,17 @@ Dentro de uma funcionalidade em `backend/modules/`, os nomes ajudam a encontrar 
 
 | Arquivo | Pergunta que ele responde |
 |---|---|
-| `routes.py` | O que a interface pediu e qual resposta devolver? |
+| `routes.py` | O que a interface pediu, quais regras aplicar e como consultar/gravar com ORM? |
 | `schemas.py` | Quais campos, formatos e respostas são aceitos? |
-| `services.py` | Quais regras e operações precisam ser coordenadas? |
-| `repository.py` | Qual SQL consulta ou grava os dados? |
+| `models.py` | Quais tabelas, campos e relacionamentos o ORM representa? |
 | `domain.py`, quando existe | Quais definições, opções e erros pertencem à funcionalidade? |
 | `__init__.py` | O que esse pacote disponibiliza ao restante do projeto? |
 
 Existem arquivos específicos: em Demandas, `storage.py` cuida dos anexos; em Eventos, `attendance_pdf.py` gera o documento de presença.
 
-Operações simples podem ir da rota ao repositório. O serviço é usado quando há regras, transações ou outras responsabilidades que precisam de coordenação. O repositório recebe a conexão e não faz um commit independente.
+As rotas mostram a sequência das operações, com funções auxiliares quando ajudam a leitura. Service e Repository não são camadas obrigatórias no backend moderno. A sessão ORM é criada por operação; gravações relacionadas usam a mesma transação, sem commits individuais nos modelos ou auxiliares.
 
-**Frase para decorar:** “A rota recebe, o schema valida o formato, o serviço aplica as regras e o repositório acessa o banco.”
+**Frase para decorar:** “O schema define os dados, o model representa a tabela e a rota coordena a operação com ORM.”
 
 ### No frontend moderno
 
@@ -184,9 +183,9 @@ POST /api/v1/demands
         ↓
 Backend confere sessão, segurança e campos
         ↓
-Serviço verifica permissões e aplica as regras
+Rota verifica permissões e aplica as regras
         ↓
-Repositório grava no banco + armazenamento salva anexos
+Sessão ORM grava no banco + armazenamento salva anexos
         ↓
 API devolve o resultado
         ↓
@@ -199,9 +198,8 @@ Arquivos para acompanhar:
 2. [RequestForm.vue](../../frontend/src/features/demands/components/RequestForm.vue): apresenta o formulário.
 3. [api.ts](../../frontend/src/features/demands/api.ts): envia a requisição.
 4. [routes.py](../../backend/modules/demands/routes.py) e [schemas.py](../../backend/modules/demands/schemas.py): recebem e validam a entrada.
-5. [services.py](../../backend/modules/demands/services.py): aplica regras e controla a transação.
-6. [repository.py](../../backend/modules/demands/repository.py): executa o SQL.
-7. [storage.py](../../backend/modules/demands/storage.py): trata o armazenamento dos anexos.
+5. [models.py](../../backend/modules/demands/models.py): representa as tabelas; as regras e transações ficam nas rotas.
+6. [storage.py](../../backend/modules/demands/storage.py): trata o armazenamento dos anexos.
 
 Exemplos de regras dessa funcionalidade: somente o solicitante pode editar, enquanto a solicitação está em análise e sem classificação; repetições do mesmo envio são reconhecidas para evitar duplicação.
 
@@ -250,7 +248,7 @@ Para saber se um módulo está registrado, confira `main.py` e `backend/modules/
 
 Esses serviços são processos separados do site. Confirmar quais estão instalados e ativos exige verificar o ambiente autorizado.
 
-**Atenção aos nomes:** `app/services/` contém automações; um `services.py` dentro de uma funcionalidade contém os casos de uso e as regras daquela funcionalidade.
+**Atenção aos nomes:** `app/services/` contém automações; no legado, `services.py` de uma funcionalidade contém regras e operações. No backend moderno, as rotas coordenam as operações e usam ORM, sem camada obrigatória de Service.
 
 ## 11. Roteiro para apresentar em 5 a 10 minutos
 

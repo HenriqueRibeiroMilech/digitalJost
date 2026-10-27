@@ -137,16 +137,17 @@ Funcionalidades modernas ficam em `backend/modules/<feature>/`, com frontend Vue
 ```text
 backend/modules/<feature>/
 ├── __init__.py          # exporta blueprints; registro explícito em modules/__init__.py
-├── routes.py            # HTTP, schemas, autorização e composição
+├── routes.py            # HTTP, autorização, regras e operações ORM
 ├── schemas.py           # contratos Pydantic de entrada e saída
-├── repository.py        # SQL parametrizado; recebe conexão, sem Flask ou commit próprio
-├── services.py          # funções de caso de uso, quando necessárias
+├── models.py            # mapeamentos ORM sobre tabelas existentes
 └── domain.py            # definições e erros do domínio, quando necessários
 ```
 
-Consultas simples podem ir da rota ao Repository. Gravações simples também podem dispensar Service quando não coordenam várias gravações, não envolvem arquivos ou integrações, não decidem regras de negócio ou transições, não exigem autorização por registro, concorrência especial ou idempotência e não precisam de reutilização por outra entrada. Nesses casos, a rota autoriza a ação e controla a transação com o engine compartilhado. Se algum critério não for atendido, use Service funcional; GET também pode exigir Service.
+No backend moderno, consultas, gravações, regras e autorização por registro podem ficar diretamente nas rotas, com funções auxiliares locais quando facilitarem a leitura. Service e Repository não são camadas obrigatórias. Extrair uma operação para outro arquivo somente quando houver responsabilidade clara, volume ou reutilização real; não criar chamadas de repasse ou um CRUD genérico. Preservar a sequência das operações com LDAP, arquivos, histórico, idempotência e concorrência.
 
-Services recebem explicitamente identidade e dependências, controlam os casos de uso e suas transações e não acessam diretamente o contexto HTTP. Não registre um objeto de Service por feature no bootstrap. Reutilize `get_td_engine`, `configure_api`, `page_access` e a ponte de identidade. Preserve autorização por ação e registro, CSRF, schemas, rollback, auditoria e concorrência existentes. Os Repositories recebem a conexão da operação e não fazem commits independentes.
+Reutilize `get_td_session_factory`, `configure_api`, `action_access`, `page_access` e a ponte de identidade. Leituras abrem `with sessions() as session`; escritas usam `with sessions.begin() as session`. A rota ou função coordenadora controla a transação, e auxiliares recebem a mesma sessão sem commits próprios. Funções extraídas para outras entradas recebem identidade e dependências explicitamente. Preserve autorização por ação e registro, CSRF, schemas, rollback, auditoria e concorrência existentes. Não registre objetos de Service por feature no bootstrap.
+
+Modelos modernos herdam de `backend.platform.database.Base`, separada dos metadados legados. Não chamar `create_all`, importar modelos de `app/` como atalho ou descobrir o banco por reflexão. Usar os tipos e defaults reais das tabelas; a projeção de `JDT_USER_DETAILS` é somente para leitura. ORM é a primeira opção; SQL excepcional continua parametrizado e usa a mesma transação. Reutilize `paginate` e `literal_contains` quando adequados e preserve os hints de trava do SQL Server. Modelos não fazem commits nem integram sistemas.
 
 Não crie camadas vazias, classes base de CRUD ou descoberta automática de módulos. Classes de contratos e adaptadores continuam adequadas. Consulte [a base compartilhada](handbook/features/base-compartilhada.md) para recursos e exemplos e [a arquitetura oficial](handbook/docs/arquitetura-modernizada.md) para critérios e cuidados.
 

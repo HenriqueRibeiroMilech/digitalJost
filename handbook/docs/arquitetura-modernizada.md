@@ -1,6 +1,6 @@
 # Arquitetura e modernização
 
-Referência oficial da organização atual do Digital JOST, revisada em **20/10/2026** por comparação textual entre código, contratos e documentos anteriores. Explica como desenvolver e migrar funcionalidades. Exemplos completos da infraestrutura ficam em [Base compartilhada](../features/base-compartilhada.md).
+Referência oficial da organização atual do Digital JOST, por comparação textual entre código, contratos e documentos anteriores. Explica como desenvolver e migrar funcionalidades. Exemplos da infraestrutura ficam em [Base compartilhada](../features/base-compartilhada.md); a [proposta de aproximação ao curso](proposta-arquitetura-proxima-ao-curso.md) registra as decisões adotadas no backend novo.
 
 **Limite da revisão:** implementação no repositório, schema aplicado e versão publicada são estados diferentes. Este guia confirma a organização observada no código; não certifica o ambiente corporativo ou a ausência de defeitos.
 
@@ -27,7 +27,7 @@ frontend/src/ → build → backend/static/app/ → /static/app/
 1. `main.py` importa `create_app` e os blueprints legados. Imports antigos podem produzir efeitos antes de receber qualquer requisição.
 2. `app/config.py` cria `APIFlask(json_errors=False)`, configura Flask-SQLAlchemy, Mail, Login e Principal e registra os ciclos globais e erros. A aplicação continua sendo a mesma para HTML e API.
 3. A factory ainda chama `db.create_all()` e depois `init_backend(app, config=BackendConfig.from_env())`.
-4. O bootstrap inicializa o engine moderno do TD, compõe diretório LDAP e armazenamento de anexos, registra os recursos do shell e os módulos.
+4. O bootstrap inicializa o engine e a factory de sessões ORM do TD, compõe diretório LDAP e armazenamento de anexos, registra os recursos do shell e os módulos. A base declarativa moderna tem metadados separados e não executa DDL.
 5. Ao retornar da factory, `main.py` registra os blueprints antigos restantes. Desativação de registro não significa necessariamente ausência de import.
 
 | Entrada atual | Responsabilidade |
@@ -46,10 +46,9 @@ Vue Router usa a base `/app/`, mas não configura sozinho uma rota no servidor. 
 ```text
 backend/modules/<feature>/
 ├── __init__.py       # exporta os blueprints
-├── routes.py         # HTTP, schemas, autorização e dependências
+├── routes.py         # HTTP, autorização, regras e operações ORM
 ├── schemas.py        # contratos Pydantic de entrada e saída
-├── repository.py     # SQL parametrizado; recebe uma conexão
-├── services.py       # funções de caso de uso, quando necessárias
+├── models.py         # mapeamentos das tabelas existentes
 └── domain.py         # definições e erros, quando necessários
 
 frontend/src/features/<feature>/
@@ -59,58 +58,59 @@ frontend/src/features/<feature>/
 └── types.ts
 ```
 
-Criar somente os arquivos que tenham responsabilidade real. `models.py`, armazenamento, políticas e integrações específicas entram quando necessários. Não criar classes base de CRUD, arquivos vazios ou uma segunda implementação de infraestrutura.
+Uma feature com persistência ORM começa com quatro arquivos: `__init__.py`, `routes.py`, `schemas.py` e `models.py`. Armazenamento, PDF e outros recursos específicos entram quando necessários. Service e Repository não são camadas obrigatórias. Não criar classes base de CRUD, arquivos vazios ou uma segunda implementação de infraestrutura.
 
 | Arquivo/camada | Deve fazer | Deve evitar |
 |---|---|---|
-| `routes.py` | Adaptar HTTP, aplicar schemas/guardas, compor dependências, traduzir erros e devolver resposta. | SQL, lógica extensa ou decidir privilégios a partir do navegador. |
+| `routes.py` | Receber HTTP, autorizar, aplicar regras, consultar/gravar com ORM e preparar a resposta. | Esconder transações, aceitar privilégios do navegador ou repetir etapas extensas sem necessidade. |
 | `schemas.py` | Definir campos, tipos, limites, normalizações e modelos públicos. | Acessar banco ou integrar sistemas para validar um campo. |
-| `services.py` | Exigir ação, conferir regras/vínculos, coordenar transação e efeitos do caso de uso. | Ler sessão/request ou criar engine/cliente global. |
-| `repository.py` | Executar SQL parametrizado usando a conexão recebida e retornar dados. | Flask, commits próprios, selecionar usuário ou criar transação independente. |
-| `domain.py` | Regras puras, opções, constantes e erros que justifiquem agrupamento. | Virar requisito para um módulo pequeno. |
+| `models.py` | Representar tabelas, tipos, defaults e FKs sobre a base moderna. | Criar estruturas, fazer commits ou chamar integrações. |
+| Função auxiliar | Dar nome a uma etapa ou consulta repetida, recebendo a sessão da operação. | Abrir outra transação ou existir apenas para repassar uma chamada. |
+| `domain.py` | Opções, constantes e erros públicos que justifiquem agrupamento. | Virar requisito para um módulo pequeno. |
 | Adaptador local | Encapsular armazenamento ou integração com contrato explícito. | Expor credenciais, caminho privado ou cliente externo na API. |
 | Página Vue | Coordenar navegação, consultas, mutações e feedback. | Ser a única barreira de autorização ou recalcular a verdade persistida. |
 | Componente Vue | Apresentar/interagir com uma parte da feature; receber dados e emitir ações. | Buscar dados de vários domínios sem responsabilidade definida. |
 
-O Repository pode usar funções comuns e SQL textual. Não há obrigação de converter tabelas corporativas em models ORM. Classes de schema, configuração, resultado e adaptadores continuam adequadas; a simplificação removeu a obrigação de objetos de Service, não o uso de classes em Python.
+Modelos herdam de `backend.platform.database.Base`. A projeção de usuários em Demandas contém somente os campos consultados de `JDT_USER_DETAILS`, sem importar o modelo legado ou gravar no cadastro. Não executar `Base.metadata.create_all()` nem reflexão automática. As tabelas e seus índices/constraints continuam sob manutenção explícita do banco.
 
 ## 3. Qual caminho usar
 
 | Operação | Caminho e responsabilidade |
 |---|---|
-| Consulta simples | Rota → Repository; a rota exige a ação e compõe a resposta. |
-| Gravação simples | Rota com transação → Repository; autorização, schemas e CSRF permanecem obrigatórios. |
-| Caso de uso | Rota → Service funcional → Repository/integração; o Service coordena regras e transações. |
+| Consulta | Rota → sessão ORM → resposta pública; autorização e escopo ficam explícitos. |
+| Gravação | Rota com transação → ORM → confirmação → resposta. |
+| Operação coordenada | Rota e auxiliares → mesma sessão ORM e adaptadores específicos. |
 
-Uma gravação só pode dispensar Service se não coordenar várias gravações, arquivos ou integrações; não decidir transições ou regras além da validação declarativa dos campos e da permissão da ação; não exigir autorização por registro, idempotência ou concorrência especial; e não precisar ser reutilizada por outra entrada. A sequência deve continuar clara na rota. Se algum critério falhar, usar Service. GET também pode precisar de Service.
+Regras de negócio, autorização por registro, histórico ou várias gravações podem ficar na rota. Extrair funções locais quando ajudarem a compreender ou reutilizar etapas. Um arquivo adicional é uma escolha por responsabilidade real, não uma obrigação por existir regra ou transação. Funções reutilizadas fora do HTTP recebem identidade e dependências explicitamente.
 
-Rotas não contêm SQL. Repositórios não conhecem Flask, não decidem o usuário autenticado e não executam commits próprios. Services recebem identidade e dependências explicitamente, sem acessar `request`, `current_user` ou `current_app`. Schemas delimitam os contratos; não substituem regras dependentes do banco ou autorização.
+ORM é o padrão para persistência. SQL excepcional permanece parametrizado, perto da operação ou em função própria se extenso/reutilizado. Auxiliares não confirmam dados independentemente. Schemas delimitam os contratos; não substituem regras dependentes do banco ou autorização. Não trocar Services por outro conjunto obrigatório de camadas.
 
 ### Exemplos que orientam a decisão
 
-- **Tipos de Eventos e contribuintes elegíveis:** consultas diretas nas rotas, com autorização e conexão comuns. Não se criou Service que apenas repassaria a chamada.
-- **Listar Eventos:** continua em Service porque combina o horário de referência do TD, filtros/status e capacidades. Ser GET não obriga a simplificar para uma única consulta.
-- **Criar ou editar evento:** Service confere período e tipo antes de gravar, na transação apropriada.
-- **Registrar presença:** exige vínculo, LDAP fora da conexão SQL e nova validação sob trava. É um caso de uso mesmo com um cadastro pequeno.
-- **Consultar uma demanda ou baixar anexo:** leitura com escopo por registro e, no download, proteção do caminho. Permanece em Service.
-- **Cadastro hipotético sem essas regras:** pode ir diretamente ao Repository, desde que a rota autorize, valide e delimite a transação. Não há uma gravação atual desses módulos que precise ser movida para a rota para cumprir o padrão.
+- **Tipos de Eventos e contribuintes elegíveis:** consultas ORM diretas nas rotas, com autorização por ação.
+- **Listar Eventos:** a rota consulta o horário do TD e usa uma projeção ORM para status, filtros e paginação.
+- **Criar ou editar evento:** a rota valida período/tipo e confirma a transação antes de responder.
+- **Registrar presença:** a rota confere vínculo, libera SQL durante o LDAP e revalida a lista sob trava antes da gravação.
+- **Consultar demanda ou baixar anexo:** auxiliares locais aplicam visibilidade; o download também valida o caminho privado.
+- **Criar demanda:** a rota coordena idempotência, arquivos, metadados e histórico, preservando a compensação em falhas específicas.
 
 A quantidade de arquivos e o número de linhas não são critérios isolados. Extrair uma função quando der nome a uma responsabilidade real; compartilhar código quando existir um contrato comum compreensível. Manter uma pequena diferença entre módulos costuma ser mais claro que configurar um CRUD universal.
 
 ## 4. Recursos compartilhados e consistência
 
-O bootstrap cria um engine/pool moderno do TD por instância da aplicação. Todos os módulos modernos o reutilizam; cada operação abre e encerra sua conexão. O legado mantém mecanismos próprios para TD e outras fontes. Conexões diferentes não formam uma transação única.
+O bootstrap cria um engine/pool e uma factory de sessões modernos do TD por instância da aplicação. Cada operação abre e encerra sua sessão. O legado mantém mecanismos próprios para TD e outras fontes. Sessões ou conexões diferentes não formam uma transação única.
 
-Nas rotas, `get_td_engine()` recupera o recurso já inicializado. `_service_deps()` pode reunir dependências repetidas dentro do próprio módulo; o usuário e os adaptadores especiais permanecem visíveis nas chamadas. Não registrar objetos de Service por feature nem guardar dados de uma requisição globalmente.
+Nas rotas, `get_td_session_factory()` recupera a factory compartilhada. `with sessions() as session:` delimita leituras e `with sessions.begin() as session:` delimita escritas. `session.flush()` envia alterações e obtém valores gerados sem confirmar a transação. Preparar os dados públicos antes de fechar a sessão e retornar sucesso depois do commit. Não guardar sessões ou usuários de uma requisição globalmente.
 
-Os casos de uso abrem a transação com `engine.begin()`; nas gravações simples, a rota faz isso. Todas as alterações atômicas usam a mesma conexão. Preservar travas, versões de edição, histórico e idempotência existentes. Commit SQL não torna arquivos, e-mails ou LDAP atômicos; essas operações exigem tratamento próprio de falhas.
+Todas as alterações atômicas usam a mesma sessão, inclusive histórico. Auxiliares recebem essa sessão e não fazem commits próprios. Preservar hints `UPDLOCK/HOLDLOCK/XLOCK`, a versão enviada pelo cliente e os filtros de autoria/área/estado. Não usar o `db.session` legado em paralelo. Commit SQL não torna arquivos ou LDAP atômicos; essas operações mantêm seu tratamento próprio de falhas.
 
 ### Ciclo das dependências
 
 | Recurso | Vida e acesso |
 |---|---|
 | Engine TD | Um por instância da aplicação em `backend_td_engine`; conexão emprestada a cada operação. |
-| `RolePermissions` | Composto na rota com a ponte de identidade e o mapa de ações local. |
+| Factory de sessões | Uma por aplicação em `backend_td_sessions`; cada chamada cria uma sessão curta. |
+| `RolePermissions` | Mapa e função de identidade compartilhados por módulo, sem guardar usuário ou resultado de uma requisição. |
 | `EmployeeDirectory` | Adaptador por aplicação; abre/encerra LDAP somente na consulta de presença. |
 | `DemandAttachmentStorage` | Adaptador por aplicação; compõe o caminho sem criar diretório no startup. |
 | Estado do formulário/cache Vue | Da interface; não representa confirmação de commit nem fonte de autorização. |
@@ -121,7 +121,7 @@ Uma consulta e sua contagem podem observar alterações entre comandos; usar a m
 
 ## 5. Segurança e convivência
 
-- A ponte de identidade reutiliza Flask-Login e os perfis antigos. `configure_api` aplica autenticação, perfil geral e CSRF; a ação e o acesso ao registro continuam explícitos no backend.
+- A ponte de identidade reutiliza Flask-Login e os perfis antigos. `configure_api` aplica autenticação, perfil geral e CSRF; `require_action`, produzido por `action_access`, autoriza a ação. O acesso ao registro continua explícito nas consultas e operações.
 - `RolePermissions` consulta a sessão corrente. Passar outro `Actor` não consulta as permissões daquele identificador; jobs exigem política apropriada ao contexto.
 - O frontend recebe apenas contratos públicos. Botões e capacidades não autorizam operações. Arquivos privados exigem autorização e contenção do caminho.
 - Configuração privada vem do ambiente/arquivo separado, nunca do Vue ou de valores copiados para os módulos.
@@ -137,7 +137,7 @@ Riscos conhecidos do legado — autenticação de fallback, flags textuais, SQL 
 
 **Auditoria.** O ciclo global de acesso continua ligado ao legado. Demandas possui histórico transacional de criação/edição; Eventos armazena autoria/data de criação, sem histórico equivalente de todas as alterações. Não chamar isso de uma auditoria de negócio completa para qualquer módulo.
 
-**Configuração.** `environment.py` é compartilhado com os consumidores antigos; ler configuração não conecta o banco por si só. A inicialização completa continua alcançando constantes, threads e integrações antigas. Não basta apontar um Service para uma dependência falsa para garantir isolamento de toda a aplicação.
+**Configuração.** `environment.py` é compartilhado com os consumidores antigos; ler configuração não conecta o banco por si só. A inicialização completa continua alcançando constantes, threads e integrações antigas. A base ORM separada não garante isolamento de toda a aplicação.
 
 **Arquivos e frontend.** Assets Vue são públicos; anexos de Demandas são privados. Variáveis de build e JavaScript entregue ao navegador não armazenam segredos. Manter texto como texto, escapar markup nos exports e revalidar IDs/vínculos no backend.
 
@@ -167,7 +167,7 @@ Concluir a migração só depois de conferir consumidores antigos, jobs e dados,
 | Frente | Situação e limite |
 |---|---|
 | Validar reutilização | A segunda feature já existe: Demandas. Evoluir a base a partir das repetições reais dessas duas implementações. |
-| Testes isolados | Services aceitam dependências explícitas, mas ainda é necessário preparar entradas sem imports/startup corporativo. Não executar a aplicação para descobrir testes. |
+| Testes isolados | Preparar entradas e transações sem imports/startup corporativo. Não executar a aplicação para descobrir testes; testes exigem autorização específica. |
 | Inicialização | Separar gradualmente DDL, threads e integrações do carregamento; exige escopo próprio. |
 | Permissões fora do HTTP | Projetar política para jobs/outros atores; `RolePermissions` atual depende da sessão. |
 | Operação e segurança | Evoluir diagnóstico sem segredos, identificação da versão publicada, publicação offline e correções por domínio. |

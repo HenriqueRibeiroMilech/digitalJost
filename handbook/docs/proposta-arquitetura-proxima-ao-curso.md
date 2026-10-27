@@ -1,8 +1,8 @@
 # Proposta de arquitetura próxima ao curso de Flask
 
-**Situação: direção consolidada para o backend novo; implementação pendente.** Esta proposta aproxima o desenvolvimento dos conhecimentos das [anotações do curso](../../curso_notion/), buscando menos arquivos obrigatórios, menos código repetitivo e operações fáceis de acompanhar.
+**Situação: direção implementada no código de Eventos e Solicitações de Demandas; validação funcional e publicação pendentes.** Este documento registra a aproximação aos conhecimentos das [anotações do curso](../../curso_notion/), buscando menos arquivos obrigatórios, menos código repetitivo e operações fáceis de acompanhar.
 
-O escopo é a arquitetura nova em `backend/`. A [arquitetura vigente](arquitetura-modernizada.md) descreve a implementação atual, e o [AGENTS.md](../../AGENTS.md) continua definindo as regras operacionais. Este documento não apresenta a migração como concluída nem autoriza executar o sistema.
+O escopo é a arquitetura nova em `backend/`, no estado após o revert do painel moderno de gestão de Demandas. A [arquitetura vigente](arquitetura-modernizada.md) e a [base compartilhada](../features/base-compartilhada.md) descrevem a implementação, e o [AGENTS.md](../../AGENTS.md) continua definindo as regras operacionais. A migração de código não comprova funcionamento no ambiente nem autoriza executar o sistema.
 
 ## 1. Decisão principal
 
@@ -66,9 +66,9 @@ backend/
         └── storage.py
 ```
 
-Essa árvore representa o destino proposto, não os arquivos já migrados. Features sem persistência não precisam de `models.py`. Arquivos de PDF, armazenamento ou integração existem porque cumprem responsabilidades específicas. Erros e constantes locais podem continuar em `domain.py` onde esse agrupamento já for útil.
+Essa árvore representa a organização implementada; o módulo de Demandas também mantém `domain.py` para erros e limites. Features sem persistência não precisam de `models.py`. Arquivos de PDF, armazenamento ou integração existem porque cumprem responsabilidades específicas.
 
-`services.py` e `repository.py` não fazem parte da estrutura mínima. Os arquivos existentes podem permanecer durante a migração de operações; sua retirada depende de transferir todas as responsabilidades e conferir suas referências. Não removê-los apenas para obter uma árvore menor.
+`services.py` e `repository.py` não fazem parte da estrutura mínima. Os quatro arquivos desses nomes em Eventos e Demandas foram retirados após transferir as operações para rotas/auxiliares ORM e conferir referências. Em futuras migrações, retirar um arquivo somente depois de transferir todas as responsabilidades.
 
 | Arquivo básico | Responsabilidade |
 |---|---|
@@ -98,7 +98,7 @@ Leituras não precisam de commit. Integrações e arquivos podem exigir etapas f
 
 ### Exemplo de leitura
 
-Este é um recorte ilustrativo da listagem de tipos de Eventos, **não uma implementação pronta**. `EventType` precisaria ser mapeado. `require_action` e `get_td_session_factory` são recursos compartilhados propostos, ainda inexistentes. `_permissions()`, a identidade, o blueprint e o schema de saída têm equivalentes no módulo atual.
+Este é um recorte da listagem de tipos de Eventos. Os imports, o modelo `EventType` e a configuração de `permissions` e `require_action` estão nos arquivos reais. `action_access`, `ApiProblem` e `get_td_session_factory` foram implementados na plataforma compartilhada.
 
 ```python
 @events_bp.get("/types")
@@ -114,7 +114,6 @@ def list_event_types():
         items = [dict(row) for row in session.execute(query).mappings()]
 
     actor = identity.current_actor()
-    permissions = _permissions()
     return {
         "items": items,
         "can_create": permissions.can(actor, "events.types.create"),
@@ -233,9 +232,9 @@ O bootstrap prepara engine, factory de sessões e adaptadores compartilhados e r
 
 Criar sessões e modelos não deve introduzir consultas, criação de tabelas, threads ou acesso a integrações durante imports. Os efeitos conhecidos do legado continuam sujeitos às restrições do AGENTS.md.
 
-## 9. Sequência de implementação
+## 9. Roteiro adotado e futuras migrações
 
-1. **Alinhar as referências de arquitetura.** Atualizar somente os trechos afetados do AGENTS.md, da arquitetura oficial e da base compartilhada quando a implementação dessa direção for solicitada. O padrão atual ainda exige separações em certos casos; este documento registra o destino proposto.
+1. **Alinhar as referências de arquitetura.** Os trechos afetados do AGENTS.md, da arquitetura oficial e da base compartilhada acompanham o padrão ORM nas rotas, sem Service/Repository obrigatórios.
 2. **Preparar a base ORM.** Definir base declarativa e factory de sessões sobre o engine moderno, com ciclo e transações explícitos e sem DDL automático.
 3. **Converter uma leitura de Eventos.** Começar pela listagem de tipos, preservando endpoint, ordenação, campos e capacidades.
 4. **Converter uma escrita completa de Eventos.** Incluir validação, autoria, vínculo, transação, resposta e erros. Regras curtas permanecem na rota.
@@ -264,9 +263,9 @@ Cada entrega precisa preservar uma forma de retorno da versão sem apagar dados.
 ## Referências
 
 - [Arquitetura vigente](arquitetura-modernizada.md), [base compartilhada](../features/base-compartilhada.md) e [anotações do curso](../../curso_notion/).
-- [Rotas](../../backend/modules/events/routes.py), [Services](../../backend/modules/events/services.py), [Repository](../../backend/modules/events/repository.py) e [schemas atuais de Eventos](../../backend/modules/events/schemas.py).
-- [Rotas](../../backend/modules/demands/routes.py), [Services](../../backend/modules/demands/services.py), [Repository](../../backend/modules/demands/repository.py) e [armazenamento atual de Demandas](../../backend/modules/demands/storage.py).
+- [Rotas](../../backend/modules/events/routes.py), [modelos](../../backend/modules/events/models.py) e [schemas de Eventos](../../backend/modules/events/schemas.py).
+- [Rotas](../../backend/modules/demands/routes.py), [modelos](../../backend/modules/demands/models.py) e [armazenamento de Demandas](../../backend/modules/demands/storage.py).
 - [Banco compartilhado](../../backend/platform/database.py), [segurança HTTP](../../backend/platform/http.py) e [bootstrap atual](../../backend/bootstrap.py).
 - [Sessões SQLAlchemy](https://docs.sqlalchemy.org/en/20/orm/session_basics.html), [particularidades do SQL Server](https://docs.sqlalchemy.org/en/20/dialects/mssql.html) e [APIFlask com Pydantic](https://apiflask.com/usage/).
 
-Esta proposta foi elaborada por leitura de arquivos. Não confirma o schema aplicado, o estado publicado ou o desempenho no ambiente corporativo. **O sistema não foi executado; a validação foi somente estática.**
+Os mapeamentos consideram os metadados de banco fornecidos pelo responsável: tipos, defaults, chaves, índices, constraints e ausência de triggers nas oito tabelas. Isso não substitui validar consultas geradas, concorrência, rollback e integrações no ambiente autorizado. **O sistema não foi executado; a validação foi somente estática.**
