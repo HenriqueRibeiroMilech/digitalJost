@@ -4,6 +4,7 @@ import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vu
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import CardGrid from '@/shared/components/CardGrid.vue'
+import CardGridSkeleton from '@/shared/components/CardGridSkeleton.vue'
 import RequestState from '@/shared/components/RequestState.vue'
 import ListPagination from '@/shared/components/ListPagination.vue'
 import { usePagination } from '@/shared/composables/usePagination'
@@ -11,7 +12,6 @@ import Button from '@/volt/Button.vue'
 import InputText from '@/volt/InputText.vue'
 import Select from '@/volt/Select.vue'
 import Message from '@/volt/Message.vue'
-import Skeleton from '@/volt/Skeleton.vue'
 import RequestForm from '../components/RequestForm.vue'
 import RequestCard from '../components/RequestCard.vue'
 import RequestDetail from '../components/RequestDetail.vue'
@@ -129,18 +129,7 @@ async function detailClosed() {
         empty-description="Envie uma nova solicitação ou ajuste os filtros. Para consultar pedidos anteriores, use o link no cabeçalho."
         error-message="Não foi possível carregar suas solicitações." @retry="refetch()">
         <template #loading>
-          <CardGrid>
-            <div v-for="index in 12" :key="index" class="rounded-dj-card border border-dj-border bg-dj-surface p-4 shadow-dj-card">
-              <div class="flex items-center justify-between gap-3">
-                <Skeleton width="7rem" height="1.5rem" />
-                <Skeleton width="4rem" height="1.5rem" border-radius="1rem" />
-              </div>
-              <Skeleton width="85%" height="2.5rem" class="mt-3" />
-              <Skeleton width="100%" height="2.5rem" class="mt-1.5" />
-              <Skeleton width="75%" height="1.25rem" class="mt-3" />
-              <Skeleton width="100%" height="1.75rem" class="mt-3" />
-            </div>
-          </CardGrid>
+          <CardGridSkeleton :count="12" compact />
         </template>
         <CardGrid>
           <RequestCard v-for="request in data?.items ?? []" :key="request.id" :request="request" @open="openRequest(request.id)" />

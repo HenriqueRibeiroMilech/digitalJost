@@ -99,6 +99,26 @@ Exemplo de composição, seguindo `RequestCard` (recorte de template):
 
 Imports, props e formatações ficam na feature; não copiar esse recorte como arquivo completo. `EventCard` fornece data/período e tom do status. `RequestCard` fornece número/tipo, urgência/data e vínculo de contribuinte. Ambos usam a mesma grade, sem obrigar os mesmos campos ou densidade.
 
+### Carregamento compartilhado dos cards
+
+[CardGridSkeleton](../../frontend/src/shared/components/CardGridSkeleton.vue) compõe a mesma grade com placeholders Volt. Recebe `count` (padrão 12) e `compact` (padrão false). Os dois layouts preservam as medidas dos carregamentos existentes: Eventos usa oito placeholders na densidade padrão; Demandas usa doze compactos. Essa quantidade é visual e não altera o número de itens por página da API.
+
+Usar no slot `loading` de `RequestState`, que anuncia o carregamento. A grade de placeholders fica oculta de leitores de tela. No exemplo, RequestState, CardGrid e CardGridSkeleton vêm de `shared/components/`; EventCard vem da feature e as variáveis/eventos pertencem à página:
+
+```vue
+<RequestState :loading="loading" :failed="isError" :error="listError"
+  :empty="data?.items.length === 0" loading-label="Carregando eventos…"
+  empty-title="Nenhum evento encontrado" @retry="refetch()">
+  <template #loading><CardGridSkeleton :count="8" /></template>
+  <CardGrid>
+    <EventCard v-for="event in data?.items ?? []" :key="event.id"
+      :event="event" @open="openEvent" />
+  </CardGrid>
+</RequestState>
+```
+
+Para outra feature, usar seu card e suas mensagens. A densidade do skeleton acompanha a dos registros. Uma alteração comum no carregamento deve ser feita nesse componente e conferida nos dois consumidores.
+
 ## 3. Formulários e diálogos
 
 Compor controles Volt/PrimeVue com `FormField`, associando rótulo, controle e erro por ID. Identificar campos opcionais, apresentar mensagens próximas dos campos e preservar o que foi digitado em falhas.
@@ -144,6 +164,7 @@ O leitor de presença é uma exceção consciente: usa Dialog Volt maximizado, s
 ## 4. Estados e feedback
 
 - `RequestState`: carregando, vazio, falha e tentativa manual; adaptar os textos ao domínio.
+- `CardGridSkeleton`: placeholders de cards nas densidades padrão e compacta, dentro do estado de carregamento.
 - `ListPagination`: navegação a partir de dados retornados pela API, sem filtrar apenas a página visível.
 - `validationMessages`: associação de erros 422 aos campos conhecidos.
 - Durante envio: impedir duplicidade e fechamento que descarte o formulário.
@@ -178,11 +199,32 @@ Mudanças em cores, medidas ou componentes comuns atualizam este guia. Regras vi
 
 1. Registrar a página no shell/Router e definir título, descrição e ação principal com PageHeader.
 2. Compor filtros com controles Volt e rótulos; aplicar no servidor e voltar à página inicial quando necessário.
-3. Usar RequestState e, em listagem de cards, CardGrid tanto nos skeletons quanto nos registros.
+3. Usar RequestState e, em listagem de cards, CardGridSkeleton no carregamento e CardGrid nos registros, mantendo a mesma densidade.
 4. Criar o card pequeno da feature como consumidor de RecordCard; manter regras/formatos de domínio locais.
 5. Usar AppDialog quando apropriado, decidir foco inicial/retorno e repassar busy dos fluxos filhos.
 6. Tratar validação, resultado incerto, conteúdo longo e erro de renovação separado da escrita.
 7. Conferir consumidores antes de alterar tokens/wrappers comuns; revisar aparência e teclado em ambiente autorizado.
+
+### Referência de composição e variações
+
+O [mapa do frontend](../../frontend/README.md) explica onde implementar cada parte. [EventsPage.vue](../../frontend/src/features/events/pages/EventsPage.vue) é a referência atual de listagem: PageHeader, filtros, RequestState, grade de cards, paginação e diálogo. Para a relação entre abas, URL e detalhes, consultar RequestsPage.vue. Reutilizar as composições e manter consultas, permissões, mensagens e regras específicas na feature.
+
+| Necessidade | Variação adotada |
+|---|---|
+| Card com uma ação principal | RecordCard com densidade padrão ou compacta; o conteúdo vem da feature. |
+| Cor do card | Tons brand, success ou neutral conforme significado do domínio, acompanhados de texto. |
+| Ação principal | Button Volt com verbo claro; controles secundários usam SecondaryButton quando apropriado. |
+| Confirmação destrutiva | AppDialog com tom danger, Cancelar no foco inicial e indicação do alcance da exclusão. |
+| Formulário em diálogo | AppDialog com conteúdo/FormField e estado busy coordenados pela feature. |
+| Mais de uma ação independente no card | Composição própria que mantenha controles acessíveis, sem colocá-los sob o botão de superfície do RecordCard. |
+
+Uma nova variação precisa responder a uma necessidade concreta e manter um contrato simples. Não criar um componente para cada combinação de cor e espaçamento nem repetir overrides extensos por tela. Se a estrutura comum precisar mudar, alterar o componente responsável e conferir seus consumidores.
+
+### Desenvolvimento com IA
+
+Antes de gerar uma tela, fornecer comportamento, contrato da API, campos e ações, além deste guia e da referência de composição. A IA deve partir dos controles de `volt/` e dos componentes de `shared/`, usando os tokens de marca. O pedido pode usar o roteiro de [frontend/README.md](../../frontend/README.md#7-ao-pedir-uma-tela-para-a-ia).
+
+Na revisão, conferir se a feature reaproveitou o componente apropriado, se o card contém apenas os dados específicos, se carregamento/erro/vazio foram cobertos e se alterações comuns foram feitas no lugar responsável. Estados de envio, foco, responsividade e permissões fazem parte da implementação. Não acrescentar dependências ou abstrações sem uma necessidade demonstrada.
 
 Na revisão estática, comparar props/slots/IDs, condições de busy, labels e classes entre consumidores. No navegador autorizado, conferir larguras próximas dos breakpoints, zoom, teclado completo, abertura/retorno de foco, leitores de tela, contraste e redução de movimento. Não afirmar conformidade apenas pela presença de ARIA.
 

@@ -5,11 +5,11 @@ import { ApiError } from '@/shared/api/client'
 import { usePagination } from '@/shared/composables/usePagination'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import CardGrid from '@/shared/components/CardGrid.vue'
+import CardGridSkeleton from '@/shared/components/CardGridSkeleton.vue'
 import RequestState from '@/shared/components/RequestState.vue'
 import ListPagination from '@/shared/components/ListPagination.vue'
 import Button from '@/volt/Button.vue'
 import Message from '@/volt/Message.vue'
-import Skeleton from '@/volt/Skeleton.vue'
 import EventCard from '../components/EventCard.vue'
 import EventDialog from '../components/EventDialog.vue'
 import EventFilters from '../components/EventFilters.vue'
@@ -120,18 +120,7 @@ async function eventChanged(action: EventChange) {
       forbidden-message="Você não tem permissão para ver os eventos."
       not-found-message="Eventos não está disponível para seu acesso." @retry="refetch()">
       <template #loading>
-        <CardGrid>
-          <div v-for="index in 8" :key="index" class="rounded-dj-card border border-dj-border bg-dj-surface p-5 shadow-dj-card">
-            <div class="mb-4 flex items-start justify-between gap-3">
-              <Skeleton width="3rem" height="3rem" border-radius="0.75rem" />
-              <Skeleton width="4rem" height="1.5rem" border-radius="1rem" />
-            </div>
-            <Skeleton width="85%" height="3rem" />
-            <Skeleton width="100%" height="3rem" class="mt-2" />
-            <Skeleton width="100%" height="5rem" class="mt-4" border-radius="0.75rem" />
-            <Skeleton width="100%" height="2rem" class="mt-4" />
-          </div>
-        </CardGrid>
+        <CardGridSkeleton :count="8" />
       </template>
       <CardGrid>
         <EventCard v-for="event in data?.items ?? []" :key="event.id" :event="event" @open="openEvent" />

@@ -206,6 +206,12 @@ Arquivos JavaScript já existentes dentro de `templates` podem depender diretame
 
 ### Frontend
 
+- No Vue moderno, consulte [o mapa do frontend](frontend/README.md) e siga [o padrão visual](handbook/docs/padrao-visual.md). Use `EventsPage.vue` como referência de composição de listagem, preservando os fluxos específicos de cada feature.
+- Mantenha páginas, componentes de domínio, tipos e chamadas da API em `frontend/src/features/<feature>/`. Recursos usados por mais de uma feature ficam em `shared/`; controles básicos são os wrappers locais de `volt/`.
+- Reutilize `PageHeader`, `CardGrid`, `RecordCard`, `CardGridSkeleton`, `RequestState`, `ListPagination`, `FormField` e `AppDialog` conforme a responsabilidade. Cards de domínio compõem `RecordCard`; não copiar sua estrutura para cada feature.
+- Use os tokens e estilos compartilhados para cores, sombras, espaçamentos e densidades. Evite sobrescrever a estrutura dos componentes comuns em cada tela; uma variação reutilizável deve ter contrato explícito no componente adequado.
+- Chamadas HTTP reutilizam o cliente comum; estado, filtros, permissões recebidas da API e coordenação de diálogos pertencem à feature. Componentes visuais compartilhados não consultam endpoints de uma feature.
+- Não crie wrappers de repasse ou bibliotecas novas para preencher uma estrutura. Ao alterar um componente compartilhado, confira seus consumidores e preserve acessibilidade, estados de carregamento/erro/vazio, validação, busy e retorno de foco.
 - Preserve `.js` incluídos por Jinja em `app/templates`; movê-los para `static` exige adaptar variáveis Jinja.
 - Pesquise JavaScript inline, `{% include %}`, formulários, `fetch`, `XMLHttpRequest`, redirects e links de menu.
 - Ao alterar um template, pesquise todos os `render_template` e includes correspondentes.
