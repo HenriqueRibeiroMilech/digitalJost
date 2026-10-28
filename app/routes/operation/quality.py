@@ -374,6 +374,9 @@ def quality_detail_post():
     with engine.begin() as cnnx:
         cnnx.execute(query, query_params)
 
+    if request.args.get('view') == 'table' and request.args['command'] == 'add':
+        return redirect(url_for('operation_quality.quality_table_get', saved='1'))
+
     return redirect("/op/qualidade/edit_select")
 
 
@@ -396,6 +399,28 @@ def quality_add_get():
                            , workcenters=workcenters.to_dict(orient="records")
                            , caxias_locations=_get_caxias_qsb_locations(workcenters)
                            , can_manage_locations=_can_manage_qsb_locations())
+
+
+@operation_quality_bp.route('/op/qualidade/tabela', methods=['GET'])
+@p_quality.require(403)
+def quality_table_get():
+    workcenters = _get_quality_workcenters()
+    query = """SELECT id, unit, type, typeDesc, workCenter, prodCode, prodFamily,
+                      description, repeat, text1, text2, text3, imgNOK, imgOK, shift,
+                      FORMAT(openDate, 'yyyy-MM-dd') AS date_iso,
+                      FORMAT(openDate, 'dd/MM/yyyy') AS date_label
+               FROM JDT_OPE_QUAL ORDER BY openDate DESC, id DESC"""
+    entries = engine_run_query(query, 'jdt').fillna('').to_dict(orient='records')
+
+    return render_template(
+        'operation.qual/op_qual_table.html',
+        entries=entries,
+        workcenters=workcenters.to_dict(orient='records'),
+        caxias_locations=_get_caxias_qsb_locations(workcenters),
+        can_manage_locations=_can_manage_qsb_locations(),
+        saved=request.args.get('saved') == '1',
+    )
+
 
 @operation_quality_bp.route('/op/qualidade/add', methods=['POST'])
 def quality_add_post():

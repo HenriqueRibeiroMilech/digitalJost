@@ -1,0 +1,171 @@
+{% extends 'home.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/operation_quality_table.css') }}">
+
+<main class="qsb-table-page">
+    <header class="qsb-table-heading">
+        <h1>Informativo da Qualidade — cadastro em tabela</h1>
+        <nav aria-label="Telas do informativo">
+            <a href="{{ url_for('operation_quality.quality_get') }}">Visualizar pirâmide</a>
+            <a href="{{ url_for('operation_quality.quality_add_get') }}">Cadastro atual</a>
+            <a href="{{ url_for('operation_quality.quality_list_get') }}">Edição atual</a>
+        </nav>
+    </header>
+
+    <p class="qsb-table-notice">Tela experimental para validação da interface. Os cadastros são reais e aparecem também nas telas atuais.</p>
+    {% if saved %}
+        <p class="qsb-table-success" role="status">Informativo cadastrado com sucesso. A primeira linha está pronta para um novo cadastro.</p>
+    {% endif %}
+
+    <section class="qsb-table-filters" aria-label="Filtrar informativos cadastrados">
+        <label>Data de abertura <input id="qsb-filter-date" type="date"></label>
+        <label>Unidade
+            <select id="qsb-filter-unit">
+                <option value="">Todas</option>
+                <option value="0">Caxias do Sul</option>
+                <option value="1">Campinas</option>
+            </select>
+        </label>
+        <label>Local da ocorrência
+            <select id="qsb-filter-type">
+                <option value="">Todos</option>
+                {% for occurrence in ['Interno', 'Cliente (Não Formal)', 'Fornecedor', 'Cliente (Formal)', 'Cliente (Logística)'] %}
+                    <option>{{ occurrence }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Pesquisar <input id="qsb-filter-search" type="search" placeholder="ID, produto, problema..."></label>
+        <button id="qsb-clear-filters" type="button">Limpar filtros</button>
+    </section>
+
+    <p id="qsb-table-count" role="status">{{ entries|length }} informativo(s) cadastrado(s).</p>
+    <p id="qsb-table-help">Preencha a primeira linha e clique em Cadastrar. Use a barra horizontal para acessar todos os campos. Os filtros se aplicam somente aos registros abaixo.</p>
+
+    <form id="qsb-table-form" method="post" enctype="multipart/form-data"
+          action="{{ url_for('operation_quality.quality_detail_post', command='add', view='table') }}"
+          data-lookup-url="{{ url_for('operation_quality.quality_add_post') }}">
+        <div class="qsb-table-scroll" tabindex="0" role="region" aria-label="Cadastro e informativos existentes" aria-describedby="qsb-table-help">
+            <table class="qsb-table">
+                <caption class="qsb-table-sr-only">Cadastro horizontal e informativos da qualidade</caption>
+                <thead>
+                    <tr>
+                        {% for title in ['Ação / ID', 'Unidade', 'Local da ocorrência', 'Local específico', 'Centro de trabalho', 'Código do produto', 'Família do produto', 'Descrição do problema', 'Reincidente', 'Contenção: o que', 'Contenção: como', 'Contenção: quem', 'Imagens NOK', 'Imagens OK', 'Data de abertura', 'Turnos'] %}
+                            <th scope="col">{{ title }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="qsb-table-create">
+                    <tr>
+                        <th scope="row">
+                            <span>Novo informativo</span>
+                            <button id="qsb-table-submit" type="submit">Cadastrar</button>
+                        </th>
+                        <td>
+                            <select id="unidade" name="unidade" aria-label="Unidade" required>
+                                <option value="0">Caxias do Sul</option>
+                                <option value="1">Campinas</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="op_local_ocorr" aria-label="Local da ocorrência" required>
+                                {% for occurrence in ['Interno', 'Cliente (Não Formal)', 'Fornecedor', 'Cliente (Formal)', 'Cliente (Logística)'] %}
+                                    <option>{{ occurrence }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="qsb-table-location">
+                            {% include 'operation.qual/op_qual_location.html' %}
+                        </td>
+                        <td>
+                            <input id="qsb-workcenter" name="ct" list="qsb-workcenters" autocomplete="off" placeholder="Selecione ou informe..." aria-label="Centro de trabalho" required>
+                            <datalist id="qsb-workcenters">
+                                {% for workcenter in workcenters %}
+                                    <option value="{{ workcenter.Workcenter_Code }}-{{ workcenter.Name }}"></option>
+                                {% endfor %}
+                            </datalist>
+                        </td>
+                        <td>
+                            <input id="qsb-product" name="id_mater" list="qsb-products" autocomplete="off" aria-label="Código do produto" required>
+                            <datalist id="qsb-products"></datalist>
+                            <small id="qsb-product-description" role="status">Informe o código do produto.</small>
+                        </td>
+                        <td>
+                            <input name="op_familia" list="qsb-families" autocomplete="off" aria-label="Família do produto" required>
+                            <datalist id="qsb-families">
+                                {% for family in ['QR', 'QR + MESA', 'AO', 'SP 3° EIXO', 'SP SR', 'SP - Suporte', 'EE', 'PR', 'AL', 'VT', 'EA', 'PE', 'EC'] %}
+                                    <option>{{ family }}</option>
+                                {% endfor %}
+                            </datalist>
+                        </td>
+                        <td><textarea name="op_problema" rows="3" aria-label="Descrição do problema" required></textarea></td>
+                        <td><label class="qsb-table-check"><input name="op_reincidente" type="checkbox"> Sim</label></td>
+                        <td><textarea name="op_cont_1" rows="3" aria-label="Contenção: o que foi feito" required></textarea></td>
+                        <td><textarea name="op_cont_2" rows="3" aria-label="Contenção: como foi feito" required></textarea></td>
+                        <td><textarea name="op_cont_3" rows="3" aria-label="Contenção: quem fez" required></textarea></td>
+                        <td>
+                            <input id="qsb-files-nok" name="file_nok" type="file" multiple accept="image/*" aria-label="Imagens NOK">
+                            <ul id="qsb-files-nok-list" class="qsb-table-files" aria-live="polite"></ul>
+                        </td>
+                        <td>
+                            <input id="qsb-files-ok" name="file_ok" type="file" multiple accept="image/*" aria-label="Imagens OK">
+                            <ul id="qsb-files-ok-list" class="qsb-table-files" aria-live="polite"></ul>
+                        </td>
+                        <td><input name="op_date" type="date" aria-label="Data de abertura" required></td>
+                        <td>
+                            <label class="qsb-table-check"><input type="checkbox" name="turno1" value="1"> Turno 1</label>
+                            <label class="qsb-table-check"><input type="checkbox" name="turno2" value="2"> Turno 2</label>
+                            <label class="qsb-table-check"><input type="checkbox" name="turno3" value="3"> Turno 3</label>
+                            <label class="qsb-table-check"><input type="checkbox" name="NA" value="NA"> Não aplicável</label>
+                        </td>
+                    </tr>
+                </tbody>
+                <tbody id="qsb-table-entries">
+                    {% for entry in entries %}
+                        {% set unit = '1' if entry.unit in [1, '1', true] else '0' %}
+                        <tr data-date="{{ entry.date_iso }}" data-unit="{{ unit }}" data-type="{{ entry.type }}">
+                            <th scope="row">
+                                <span>{{ entry.id }}</span>
+                                <a class="qsb-table-edit" href="{{ url_for('operation_quality.quality_edit_get', entryID=entry.id, command='edit') }}">Editar</a>
+                            </th>
+                            <td>{{ 'Campinas' if unit == '1' else 'Caxias do Sul' }}</td>
+                            <td>{{ entry.type }}</td>
+                            <td>{{ entry.typeDesc }}</td>
+                            <td>{{ entry.workCenter }}</td>
+                            <td>{{ entry.prodCode }}</td>
+                            <td>{{ entry.prodFamily }}</td>
+                            <td>{{ entry.description }}</td>
+                            <td>{{ 'Sim' if entry.repeat in [1, '1', true] else 'Não' }}</td>
+                            <td>{{ entry.text1 }}</td>
+                            <td>{{ entry.text2 }}</td>
+                            <td>{{ entry.text3 }}</td>
+                            {% for images in [entry.imgNOK, entry.imgOK] %}
+                                <td>
+                                    {% if images %}
+                                        <ul class="qsb-table-files">
+                                            {% for filename in images.split('||') if filename %}
+                                                <li>{{ filename }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        Sem imagens
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            <td>{{ entry.date_label }}</td>
+                            <td>{{ entry.shift }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr id="qsb-table-empty" {% if entries %}hidden{% endif %}>
+                        <td colspan="16">Nenhum informativo encontrado.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </form>
+</main>
+
+<script src="{{ url_for('static', filename='js/operation.quality/qsb_locations.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/operation.quality/quality_table.js') }}" defer></script>
+{% endblock %}
