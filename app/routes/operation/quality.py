@@ -411,6 +411,26 @@ def quality_table_get():
                       FORMAT(openDate, 'dd/MM/yyyy') AS date_label
                FROM JDT_OPE_QUAL ORDER BY openDate DESC, id DESC"""
     entries = engine_run_query(query, 'jdt').fillna('').to_dict(orient='records')
+    for entry in entries:
+        entry_id = str(entry['id'])
+        for category, column in (('nok', 'imgNOK'), ('ok', 'imgOK')):
+            entry[f'photos_{category}'] = [
+                {
+                    'name': filename,
+                    'url': url_for(
+                        'static',
+                        filename=f'uploads/operation/img_{category}/{entry_id}/{filename}',
+                    ),
+                    'legacy_url': url_for(
+                        'static',
+                        filename=f'uploads/operation/img_{category}/{filename}',
+                    ),
+                }
+                for filename in str(entry[column]).split('||')
+                if filename and filename not in ('.', '..')
+                and '/' not in filename and '\\' not in filename
+                and entry_id.isdigit()
+            ]
 
     return render_template(
         'operation.qual/op_qual_table.html',
