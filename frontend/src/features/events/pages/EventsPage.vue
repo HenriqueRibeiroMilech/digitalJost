@@ -86,7 +86,7 @@ async function eventChanged(action: EventChange) {
 
 <template>
   <section ref="pageElement" tabindex="-1" aria-labelledby="events-title">
-    <PageHeader id="events-title" title="Eventos"
+    <PageHeader id="events-title" title="Eventos" icon="pi pi-calendar"
       description="Organize os eventos, acompanhe os períodos de realização e listas de presença.">
       <template #actions>
         <div v-if="canCreate" ref="newEventAction">
@@ -105,7 +105,7 @@ async function eventChanged(action: EventChange) {
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
       <h2 class="flex items-center gap-2.5 text-sm font-semibold text-dj-ink">
         Eventos encontrados
-        <span v-if="data && !isError" class="rounded-full border border-dj-border bg-dj-surface px-2.5 py-0.5 text-xs text-dj-muted tabular-nums"
+        <span v-if="data && !isError" class="rounded-full bg-primary-100 px-2.5 py-0.5 text-xs text-dj-brand tabular-nums"
           :aria-label="'Total de eventos: ' + data.total">{{ data.total }}</span>
       </h2>
       <p class="text-xs text-dj-muted">Selecione um evento para ver os detalhes.</p>

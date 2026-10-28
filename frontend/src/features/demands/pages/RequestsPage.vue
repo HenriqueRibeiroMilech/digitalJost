@@ -87,7 +87,7 @@ async function detailClosed() {
 
 <template>
   <section ref="pageElement" tabindex="-1" aria-labelledby="requests-title">
-    <PageHeader id="requests-title" title="Solicitações de demandas" eyebrow="Transformação Digital"
+    <PageHeader id="requests-title" title="Solicitações de demandas" eyebrow="Transformação Digital" icon="pi pi-lightbulb"
       description="Envie uma necessidade ou reporte um erro e acompanhe suas solicitações.">
       <template #actions>
         <a href="/demandas/solicitacoes?area=Transforma%C3%A7%C3%A3o%20Digital&amp;tab=minhas"
@@ -121,7 +121,10 @@ async function detailClosed() {
         <Button type="submit" label="Buscar" icon="pi pi-search" class="self-end" pt:root:class="rounded-xl" />
       </form>
       <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 class="text-sm font-semibold">Solicitações encontradas <span v-if="data && !isError" class="ml-2 rounded-full border border-dj-border bg-dj-surface px-2.5 py-1 text-xs">{{ data.total }}</span></h2>
+        <h2 class="flex items-center gap-2.5 text-sm font-semibold">Solicitações encontradas
+          <span v-if="data && !isError" class="rounded-full bg-primary-100 px-2.5 py-0.5 text-xs text-dj-brand tabular-nums"
+            :aria-label="'Total de solicitações: ' + data.total">{{ data.total }}</span>
+        </h2>
         <p class="text-xs text-dj-muted">Inclui as solicitações que você acompanha como contribuinte.</p>
       </div>
       <RequestState :loading="isPending" :failed="isError" :error="error" :empty="data?.items.length === 0"

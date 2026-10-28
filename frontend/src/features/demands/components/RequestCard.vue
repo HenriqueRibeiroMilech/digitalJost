@@ -1,30 +1,43 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import RecordCard from '@/shared/components/RecordCard.vue'
 import Tag from '@/volt/Tag.vue'
-import { displayDate, kindLabel, statusLabel } from '../presentation'
+import { displayDate, kindLabel, requestStatus } from '../presentation'
 import type { RequestItem } from '../types'
 
-defineProps<{ request: RequestItem }>()
+const props = defineProps<{ request: RequestItem }>()
 defineEmits<{ open: [] }>()
+const status = computed(() => requestStatus(props.request.status))
+const urgencyClass = computed(() => props.request.urgency === 'Alta' ? 'bg-dj-danger-soft text-dj-danger'
+  : props.request.urgency === 'Média' ? 'bg-primary-50 text-dj-brand' : 'bg-surface-100 text-dj-muted')
 </script>
 
 <template>
   <RecordCard :title-id="'request-title-' + request.id" :title="request.title" :description="request.description"
     :action-id="'request-open-' + request.id" action-label="Ver solicitação" opens-dialog compact
-    :tone="request.status === 'concluido' ? 'success' : 'brand'" @open="$emit('open')">
+    :tone="status.tone" @open="$emit('open')">
     <template #marker>
-      <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5">
-        <span class="font-semibold text-dj-ink" :aria-label="'Solicitação número ' + request.id">#{{ request.id }}</span>
-        <span class="inline-flex items-center gap-1 text-dj-muted">
-          <i :class="request.entry_kind === 'erro' ? 'pi pi-exclamation-triangle' : 'pi pi-briefcase'" aria-hidden="true" />
-          {{ kindLabel(request.entry_kind) }}
+      <div class="flex min-w-0 items-center gap-2.5 text-xs leading-5">
+        <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-base"
+          :class="request.entry_kind === 'erro' ? 'bg-dj-danger-soft text-dj-danger' : 'bg-primary-50 text-dj-brand'" aria-hidden="true">
+          <i :class="request.entry_kind === 'erro' ? 'pi pi-exclamation-triangle' : 'pi pi-briefcase'" />
         </span>
+        <div class="min-w-0">
+          <span class="font-semibold text-dj-ink" :aria-label="'Solicitação número ' + request.id">#{{ request.id }}</span>
+          <p class="text-dj-muted">{{ kindLabel(request.entry_kind) }}</p>
+        </div>
       </div>
     </template>
-    <template #badge><Tag :value="statusLabel(request.status)" severity="secondary" class="shrink-0" /></template>
-    <dl class="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs leading-5">
-      <div class="inline-flex items-baseline gap-1.5">
-        <dt class="text-dj-muted">Urgência</dt><dd class="font-medium">{{ request.urgency }}</dd>
+    <template #badge>
+      <Tag :value="status.label" :icon="status.icon" severity="secondary" rounded
+        class="dj-tone-badge text-xs" :class="'dj-tone-' + status.tone" />
+    </template>
+    <dl class="space-y-2 rounded-xl bg-dj-canvas p-3 text-xs leading-5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <dt class="text-dj-muted">Urgência</dt>
+        <dd class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold" :class="urgencyClass">
+          <i class="pi pi-flag text-xs" aria-hidden="true" />{{ request.urgency }}
+        </dd>
       </div>
       <div class="min-w-0">
         <dt class="sr-only">Enviada em</dt>

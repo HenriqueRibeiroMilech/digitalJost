@@ -23,7 +23,7 @@ defineEmits<{ open: [] }>()
       :pt:body:class="'flex h-full flex-1 flex-col gap-0 ' + (compact ? 'p-4' : 'p-5')"
       pt:content:class="flex flex-1 flex-col">
       <template #content>
-        <div v-if="icon || $slots.marker || $slots.badge" class="flex justify-between gap-3"
+        <div v-if="icon || $slots.marker || $slots.badge" class="flex flex-wrap justify-between gap-3"
           :class="compact ? 'mb-3 items-center' : 'mb-4 items-start'">
           <slot name="marker">
             <span v-if="icon" class="inline-flex shrink-0 items-center justify-center bg-(--dj-tone-soft) text-(--dj-tone)"
@@ -33,7 +33,7 @@ defineEmits<{ open: [] }>()
           </slot>
           <slot name="badge" />
         </div>
-        <h2 :id="titleId" class="line-clamp-2 break-words font-semibold tracking-tight text-dj-ink"
+        <h2 :id="titleId" class="line-clamp-2 break-words font-semibold tracking-tight text-dj-ink transition-colors group-hover:text-(--dj-tone) group-focus-within:text-(--dj-tone)"
           :class="compact ? 'text-base leading-5' : 'min-h-12 text-lg leading-6'">
           {{ title }}
         </h2>
@@ -49,7 +49,7 @@ defineEmits<{ open: [] }>()
             :class="compact ? 'pt-2' : 'pt-3'" aria-hidden="true">
             <span>{{ actionLabel }}</span>
             <span class="inline-flex items-center justify-center rounded-full bg-(--dj-tone-soft) transition-colors
-              group-hover:bg-(--dj-tone) group-hover:text-white" :class="compact ? 'size-7' : 'size-8'">
+              group-hover:bg-(--dj-tone) group-hover:text-white group-focus-within:bg-(--dj-tone) group-focus-within:text-white" :class="compact ? 'size-7' : 'size-8'">
               <i class="pi pi-arrow-up-right text-xs" />
             </span>
           </div>

@@ -19,7 +19,7 @@ Revisão em **20/10/2026**, comparando tokens/layout, componentes compartilhados
 | Destaque | Laranja para detalhes e ações específicas, como o PDF de presença. |
 | Superfícies | Fundo claro, cards brancos, bordas suaves e sombras discretas. |
 | Conteúdo | `.dj-container`, largura máxima de 110 rem; margens adaptáveis. |
-| Cabeçalho | `PageHeader` com título, descrição e ações; `eyebrow` somente quando necessário. |
+| Cabeçalho | `PageHeader` em painel com gradientes suaves, título, descrição, ícone opcional e ações; `eyebrow` somente quando necessário. |
 
 Usar os tokens de [tokens.css](../../frontend/src/shared/styles/tokens.css) e as regras de [layout.css](../../frontend/src/shared/styles/layout.css). Não repetir cores e medidas da marca em cada feature nem criar um container menor dentro da listagem sem uma necessidade de leitura específica.
 
@@ -44,7 +44,7 @@ Montserrat é a primeira fonte declarada. A regra CSS não garante sua instalaç
 
 ### Cabeçalho e página
 
-`PageHeader` recebe `id`, `title`, `description` e `eyebrow` opcional; o slot `actions` contém controles reais. O ID nomeia o título principal e pode ser usado em `aria-labelledby` da seção. Eventos usa somente título/descrição; Demandas identifica Transformação Digital no eyebrow. Ações podem quebrar linha em telas pequenas, sem provocar rolagem horizontal da página inteira.
+`PageHeader` recebe `id` e `title` obrigatórios, além de `description`, `eyebrow` e `icon` opcionais; o slot `actions` contém controles reais. O ícone é decorativo e usa uma classe PrimeIcons. O ID nomeia o título principal e pode ser usado em `aria-labelledby` da seção. Eventos usa calendário; Demandas usa lâmpada e identifica Transformação Digital no eyebrow. O painel combina azul e laranja suaves sobre a superfície clara, usando os tokens compartilhados. Ações podem quebrar linha em telas pequenas, sem provocar rolagem horizontal da página inteira.
 
 ## 2. Listagens e cards
 
@@ -64,6 +64,7 @@ O espaçamento é de 20 px e o limite permanece em quatro colunas. Eventos e Min
 - Usar IDs únicos em `titleId` e, quando necessário, `actionId`; informar `actionLabel` e `opensDialog`.
 - Título e resumo têm até duas linhas visuais; o conteúdo completo continua disponível nos detalhes.
 - Tons `brand`, `success` e `neutral` acompanham um significado definido pela feature, com texto e ícone além da cor.
+- A superfície recebe um gradiente suave no tom do card; título e indicador da ação ganham destaque tanto no hover quanto no foco de teclado. A identificação e o status podem quebrar linha para acomodar cards estreitos.
 - A variante `compact` reduz espaços e alturas mínimas. Demandas a utiliza; Eventos mantém a densidade padrão.
 - O card possui um botão que cobre sua superfície. Não inserir links, botões ou campos nos slots sob essa ação.
 - Hover controla elevação e sombra; foco de teclado usa contorno. Restaurar o foco não deve deixar o card elevado.
@@ -97,11 +98,11 @@ Exemplo de composição, seguindo `RequestCard` (recorte de template):
 </RecordCard>
 ```
 
-Imports, props e formatações ficam na feature; não copiar esse recorte como arquivo completo. `EventCard` fornece data/período e tom do status. `RequestCard` fornece número/tipo, urgência/data e vínculo de contribuinte. Ambos usam a mesma grade, sem obrigar os mesmos campos ou densidade.
+Imports, props e formatações ficam na feature; não copiar esse recorte como arquivo completo. `EventCard` fornece data/período, com marcador em formato de calendário, e tom do status. `RequestCard` fornece número/tipo, urgência/data e vínculo de contribuinte. Em Demandas, status ativos usam azul, concluído usa verde e pausado/cancelado/recusado usam neutro, sempre com rótulo e ícone. Urgência alta recebe destaque de perigo acompanhado do texto. Ambos usam a mesma grade, sem obrigar os mesmos campos ou densidade.
 
 ### Carregamento compartilhado dos cards
 
-[CardGridSkeleton](../../frontend/src/shared/components/CardGridSkeleton.vue) compõe a mesma grade com placeholders Volt. Recebe `count` (padrão 12) e `compact` (padrão false). Os dois layouts preservam as medidas dos carregamentos existentes: Eventos usa oito placeholders na densidade padrão; Demandas usa doze compactos. Essa quantidade é visual e não altera o número de itens por página da API.
+[CardGridSkeleton](../../frontend/src/shared/components/CardGridSkeleton.vue) compõe a mesma grade com placeholders Volt. Recebe `count` (padrão 12) e `compact` (padrão false). Os placeholders acompanham os marcadores e blocos de informação dos cards: Eventos usa oito na densidade padrão; Demandas usa doze compactos. Essa quantidade é visual e não altera o número de itens por página da API.
 
 Usar no slot `loading` de `RequestState`, que anuncia o carregamento. A grade de placeholders fica oculta de leitores de tela. No exemplo, RequestState, CardGrid e CardGridSkeleton vêm de `shared/components/`; EventCard vem da feature e as variáveis/eventos pertencem à página:
 
