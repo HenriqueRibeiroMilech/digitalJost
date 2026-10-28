@@ -11,28 +11,21 @@ withDefaults(defineProps<{ count?: number; compact?: boolean }>(), {
 <template>
   <CardGrid aria-hidden="true">
     <div v-for="index in count" :key="index"
-      class="rounded-dj-card border border-t-4 border-dj-border bg-dj-surface shadow-dj-card"
-      :class="compact ? 'p-4' : 'p-5'">
-      <template v-if="compact">
-        <div class="flex items-center justify-between gap-3">
-          <Skeleton width="7rem" height="2.5rem" />
-          <Skeleton width="4rem" height="1.5rem" border-radius="1rem" />
+      class="dj-record-card flex h-full min-w-0 flex-col rounded-dj-card border border-t-4 border-dj-border bg-dj-surface p-(--dj-card-padding) shadow-dj-card"
+      :class="{ 'dj-record-card-compact': compact }">
+      <div class="mb-(--dj-card-gap) flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <Skeleton :width="compact ? '6rem' : 'var(--dj-card-marker-size)'"
+          height="var(--dj-card-marker-size)" border-radius="0.75rem" />
+        <Skeleton width="6rem" :height="compact ? '1.5rem' : '1.75rem'" border-radius="1rem" />
+      </div>
+      <Skeleton width="85%" height="calc(var(--dj-card-line-height) * 2)" />
+      <Skeleton width="100%" height="calc(var(--dj-card-line-height) * 2)" :class="compact ? 'mt-1.5' : 'mt-2'" />
+      <Skeleton width="100%" :height="compact ? '3.25rem' : '5rem'" class="mt-(--dj-card-gap)" border-radius="0.75rem" />
+      <div class="mt-auto pt-(--dj-card-gap)">
+        <div class="border-t border-dj-border" :class="compact ? 'pt-2' : 'pt-3'">
+          <Skeleton width="100%" height="var(--dj-card-action-size)" />
         </div>
-        <Skeleton width="85%" height="2.5rem" class="mt-3" />
-        <Skeleton width="100%" height="2.5rem" class="mt-1.5" />
-        <Skeleton width="100%" height="4.75rem" class="mt-3" border-radius="0.75rem" />
-        <Skeleton width="100%" height="1.75rem" class="mt-3" />
-      </template>
-      <template v-else>
-        <div class="mb-4 flex items-start justify-between gap-3">
-          <Skeleton width="3.5rem" height="3.5rem" border-radius="1rem" />
-          <Skeleton width="4rem" height="1.5rem" border-radius="1rem" />
-        </div>
-        <Skeleton width="85%" height="3rem" />
-        <Skeleton width="100%" height="3rem" class="mt-2" />
-        <Skeleton width="100%" height="5rem" class="mt-4" border-radius="0.75rem" />
-        <Skeleton width="100%" height="2rem" class="mt-4" />
-      </template>
+      </div>
     </div>
   </CardGrid>
 </template>

@@ -18,28 +18,29 @@ const urgencyClass = computed(() => props.request.urgency === 'Alta' ? 'bg-dj-da
     :tone="status.tone" @open="$emit('open')">
     <template #marker>
       <div class="flex min-w-0 items-center gap-2.5 text-xs leading-5">
-        <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-base"
+        <span class="inline-flex size-(--dj-card-marker-size) shrink-0 items-center justify-center rounded-xl text-base"
           :class="request.entry_kind === 'erro' ? 'bg-dj-danger-soft text-dj-danger' : 'bg-primary-50 text-dj-brand'" aria-hidden="true">
           <i :class="request.entry_kind === 'erro' ? 'pi pi-exclamation-triangle' : 'pi pi-briefcase'" />
         </span>
-        <div class="min-w-0">
-          <span class="font-semibold text-dj-ink" :aria-label="'Solicitação número ' + request.id">#{{ request.id }}</span>
-          <p class="text-dj-muted">{{ kindLabel(request.entry_kind) }}</p>
-        </div>
+        <span class="font-semibold text-dj-ink" :aria-label="'Solicitação número ' + request.id">#{{ request.id }}</span>
       </div>
     </template>
     <template #badge>
       <Tag :value="status.label" :icon="status.icon" severity="secondary" rounded
         class="dj-tone-badge text-xs" :class="'dj-tone-' + status.tone" />
     </template>
-    <dl class="space-y-2 rounded-xl bg-dj-canvas p-3 text-xs leading-5">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <dt class="text-dj-muted">Urgência</dt>
+    <dl class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs leading-5">
+      <div class="min-w-0">
+        <dt class="sr-only">Tipo</dt>
+        <dd class="text-dj-muted">{{ kindLabel(request.entry_kind) }}</dd>
+      </div>
+      <div>
+        <dt class="sr-only">Urgência</dt>
         <dd class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold" :class="urgencyClass">
           <i class="pi pi-flag text-xs" aria-hidden="true" />{{ request.urgency }}
         </dd>
       </div>
-      <div class="min-w-0">
+      <div class="min-w-0 basis-full">
         <dt class="sr-only">Enviada em</dt>
         <dd class="flex min-w-0 items-center gap-1.5 text-dj-muted">
           <i class="pi pi-calendar shrink-0" aria-hidden="true" />

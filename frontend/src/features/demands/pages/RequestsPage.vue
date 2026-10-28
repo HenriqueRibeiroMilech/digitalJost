@@ -7,6 +7,7 @@ import CardGrid from '@/shared/components/CardGrid.vue'
 import CardGridSkeleton from '@/shared/components/CardGridSkeleton.vue'
 import RequestState from '@/shared/components/RequestState.vue'
 import ListPagination from '@/shared/components/ListPagination.vue'
+import ListHeader from '@/shared/components/ListHeader.vue'
 import { usePagination } from '@/shared/composables/usePagination'
 import Button from '@/volt/Button.vue'
 import InputText from '@/volt/InputText.vue'
@@ -107,26 +108,26 @@ async function detailClosed() {
       <RequestForm @busy="busy = $event" @saved="saved" @inspect="changeTab('minhas')" />
     </section>
     <section v-show="tab === 'minhas'" id="requests-mine" aria-label="Minhas solicitações">
-      <form class="mb-6 grid gap-4 rounded-2xl border border-dj-border bg-dj-surface p-4 sm:grid-cols-[1fr_16rem_auto]" @submit.prevent="applyFilters">
+      <form role="search" aria-label="Filtrar solicitações"
+        class="dj-filter-panel mb-5 grid items-end gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)_auto]" @submit.prevent="applyFilters">
         <div>
-          <label for="requests-search" class="mb-2 block text-sm font-medium">Buscar por título ou número</label>
-          <InputText id="requests-search" v-model="search" :maxlength="250" placeholder="Ex.: automatizar relatório"
-            class="w-full" pt:root:class="rounded-xl" />
+          <label for="requests-search" class="mb-2 block text-xs font-semibold text-dj-muted">Buscar por título ou número</label>
+          <div class="relative">
+            <i class="pi pi-search pointer-events-none absolute top-1/2 left-3 z-1 -translate-y-1/2 text-sm text-dj-muted" aria-hidden="true" />
+            <InputText id="requests-search" v-model="search" type="search" :maxlength="250" placeholder="Ex.: automatizar relatório"
+              pt:root:class="w-full rounded-xl py-3 pl-10" />
+          </div>
         </div>
         <div>
-          <label for="requests-kind" class="mb-2 block text-sm font-medium">Tipo</label>
+          <label for="requests-kind" class="mb-2 block text-xs font-semibold text-dj-muted">Tipo</label>
           <Select v-model="kind" input-id="requests-kind" :options="filterOptions" option-label="label" option-value="value"
-            class="w-full" pt:root:class="rounded-xl" />
+            pt:root:class="w-full rounded-xl" pt:label:class="py-3" />
         </div>
-        <Button type="submit" label="Buscar" icon="pi pi-search" class="self-end" pt:root:class="rounded-xl" />
+        <Button type="submit" label="Buscar" icon="pi pi-search" pt:root:class="rounded-xl py-3" />
       </form>
-      <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 class="flex items-center gap-2.5 text-sm font-semibold">Solicitações encontradas
-          <span v-if="data && !isError" class="rounded-full bg-primary-100 px-2.5 py-0.5 text-xs text-dj-brand tabular-nums"
-            :aria-label="'Total de solicitações: ' + data.total">{{ data.total }}</span>
-        </h2>
-        <p class="text-xs text-dj-muted">Inclui as solicitações que você acompanha como contribuinte.</p>
-      </div>
+      <ListHeader id="requests-results-title" title="Solicitações encontradas"
+        :total="!isPending && !isError ? data?.total : undefined" total-label="Total de solicitações"
+        description="Inclui as solicitações que você acompanha como contribuinte." />
       <RequestState :loading="isPending" :failed="isError" :error="error" :empty="data?.items.length === 0"
         loading-label="Carregando solicitações…" empty-title="Nenhuma solicitação encontrada"
         empty-description="Envie uma nova solicitação ou ajuste os filtros. Para consultar pedidos anteriores, use o link no cabeçalho."

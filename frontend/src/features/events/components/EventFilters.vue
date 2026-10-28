@@ -33,7 +33,7 @@ function reset() {
 </script>
 
 <template>
-  <form role="search" aria-label="Filtrar eventos" class="mb-6 rounded-dj-card border border-dj-border bg-dj-surface p-4 shadow-dj-card sm:p-5"
+  <form role="search" aria-label="Filtrar eventos" class="dj-filter-panel mb-5"
     @submit.prevent="emitFilters">
     <div class="grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)_auto]">
       <div>

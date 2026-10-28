@@ -66,6 +66,8 @@ volt/Card
 | Necessidade | Recurso existente |
 |---|---|
 | Cabeçalho da página | `PageHeader` com título, descrição e slot de ações. |
+| Cabeçalho dos resultados | `ListHeader` com título, total do servidor e orientação opcional. |
+| Superfície dos filtros | Classe compartilhada `dj-filter-panel` no formulário da feature. |
 | Grade responsiva de registros | `CardGrid`. |
 | Card com uma ação principal | `RecordCard`, normalmente dentro de um card da feature. |
 | Carregamento de uma grade | `CardGridSkeleton`, com `count` e `compact`. |
@@ -75,6 +77,8 @@ volt/Card
 | Diálogo | `AppDialog` com conteúdo e ações da feature. |
 
 As variações atuais do card são densidade padrão ou `compact`, e tons `brand`, `success` ou `neutral`. `EventCard` usa a densidade padrão; `RequestCard` usa a compacta. O significado de cada status e seu texto pertencem à feature.
+
+As medidas de densidade ficam em `shared/styles/layout.css` e são consumidas por `RecordCard` e `CardGridSkeleton`. Um marcador próprio usa `--dj-card-marker-size` para acompanhar essa densidade. Não repetir padding e tamanhos do card em cada feature; manter `compact` igual no card e no skeleton correspondente.
 
 O `RecordCard` possui um botão que cobre sua superfície. Seus slots devem conter informações; links, botões e campos independentes precisam de uma composição apropriada para múltiplas ações. IDs de título e ação devem ser únicos.
 
@@ -91,6 +95,7 @@ AppShell
   → página da feature
     → PageHeader
     → filtros e feedback quando necessários
+    → ListHeader com total do servidor, quando disponível
     → RequestState
       → carregando: CardGridSkeleton
       → resultado: CardGrid + card da feature
@@ -114,6 +119,7 @@ As chaves de consulta distinguem feature, operação, filtros e página. Após u
 | URL, payload ou chamada da API | `api.ts` e `types.ts` da feature; conferir os schemas do backend. |
 | Cores, fonte, raio e sombras comuns | `src/shared/styles/tokens.css`. |
 | Grade e regras gerais de layout | `src/shared/styles/layout.css`. |
+| Título e contagem da listagem | `ListHeader.vue`; a feature fornece o total e decide quando exibi-lo. |
 | Estrutura dos cards de várias features | `RecordCard.vue` e seu carregamento em `CardGridSkeleton.vue`. |
 | Controle básico usado em várias telas | Wrapper correspondente em `src/volt/`. |
 

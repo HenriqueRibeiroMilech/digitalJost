@@ -8,6 +8,7 @@ import CardGrid from '@/shared/components/CardGrid.vue'
 import CardGridSkeleton from '@/shared/components/CardGridSkeleton.vue'
 import RequestState from '@/shared/components/RequestState.vue'
 import ListPagination from '@/shared/components/ListPagination.vue'
+import ListHeader from '@/shared/components/ListHeader.vue'
 import Button from '@/volt/Button.vue'
 import Message from '@/volt/Message.vue'
 import EventCard from '../components/EventCard.vue'
@@ -102,14 +103,9 @@ async function eventChanged(action: EventChange) {
 
     <EventFilters @change="applyFilters" />
 
-    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <h2 class="flex items-center gap-2.5 text-sm font-semibold text-dj-ink">
-        Eventos encontrados
-        <span v-if="data && !isError" class="rounded-full bg-primary-100 px-2.5 py-0.5 text-xs text-dj-brand tabular-nums"
-          :aria-label="'Total de eventos: ' + data.total">{{ data.total }}</span>
-      </h2>
-      <p class="text-xs text-dj-muted">Selecione um evento para ver os detalhes.</p>
-    </div>
+    <ListHeader id="events-results-title" title="Eventos encontrados"
+      :total="!loading && !isError ? data?.total : undefined" total-label="Total de eventos"
+      description="Selecione um evento para ver os detalhes." />
 
     <RequestState :loading="loading" :failed="isError" :error="listError"
       :empty="data?.items.length === 0" loading-label="Carregando eventos…"

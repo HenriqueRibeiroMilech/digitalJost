@@ -46,6 +46,20 @@ Montserrat é a primeira fonte declarada. A regra CSS não garante sua instalaç
 
 `PageHeader` recebe `id` e `title` obrigatórios, além de `description`, `eyebrow` e `icon` opcionais; o slot `actions` contém controles reais. O ícone é decorativo e usa uma classe PrimeIcons. O ID nomeia o título principal e pode ser usado em `aria-labelledby` da seção. Eventos usa calendário; Demandas usa lâmpada e identifica Transformação Digital no eyebrow. O painel combina azul e laranja suaves sobre a superfície clara, usando os tokens compartilhados. Ações podem quebrar linha em telas pequenas, sem provocar rolagem horizontal da página inteira.
 
+O título usa 24 px em telas pequenas e 30 px a partir de 640 px, com a referência de 16 px/rem. O ícone acompanha essa proporção, com 40/48 px. Descrição e título ficam alinhados; o painel usa padding de 16/24 px para manter a listagem próxima do cabeçalho.
+
+### Filtros e cabeçalho dos resultados
+
+Aplicar `dj-filter-panel` ao formulário de filtros para compartilhar superfície, borda, raio, sombra e padding de 16/20 px. Labels, controles, disposição dos campos e eventos continuam na feature. Em espaços menores, empilhar campos antes de comprimir busca, seletor e ações em uma linha. Eventos continua aplicando busca com espera; Demandas continua aplicando por envio do formulário.
+
+[ListHeader](../../frontend/src/shared/components/ListHeader.vue) centraliza título, etiqueta de contagem e orientação da listagem. Recebe `id` e `title` obrigatórios, `total`, `totalLabel` (padrão “Total de registros”) e `description` opcionais. O total zero é exibido; `undefined` omite a etiqueta. A feature passa a contagem filtrada da API e a omite durante carregamento inicial ou falha. O componente não calcula totais nem consulta endpoints.
+
+```vue
+<ListHeader id="events-results-title" title="Eventos encontrados"
+  :total="!loading && !isError ? data?.total : undefined" total-label="Total de eventos"
+  description="Selecione um evento para ver os detalhes." />
+```
+
 ## 2. Listagens e cards
 
 `CardGrid` é usado tanto nos registros quanto nos skeletons. Com a referência de 16 px/rem:
@@ -84,6 +98,8 @@ O espaçamento é de 20 px e o limite permanece em quatro colunas. Eventos e Min
 | Evento `open` | Solicita ao consumidor abrir o registro. Não executa consulta. |
 
 Na densidade padrão, há padding de 20 px, título/resumo com alturas mínimas e maior espaço no rodapé. A compacta usa padding de 16 px e dispensa essas alturas mínimas, mantendo duas linhas visuais. Não truncar o conteúdo persistido para caber no card.
+
+`RecordCard` e `CardGridSkeleton` compartilham as medidas de densidade de `.dj-record-card` e `.dj-record-card-compact` em `layout.css`: padding, espaçamento, marcador, altura de linha e indicador da ação. A altura mínima de título/resumo também é definida pela densidade e acompanha duas linhas na padrão; a compacta dispensa essa reserva. A prop `compact` seleciona esse conjunto nos dois componentes. Marcadores da feature usam `--dj-card-marker-size` (48 px na padrão e 32 px na compacta); ajustes comuns ficam na base, sem sobrescrever a estrutura em cada tela. Em Demandas, tipo e urgência ficam na mesma faixa quando há espaço, com a data abaixo, sem um painel interno que aumente a altura do card.
 
 O botão nativo cobre a superfície e fornece Enter/Espaço, nome acessível com ação+título e foco. O rodapé visual fica oculto de leitores de tela para evitar repetição. Para múltiplas ações independentes, criar uma composição apropriada; colocar controles embaixo desse botão os torna inacessíveis à interação pretendida.
 
@@ -199,7 +215,7 @@ Mudanças em cores, medidas ou componentes comuns atualizam este guia. Regras vi
 ### Roteiro para uma nova tela
 
 1. Registrar a página no shell/Router e definir título, descrição e ação principal com PageHeader.
-2. Compor filtros com controles Volt e rótulos; aplicar no servidor e voltar à página inicial quando necessário.
+2. Compor filtros com controles Volt e rótulos em `dj-filter-panel`; aplicar no servidor e voltar à página inicial quando necessário. Usar ListHeader para o título e a contagem dos resultados.
 3. Usar RequestState e, em listagem de cards, CardGridSkeleton no carregamento e CardGrid nos registros, mantendo a mesma densidade.
 4. Criar o card pequeno da feature como consumidor de RecordCard; manter regras/formatos de domínio locais.
 5. Usar AppDialog quando apropriado, decidir foco inicial/retorno e repassar busy dos fluxos filhos.
