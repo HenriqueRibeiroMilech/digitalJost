@@ -91,8 +91,8 @@ function saved(request: RequestDetail) {
       </div>
     </RequestState>
     <template v-if="!editing" #footer>
-      <SecondaryButton type="button" label="Fechar" outlined @click="close" />
       <Button v-if="data?.can_update && !isError" type="button" label="Editar solicitação" icon="pi pi-pencil" @click="editing = true" />
+      <SecondaryButton type="button" label="Fechar" outlined @click="close" />
     </template>
   </AppDialog>
 </template>

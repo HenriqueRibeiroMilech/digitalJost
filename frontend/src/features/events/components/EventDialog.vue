@@ -223,7 +223,6 @@ async function deleteEvent() {
           pt:root:class="dj-danger-action rounded-xl" @click="deleteEvent" />
       </template>
       <template v-else>
-        <SecondaryButton type="button" label="Fechar" outlined :disabled="busy" pt:root:class="rounded-xl" @click="updateVisibility(false)" />
         <template v-if="event && !loading && !isError">
           <Button v-if="event.capabilities.can_update" type="button" label="Editar"
             icon="pi pi-pencil" outlined :disabled="isFetching || busy" pt:root:class="rounded-xl" @click="changeView('edit')" />
@@ -232,6 +231,7 @@ async function deleteEvent() {
             pt:root:class="rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft enabled:hover:text-dj-danger"
             @click="changeView('delete')" />
         </template>
+        <SecondaryButton type="button" label="Fechar" outlined :disabled="busy" pt:root:class="rounded-xl" @click="updateVisibility(false)" />
       </template>
     </template>
   </AppDialog>
