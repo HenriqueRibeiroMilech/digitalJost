@@ -163,18 +163,8 @@ async function deleteEvent() {
           </div>
 
           <div v-else>
-            <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div class="flex flex-wrap items-center gap-3">
-                <EventStatusBadge :status="event.status" />
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <Button v-if="event.capabilities.can_update" type="button" label="Editar"
-                  icon="pi pi-pencil" outlined :disabled="isFetching || busy" pt:root:class="rounded-xl" @click="changeView('edit')" />
-                <SecondaryButton v-if="event.capabilities.can_delete" type="button" label="Excluir"
-                  icon="pi pi-trash" outlined :disabled="isFetching || busy"
-                  pt:root:class="rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft enabled:hover:text-dj-danger"
-                  @click="changeView('delete')" />
-              </div>
+            <div class="mb-5 flex flex-wrap items-center gap-3">
+              <EventStatusBadge :status="event.status" />
             </div>
             <h3 id="event-details-title" tabindex="-1" class="break-words text-2xl leading-8 font-bold tracking-tight text-dj-ink">{{ event.name }}</h3>
             <Tabs v-model:value="activeTab" class="mt-4">
@@ -232,7 +222,17 @@ async function deleteEvent() {
           :loading="deleting" :disabled="busy || isError || !event?.capabilities.can_delete"
           pt:root:class="dj-danger-action rounded-xl" @click="deleteEvent" />
       </template>
-      <SecondaryButton v-else type="button" label="Fechar" outlined :disabled="busy" pt:root:class="rounded-xl" @click="updateVisibility(false)" />
+      <template v-else>
+        <SecondaryButton type="button" label="Fechar" outlined :disabled="busy" pt:root:class="rounded-xl" @click="updateVisibility(false)" />
+        <template v-if="event && !loading && !isError">
+          <Button v-if="event.capabilities.can_update" type="button" label="Editar"
+            icon="pi pi-pencil" outlined :disabled="isFetching || busy" pt:root:class="rounded-xl" @click="changeView('edit')" />
+          <SecondaryButton v-if="event.capabilities.can_delete" type="button" label="Excluir"
+            icon="pi pi-trash" outlined :disabled="isFetching || busy"
+            pt:root:class="rounded-xl border-dj-danger/20 text-dj-danger enabled:hover:bg-dj-danger-soft enabled:hover:text-dj-danger"
+            @click="changeView('delete')" />
+        </template>
+      </template>
     </template>
   </AppDialog>
 </template>
