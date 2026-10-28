@@ -1,10 +1,20 @@
-{% extends 'home.html' %}
-
-{% block content %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Informativo da Qualidade | Digital JOST</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/operation_quality_table.css') }}">
+</head>
+<body class="qsb-table-body">
 {% set occurrence_types = ['Interno', 'Cliente (Não Formal)', 'Fornecedor', 'Cliente (Formal)', 'Cliente (Logística)'] %}
 {% set product_families = ['QR', 'QR + MESA', 'AO', 'SP 3° EIXO', 'SP SR', 'SP - Suporte', 'EE', 'PR', 'AL', 'VT', 'EA', 'PE', 'EC'] %}
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/operation_quality_table.css') }}">
 
 <main class="qsb-table-page">
     <header class="qsb-table-heading">
@@ -210,4 +220,5 @@
 
 <script src="{{ url_for('static', filename='js/operation.quality/qsb_locations.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/operation.quality/quality_table.js') }}" defer></script>
-{% endblock %}
+</body>
+</html>

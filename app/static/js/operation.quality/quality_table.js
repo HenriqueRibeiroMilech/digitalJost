@@ -33,8 +33,6 @@
     let skipTopScroll = false;
     let skipGridScroll = false;
 
-    removeNav();
-
     function fillOptions(list, values) {
         list.replaceChildren();
         values.forEach(function (value) {

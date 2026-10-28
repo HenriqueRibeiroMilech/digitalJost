@@ -1,3 +1,5 @@
+.qsb-table-body { margin: 0; background: #f4f6f5; }
+
 .qsb-table-page {
     --qsb-ink: #1e3430;
     --qsb-muted: #71807c;
@@ -10,7 +12,6 @@
     font-family: 'Montserrat', Arial, sans-serif;
     font-size: 13px;
     line-height: 1.5;
-    margin-left: 40px;
     min-height: 100vh;
     padding: 28px 28px 36px;
 }
