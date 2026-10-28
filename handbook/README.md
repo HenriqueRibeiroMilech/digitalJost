@@ -24,6 +24,7 @@ Os oito guias foram aprofundados em **20/10/2026**, comparando código e versõe
 | [Demandas](features/demandas.md) | Solicitações modernas, edição, anexos, histórico e limites do gerenciador ainda planejado. |
 | [Base compartilhada](features/base-compartilhada.md) | Identidade, permissões, CSRF, banco, contratos, dependências e criação de módulos. |
 | [Planejamento operacional](features/planejamento-operacional.md) | Disponibilidade e manutenção no Operation Meeting e no relatório detalhado. |
+| [Controle de Qualidade e QSB](features/qualidade.md) | Cadastro horizontal, modal, paradas, publicação na pirâmide, histórico e implantação do controle legado. |
 
 ## Como manter o manual
 

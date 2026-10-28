@@ -3,11 +3,15 @@ from datetime import datetime
 import pandas as pd
 import json
 import os
+import hmac
+import secrets
+from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from flask import Blueprint, abort, jsonify, render_template, request, redirect, send_file, url_for
+from flask import Blueprint, abort, current_app, jsonify, render_template, request, redirect, send_file, session, url_for
 from flask_login import current_user
 
 from app.utils.constants import APP_PATH
@@ -15,11 +19,70 @@ from app.utils.db_utils import engine_run_query, get_engine
 from app.utils.dynamic_constants import getPlex
 from app.utils.files_utils import qsb_file
 from app.utils.permissions import get_permission
+from .quality_control import (
+    OCCURRENCE_TYPES, PRODUCT_FAMILIES, STOP_REASONS, QualityControlError,
+    QualityControlService,
+)
+from .quality_control.domain import CAMPINAS_WORKCENTERS, is_flag_set
+from .quality_control.repository import JOIN, PROJECTION, PUBLISHED, VISIBLE
+from .quality_control.services import image_names, safe_name
 
 
 p_quality = get_permission('QUALITY')
 
 operation_quality_bp = Blueprint('operation_quality', __name__)
+
+
+def _quality_control():
+    return QualityControlService(
+        get_engine('jdt'), Path(current_app.root_path) / 'static' / 'uploads' / 'operation'
+    )
+
+
+def _quality_csrf_token():
+    if not session.get('quality_control_csrf'):
+        session['quality_control_csrf'] = secrets.token_urlsafe(32)
+    return session['quality_control_csrf']
+
+
+def _validate_quality_csrf():
+    expected = session.get('quality_control_csrf', '')
+    received = request.headers.get('X-CSRF-Token', '')
+    if not expected or not received or not hmac.compare_digest(expected.encode('utf-8'), received.encode('utf-8')):
+        raise QualityControlError('Sessão de segurança inválida. Atualize a página.', 400)
+
+
+def _quality_entry_id():
+    try:
+        entry_id = int(request.args.get('entryID', ''))
+        if entry_id <= 0:
+            raise ValueError
+        return entry_id
+    except (ValueError, TypeError):
+        abort(400, 'Identificação da ocorrência inválida.')
+
+
+def _quality_record_urls(record):
+    record['permissions'] = {'edit': p_quality.can(), 'delete': p_quality.can()}
+    for category in ('nok', 'ok'):
+        for photo in record[f'images_{category}']:
+            photo['url'] = url_for(
+                'operation_quality.quality_table_image', entry_id=record['id'],
+                category=category, filename=photo['name'],
+            )
+    return record
+
+
+@operation_quality_bp.errorhandler(QualityControlError)
+def quality_control_error(error):
+    return jsonify({'error': str(error), 'field': error.field}), error.status_code
+
+
+@operation_quality_bp.errorhandler(SQLAlchemyError)
+def quality_database_error(error):
+    # Não expor SQL, parâmetros ou dados de conexão ao usuário ou aos logs.
+    current_app.logger.error('Falha de banco no controle QSB.')
+    return jsonify({'error': 'Controle de Qualidade indisponível. Contate o responsável pelo sistema.'}), 503
 
 _QSB_LOCATION_MANAGER_REGISTRATIONS = {
     '00023485',
@@ -93,19 +156,23 @@ def _QUALITY_DETAIL(day):
     params = {'day': day}
 
     if 'unit' in request.args:
-        aux = "AND unit = :unit"
+        aux = "AND q.unit = :unit"
         params['unit'] = request.args['unit']
 
-    query = f"SELECT * FROM JDT_OPE_QUAL WHERE openDate = :day {aux}"
+    query = f"SELECT {PROJECTION} FROM JDT_OPE_QUAL q {JOIN} WHERE q.openDate = :day AND {PUBLISHED} {aux}"
     df = engine_run_query(query, 'jdt', params)
 
     file = []
     for _, row in df.iterrows():
-        repeat = 'Sim' if row.get('repeat') else 'Não'
+        repeat = 'Sim' if is_flag_set(row.get('repeat')) else 'Não'
+        photos_nok = [name for name in image_names(row.get('imgNOK')) if safe_name(name)]
+        photos_ok = [name for name in image_names(row.get('imgOK')) if safe_name(name)]
         file_info = {
             'Local da Ocorrencia': [str(row.get('type', '')), str(row.get('typeDesc', ''))]
-            , 'Imagens NOK': [item for item in str(row.get('imgNOK', '')).split('||') if item]
-            , 'Imagens OK': [item for item in str(row.get('imgOK', '')).split('||') if item]
+            , 'Imagens NOK': photos_nok
+            , 'Imagens OK': photos_ok
+            , 'URLs Imagens NOK': [url_for('operation_quality.quality_table_image', entry_id=row['id'], category='nok', filename=name) for name in photos_nok]
+            , 'URLs Imagens OK': [url_for('operation_quality.quality_table_image', entry_id=row['id'], category='ok', filename=name) for name in photos_ok]
             , 'Centro de Trabalho': str(row.get('workCenter', ''))
             , 'Familia do Produto': str(row.get('prodFamily', ''))
             , 'Problema': str(row.get('description', ''))
@@ -120,6 +187,11 @@ def _QUALITY_DETAIL(day):
             , 'workCenter': str(row.get('workCenter', ''))
             , 'prodCode': str(row.get('prodCode', ''))
             , 'unit': str(int(row.get('unit', 0))) if 'unit' in row else ''
+            , 'Horário da parada': str(row['stop_time'])[:5] if pd.notna(row['stop_time']) else ''
+            , 'Motivo da parada': str(row['stop_reason']) if pd.notna(row['stop_reason']) else ''
+            , 'Tempo total de parada': float(row['stop_minutes']) if pd.notna(row['stop_minutes']) else None
+            , 'Quantidade de paradas': int(row['stop_count']) if pd.notna(row['stop_count']) else None
+            , 'Detalhamento do local': str(row['location_detail']) if pd.notna(row['location_detail']) else ''
         }
         file.append(file_info)
 
@@ -145,16 +217,17 @@ def quality_post():
     if 'unit' in request.args:
         try:
             unit = int(request.args['unit'])
-            unit_filter = "AND unit = :unit"
+            unit_filter = "AND q.unit = :unit"
             params['unit'] = unit
         except ValueError:
             return abort(400, "Unidade inválida.")
 
     query = f"""
-        SELECT DAY(openDate) AS day, type
-        FROM JDT_OPE_QUAL
-        WHERE YEAR(openDate) = :year AND MONTH(openDate) = :month {unit_filter}
-        ORDER BY openDate
+        SELECT DAY(q.openDate) AS day, q.type
+        FROM JDT_OPE_QUAL q {JOIN}
+        WHERE YEAR(q.openDate) = :year AND MONTH(q.openDate) = :month
+          AND {PUBLISHED} {unit_filter}
+        ORDER BY q.openDate
     """
     df = engine_run_query(query, 'jdt', params)
     
@@ -181,7 +254,27 @@ def quality_detail_get():
 @operation_quality_bp.route('/op/qualidade/update', methods=['POST'])
 @p_quality.require(403)
 def quality_detail_post():
+    command = request.args.get('command')
+    if command not in ('add', 'edit') or (command == 'add' and 'entryID' in request.args):
+        abort(400, 'Operação inválida.')
+    service = _quality_control()
+    repository = service.repository
+    actor_id = str(current_user.id)
+    with service.engine.begin() as connection:
+        before = None
+        if command == 'add':
+            repository.acquire_creation_lock(connection)
+        else:
+            before = repository.get_entry(connection, _quality_entry_id(), lock=True)
+        entry_id = _save_legacy_quality_form(connection)
+        repository.ensure_control(connection, entry_id, actor_id, is_new=command == 'add')
+        repository.touch_control(connection, entry_id, actor_id)
+        after = repository.get_entry(connection, entry_id)
+        repository.audit(connection, entry_id, actor_id, 'create' if command == 'add' else 'update', before, after)
+    return redirect(url_for('operation_quality.quality_list_get'))
 
+
+def _save_legacy_quality_form(connection):
     try:
         unit = int(request.form.get('unidade', ''))
     except (TypeError, ValueError):
@@ -208,17 +301,12 @@ def quality_detail_post():
         repeat = 1
 
     if 'entryID' in request.args:  # caso a URL apresente um ID valido, sera executado
-        query = f"""SELECT 
-                        imgNOK, imgOK 
-                    FROM 
-                        JDT_OPE_QUAL WHERE id = '{request.args['entryID']}'"""  # query para selecionar as imagens da ocorrencia
-
-        sql_data = engine_run_query(query, 'jdt')
-
-        img_nok = sql_data['imgNOK'][0]  # armazena os nomes dos arquivos NOK
-        img_ok = sql_data['imgOK'][0]  # amazena os nomes dos arquivos OK
-
-        caminho = request.args['entryID']  # redefini o ID da ocorrencia
+        caminho = str(_quality_entry_id())
+        sql_data = connection.execute(text(
+            "SELECT imgNOK, imgOK FROM JDT_OPE_QUAL WHERE id = :id"
+        ), {'id': caminho}).mappings().one()
+        img_nok = sql_data['imgNOK'] or ''
+        img_ok = sql_data['imgOK'] or ''
 
         # CONDICAO DEVIDO A ATUALIZACAO NA FORMA DE SALVAR, PARA O QUE JÁ FOR SALVO, NÃO SE PERDER
         if not os.path.exists('app/static/uploads/operation/img_nok/' + caminho + '/'):
@@ -241,16 +329,7 @@ def quality_detail_post():
 
     else:
 
-        query = f"""SELECT MAX(id) as last_id FROM JDT_OPE_QUAL"""
-        data = engine_run_query(query, 'jdt')['last_id'][0]
-
-        year = data[:4]
-        last_id = int(data[-5:])
-
-        if year != str(datetime.now().year):
-            last_id = 10000
-
-        caminho = str(datetime.now().year) + str(last_id + 1)
+        caminho = _quality_control().repository.next_id(connection)
 
         # CONDICAO NOVA, PARA CRIAR UMA PASTA DE ARQUIVOS P/ CADA OCORRÊNCIA
         if not os.path.exists('app/static/uploads/operation/img_nok/' + caminho + '/'):
@@ -323,14 +402,10 @@ def quality_detail_post():
         for image in request.form['deletar1'].split("__,"):
             if image != "":
                 img_nok = img_nok.replace(image + '||', "")
-                if os.path.exists(rf'{APP_PATH}\app\static\uploads\operation\img_nok\{request.args["entryID"]}\{image}'):
-                    os.remove(rf'{APP_PATH}\app\static\uploads\operation\img_nok\{request.args["entryID"]}\{image}')
 
         for image in request.form['deletar2'].split("__,"):
             if image != "":
                 img_ok = img_ok.replace(image + '||', "")
-                if os.path.exists(rf'{APP_PATH}\app\static\uploads\operation\img_ok\{request.args["entryID"]}\{image}'):
-                    os.remove(rf'{APP_PATH}\app\static\uploads\operation\img_ok\{request.args["entryID"]}\{image}')
 
         query = text("""UPDATE JDT_OPE_QUAL SET
                             type = :occurrence_type,
@@ -370,14 +445,8 @@ def quality_detail_post():
         'unit': unit,
     }
 
-    engine = get_engine('jdt')
-    with engine.begin() as cnnx:
-        cnnx.execute(query, query_params)
-
-    if request.args.get('view') == 'table' and request.args['command'] == 'add':
-        return redirect(url_for('operation_quality.quality_table_get', saved='1'))
-
-    return redirect("/op/qualidade/edit_select")
+    connection.execute(query, query_params)
+    return caminho
 
 
 # PÁGINA PARA IMPRESSÃO DO INFORMATIVO DA QUALIDADE - OPERATION MEETING
@@ -405,32 +474,7 @@ def quality_add_get():
 @p_quality.require(403)
 def quality_table_get():
     workcenters = _get_quality_workcenters()
-    query = """SELECT id, unit, type, typeDesc, workCenter, prodCode, prodFamily,
-                      description, repeat, text1, text2, text3, imgNOK, imgOK, shift,
-                      FORMAT(openDate, 'yyyy-MM-dd') AS date_iso,
-                      FORMAT(openDate, 'dd/MM/yyyy') AS date_label
-               FROM JDT_OPE_QUAL ORDER BY openDate DESC, id DESC"""
-    entries = engine_run_query(query, 'jdt').fillna('').to_dict(orient='records')
-    for entry in entries:
-        entry_id = str(entry['id'])
-        for category, column in (('nok', 'imgNOK'), ('ok', 'imgOK')):
-            entry[f'photos_{category}'] = [
-                {
-                    'name': filename,
-                    'url': url_for(
-                        'static',
-                        filename=f'uploads/operation/img_{category}/{entry_id}/{filename}',
-                    ),
-                    'legacy_url': url_for(
-                        'static',
-                        filename=f'uploads/operation/img_{category}/{filename}',
-                    ),
-                }
-                for filename in str(entry[column]).split('||')
-                if filename and filename not in ('.', '..')
-                and '/' not in filename and '\\' not in filename
-                and entry_id.isdigit()
-            ]
+    entries = [_quality_record_urls(entry) for entry in _quality_control().list_entries()]
 
     return render_template(
         'operation.qual/op_qual_table.html',
@@ -438,8 +482,82 @@ def quality_table_get():
         workcenters=workcenters.to_dict(orient='records'),
         caxias_locations=_get_caxias_qsb_locations(workcenters),
         can_manage_locations=_can_manage_qsb_locations(),
-        saved=request.args.get('saved') == '1',
+        occurrence_types=OCCURRENCE_TYPES, product_families=PRODUCT_FAMILIES,
+        stop_reasons=STOP_REASONS, campinas_workcenters=CAMPINAS_WORKCENTERS,
+        csrf_token=_quality_csrf_token(), submission_key=str(uuid4()),
     )
+
+
+@operation_quality_bp.route('/op/qualidade/tabela/registros', methods=['POST'])
+@p_quality.require(403)
+def quality_table_create():
+    if request.content_length and request.content_length > 42 * 1024 * 1024:
+        raise QualityControlError('O envio excede o limite de 40 MB de imagens.', 413)
+    _validate_quality_csrf()
+    workcenters = _get_quality_workcenters()
+    entry = _quality_control().save(
+        request.form, request.files, str(current_user.id),
+        _get_caxias_qsb_locations(workcenters),
+        [f"{row['Workcenter_Code']}-{row['Name']}" for _, row in workcenters.iterrows()],
+    )
+    return jsonify(_quality_record_urls(entry)), 201
+
+
+@operation_quality_bp.route('/op/qualidade/tabela/registros/<int:entry_id>', methods=['GET', 'PATCH', 'DELETE'])
+@p_quality.require(403)
+def quality_table_record(entry_id):
+    service = _quality_control()
+    if request.method == 'GET':
+        return jsonify(_quality_record_urls(service.detail(entry_id)))
+    _validate_quality_csrf()
+    if request.method == 'DELETE':
+        payload = request.get_json(silent=True) or {}
+        if not isinstance(payload, dict):
+            raise QualityControlError('Dados de exclusão inválidos.')
+        service.delete(entry_id, payload.get('revision'), str(current_user.id))
+        return '', 204
+    if request.content_length and request.content_length > 42 * 1024 * 1024:
+        raise QualityControlError('O envio excede o limite de 40 MB de imagens.', 413)
+    workcenters = _get_quality_workcenters()
+    entry = service.save(
+        request.form, request.files, str(current_user.id),
+        _get_caxias_qsb_locations(workcenters),
+        [f"{row['Workcenter_Code']}-{row['Name']}" for _, row in workcenters.iterrows()],
+        entry_id=entry_id,
+    )
+    return jsonify(_quality_record_urls(entry))
+
+
+@operation_quality_bp.route('/op/qualidade/tabela/registros/<int:entry_id>/imagens/<category>/<filename>', methods=['GET'])
+def quality_table_image(entry_id, category, filename):
+    path, mimetype = _quality_control().image_path(
+        entry_id, category, filename, allow_unpublished=p_quality.can()
+    )
+    response = send_file(path, mimetype=mimetype, conditional=True)
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@operation_quality_bp.route('/op/qualidade/tabela/produtos', methods=['GET'])
+@p_quality.require(403)
+def quality_table_products():
+    product = request.args.get('searchProd', '').strip()
+    center = request.args.get('searchCt', '').strip()
+    if len(product) > 150 or len(center) > 250:
+        raise QualityControlError('Filtro de produto inválido.')
+    with get_engine('ftm').connect() as connection:
+        data = _quality_control().repository.product_options(connection, product, center)
+    return jsonify(data)
+
+
+@operation_quality_bp.route('/op/qualidade/tabela/locais', methods=['POST'])
+@p_quality.require(403)
+def quality_table_location():
+    _validate_quality_csrf()
+    if not isinstance(request.get_json(silent=True), dict):
+        raise QualityControlError('Dados do local inválidos.')
+    return quality_location_post()
 
 
 @operation_quality_bp.route('/op/qualidade/add', methods=['POST'])
@@ -505,7 +623,9 @@ def quality_location_post():
 @p_quality.require(403)
 def quality_list_get():
 
-    query = "SELECT type, typeDesc, description, FORMAT(openDate, 'dd/MM/yyyy') AS openDate, prodFamily, id, unit FROM JDT_OPE_QUAL ORDER BY openDate DESC"
+    query = f"""SELECT q.type, q.typeDesc, q.description, FORMAT(q.openDate, 'dd/MM/yyyy') AS openDate,
+                       q.prodFamily, q.id, q.unit FROM JDT_OPE_QUAL q {JOIN}
+                WHERE {VISIBLE} ORDER BY q.openDate DESC"""
     data = engine_run_query(query, 'jdt')
 
     if data.empty:
@@ -537,8 +657,10 @@ def quality_edit_get():
 
     if request.args['command'] == 'edit':
             
-        query = f'SELECT * FROM JDT_OPE_QUAL WHERE id = {request.args["entryID"]}'
-        data = engine_run_query(query, 'jdt')
+        query = f"SELECT q.* FROM JDT_OPE_QUAL q {JOIN} WHERE q.id = :id AND {VISIBLE}"
+        data = engine_run_query(query, 'jdt', {'id': _quality_entry_id()})
+        if data.empty:
+            abort(404)
         data['unit'] = data['unit'].astype(int)
         data = data.astype(str)
 
@@ -561,14 +683,10 @@ def quality_edit_get():
 
     elif request.args['command'] == 'remove':
 
-        engine = get_engine('jdt')
-        with engine.begin() as cnnx:
-            query = f"""DELETE FROM JDT_OPE_QUAL WHERE id = {request.args["entryID"]}"""
-            cnnx.execute(text(query))
-
-        # deleta todos os arquivos da ocorrencia
-        shutil.rmtree(rf'{APP_PATH}\app\static\uploads\operation\img_nok\{request.args["entryID"]}')
-        shutil.rmtree(rf'{APP_PATH}\app\static\uploads\operation\img_ok\{request.args["entryID"]}')
+        service = _quality_control()
+        entry_id = _quality_entry_id()
+        entry = service.detail(entry_id)
+        service.delete(entry_id, entry['revision'], str(current_user.id))
 
         return redirect('/op/qualidade/edit_select')
 

@@ -263,7 +263,11 @@ def qsb_file():
                     text1 AS CONTENÇÃO_1, text2 AS CONTENÇÃO_2, text3 AS CONTENÇÃO_3, 
                     CONCAT(DAY(openDate), '/', MONTH(openDate), '/', YEAR(openDate)) as DATA_ABERTURA
                 FROM 
-                    JDT_OPE_QUAL"""
+                    JDT_OPE_QUAL q
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM dbo.JDT_OPE_QUAL_CONTROL c
+                    WHERE c.entry_id = CONVERT(VARCHAR(32), q.id) AND c.deleted_at IS NOT NULL
+                )"""
     
     engine = get_engine('jdt')
     with engine.connect() as cnnx:

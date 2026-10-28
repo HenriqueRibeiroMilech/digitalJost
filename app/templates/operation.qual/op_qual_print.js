@@ -46,12 +46,14 @@ function init() {
                 <div class="qual_img_section"></div>`
 
         for (let k = 0; k < entry['Imagens NOK'].length; k++) {
+            var src = (entry['URLs Imagens NOK'] || [])[k] || '/static/uploads/operation/img_nok/' + entry['ID'] + '/' + encodeURIComponent(entry['Imagens NOK'][k])
             document.querySelectorAll('.qual_img_section')[i].innerHTML += `
-                <div class="qual_img_wrap" style="background:rgb(182,21,21)">NOK  <img class="qual_img" src="/static/uploads/operation/img_nok/` + entry['ID'] + `/` + entry['Imagens NOK'][k] + `"/></div>`
+                <div class="qual_img_wrap" style="background:rgb(182,21,21)">NOK  <img class="qual_img" src="` + src + `"/></div>`
         }
         for (let k = 0; k < entry['Imagens OK'].length; k++) {
+            var src = (entry['URLs Imagens OK'] || [])[k] || '/static/uploads/operation/img_ok/' + entry['ID'] + '/' + encodeURIComponent(entry['Imagens OK'][k])
             document.querySelectorAll('.qual_img_section')[i].innerHTML += `
-                <div class="qual_img_wrap" style="background:#228C22">OK <img class="qual_img" src="/static/uploads/operation/img_ok/` + entry['ID'] + `/` + entry['Imagens OK'][k] + `"/></div>`
+                <div class="qual_img_wrap" style="background:#228C22">OK <img class="qual_img" src="` + src + `"/></div>`
         }
 
         document.getElementById('op_qual_body').innerHTML += `

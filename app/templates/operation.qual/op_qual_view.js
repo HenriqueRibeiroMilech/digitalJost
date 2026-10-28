@@ -46,15 +46,15 @@ function init() {
         var acum = 100 / (entry['Imagens NOK'].length + entry['Imagens OK'].length)
 
         for (let k = 0; k < entry['Imagens NOK'].length; k++) {
-            var src = encodeURIComponent(entry['Imagens NOK'][k])
+            var src = (entry['URLs Imagens NOK'] || [])[k] || '/static/uploads/operation/img_nok/' + entry['ID'] + '/' + encodeURIComponent(entry['Imagens NOK'][k])
             document.querySelectorAll('.qual_view_img_section')[i].innerHTML += `
-                <div class="qual_img_wrap" style="background:rgb(182,21,21);max-width:` + acum + `vw;max-height:` + 50 + `vh;">NOK  <img class="qual_view_img" style="max-width:` + (acum - 5) + `vw;max-height:` + 45 + `vh;" src="/static/uploads/operation/img_nok/` + entry['ID'] + `/` + src + `"/></div>`
+                <div class="qual_img_wrap" style="background:rgb(182,21,21);max-width:` + acum + `vw;max-height:` + 50 + `vh;">NOK  <img class="qual_view_img" style="max-width:` + (acum - 5) + `vw;max-height:` + 45 + `vh;" src="` + src + `"/></div>`
         }
 
         for (let k = 0; k < entry['Imagens OK'].length; k++) {
-            var src = encodeURIComponent(entry['Imagens OK'][k])
+            var src = (entry['URLs Imagens OK'] || [])[k] || '/static/uploads/operation/img_ok/' + entry['ID'] + '/' + encodeURIComponent(entry['Imagens OK'][k])
             document.querySelectorAll('.qual_view_img_section')[i].innerHTML += `
-                <div class="qual_img_wrap" style="background:#228C22;max-width:` + acum + `vw;max-height:` + 50 + `vh;">OK <img class="qual_view_img" style="max-width:` + (acum - 5) + `vw;max-height:` + 45 + `vh;" src="/static/uploads/operation/img_ok/` + entry['ID'] + `/` + src + `"/></div>`
+                <div class="qual_img_wrap" style="background:#228C22;max-width:` + acum + `vw;max-height:` + 50 + `vh;">OK <img class="qual_view_img" style="max-width:` + (acum - 5) + `vw;max-height:` + 45 + `vh;" src="` + src + `"/></div>`
         }
     }
 }

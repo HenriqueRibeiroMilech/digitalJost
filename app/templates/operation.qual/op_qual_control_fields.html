@@ -1,0 +1,63 @@
+{% macro entry_field(key, prefix) -%}
+{% set field_id = prefix ~ '-' ~ key %}
+{% if key == 'unit' %}
+    <select id="{{ field_id }}" name="unidade" data-unit aria-label="Unidade JOST" required><option value="0">Caxias do Sul</option><option value="1">Campinas</option></select>
+{% elif key == 'type' %}
+    <select id="{{ field_id }}" name="op_local_ocorr" aria-label="Local da ocorrência" required>{% for option in occurrence_types %}<option>{{ option }}</option>{% endfor %}</select>
+{% elif key == 'typeDesc' %}
+    <div class="qsb-location-field">
+        <select id="{{ field_id }}" name="op_local_info" data-location-select aria-label="Local específico" required><option value="">Selecione um local...</option>{% for option in caxias_locations %}<option>{{ option }}</option>{% endfor %}</select>
+        <input id="{{ field_id }}-free" name="op_local_info" data-location-free aria-label="Local específico" placeholder="Informe o local..." disabled hidden required autocomplete="off">
+        {% if can_manage_locations %}<button type="button" class="qsb-location-add-button" data-create-location aria-label="Cadastrar local específico">+</button>{% endif %}
+    </div>
+{% elif key == 'location_detail' %}
+    <textarea id="{{ field_id }}" name="location_detail" maxlength="500" rows="3" aria-label="Detalhamento do local" placeholder="Ponto, posto ou referência adicional (opcional)..."></textarea>
+{% elif key == 'stop_reason' %}
+    <select id="{{ field_id }}" name="stop_reason" data-stop-field aria-label="Motivo da parada" required><option value="">Selecione...</option>{% for reason in stop_reasons %}<option>{{ reason }}</option>{% endfor %}</select>
+{% elif key == 'stop_time' %}
+    <input id="{{ field_id }}" name="stop_time" data-stop-field type="time" step="60" aria-label="Horário da parada" required>
+{% elif key == 'stop_minutes' %}
+    <input id="{{ field_id }}" name="stop_minutes" data-stop-field type="number" min="0.01" max="9999999999.99" step="0.01" placeholder="Ex.: 42" aria-label="Tempo total de parada em minutos" required>
+    <small class="qsb-field-hint">Total de todas as paradas desta ocorrência, em minutos.</small>
+{% elif key == 'stop_count' %}
+    <input id="{{ field_id }}" name="stop_count" data-stop-field type="number" min="1" max="2147483647" step="1" placeholder="Ex.: 2" aria-label="Quantidade de paradas" required>
+{% elif key == 'workCenter' %}
+    <input id="{{ field_id }}" name="ct" data-workcenter list="{{ prefix }}-workcenters" autocomplete="off" placeholder="Selecione o centro..." aria-label="Centro de trabalho" required>
+    <datalist id="{{ prefix }}-workcenters" data-workcenters>{% for center in workcenters %}<option value="{{ center.Workcenter_Code }}-{{ center.Name }}"></option>{% endfor %}</datalist>
+{% elif key == 'prodCode' %}
+    <input id="{{ field_id }}" name="id_mater" data-product list="{{ prefix }}-products" autocomplete="off" placeholder="Código..." aria-label="Código do produto" required>
+    <datalist id="{{ prefix }}-products" data-products></datalist>
+{% elif key == 'product_description' %}
+    <output id="{{ field_id }}" data-product-description class="qsb-product-description" aria-live="polite">Aguardando código do produto.</output>
+{% elif key == 'prodFamily' %}
+    <input id="{{ field_id }}" name="op_familia" list="{{ prefix }}-families" autocomplete="off" placeholder="Selecione ou digite..." aria-label="Família de produtos" required>
+    <datalist id="{{ prefix }}-families">{% for family in product_families %}<option>{{ family }}</option>{% endfor %}</datalist>
+{% elif key == 'description' %}
+    <textarea id="{{ field_id }}" name="op_problema" rows="4" placeholder="Descreva a não conformidade..." aria-label="Descrição do problema" required></textarea>
+{% elif key == 'repeat' %}
+    <select id="{{ field_id }}" name="op_reincidente" aria-label="Problema reincidente"><option value="0">Não</option><option value="1">Sim</option></select>
+{% elif key in ['text1', 'text2', 'text3'] %}
+    {% set number = {'text1': '1', 'text2': '2', 'text3': '3'}[key] %}
+    {% set question = {'text1': 'O que foi feito?', 'text2': 'Como foi feito?', 'text3': 'Quem fez?'}[key] %}
+    <textarea id="{{ field_id }}" name="op_cont_{{ number }}" rows="4" placeholder="{{ question }}" aria-label="{{ question }}" required></textarea>
+{% elif key in ['imgNOK', 'imgOK'] %}
+    {% set category = 'nok' if key == 'imgNOK' else 'ok' %}
+    <div data-existing-images="{{ category }}" class="qsb-existing-images"></div>
+    <div class="qsb-upload qsb-upload-{{ category }}">
+        <input id="{{ field_id }}" class="qsb-sr-only" name="file_{{ category }}" data-files="{{ category }}" type="file" multiple accept="image/png,image/jpeg,image/gif,image/webp,image/bmp" aria-label="Imagens {{ category|upper }}">
+        <label for="{{ field_id }}"><span class="qsb-upload-icon" aria-hidden="true">+</span><span><strong>Adicionar imagens {{ category|upper }}</strong><small>Até 10 MB por imagem</small></span></label>
+    </div>
+    <ul data-file-previews="{{ category }}" class="qsb-file-previews" aria-label="Imagens {{ category|upper }} selecionadas"></ul>
+    <small data-file-count="{{ category }}" class="qsb-field-hint" aria-live="polite">Nenhuma imagem selecionada.</small>
+{% elif key == 'openDate' %}
+    <input id="{{ field_id }}" name="op_date" type="date" aria-label="Data de abertura" required>
+{% elif key == 'shift' %}
+    <fieldset id="{{ field_id }}" class="qsb-shift-fieldset">
+        <legend class="qsb-sr-only">Turnos da ocorrência</legend>
+        <div class="qsb-shift-options">{% for name, value, label in [('turno1', '1', 'Turno 1'), ('turno2', '2', 'Turno 2'), ('turno3', '3', 'Turno 3'), ('NA', 'NA', 'Não aplicável')] %}<label><input type="checkbox" name="{{ name }}" value="{{ value }}"><span>{{ label }}</span></label>{% endfor %}</div>
+    </fieldset>
+{% elif key == 'publish_qsb' %}
+    <select id="{{ field_id }}" name="publish_qsb" aria-label="Publicar na pirâmide" required><option value="1">Sim</option><option value="0">Não — só no controle</option></select>
+    <small class="qsb-field-hint">A ocorrência é preservada na tabela em ambas as opções.</small>
+{% endif %}
+{%- endmacro %}

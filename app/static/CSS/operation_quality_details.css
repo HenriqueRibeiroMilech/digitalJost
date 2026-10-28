@@ -1,0 +1,12 @@
+.qual_view_event.qsb-has-stop-details { height: auto; min-height: 100vh; overflow: visible; padding-bottom: 12px; }
+.qsb-stop-details { clear: both; margin: 12px; padding: 16px; border: 1px solid #c4d4bd; border-radius: 7px; background: #f8f9e9; color: #315c37; }
+.qsb-stop-details h3 { margin: 0 0 12px; font-size: 16px; font-weight: 700; }
+.qsb-stop-details dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 0; }
+.qsb-stop-details dt { font-size: 11px; font-weight: 600; }
+.qsb-stop-details dd { font-size: 14px; margin: 5px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media print {
+    .qual_view_event.qsb-has-stop-details { min-height: 0; }
+    .qsb-stop-details { break-inside: avoid; margin: 8px; padding: 10px; }
+    .qsb-stop-details dl { grid-template-columns: repeat(3, 1fr); }
+    .qsb-stop-details dd { font-size: 11px; }
+}

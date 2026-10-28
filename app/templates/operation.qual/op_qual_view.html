@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/operation_quality_details.css') }}">
 </head>
 
 <style>
@@ -30,7 +31,9 @@
     </section>
 </body>
 
+<script src="{{ url_for('static', filename='js/operation.quality/stop_details.js') }}"></script>
 <script>
     {% include 'operation.qual/op_qual_view.js' %}
+    window.QsbStopDetails.render(document.querySelectorAll('.qual_view_event'), {{ file|tojson }});
 </script>
 {% endblock %}
