@@ -1,6 +1,6 @@
 # Demandas
 
-**Estado atual:** a arquitetura moderna entrega **Nova solicitação** e **Minhas solicitações**, em `/app/demandas/solicitacoes`, e a análise de solicitações em `/app/demandas/gerenciador`, somente para Transformação Digital (`area_id = 1`). A aba Demandas do novo gerenciador contém apenas uma indicação de entrega futura. O gerenciador antigo continua separado. Código implementado não comprova schema aplicado ou publicação no servidor.
+**Estado atual:** a arquitetura moderna entrega **Nova solicitação** e **Minhas solicitações**, em `/app/demandas/solicitacoes`, e o gerenciador em `/app/demandas/gerenciador`, somente para Transformação Digital (`area_id = 1`). O gerenciador reúne análise de solicitações, quadro por responsável, cadastro direto, avisos e planejamento. O gerenciador antigo continua separado. Código implementado não comprova schema aplicado ou publicação no servidor.
 
 Referência confrontada com rotas, schemas, modelos ORM, armazenamento, Vue, migration e os antigos documentos de [solicitações](../historico/handbook/solicitacoes-demandas.md) e [proposta do gerenciador](../historico/handbook/proposta-gerenciador-demandas.md). O escopo deste arquivo é o módulo moderno; os fluxos antigos são citados para explicar a convivência.
 
@@ -24,7 +24,7 @@ Após criação confirmada, a interface limpa o formulário, gera nova chave, at
 
 ### Análise no gerenciador
 
-O gerenciador abre a aba **Solicitações** por padrão; `?tab=demandas` seleciona o espaço reservado para Demandas e `?request=<id>` abre um detalhe na aba Solicitações. O seletor de abas usa a mesma composição visual de Nova/Minhas solicitações. A listagem tem 12 cards compactos, nome do solicitante, busca por título/número e filtros de tipo e situação. O filtro inicial **Pendentes de análise** inclui `em_analise` e `aguardando_informacoes`; aceitas e recusadas podem ser consultadas pelos filtros.
+O gerenciador abre a aba **Demandas** por padrão; `?tab=solicitacoes` abre a análise e `?request=<id>` abre um detalhe na aba Solicitações. O seletor de abas usa a mesma composição visual de Nova/Minhas solicitações. A listagem de solicitações tem 12 cards compactos, nome do solicitante, busca por título/número e filtros de tipo e situação. O filtro inicial **Pendentes de análise** inclui `em_analise` e `aguardando_informacoes`; aceitas e recusadas podem ser consultadas pelos filtros.
 
 O detalhe reaproveita dados, documentos e histórico e apresenta três decisões:
 
@@ -36,7 +36,32 @@ O detalhe reaproveita dados, documentos e histórico e apresenta três decisões
 
 As decisões só são permitidas em `em_analise` ou `aguardando_informacoes`, sem classificação. Aceitas/recusadas permanecem consultáveis, sem novas decisões. O solicitante pode editar para complementar uma solicitação aguardando informações; salvar devolve o registro para `em_analise` e registra `information_provided`. A gestão de anexos continua fora da edição.
 
-Cada decisão compara `row_version` sob trava, atualiza solicitação e histórico na mesma transação e só retorna após commit. Em conflito, falha de rede ou resultado incerto, o formulário exige recarregar os detalhes antes de outra decisão; não repete a escrita automaticamente. A recarga deve ser conferida no estado/histórico. Nenhum e-mail ou integração de notificação é acionado. O aceite ainda não disponibiliza execução ou acompanhamento na aba Demandas.
+Cada decisão compara `row_version` sob trava, atualiza solicitação e histórico na mesma transação e só retorna após commit. O aceite também cria uma entrada única no quadro de demandas, com uma fotografia dos campos da solicitação e vínculo à origem. Em conflito, falha de rede ou resultado incerto, o formulário exige recarregar os detalhes antes de outra decisão; não repete a escrita automaticamente. A recarga deve ser conferida no estado/histórico. Nenhum e-mail ou integração de notificação é acionado.
+
+### Quadro de demandas e avisos
+
+A aba Demandas usa cards compactos em abas por responsável, com **Avisos** como primeira opção no topo. Por padrão seleciona a pessoa autenticada, quando está nas opções, ou a primeira pessoa disponível. Inclui integrantes ativos da equipe mesmo sem registros e preserva abas de pessoas inativas ou sem cadastro que ainda tenham demandas. Os contadores abrangem todos os registros da respectiva aba; busca e filtro de tipo aplicam-se à lista paginada, não a esses contadores.
+
+`?owner=<id>` seleciona uma pessoa; `?board=avisos` seleciona Avisos; `?work=<id>` abre o detalhe da demanda ou aviso. A busca é literal por título/número, a paginação ocorre no servidor e avisos são excluídos das abas de pessoas. As demandas são ordenadas por prioridade crescente (1 é a mais alta), com prioridade não definida ao fim e desempate pelo ID mais recente.
+
+O botão **Nova demanda ou aviso** solicita o tipo antes de mostrar os campos:
+
+| Tipo | Campos do cadastro |
+|---|---|
+| Projeto / Melhoria | Título, objetivo, responsável, urgência, contribuinte opcional, premissas, problemas atuais, ganhos esperados e documentos opcionais. |
+| Erro | Título, descrição do erro, responsável, urgência, contribuinte opcional e evidências opcionais. |
+| Atividade | Somente título, descrição e responsável. |
+| Aviso | Título, descrição, responsável e datas/horas obrigatórias de início e fim, com fim posterior ao início. |
+
+Responsável segue a mesma elegibilidade do aceite: integrante ativo, não genérico e com perfil Transformação Digital. O contribuinte segue as regras da solicitação pessoal. Título tem limite de 250 unidades UTF-16; descrição, contexto e observações, 4.000. Nos tipos com anexos opcionais, são aceitos zero a dez arquivos, com os mesmos formatos e limites por arquivo/total das solicitações. Atividades e avisos rejeitam anexos e campos exclusivos dos outros tipos.
+
+Datas do aviso são digitadas no horário local do navegador, enviadas com fuso e normalizadas para UTC pelo backend. Todas as datas desta funcionalidade são armazenadas como UTC e exibidas localmente. Os avisos permanecem consultáveis após o fim; esta entrega não os oculta automaticamente nem executa jobs de publicação/encerramento.
+
+O detalhe abre em **Informações**, com conteúdo completo, pessoas, origem, documentos e os campos de planejamento. **Histórico** é a segunda aba, com criação, aceite de origem e campos alterados no planejamento. O planejamento permite dificuldade Baixa/Média/Alta, prioridade inteira de 1 a 10, tempo total, diário e realizado em horas e observações. Tempos aceitam de 0 a 99.999,99, com até duas casas decimais; realizado inicia em zero e pode superar o estimado. Os demais campos de planejamento são opcionais.
+
+Responsável e equipe podem editar o planejamento. Atualmente todos os responsáveis elegíveis pertencem à equipe e o quadro/API exige GENERAL e SYSADMIN; não há concessão de edição a terceiros pelo payload ou pela aba selecionada. A gravação compara a versão sob UPDLOCK/HOLDLOCK e confirma planejamento e histórico juntos. Conflito ou resultado incerto bloqueia nova escrita até recarregar. Avisos exibem suas informações e período sem formulário de planejamento. Edição do conteúdo inicial, reatribuição, tarefas e transições de execução ainda não fazem parte desta entrega.
+
+O cadastro direto começa em `a_fazer`, usa UUID de envio e fingerprint dos dados/arquivos, trava e índice único para evitar duplicidade. Após resposta incerta, mantém dados e arquivos bloqueados e permite confirmar o mesmo envio. Fechar o diálogo ou recarregar perde esse rascunho/chave; conferir o quadro antes de iniciar outro cadastro. Sucesso confirmado atualiza a aba correspondente e não depende de a renovação da listagem também funcionar.
 
 ## 2. Campos e limites
 
@@ -169,6 +194,19 @@ O módulo aplica `Cache-Control: private, no-store` a suas respostas. Downloads 
 
 O POST de análise aceita `action` igual a `accept`, `reject` ou `request_information`. Aceite exige responsável; demanda exige `melhoria` ou `projeto`, enquanto erro rejeita classificação. Recusa e pedido de informações exigem mensagem e rejeitam responsável/classificação; aceite rejeita mensagem. Campos extras são proibidos. Não há DELETE moderno nem operação de execução de demanda. Rótulos futuros em `presentation.ts` não significam operações implementadas.
 
+### API do quadro
+
+Base `/api/v1/demands/work`, com guarda GENERAL, ações `demands.work.read/create/update` mapeadas para SYSADMIN, escopo de área no backend, CSRF nas escritas e respostas privadas sem cache.
+
+| Método e caminho relativo | Contrato |
+|---|---|
+| GET `/board` | Responsáveis e totais, quantidade de avisos, identidade atual e capacidade de criar. |
+| GET `""` | `page`, `per_page`, `view=users/notices`, `owner_id`, `search`, `kind=todos/projeto/melhoria/erro/atividade`; lista paginada. |
+| POST `""` | Multipart com `payload` (`WorkCreate`) e `files` opcionais; detalhe e HTTP 201 após commit. Não aceita campos de planejamento ou status arbitrário. |
+| GET `/<work_id>` | Campos completos, versão, `can_update`, anexos e histórico. |
+| PUT `/<work_id>/planning` | Campos completos de `WorkPlan`, incluindo `row_version` e tempo realizado; atualiza somente planejamento, sem trocar responsável, tipo, origem ou conteúdo inicial. |
+| GET `/<work_id>/attachments/<attachment_id>` | Download autorizado do arquivo direto ou da solicitação de origem, sem expor caminho/chave privada. |
+
 ## 5. Arquivos, transações e dados
 
 Anexos ficam em `<instance_path>/modern_demand_attachments/`, fora dos assets públicos. O nome de download é saneado; o armazenamento usa chave aleatória, sem incorporar nome ou caminho enviado. O download autoriza a demanda, confere o vínculo do anexo e valida chave, contenção de caminho e ausência de link simbólico no arquivo.
@@ -190,6 +228,9 @@ Se `save()` falhar com erro de filesystem, tenta remover apenas os arquivos novo
 | `DJ_DEMANDS` | Solicitação, participantes, responsável, classificação, estado, datas, ROWVERSION, chave e fingerprint do envio. |
 | `DJ_DEMAND_ATTACHMENTS` | Metadados, tamanho, SHA-256 e chave privada dos arquivos. |
 | `DJ_DEMAND_HISTORY` | Criação, edição e decisões (`accepted`, `rejected`, `information_requested`, `information_provided`); autor, data, mudanças e mensagens em JSON. |
+| `DJ_DEMAND_WORK` | Cadastros diretos e fotografia de solicitações aceitas, responsável, planejamento, período de avisos, versão e idempotência. |
+| `DJ_DEMAND_WORK_HISTORY` | Criação, aceite de origem e mudanças do planejamento, com autor/data e valores anteriores/posteriores em JSON. A API expõe nomes dos campos alterados, sem devolver o JSON completo. |
+| `DJ_DEMAND_WORK_ATTACHMENTS` | Metadados de anexos do cadastro direto. Entradas originadas em solicitação leem os documentos originais, sem copiar/mover arquivos. |
 | `JDT_USER_DETAILS` | Consulta compartilhada de nomes e colaboradores; não substitui as tabelas modernas. |
 
 O [script de criação](../../database/migrations/20261019_create_dj_demands.sql) prevê IDENTITY, índices, FKs dos anexos/histórico e unicidade de `(area_id, requester_id, submission_key)`. É sujeito a revisão/aplicação explícita; esta documentação não comprova sua execução. A API depende desses objetos e não aplica o script automaticamente.
@@ -198,13 +239,15 @@ O [script de responsável](../../database/migrations/20261029_add_demand_respons
 
 Executar esse script integralmente no SSMS/sqlcmd, na mesma conexão. O `GO` entre a criação da coluna e o CHECK separa a compilação dos lotes e evita o erro 207 (`Invalid column name 'responsible_id'`); a transação continua até o COMMIT. As verificações de existência permitem repetir o script quando a coluna ou a constraint já existem. `GO` é um separador do cliente, não uma instrução para enviar diretamente por ODBC.
 
+O [script do quadro](../../database/migrations/20261029_create_demand_work.sql), também proposto e não executado pelo agente, cria as três tabelas de trabalho e seus índices/checks. Requer os dois scripts anteriores e aplicação antes de publicar esta versão: o aceite passa a depender da tabela de trabalho. Execute uma vez, integralmente, na mesma conexão do SSMS/sqlcmd, em janela com cadastros e aceites interrompidos. Além do DDL, o script inclui no quadro as solicitações **modernas** já aceitas (`a_fazer`, responsável definido e tipo/classificação elegível), com histórico inicial. Não importa dados legados. Revisar esse preenchimento junto com o schema; o código não aplica o script nem executa preenchimento automático no startup.
+
 A migration inclui checks de área positiva, participantes, entrada/classificação, texto obrigatório, urgência e detalhes de demanda. Anexos/histórico possuem FK para a solicitação **sem cascade de exclusão**. IDs de usuário são referências lógicas ao cadastro compartilhado: nenhuma FK foi presumida sem confirmar tipo/chave reais. Não substituir IDENTITY por `MAX(id) + 1`.
 
 A coluna `classification` permite `melhoria`, `projeto` ou `atividade` para entrada demanda; a análise implementada utiliza somente `melhoria` e `projeto`. Erro permanece sem classificação. `status` tem default `em_analise` e check de texto não vazio; as transições da análise são controladas pelo backend, com autorização, concorrência e histórico.
 
 ## 6. Onde alterar e publicar
 
-- [Backend](../../backend/modules/demands/): operações, permissões e auxiliares ORM em `routes.py`, contratos em `schemas.py`, mapeamentos em `models.py` e armazenamento/limites dos anexos em `storage.py`. Os erros usam o `ApiProblem` compartilhado.
+- [Backend](../../backend/modules/demands/): solicitações/análise em `routes.py`; quadro, cadastro direto e planejamento em `work_routes.py`; contratos em `schemas.py`, mapeamentos em `models.py` e armazenamento/limites dos anexos em `storage.py`. Os erros usam o `ApiProblem` compartilhado. Ambos os blueprints são registrados explicitamente em `backend/modules/__init__.py`.
 - [Frontend](../../frontend/src/features/demands/): página, formulário, detalhe, cards, tipos e cliente HTTP.
 - [Inicialização do backend](../../backend/__init__.py): prepara o armazenamento; as rotas o utilizam na criação e no download. A factory ORM reutiliza o engine moderno do TD.
 
@@ -222,7 +265,7 @@ Publicação inicial: revisar/aplicar o script autorizado antes de usar a API; c
 
 ## 7. Limites e verificações pendentes
 
-Ainda não estão implementados no gerenciador moderno: execução e acompanhamento de atividades/projetos, reatribuição, indicadores, notificações e migração das demandas antigas. A análise já registra aceite, classificação, responsável, recusa e pedido de informações. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias e decisões pendentes; não deve ser tratada como funcionalidade pronta ou schema aprovado.
+Ainda não estão implementados no gerenciador moderno: transições de execução, tarefas, pausas, prazos de entrega, reatribuição, indicadores, notificações e migração das demandas antigas. A análise registra as decisões e a aba Demandas oferece cadastro direto, avisos, planejamento e horas realizadas informadas manualmente. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias e decisões pendentes; não deve ser tratada como funcionalidade pronta ou schema aprovado.
 
 ### O que permanece da proposta e o que mudou
 
@@ -246,6 +289,9 @@ Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demand
 | Criação repetida | Mesmo envio simultâneo, mesmo envio após timeout, chave reutilizada com dados/ordem de arquivos alterados. |
 | Edição | Versão antiga, registro já analisado/classificado, contribuinte tentando editar, mudança para erro e histórico. |
 | Análise | GENERAL sem SYSADMIN; escopo da área e download da equipe; responsável inativo/genérico/sem perfil; classificação em demanda/erro; justificativas vazias/excessivas; decisões concorrentes e repetidas; complemento retornando a análise. |
+| Quadro | Abas por pessoa e Avisos, busca/paginação, proprietário inativo com registros, origem única por aceite, preenchimento das solicitações modernas já aceitas e isolamento do legado. |
+| Cadastro direto | Cinco tipos, campos obrigatórios/exclusivos, responsável/contribuinte elegíveis, anexos opcionais, fuso e intervalo do aviso, envio repetido e resultado incerto. |
+| Planejamento | Horas decimais/negativas/excessivas, prioridade e dificuldade inválidas, observações UTF-16, versão antiga, edição da equipe, histórico transacional e aviso sem planejamento. |
 | Arquivos | Zero/11 arquivos, vazio, limites exatos, nome/caminho malicioso, extensão rejeitada e arquivo privado ausente. |
 | Falhas | Erro ao salvar arquivo, inserir metadados, montar resposta e confirmar transação; conferir SQL e arquivos juntos. |
 | Interface | Rascunho entre seções, envio incerto bloqueado, foco, URL do detalhe, volta da página e sucesso com falha de renovação. |

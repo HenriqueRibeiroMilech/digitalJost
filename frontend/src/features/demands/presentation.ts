@@ -1,3 +1,5 @@
+import type { WorkKind } from './types'
+
 export const entryOptions = [
   { value: 'demanda', label: 'Solicitar demanda' },
   { value: 'erro', label: 'Reportar erro' },
@@ -27,6 +29,25 @@ const historyLabels: Record<string, string> = {
   information_provided: 'Informações complementadas pelo solicitante',
 }
 export function historyLabel(event: string) { return historyLabels[event] ?? 'Atualização registrada' }
+
+export const workKindOptions: { value: WorkKind; label: string; icon: string }[] = [
+  { value: 'projeto', label: 'Projeto', icon: 'pi pi-briefcase' },
+  { value: 'melhoria', label: 'Melhoria', icon: 'pi pi-lightbulb' },
+  { value: 'erro', label: 'Erro', icon: 'pi pi-exclamation-triangle' },
+  { value: 'atividade', label: 'Atividade', icon: 'pi pi-check-square' },
+  { value: 'aviso', label: 'Aviso', icon: 'pi pi-megaphone' },
+]
+export function workKind(kind: string) {
+  return workKindOptions.find(option => option.value === kind)
+    ?? { value: 'atividade', label: 'Atividade', icon: 'pi pi-check-square' }
+}
+export const planningLabels: Record<string, string> = {
+  difficulty: 'Dificuldade', priority: 'Prioridade', estimated_hours: 'Tempo total (h)',
+  daily_hours: 'Tempo diário (h)', completed_hours: 'Tempo total realizado (h)', observations: 'Observações',
+}
+export function displayHours(value: number | null) {
+  return value === null ? 'Não informado' : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(value) + ' h'
+}
 
 export function displayDate(value: string) {
   // As tabelas modernas desta feature armazenam UTC; o portal exibe a hora local.

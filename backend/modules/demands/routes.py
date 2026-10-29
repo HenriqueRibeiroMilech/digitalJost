@@ -13,7 +13,7 @@ from backend.shared.http import ApiProblem, action_access, api_error, configure_
 from backend.shared.identity import RolePermissions
 from backend.shared.vue_shell import render_vue_shell
 
-from .models import Demand, DemandAttachment, DemandHistory, SharedUser
+from .models import Demand, DemandAttachment, DemandHistory, SharedUser, WorkHistory, WorkItem
 from .schemas import (
     ContributorsOut, ManagementQuery, RequestCreate, RequestDetail, RequestList,
     RequestQuery, RequestReview, RequestUpdate,
@@ -270,6 +270,20 @@ def review_request(demand_id, json_data):
         ).values(**values, updated_at=func.sysutcdatetime()).returning(Demand.id))
         if updated_id is None:
             raise ApiProblem(409, "A solicitação mudou. Recarregue os detalhes antes de decidir novamente.")
+        if json_data.action == "accept":
+            # Aceite e entrada no quadro são confirmados juntos; a origem é única.
+            work = WorkItem(
+                area_id=AREA_ID, source_request_id=demand_id,
+                kind="erro" if current["entry_kind"] == "erro" else json_data.classification,
+                responsible_id=json_data.responsible_id, requester_id=current["requester_id"],
+                contributor_id=current["contributor_id"], title=current["title"], description=current["description"],
+                urgency=current["urgency"], assumptions=current["assumptions"],
+                current_problems=current["current_problems"], expected_benefits=current["expected_benefits"],
+                created_by=actor_id,
+            )
+            session.add(work)
+            session.flush()
+            session.add(WorkHistory(work_id=work.id, actor_id=actor_id, event_type="request_accepted"))
         changes = {field: {"before": current[field], "after": value} for field, value in values.items()}
         if json_data.message:
             changes["message"] = json_data.message

@@ -61,3 +61,72 @@ export interface ReviewFields {
   classification: 'melhoria' | 'projeto' | null
   message: string | null
 }
+
+export type WorkKind = 'projeto' | 'melhoria' | 'erro' | 'atividade' | 'aviso'
+
+export interface WorkCreate {
+  kind: WorkKind
+  title: string
+  description: string
+  responsible_id: string
+  contributor_id: string | null
+  urgency: RequestFields['urgency'] | null
+  assumptions: string | null
+  current_problems: string | null
+  expected_benefits: string | null
+  starts_at: string | null
+  ends_at: string | null
+  submission_key: string
+}
+
+export interface WorkPlanning {
+  difficulty: 'Baixa' | 'Média' | 'Alta' | null
+  priority: number | null
+  estimated_hours: number | null
+  daily_hours: number | null
+  completed_hours: number
+  observations: string | null
+}
+
+export interface WorkItem extends WorkPlanning {
+  id: number
+  source_request_id: number | null
+  kind: WorkKind
+  title: string
+  description: string
+  responsible_id: string
+  responsible_name: string | null
+  requester_name: string | null
+  contributor_name: string | null
+  urgency: string | null
+  assumptions: string | null
+  current_problems: string | null
+  expected_benefits: string | null
+  starts_at: string | null
+  ends_at: string | null
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkDetail extends WorkItem {
+  row_version: string
+  can_update: boolean
+  attachments: RequestDetail['attachments']
+  history: { id: number; event_type: string; actor_name: string | null; created_at: string; fields: string[] }[]
+}
+
+export interface WorkBoard {
+  owners: { id: string; name: string; total: number }[]
+  notice_total: number
+  actor_id: string
+  can_create: boolean
+}
+
+export interface WorkFilters {
+  view: 'users' | 'notices'
+  owner_id: string | null
+  search: string
+  kind: 'todos' | Exclude<WorkKind, 'aviso'>
+}
+export type WorkList = PaginatedResponse<WorkItem, { can_create: boolean }>

@@ -15,13 +15,14 @@ import Select from '@/volt/Select.vue'
 import Message from '@/volt/Message.vue'
 import RequestCard from '../components/RequestCard.vue'
 import RequestDetail from '../components/RequestDetail.vue'
+import DemandBoard from '../components/DemandBoard.vue'
 import { demandsApi } from '../api'
 import type { ManagementFilters } from '../types'
 
 const route = useRoute()
 const router = useRouter()
 const client = useQueryClient()
-const tab = computed(() => route.query.tab === 'demandas' && !route.query.request ? 'demandas' : 'solicitacoes')
+const tab = computed(() => route.query.request || route.query.tab === 'solicitacoes' ? 'solicitacoes' : 'demandas')
 const busy = ref(false)
 const feedback = ref('')
 const pageElement = ref<HTMLElement | null>(null)
@@ -57,7 +58,7 @@ onBeforeRouteUpdate(() => !busy.value)
 function changeTab(value: 'demandas' | 'solicitacoes') {
   if (busy.value) return
   feedback.value = ''
-  void router.replace({ query: { ...route.query, tab: value, request: undefined } })
+  void router.replace({ query: { ...route.query, tab: value, request: undefined, work: undefined } })
 }
 function applyFilters() {
   resetPage()
@@ -71,6 +72,7 @@ function reviewed() {
   feedback.value = 'Decisão registrada. O resultado está disponível nos detalhes e no histórico da solicitação.'
   void client.invalidateQueries({ queryKey: ['demands', 'management', 'list'] })
   void client.invalidateQueries({ queryKey: ['demands', 'list'] })
+  void client.invalidateQueries({ queryKey: ['demands', 'work'] })
 }
 async function detailClosed() {
   const previous = selectedId.value
@@ -86,7 +88,7 @@ async function detailClosed() {
 <template>
   <section ref="pageElement" tabindex="-1" aria-labelledby="management-title">
     <PageHeader id="management-title" title="Gerenciador de demandas" eyebrow="Transformação Digital" icon="pi pi-briefcase"
-      description="Analise as solicitações recebidas e defina os próximos passos com a equipe." />
+      description="Organize as demandas da equipe, consulte avisos e analise as solicitações recebidas." />
     <nav aria-label="Áreas do gerenciador" class="mb-6 flex flex-wrap gap-2 rounded-2xl border border-dj-border bg-dj-surface p-2">
       <Button type="button" label="Demandas" icon="pi pi-briefcase" :outlined="tab !== 'demandas'" :disabled="busy"
         :aria-current="tab === 'demandas' ? 'page' : undefined" aria-controls="management-demands"
@@ -96,12 +98,7 @@ async function detailClosed() {
         pt:root:class="rounded-xl px-5 py-3" @click="changeTab('solicitacoes')" />
     </nav>
     <Message v-if="feedback" severity="success" role="status" aria-live="polite" class="mb-5">{{ feedback }}</Message>
-    <section v-if="tab === 'demandas'" id="management-demands" aria-label="Demandas"
-      class="rounded-dj-card border border-dashed border-dj-border bg-dj-surface px-6 py-14 text-center">
-      <i class="pi pi-briefcase text-2xl text-dj-brand" aria-hidden="true" />
-      <h2 class="mt-4 text-lg font-semibold text-dj-ink">Demandas</h2>
-      <p class="mt-2 text-sm leading-6 text-dj-muted">O acompanhamento das demandas será disponibilizado em uma próxima etapa.</p>
-    </section>
+    <DemandBoard v-if="tab === 'demandas'" id="management-demands" @busy="busy = $event" />
     <section v-else id="management-requests" aria-label="Solicitações recebidas">
       <form role="search" aria-label="Filtrar solicitações recebidas" @submit.prevent="applyFilters"
         class="dj-filter-panel mb-5 grid items-end gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,13rem)_minmax(12rem,16rem)_auto]">

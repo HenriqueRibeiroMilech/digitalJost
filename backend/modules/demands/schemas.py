@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
@@ -154,3 +155,165 @@ class ContributorOut(BaseModel):
 
 class ContributorsOut(BaseModel):
     items: list[ContributorOut]
+
+
+WorkKind = Literal["projeto", "melhoria", "erro", "atividade", "aviso"]
+
+
+class WorkCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+
+    kind: WorkKind
+    title: str = Field(min_length=1, max_length=250)
+    description: str = Field(min_length=1, max_length=4000)
+    responsible_id: str = Field(min_length=1, max_length=128)
+    contributor_id: str | None = Field(default=None, max_length=128)
+    urgency: Literal["Alta", "Média", "Baixa"] | None = None
+    assumptions: str | None = Field(default=None, max_length=4000)
+    current_problems: str | None = Field(default=None, max_length=4000)
+    expected_benefits: str | None = Field(default=None, max_length=4000)
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+    submission_key: str = Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+    @field_validator("title", "description", "responsible_id", "contributor_id", "assumptions", "current_problems", "expected_benefits")
+    @classmethod
+    def validate_text(cls, value, info: ValidationInfo):
+        return RequestFields.validate_text(value, info)
+
+    @field_validator("starts_at", "ends_at", mode="before")
+    @classmethod
+    def parse_notice_time(cls, value):
+        if value is None:
+            return None
+        if not isinstance(value, str) or len(value) < 20 or value[10] != "T":
+            raise ValueError("Informe a data e hora com fuso horário.")
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError:
+            raise ValueError("Informe uma data e hora válidas.") from None
+        if parsed.tzinfo is None or parsed.microsecond % 1000:
+            raise ValueError("Informe o fuso horário e precisão de até milissegundos.")
+        try:
+            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        except (ValueError, OverflowError):
+            raise ValueError("Informe uma data e hora dentro do intervalo válido.") from None
+
+    @model_validator(mode="after")
+    def validate_kind(self):
+        if self.kind == "aviso":
+            if self.starts_at is None or self.ends_at is None or self.ends_at <= self.starts_at:
+                raise ValueError("Informe início e fim do aviso; o fim deve ser posterior ao início.")
+        elif self.starts_at is not None or self.ends_at is not None:
+            raise ValueError("Datas de início e fim pertencem somente aos avisos.")
+        if self.kind in ("projeto", "melhoria"):
+            if not all((self.assumptions, self.current_problems, self.expected_benefits)):
+                raise ValueError("Preencha premissas, problemas atuais e ganhos esperados.")
+        elif any((self.assumptions, self.current_problems, self.expected_benefits)):
+            raise ValueError("Os campos de contexto pertencem somente a projetos e melhorias.")
+        if self.kind in ("atividade", "aviso"):
+            if self.urgency is not None or self.contributor_id is not None:
+                raise ValueError("Atividade e aviso usam título, descrição e responsável.")
+        elif self.urgency is None:
+            raise ValueError("Informe a urgência da demanda.")
+        return self
+
+
+class WorkPlan(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+
+    row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
+    difficulty: Literal["Baixa", "Média", "Alta"] | None = None
+    priority: int | None = Field(default=None, ge=1, le=10)
+    estimated_hours: float | None = Field(default=None, ge=0, le=99999.99, allow_inf_nan=False)
+    daily_hours: float | None = Field(default=None, ge=0, le=99999.99, allow_inf_nan=False)
+    completed_hours: float = Field(ge=0, le=99999.99, allow_inf_nan=False)
+    observations: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("estimated_hours", "daily_hours", "completed_hours")
+    @classmethod
+    def validate_hours(cls, value):
+        if value is not None and Decimal(str(value)) != Decimal(str(value)).quantize(Decimal("0.01")):
+            raise ValueError("Use até duas casas decimais para as horas.")
+        return value
+
+    @field_validator("observations")
+    @classmethod
+    def validate_text(cls, value, info: ValidationInfo):
+        return RequestFields.validate_text(value, info)
+
+
+class WorkQuery(PaginationQuery):
+    area: Literal["Transformação Digital"] = "Transformação Digital"
+    view: Literal["users", "notices"] = "users"
+    owner_id: str | None = Field(default=None, min_length=1, max_length=128)
+    search: str = Field(default="", max_length=250)
+    kind: Literal["todos", "projeto", "melhoria", "erro", "atividade"] = "todos"
+
+    @field_validator("owner_id", "search")
+    @classmethod
+    def validate_text(cls, value):
+        if value is not None and "\x00" in value:
+            raise ValueError("Informe um filtro válido.")
+        return value.strip() if value is not None else None
+
+
+class WorkOwner(ContributorOut):
+    total: int
+
+
+class WorkBoard(BaseModel):
+    owners: list[WorkOwner]
+    notice_total: int
+    actor_id: str
+    can_create: bool
+
+
+class WorkItemOut(BaseModel):
+    id: int
+    source_request_id: int | None
+    kind: WorkKind
+    title: str
+    description: str
+    responsible_id: str
+    responsible_name: str | None
+    requester_name: str | None
+    contributor_name: str | None
+    urgency: str | None
+    assumptions: str | None
+    current_problems: str | None
+    expected_benefits: str | None
+    starts_at: datetime | None
+    ends_at: datetime | None
+    status: str
+    difficulty: str | None
+    priority: int | None
+    estimated_hours: float | None
+    daily_hours: float | None
+    completed_hours: float
+    observations: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class WorkHistoryOut(BaseModel):
+    id: int
+    event_type: str
+    actor_name: str | None
+    created_at: datetime
+    fields: list[str]
+
+
+class WorkDetail(WorkItemOut):
+    row_version: str
+    can_update: bool
+    attachments: list[AttachmentOut]
+    history: list[WorkHistoryOut]
+
+
+class WorkCapabilities(BaseModel):
+    can_create: bool
+
+
+class WorkList(PaginatedResponse[WorkItemOut, WorkCapabilities]):
+    pass
