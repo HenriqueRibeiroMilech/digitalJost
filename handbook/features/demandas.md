@@ -196,6 +196,8 @@ O [script de criação](../../database/migrations/20261019_create_dj_demands.sql
 
 O [script de responsável](../../database/migrations/20261029_add_demand_responsible.sql) propõe adicionar `responsible_id NVARCHAR(128) NULL`, com check de texto não vazio. Precisa ser revisado/aplicado após a criação das tabelas e antes de publicar esta versão, inclusive para preservar as consultas pessoais que agora leem o responsável. O script não foi executado; não há alteração automática de schema.
 
+Executar esse script integralmente no SSMS/sqlcmd, na mesma conexão. O `GO` entre a criação da coluna e o CHECK separa a compilação dos lotes e evita o erro 207 (`Invalid column name 'responsible_id'`); a transação continua até o COMMIT. As verificações de existência permitem repetir o script quando a coluna ou a constraint já existem. `GO` é um separador do cliente, não uma instrução para enviar diretamente por ODBC.
+
 A migration inclui checks de área positiva, participantes, entrada/classificação, texto obrigatório, urgência e detalhes de demanda. Anexos/histórico possuem FK para a solicitação **sem cascade de exclusão**. IDs de usuário são referências lógicas ao cadastro compartilhado: nenhuma FK foi presumida sem confirmar tipo/chave reais. Não substituir IDENTITY por `MAX(id) + 1`.
 
 A coluna `classification` permite `melhoria`, `projeto` ou `atividade` para entrada demanda; a análise implementada utiliza somente `melhoria` e `projeto`. Erro permanece sem classificação. `status` tem default `em_analise` e check de texto não vazio; as transições da análise são controladas pelo backend, com autorização, concorrência e histórico.
