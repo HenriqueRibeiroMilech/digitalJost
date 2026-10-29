@@ -5,7 +5,7 @@ import Tag from '@/volt/Tag.vue'
 import { displayDate, kindLabel, requestStatus } from '../presentation'
 import type { RequestItem } from '../types'
 
-const props = defineProps<{ request: RequestItem }>()
+const props = defineProps<{ request: RequestItem; management?: boolean }>()
 defineEmits<{ open: [] }>()
 const status = computed(() => requestStatus(props.request.status))
 const urgencyClass = computed(() => props.request.urgency === 'Alta' ? 'bg-dj-danger-soft text-dj-danger'
@@ -48,7 +48,10 @@ const urgencyClass = computed(() => props.request.urgency === 'Alta' ? 'bg-dj-da
         </dd>
       </div>
     </dl>
-    <p v-if="request.relationship === 'contributor'" class="mt-2 truncate text-xs leading-5 text-dj-muted"
+    <p v-if="management" class="mt-2 truncate text-xs leading-5 text-dj-muted" :title="request.requester_name ?? 'Não informado'">
+      Solicitante: {{ request.requester_name ?? 'Não informado' }}
+    </p>
+    <p v-else-if="request.relationship === 'contributor'" class="mt-2 truncate text-xs leading-5 text-dj-muted"
       :title="'Você acompanha como contribuinte. Solicitante: ' + (request.requester_name ?? 'Não informado')">
       Contribuinte · Solicitante: {{ request.requester_name ?? 'Não informado' }}
     </p>

@@ -20,6 +20,7 @@ class SharedUser(Base):
     company_email: Mapped[str] = mapped_column("companyEmail", VARCHAR(50))
     active: Mapped[bool | None] = mapped_column(BIT)
     generic: Mapped[bool | None] = mapped_column(BIT)
+    role: Mapped[str | None] = mapped_column(VARCHAR(100))
 
 
 class Demand(Base):
@@ -30,6 +31,7 @@ class Demand(Base):
     area_id: Mapped[int] = mapped_column(Integer)
     requester_id: Mapped[str] = mapped_column(NVARCHAR(128))
     contributor_id: Mapped[str | None] = mapped_column(NVARCHAR(128))
+    responsible_id: Mapped[str | None] = mapped_column(NVARCHAR(128))
     entry_kind: Mapped[str] = mapped_column(NVARCHAR(10))
     classification: Mapped[str | None] = mapped_column(NVARCHAR(16))
     status: Mapped[str] = mapped_column(NVARCHAR(32), server_default="em_analise")

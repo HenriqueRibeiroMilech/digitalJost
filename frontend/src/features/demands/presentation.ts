@@ -7,6 +7,7 @@ export const fileAccept = '.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.pdf,.png,.jpg,
 
 const statuses: Record<string, { label: string; icon: string; tone: 'brand' | 'success' | 'neutral' }> = {
   em_analise: { label: 'Em análise', icon: 'pi pi-search', tone: 'brand' },
+  aguardando_informacoes: { label: 'Aguardando informações', icon: 'pi pi-comment', tone: 'neutral' },
   a_fazer: { label: 'A fazer', icon: 'pi pi-list', tone: 'brand' },
   em_andamento: { label: 'Em andamento', icon: 'pi pi-play-circle', tone: 'brand' },
   pausado: { label: 'Pausado', icon: 'pi pi-pause-circle', tone: 'neutral' },
@@ -19,6 +20,13 @@ export function requestStatus(status: string) {
 }
 export function statusLabel(status: string) { return requestStatus(status).label }
 export function kindLabel(kind: string) { return kind === 'erro' ? 'Relato de erro' : 'Demanda' }
+
+const historyLabels: Record<string, string> = {
+  created: 'Solicitação enviada', updated: 'Dados atualizados', accepted: 'Solicitação aceita',
+  rejected: 'Solicitação recusada', information_requested: 'Mais informações solicitadas',
+  information_provided: 'Informações complementadas pelo solicitante',
+}
+export function historyLabel(event: string) { return historyLabels[event] ?? 'Atualização registrada' }
 
 export function displayDate(value: string) {
   // As tabelas modernas desta feature armazenam UTC; o portal exibe a hora local.

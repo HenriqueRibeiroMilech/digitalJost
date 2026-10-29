@@ -1,6 +1,6 @@
 import { requestJson } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
-import type { Contributor, RequestDetail, RequestFields, RequestFilters, RequestList } from './types'
+import type { Contributor, ManagementFilters, RequestDetail, RequestFields, RequestFilters, RequestList, ReviewFields } from './types'
 
 const base = '/api/v1/demands'
 
@@ -26,7 +26,23 @@ export const demandsApi = {
   update(id: number, payload: RequestFields & { row_version: string }) {
     return requestJson<RequestDetail>(`${base}/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
   },
-  attachmentUrl(id: number, attachmentId: number) {
-    return `${base}/${id}/attachments/${attachmentId}`
+  managementList(page: number, perPage: number, filters: ManagementFilters) {
+    const query = paginationQuery(page, perPage)
+    query.set('search', filters.search)
+    query.set('entry_kind', filters.entry_kind)
+    query.set('status', filters.status)
+    return requestJson<RequestList>(`${base}/management?${query}`, { cache: 'no-store' })
+  },
+  managementGet(id: number) {
+    return requestJson<RequestDetail>(`${base}/management/${id}`, { cache: 'no-store' })
+  },
+  responsibles() {
+    return requestJson<{ items: Contributor[] }>(`${base}/management/responsibles`, { cache: 'no-store' })
+  },
+  review(id: number, payload: ReviewFields) {
+    return requestJson<RequestDetail>(`${base}/management/${id}/review`, { method: 'POST', body: JSON.stringify(payload) })
+  },
+  attachmentUrl(id: number, attachmentId: number, management = false) {
+    return `${base}${management ? '/management' : ''}/${id}/attachments/${attachmentId}`
   },
 }

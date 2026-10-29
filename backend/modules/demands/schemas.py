@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from backend.shared.schemas import PaginatedResponse, PaginationQuery
 
@@ -26,7 +26,7 @@ class RequestFields(BaseModel):
     def validate_text(cls, value, info: ValidationInfo):
         if value is None:
             return None
-        limit = 250 if info.field_name == "title" else 128 if info.field_name == "contributor_id" else 4000
+        limit = 250 if info.field_name == "title" else 128 if info.field_name in ("contributor_id", "responsible_id") else 4000
         try:
             # O limite de NVARCHAR conta unidades UTF-16; alguns símbolos ocupam duas.
             units = len(value.encode("utf-16-le")) // 2
@@ -68,6 +68,34 @@ class RequestQuery(PaginationQuery):
         return value.strip()
 
 
+class ManagementQuery(RequestQuery):
+    status: Literal["pendentes", "todos", "em_analise", "aguardando_informacoes", "a_fazer", "recusado"] = "pendentes"
+
+
+class RequestReview(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+
+    action: Literal["accept", "reject", "request_information"]
+    row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
+    responsible_id: str | None = Field(default=None, min_length=1, max_length=128)
+    classification: Literal["melhoria", "projeto"] | None = None
+    message: str | None = Field(default=None, min_length=1, max_length=4000)
+
+    @field_validator("responsible_id", "message")
+    @classmethod
+    def validate_text(cls, value, info: ValidationInfo):
+        return RequestFields.validate_text(value, info)
+
+    @model_validator(mode="after")
+    def validate_action_fields(self):
+        if self.action == "accept":
+            if not self.responsible_id or self.message is not None:
+                raise ValueError("Selecione o responsável para aceitar a solicitação.")
+        elif not self.message or self.responsible_id is not None or self.classification is not None:
+            raise ValueError("Informe o motivo sem responsável ou classificação para esta ação.")
+        return self
+
+
 class RequestCapabilities(BaseModel):
     can_create: bool
 
@@ -81,7 +109,7 @@ class RequestItem(BaseModel):
     status: str
     created_at: datetime
     requester_name: str | None
-    relationship: Literal["requester", "contributor"]
+    relationship: Literal["requester", "contributor", "manager"]
 
 
 class AttachmentOut(BaseModel):
@@ -95,17 +123,22 @@ class HistoryOut(BaseModel):
     event_type: str
     actor_name: str | None
     created_at: datetime
+    message: str | None
 
 
 class RequestDetail(RequestItem):
     contributor_id: str | None
     contributor_name: str | None
+    responsible_id: str | None
+    responsible_name: str | None
+    classification: str | None
     assumptions: str | None
     current_problems: str | None
     expected_benefits: str | None
     updated_at: datetime
     row_version: str
     can_update: bool
+    can_review: bool
     attachments: list[AttachmentOut]
     history: list[HistoryOut]
 

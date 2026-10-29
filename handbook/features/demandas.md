@@ -1,6 +1,6 @@
 # Demandas
 
-**Estado atual:** a arquitetura moderna entrega **Nova solicitação** e **Minhas solicitações**, em `/app/demandas/solicitacoes`, somente para Transformação Digital (`area_id = 1`). O gerenciador antigo continua separado. Código implementado não comprova schema aplicado ou publicação no servidor.
+**Estado atual:** a arquitetura moderna entrega **Nova solicitação** e **Minhas solicitações**, em `/app/demandas/solicitacoes`, e a análise de solicitações em `/app/demandas/gerenciador`, somente para Transformação Digital (`area_id = 1`). A aba Demandas do novo gerenciador contém apenas uma indicação de entrega futura. O gerenciador antigo continua separado. Código implementado não comprova schema aplicado ou publicação no servidor.
 
 Referência confrontada com rotas, schemas, modelos ORM, armazenamento, Vue, migration e os antigos documentos de [solicitações](../historico/handbook/solicitacoes-demandas.md) e [proposta do gerenciador](../historico/handbook/proposta-gerenciador-demandas.md). O escopo deste arquivo é o módulo moderno; os fluxos antigos são citados para explicar a convivência.
 
@@ -16,11 +16,27 @@ Solicitações modernas não aparecem no gerenciador antigo: não há importaç�
 
 - Sem seletor, a página abre Nova solicitação. `?tab=minhas` abre a listagem; `?request=<id>` também seleciona Minhas solicitações e tenta abrir o detalhe autorizado.
 - `area`, quando fornecida, deve ser exatamente `Transformação Digital`; outra área recebe 400. O backend usa `AREA_ID = 1`, sem confiar em um ID de área recebido no payload.
-- A navegação moderna tem Eventos, Solicitações e retorno ao portal. O link **Consultar solicitações anteriores** aponta para `/demandas/solicitacoes?area=Transformação%20Digital&tab=minhas` no legado.
+- A navegação moderna tem Eventos, Solicitações, Gerenciador e retorno ao portal. O gerenciador exige permissão própria, inclusive ao navegar pelo Vue. O link **Consultar solicitações anteriores** aponta para `/demandas/solicitacoes?area=Transformação%20Digital&tab=minhas` no legado.
 - O formulário permanece montado ao trocar Nova/Minhas, preservando o rascunho na mesma página. Recarregar ou sair não persiste rascunho, arquivos ou chave de envio.
 - Durante gravação, a página bloqueia troca de seção/rota interna; o diálogo bloqueia fechamento enquanto salva. Isso não impede fechamento do navegador nem prova cancelamento no servidor.
 
 Após criação confirmada, a interface limpa o formulário, gera nova chave, atualiza cache/listagem, limpa filtros e mostra Minhas solicitações com mensagem de sucesso. Falha de listagem posterior não autoriza repetir a criação.
+
+### Análise no gerenciador
+
+O gerenciador abre a aba **Solicitações** por padrão; `?tab=demandas` seleciona o espaço reservado para Demandas e `?request=<id>` abre um detalhe na aba Solicitações. O seletor de abas usa a mesma composição visual de Nova/Minhas solicitações. A listagem tem 12 cards compactos, nome do solicitante, busca por título/número e filtros de tipo e situação. O filtro inicial **Pendentes de análise** inclui `em_analise` e `aguardando_informacoes`; aceitas e recusadas podem ser consultadas pelos filtros.
+
+O detalhe reaproveita dados, documentos e histórico e apresenta três decisões:
+
+| Ação | Dados obrigatórios e resultado |
+|---|---|
+| Aceitar | Responsável ativo e não genérico com perfil JSON `Transformação Digital`; para demanda, classificação `melhoria` ou `projeto`. Erro mantém classificação NULL. Grava `responsible_id` e status `a_fazer`. |
+| Recusar | Motivo de até 4.000 unidades UTF-16, visível no histórico; status `recusado`. |
+| Solicitar mais informações | Mensagem obrigatória com o mesmo limite, visível no histórico; status `aguardando_informacoes`. |
+
+As decisões só são permitidas em `em_analise` ou `aguardando_informacoes`, sem classificação. Aceitas/recusadas permanecem consultáveis, sem novas decisões. O solicitante pode editar para complementar uma solicitação aguardando informações; salvar devolve o registro para `em_analise` e registra `information_provided`. A gestão de anexos continua fora da edição.
+
+Cada decisão compara `row_version` sob trava, atualiza solicitação e histórico na mesma transação e só retorna após commit. Em conflito, falha de rede ou resultado incerto, o formulário exige recarregar os detalhes antes de outra decisão; não repete a escrita automaticamente. A recarga deve ser conferida no estado/histórico. Nenhum e-mail ou integração de notificação é acionado. O aceite ainda não disponibiliza execução ou acompanhamento na aba Demandas.
 
 ## 2. Campos e limites
 
@@ -68,7 +84,7 @@ Para erro, `assumptions`, `current_problems` e `expected_benefits` são normaliz
 
 Todas as rotas exigem sessão e GENERAL. As ações `demands.read/create/update` ficam em `routes.py`; o backend restringe registros à área e ao vínculo de solicitante/contribuinte. Recurso inacessível retorna 404. Escritas exigem o CSRF compartilhado.
 
-Somente o solicitante edita, enquanto o registro está em análise e sem classificação. O contribuinte consulta e baixa anexos. A edição revalida vínculo, estado e classificação sob trava e compara `row_version`; conflito retorna 409. Histórico e alteração usam a mesma transação. A edição preserva os anexos existentes; gestão posterior de arquivos não está implementada.
+Somente o solicitante edita, enquanto o registro está em análise ou aguardando informações e sem classificação. O contribuinte consulta e baixa anexos. A edição revalida vínculo, estado e classificação sob trava e compara `row_version`; conflito retorna 409. Histórico e alteração usam a mesma transação. A edição preserva os anexos existentes; gestão posterior de arquivos não está implementada.
 
 Na criação, `submission_key` e fingerprint do conteúdo/arquivos permitem reconhecer repetições: mesma chave/conteúdo devolve o registro; conteúdo diferente retorna 409. A verificação é serializada e depende da restrição única no banco. O browser conserva o mesmo envio após falha, sem repetição automática. Depois de abandonar ou recarregar o formulário, conferir a lista antes de iniciar outro cadastro: a chave não é persistida no navegador.
 
@@ -78,12 +94,13 @@ Uma falha na renovação da lista não desfaz a gravação. Resultado incerto ex
 
 | Pessoa/contexto | Listar/detalhar/baixar | Editar |
 |---|---|---|
-| Solicitante, área atendida e GENERAL | Sim. | Se `em_analise`, classificação NULL, ação e versão válidas. |
+| Solicitante, área atendida e GENERAL | Sim. | Se `em_analise` ou `aguardando_informacoes`, classificação NULL, ação e versão válidas. |
 | Contribuinte, área atendida e GENERAL | Sim. | Não; tentativa de edição retorna 404. |
 | Outro usuário com GENERAL | Não vê o registro; detalhe/anexo retorna 404. | Não. |
+| Equipe com GENERAL e SYSADMIN | Nas rotas `/management`, consulta todas as solicitações da área, documentos e histórico. | Decide pela ação `demands.review`; não ganha edição do conteúdo alheio. |
 | Sem sessão / sem GENERAL | 401 / 403 na API. | Negado antes da operação. |
 
-As três ações são mapeadas para GENERAL, mas esse perfil sozinho não concede acesso a todas as solicitações. O filtro ORM inclui área e `(requester_id = actor_id OR contributor_id = actor_id)`. Não existe exceção administrativa global nesse módulo. Alterar o contribuinte pode retirar o acesso da pessoa anterior; a rota revalida a elegibilidade da pessoa selecionada ao salvar.
+As ações pessoais são mapeadas para GENERAL, mas esse perfil sozinho não concede acesso a todas as solicitações. O filtro ORM inclui área e `(requester_id = actor_id OR contributor_id = actor_id)`. As ações `demands.management.read` e `demands.review` exigem SYSADMIN, que corresponde ao perfil existente `Transformação Digital`, sem consultar o campo textual `admin`. O escopo ampliado só é aplicado pelas rotas de gerenciamento, incluindo o download próprio; as rotas pessoais preservam o vínculo. Alterar o contribuinte pode retirar o acesso da pessoa anterior; a rota revalida a elegibilidade da pessoa selecionada ao salvar.
 
 A lista de contribuintes consulta `JDT_USER_DETAILS`: `active = 1`, `generic = 0`, ID diferente do solicitante, nome não nulo e e-mail corporativo não vazio. Não cria usuários, envia convites ou consulta LDAP. A mesma condição é aplicada na gravação; não confiar apenas nas opções do Select. Se o colaborador antigo deixar de ser elegível, a interface ainda pode mostrá-lo como atual, mas o backend exige uma escolha válida ou sua remoção.
 
@@ -110,7 +127,7 @@ O frontend mantém chave e conteúdo após falha de envio. Em rede/timeout, 5xx 
 
 A rota abre transação ORM, lê a solicitação visível com UPDLOCK/HOLDLOCK, exige vínculo de solicitante e confere status/classificação. O UPDATE repete essas condições e compara a versão recebida. Se nenhuma linha for atualizada, retorna 409 para reabrir os dados; não sobrescreve deliberadamente outra edição. `row_version` é mapeada como `ROWVERSION` gerada pelo banco; a resposta continua usando hexadecimal.
 
-Os campos são comparados com a linha atual. Se houver mudanças, grava evento `updated` com valores anteriores/posteriores em JSON na mesma transação. Na criação, grava `created`. Um PUT sem mudança de conteúdo pode atualizar data/ROWVERSION sem gerar evento de mudança. O campo `history` do detalhe expõe evento, autor e data; os valores de `changes` ficam no banco e não são devolvidos/exibidos no detalhe atual.
+Os campos são comparados com a linha atual. Se houver mudanças, grava evento `updated` com valores anteriores/posteriores em JSON na mesma transação. Complementar um registro aguardando informações grava `information_provided`, incluindo a volta a `em_analise`. Na criação, grava `created`. Um PUT sem mudança de conteúdo em análise pode atualizar data/ROWVERSION sem gerar evento de mudança. O campo `history` do detalhe expõe evento, autor, data e a mensagem da análise quando presente; os demais valores de `changes` ficam no banco.
 
 A capacidade `can_update` orienta o botão, mas é recalculada e não substitui as condições na escrita. Não há inclusão, troca ou exclusão de anexos pelo PUT.
 
@@ -126,6 +143,11 @@ Base `/api/v1/demands`; IDs são inteiros nas rotas Flask. `area`, quando inform
 | GET `/<demand_id>` | Detalhe, anexos, histórico, versão e `can_update`. |
 | PUT `/<demand_id>` | JSON completo de `RequestUpdate`; detalhe após commit. |
 | GET `/<demand_id>/attachments/<attachment_id>` | Download autorizado, privado, sem cache e com `nosniff`. |
+| GET `/management` | Lista da área para a equipe; filtros pessoais mais `status`: `pendentes` (padrão), `todos`, `em_analise`, `aguardando_informacoes`, `a_fazer` ou `recusado`. |
+| GET `/management/responsibles` | IDs/nomes de pessoas ativas, não genéricas e com perfil da equipe; mesma elegibilidade validada no aceite. |
+| GET `/management/<demand_id>` | Detalhe da área autorizado para a equipe, com `can_review`; `can_update` é falso nesse contexto. |
+| POST `/management/<demand_id>/review` | JSON com `action`, `row_version`, `responsible_id`, `classification` e `message`; detalhe após commit. |
+| GET `/management/<demand_id>/attachments/<attachment_id>` | Download da equipe, com os mesmos controles de arquivo e vínculo anexo/solicitação. |
 
 Erros seguem `{message, detail}`: campos inválidos 422, conflito 409, tamanho HTTP 413 e armazenamento indisponível 503. A área e o limite de request são conferidos antes do parsing do formulário.
 
@@ -137,15 +159,15 @@ O POST aceita somente a chave de formulário `payload` e a chave de arquivos `fi
 
 | Resposta | Conteúdo público |
 |---|---|
-| Lista | ID, entrada, título, descrição, urgência, status, data, nome do solicitante e relação (`requester`/`contributor`), paginação e capacidade de criar. |
-| Detalhe | Campos da lista, contribuinte, campos de contexto, atualização, versão, `can_update`, anexos e histórico. |
+| Lista | ID, entrada, título, descrição, urgência, status, data, nome do solicitante e relação (`requester`/`contributor`/`manager`), paginação e capacidade de criar (falsa no gerenciador). |
+| Detalhe | Campos da lista, contribuinte, responsável, classificação, campos de contexto, atualização, versão, `can_update`, `can_review`, anexos e histórico. |
 | Anexo no detalhe | Somente ID, nome e tamanho; sem caminho/chave privada ou digest. |
-| Histórico no detalhe | ID, tipo do evento, nome do autor e data. |
+| Histórico no detalhe | ID, tipo do evento, nome do autor, data e mensagem opcional da análise. |
 | Contribuintes | `{items: [{id, name}]}`, sem e-mail/cadastro completo. |
 
 O módulo aplica `Cache-Control: private, no-store` a suas respostas. Downloads são links autenticados para a rota de anexo; o servidor responde como `application/octet-stream`, attachment, sem resposta condicional e com `X-Content-Type-Options: nosniff`. Não servir o armazenamento por uma URL estática.
 
-Não há DELETE moderno, endpoint de classificação, transição ou execução de demanda. Rótulos futuros em `presentation.ts` não significam operações implementadas.
+O POST de análise aceita `action` igual a `accept`, `reject` ou `request_information`. Aceite exige responsável; demanda exige `melhoria` ou `projeto`, enquanto erro rejeita classificação. Recusa e pedido de informações exigem mensagem e rejeitam responsável/classificação; aceite rejeita mensagem. Campos extras são proibidos. Não há DELETE moderno nem operação de execução de demanda. Rótulos futuros em `presentation.ts` não significam operações implementadas.
 
 ## 5. Arquivos, transações e dados
 
@@ -165,16 +187,18 @@ Se `save()` falhar com erro de filesystem, tenta remover apenas os arquivos novo
 
 | Fonte | Responsabilidade |
 |---|---|
-| `DJ_DEMANDS` | Solicitação, participantes, estado, datas, ROWVERSION, chave e fingerprint do envio. |
+| `DJ_DEMANDS` | Solicitação, participantes, responsável, classificação, estado, datas, ROWVERSION, chave e fingerprint do envio. |
 | `DJ_DEMAND_ATTACHMENTS` | Metadados, tamanho, SHA-256 e chave privada dos arquivos. |
-| `DJ_DEMAND_HISTORY` | Criação e edição; autor, data e mudanças em JSON. |
+| `DJ_DEMAND_HISTORY` | Criação, edição e decisões (`accepted`, `rejected`, `information_requested`, `information_provided`); autor, data, mudanças e mensagens em JSON. |
 | `JDT_USER_DETAILS` | Consulta compartilhada de nomes e colaboradores; não substitui as tabelas modernas. |
 
 O [script de criação](../../database/migrations/20261019_create_dj_demands.sql) prevê IDENTITY, índices, FKs dos anexos/histórico e unicidade de `(area_id, requester_id, submission_key)`. É sujeito a revisão/aplicação explícita; esta documentação não comprova sua execução. A API depende desses objetos e não aplica o script automaticamente.
 
+O [script de responsável](../../database/migrations/20261029_add_demand_responsible.sql) propõe adicionar `responsible_id NVARCHAR(128) NULL`, com check de texto não vazio. Precisa ser revisado/aplicado após a criação das tabelas e antes de publicar esta versão, inclusive para preservar as consultas pessoais que agora leem o responsável. O script não foi executado; não há alteração automática de schema.
+
 A migration inclui checks de área positiva, participantes, entrada/classificação, texto obrigatório, urgência e detalhes de demanda. Anexos/histórico possuem FK para a solicitação **sem cascade de exclusão**. IDs de usuário são referências lógicas ao cadastro compartilhado: nenhuma FK foi presumida sem confirmar tipo/chave reais. Não substituir IDENTITY por `MAX(id) + 1`.
 
-A coluna `classification` permite futuramente `melhoria`, `projeto` ou `atividade` para entrada demanda, mas não há operação que a preencha nesta etapa. `status` tem default `em_analise` e check de texto não vazio; a tabela não define sozinha uma máquina completa de estados. Novas transições precisam de regras no backend, autorização, concorrência e histórico.
+A coluna `classification` permite `melhoria`, `projeto` ou `atividade` para entrada demanda; a análise implementada utiliza somente `melhoria` e `projeto`. Erro permanece sem classificação. `status` tem default `em_analise` e check de texto não vazio; as transições da análise são controladas pelo backend, com autorização, concorrência e histórico.
 
 ## 6. Onde alterar e publicar
 
@@ -196,15 +220,15 @@ Publicação inicial: revisar/aplicar o script autorizado antes de usar a API; c
 
 ## 7. Limites e verificações pendentes
 
-Ainda não estão implementados no gerenciador moderno: classificação operacional, aprovação, atribuição, execução de atividades/projetos, indicadores, notificações e migração das demandas antigas. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias e decisões pendentes; não deve ser tratada como funcionalidade pronta ou schema aprovado.
+Ainda não estão implementados no gerenciador moderno: execução e acompanhamento de atividades/projetos, reatribuição, indicadores, notificações e migração das demandas antigas. A análise já registra aceite, classificação, responsável, recusa e pedido de informações. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias e decisões pendentes; não deve ser tratada como funcionalidade pronta ou schema aprovado.
 
 ### O que permanece da proposta e o que mudou
 
 | Assunto | Situação correta para próximas entregas |
 |---|---|
 | Armazenamento | A decisão posterior escolheu tabelas `DJ_*` novas. A antiga ideia de unificar tudo em `JDT_REQUEST_IMPROVEMENTS_SMALL` foi superada. |
-| Entrada/classificação | Solicitante escolhe demanda ou erro; classificação de demanda fica para o gerenciamento futuro. Não oferecer quatro tipos como se o contrato atual os aceitasse. |
-| Atividades e execução | Reformulação prevista; tarefas, atribuição, pausas, prazos, aprovação e validação precisam de desenho/implementação próprios. |
+| Entrada/classificação | Solicitante escolhe demanda ou erro; equipe classifica demanda como Melhoria ou Projeto ao aceitar. Erro preserva seu tipo sem classificação. |
+| Atividades e execução | Reformulação prevista; tarefas, reatribuição, pausas, prazos e validação de entrega precisam de desenho/implementação próprios. O aceite já atribui o responsável inicial. |
 | Recorrências | Retirá-las é direção do novo produto, não autorização para desligar a automação antiga. Agendamento e recorrência precisam ser separados. |
 | Migração | Não realizada. Exige levantamento do schema real, mapeamento de IDs/participantes/status, anexos, histórico e plano de conciliação/retorno. |
 | Indicadores/notificações | Propostas, sem efeito nas solicitações modernas de hoje. |
@@ -219,6 +243,7 @@ Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demand
 | Acesso | Solicitante, contribuinte e terceiro; outra área; anexo de outra demanda; sessão/CSRF. |
 | Criação repetida | Mesmo envio simultâneo, mesmo envio após timeout, chave reutilizada com dados/ordem de arquivos alterados. |
 | Edição | Versão antiga, registro já analisado/classificado, contribuinte tentando editar, mudança para erro e histórico. |
+| Análise | GENERAL sem SYSADMIN; escopo da área e download da equipe; responsável inativo/genérico/sem perfil; classificação em demanda/erro; justificativas vazias/excessivas; decisões concorrentes e repetidas; complemento retornando a análise. |
 | Arquivos | Zero/11 arquivos, vazio, limites exatos, nome/caminho malicioso, extensão rejeitada e arquivo privado ausente. |
 | Falhas | Erro ao salvar arquivo, inserir metadados, montar resposta e confirmar transação; conferir SQL e arquivos juntos. |
 | Interface | Rascunho entre seções, envio incerto bloqueado, foco, URL do detalhe, volta da página e sucesso com falha de renovação. |

@@ -17,6 +17,8 @@ import { RouterLink } from 'vue-router'
             active-class="bg-white/15" aria-current-value="page">Eventos</RouterLink>
           <RouterLink to="/demandas/solicitacoes" class="rounded-lg px-3 py-2 text-sm hover:bg-white/10"
             active-class="bg-white/15" aria-current-value="page">Solicitações</RouterLink>
+          <RouterLink to="/demandas/gerenciador" class="rounded-lg px-3 py-2 text-sm hover:bg-white/10"
+            active-class="bg-white/15" aria-current-value="page">Gerenciador</RouterLink>
           <a href="/" class="inline-flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-sm
             transition-colors hover:border-white/40 hover:bg-white/10 focus-visible:outline-white">
             <i class="pi pi-arrow-up-left text-xs" aria-hidden="true" />
