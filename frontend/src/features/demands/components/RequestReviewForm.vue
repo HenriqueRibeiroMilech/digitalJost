@@ -94,7 +94,8 @@ async function submit() {
     <p class="mt-2 text-sm leading-6 text-dj-muted">Confira os dados antes de registrar sua decisão.</p>
     <div class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Decisão sobre a solicitação">
       <Button v-for="option in actions" :key="option.value" type="button" :label="option.label" :icon="option.icon"
-        :outlined="action !== option.value" :aria-pressed="action === option.value" :disabled="locked"
+        class="demand-review-action rounded-xl px-4 py-2.5" :class="'demand-review-action-' + option.value"
+        :aria-pressed="action === option.value" :disabled="locked"
         :aria-controls="prefix + '-form'" @click="choose(option.value)" />
     </div>
     <form v-if="action" :id="prefix + '-form'" ref="form" class="mt-5 space-y-4" novalidate @submit.prevent="submit">
@@ -139,3 +140,45 @@ async function submit() {
     </form>
   </section>
 </template>
+
+<style scoped>
+.demand-review-action-accept {
+  --demand-review-fill: var(--color-dj-success);
+  --demand-review-ink: color-mix(in srgb, var(--color-dj-success) 70%, black);
+}
+
+.demand-review-action-reject {
+  --demand-review-fill: var(--color-dj-danger);
+  --demand-review-ink: color-mix(in srgb, var(--color-dj-danger) 70%, black);
+}
+
+.demand-review-action-request_information {
+  --demand-review-fill: var(--color-yellow-400, #facc15);
+  --demand-review-ink: var(--color-yellow-900, #713f12);
+}
+
+.demand-review-action {
+  color: var(--demand-review-ink);
+  border-color: color-mix(in srgb, var(--demand-review-fill) 55%, var(--color-dj-surface));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--demand-review-fill) 38%, var(--color-dj-surface)),
+    color-mix(in srgb, var(--demand-review-fill) 18%, var(--color-dj-surface)));
+}
+
+.demand-review-action:enabled:hover,
+.demand-review-action[aria-pressed='true'] {
+  border-color: var(--demand-review-ink);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--demand-review-fill) 48%, var(--color-dj-surface)),
+    color-mix(in srgb, var(--demand-review-fill) 26%, var(--color-dj-surface)));
+}
+
+.demand-review-action[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px var(--demand-review-ink);
+}
+
+.demand-review-action:focus-visible {
+  outline: 2px solid var(--demand-review-ink);
+  outline-offset: 3px;
+}
+</style>
