@@ -1,9 +1,9 @@
 """Tabelas de solicitações e projeção de leitura do cadastro compartilhado."""
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import FetchedValue, ForeignKey, Integer, Numeric, func
+from sqlalchemy import Date, FetchedValue, ForeignKey, Integer, Numeric, func
 from sqlalchemy.dialects.mssql import BIT, CHAR, DATETIME2, NVARCHAR, ROWVERSION, VARCHAR
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -101,6 +101,10 @@ class WorkItem(Base):
     starts_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     ends_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     status: Mapped[str] = mapped_column(NVARCHAR(32), server_default="a_fazer")
+    scheduled_start_on: Mapped[date | None] = mapped_column(Date)
+    started_on: Mapped[date | None] = mapped_column(Date)
+    due_on: Mapped[date | None] = mapped_column(Date)
+    closed_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     difficulty: Mapped[str | None] = mapped_column(NVARCHAR(10))
     priority: Mapped[int | None] = mapped_column(Integer)
     estimated_hours: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))

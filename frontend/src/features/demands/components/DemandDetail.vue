@@ -14,15 +14,19 @@ import Textarea from '@/volt/Textarea.vue'
 import Message from '@/volt/Message.vue'
 import Tag from '@/volt/Tag.vue'
 import { workApi } from '../api'
-import { displayDate, fileSize, planningLabels, statusLabel, workKind } from '../presentation'
-import type { WorkPlanning } from '../types'
+import { displayDate, displayDay, fileSize, planningLabels, statusLabel, workFieldLabels, workHistoryLabel, workHistoryValue, workKind } from '../presentation'
+import type { WorkDetail, WorkPlanning } from '../types'
+import DemandActions from './DemandActions.vue'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{ closed: []; changed: []; busy: [value: boolean] }>()
 const visible = ref(true)
 const saving = ref(false)
 const reloading = ref(false)
-const busy = computed(() => saving.value || reloading.value)
+const actionSaving = ref(false)
+const actionEditing = ref(false)
+const reloadKey = ref(0)
+const busy = computed(() => saving.value || reloading.value || actionSaving.value)
 const needsReload = ref(false)
 const tab = ref<'info' | 'history'>('info')
 const serverError = ref('')
@@ -37,7 +41,9 @@ const plan = reactive<WorkPlanning>({ difficulty: null, priority: null, estimate
 const completed = ref<number | null>(0)
 const errorKeys = ['difficulty', 'priority', 'estimated_hours', 'daily_hours', 'completed_hours', 'observations', 'row_version'] as const
 const errors = reactive(Object.fromEntries(errorKeys.map(key => [key, ''])) as Record<typeof errorKeys[number], string>)
-const locked = computed(() => busy.value || isFetching.value || needsReload.value || !data.value?.can_update)
+const locked = computed(() => busy.value || actionEditing.value || isFetching.value || needsReload.value || !data.value?.can_update)
+const planningDirty = computed(() => data.value && (completed.value !== data.value.completed_hours
+  || Object.entries(plan).some(([field, value]) => value !== data.value?.[field as keyof WorkPlanning])))
 const hourFields = ['estimated_hours', 'daily_hours', 'completed_hours'] as const
 const contextFields = [{ key: 'assumptions', label: 'Premissas' }, { key: 'current_problems', label: 'Problemas atuais' },
   { key: 'expected_benefits', label: 'Ganhos esperados' }] as const
@@ -62,6 +68,8 @@ async function reload() {
     const result = await refetch()
     if (result.isSuccess) {
       needsReload.value = false
+      actionEditing.value = false
+      reloadKey.value++
       serverError.value = ''
       errorKeys.forEach(key => { errors[key] = '' })
       feedback.value = 'Detalhes atualizados. Confira as informações antes de salvar novamente.'
@@ -72,6 +80,9 @@ async function reload() {
           completed_hours: result.data.completed_hours, observations: result.data.observations })
         completed.value = result.data.completed_hours
       }
+      emit('changed')
+      await nextTick()
+      document.getElementById(prefix + '-feedback')?.focus()
     }
   } finally { reloading.value = false }
 }
@@ -103,6 +114,14 @@ async function save() {
     document.getElementById(prefix + '-feedback')?.focus()
   } else await focusError()
 }
+async function actionSaved(item: WorkDetail) {
+  actionEditing.value = false
+  client.setQueryData(queryKey, item)
+  feedback.value = 'Ação registrada. A situação e o histórico foram atualizados.'
+  emit('changed')
+  await nextTick()
+  document.getElementById(prefix + '-feedback')?.focus()
+}
 </script>
 
 <template>
@@ -118,6 +137,8 @@ async function save() {
           <Tag v-if="data.source_request_id" :value="'Solicitação #' + data.source_request_id" severity="secondary" />
         </div>
         <h3 class="mt-4 break-words text-xl font-semibold text-dj-ink">{{ data.title }}</h3>
+        <Message v-if="feedback" :id="prefix + '-feedback'" tabindex="-1" severity="success" role="status" class="mt-4">{{ feedback }}</Message>
+        <p v-if="needsReload" role="status" class="mt-4 text-sm leading-6 text-dj-muted">Recarregue e confira os detalhes e o histórico antes de registrar outra alteração.</p>
         <nav aria-label="Detalhes da demanda" class="my-5 flex flex-wrap gap-2 rounded-xl border border-dj-border bg-dj-canvas p-2">
           <Button type="button" label="Informações" icon="pi pi-info-circle" :outlined="tab !== 'info'" :disabled="busy"
             :aria-current="tab === 'info' ? 'page' : undefined" :aria-controls="prefix + '-info'" @click="tab = 'info'" />
@@ -136,7 +157,17 @@ async function save() {
               <div><dt class="text-xs text-dj-muted">Data e hora de início</dt><dd class="mt-1">{{ data.starts_at ? displayDate(data.starts_at) : 'Não informado' }}</dd></div>
               <div><dt class="text-xs text-dj-muted">Data e hora de fim</dt><dd class="mt-1">{{ data.ends_at ? displayDate(data.ends_at) : 'Não informado' }}</dd></div>
             </template>
+            <template v-else>
+              <div v-if="data.scheduled_start_on"><dt class="text-xs text-dj-muted">Início agendado</dt><dd class="mt-1">{{ displayDay(data.scheduled_start_on) }}</dd></div>
+              <div v-if="data.started_on"><dt class="text-xs text-dj-muted">Início realizado</dt><dd class="mt-1">{{ displayDay(data.started_on) }}</dd></div>
+              <div><dt class="text-xs text-dj-muted">Prazo de entrega</dt><dd class="mt-1">{{ data.due_on ? displayDay(data.due_on) : 'Não definido' }}</dd></div>
+              <div v-if="data.closed_at"><dt class="text-xs text-dj-muted">Encerramento</dt><dd class="mt-1">{{ displayDate(data.closed_at) }}</dd></div>
+            </template>
           </dl>
+          <p v-if="planningDirty && data.can_update" class="mt-4 text-sm text-dj-muted">Salve o planejamento antes de registrar uma ação da demanda.</p>
+          <DemandActions v-if="data.can_update" :key="data.row_version + ':' + reloadKey" :work="data"
+            :disabled="busy || isFetching || isError || needsReload || Boolean(planningDirty)" @busy="actionSaving = $event"
+            @editing="actionEditing = $event" @uncertain="needsReload = true" @saved="actionSaved" />
           <section class="mt-5">
             <h4 class="mb-2 text-sm font-semibold">{{ data.kind === 'erro' ? 'Descrição do erro' : ['projeto', 'melhoria'].includes(data.kind) ? 'Objetivo da demanda' : 'Descrição' }}</h4>
             <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-muted">{{ data.description }}</p>
@@ -160,7 +191,6 @@ async function save() {
           <form v-if="data.kind !== 'aviso'" :id="prefix + '-form'" ref="form" novalidate class="mt-6 border-t border-dj-border pt-5" @submit.prevent="save">
             <h4 class="mb-4 text-sm font-semibold">Planejamento e acompanhamento</h4>
             <p v-if="isFetching" role="status" class="mb-4 text-sm text-dj-muted">Atualizando informações…</p>
-            <Message v-if="feedback" :id="prefix + '-feedback'" tabindex="-1" severity="success" role="status" class="mb-4">{{ feedback }}</Message>
             <Message v-if="serverError" severity="error" role="alert" class="mb-4">{{ serverError }}</Message>
             <Message v-if="errors.row_version" severity="error" class="mb-4">{{ errors.row_version }}</Message>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -183,14 +213,17 @@ async function save() {
             <FormField :id="prefix + '-observations'" label="Observações" :error="errors.observations" class="mt-4" v-slot="{ controlProps }">
               <Textarea v-model="plan.observations" v-bind="controlProps" :rows="4" :maxlength="4000" :disabled="locked" class="w-full" />
             </FormField>
-            <p v-if="needsReload" role="status" class="mt-4 text-sm leading-6 text-dj-muted">Recarregue e confira os detalhes e o histórico antes de salvar novamente.</p>
           </form>
         </section>
         <section v-show="tab === 'history'" :id="prefix + '-history'" aria-label="Histórico da demanda">
           <ol class="space-y-4 text-sm">
             <li v-for="event in data.history" :key="event.id" class="border-l-2 border-dj-border pl-3">
-              <p class="font-medium">{{ event.event_type === 'request_accepted' ? 'Criada a partir de solicitação aceita' : event.event_type === 'planning_updated' ? 'Planejamento atualizado' : 'Cadastro criado' }}</p>
-              <p v-if="event.fields.length" class="mt-1 text-dj-muted">Campos: {{ event.fields.map(field => planningLabels[field] ?? field).join(', ') }}.</p>
+              <p class="font-medium">{{ workHistoryLabel(event.event_type) }}</p>
+              <p v-if="event.fields.length" class="mt-1 text-dj-muted">Campos: {{ event.fields.map(field => workFieldLabels[field] ?? field).join(', ') }}.</p>
+              <p v-for="change in event.transitions" :key="change.field" class="mt-1 text-xs leading-5 text-dj-muted">
+                {{ workFieldLabels[change.field] ?? change.field }}: {{ workHistoryValue(change.field, change.before) }} → {{ workHistoryValue(change.field, change.after) }}
+              </p>
+              <p v-if="event.message" class="mt-2 whitespace-pre-wrap break-words leading-6">{{ event.message }}</p>
               <p class="mt-1 text-xs text-dj-muted">{{ event.actor_name ?? 'Usuário indisponível' }} · {{ displayDate(event.created_at) }}</p>
             </li>
           </ol>
@@ -200,7 +233,7 @@ async function save() {
     </RequestState>
     <template #footer>
       <Button v-if="needsReload" type="button" label="Recarregar detalhes" icon="pi pi-refresh" :loading="reloading" :disabled="busy" @click="reload" />
-      <Button v-else-if="data?.can_update && !isError && tab === 'info'" type="submit" :form="prefix + '-form'" label="Salvar planejamento" icon="pi pi-save" :loading="saving" :disabled="locked" />
+      <Button v-else-if="data?.can_update && !isError && tab === 'info' && !actionEditing" type="submit" :form="prefix + '-form'" label="Salvar planejamento" icon="pi pi-save" :loading="saving" :disabled="locked" />
       <SecondaryButton type="button" label="Fechar" outlined :disabled="busy" @click="close" />
     </template>
   </AppDialog>

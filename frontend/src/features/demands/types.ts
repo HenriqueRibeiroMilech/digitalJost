@@ -63,6 +63,16 @@ export interface ReviewFields {
 }
 
 export type WorkKind = 'projeto' | 'melhoria' | 'erro' | 'atividade' | 'aviso'
+export type WorkActionName = 'start' | 'cancel' | 'schedule' | 'request_information' | 'complete'
+  | 'validate' | 'pause' | 'wait_third_party' | 'resume' | 'change_deadline'
+
+export interface WorkAction {
+  action: WorkActionName
+  row_version: string
+  scheduled_start_on: string | null
+  due_on: string | null
+  message: string | null
+}
 
 export interface WorkCreate {
   kind: WorkKind
@@ -105,6 +115,10 @@ export interface WorkItem extends WorkPlanning {
   starts_at: string | null
   ends_at: string | null
   status: string
+  scheduled_start_on: string | null
+  started_on: string | null
+  due_on: string | null
+  closed_at: string | null
   created_at: string
   updated_at: string
 }
@@ -112,8 +126,10 @@ export interface WorkItem extends WorkPlanning {
 export interface WorkDetail extends WorkItem {
   row_version: string
   can_update: boolean
+  available_actions: WorkActionName[]
   attachments: RequestDetail['attachments']
-  history: { id: number; event_type: string; actor_name: string | null; created_at: string; fields: string[] }[]
+  history: { id: number; event_type: string; actor_name: string | null; created_at: string; fields: string[]
+    message: string | null; transitions: { field: string; before: string | null; after: string | null }[] }[]
 }
 
 export interface WorkBoard {

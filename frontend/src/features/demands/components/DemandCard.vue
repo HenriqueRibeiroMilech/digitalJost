@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import RecordCard from '@/shared/components/RecordCard.vue'
 import Tag from '@/volt/Tag.vue'
-import { displayDate, displayHours, requestStatus, workKind } from '../presentation'
+import { displayDate, displayDay, displayHours, requestStatus, workKind } from '../presentation'
 import type { WorkItem } from '../types'
 
 const props = defineProps<{ item: WorkItem }>()
@@ -45,6 +45,9 @@ const status = computed(() => requestStatus(props.item.status))
         <div><dt class="text-dj-muted">Tempo total</dt><dd class="font-semibold text-dj-ink">{{ displayHours(item.estimated_hours) }}</dd></div>
         <div><dt class="text-dj-muted">Realizado</dt><dd class="font-semibold text-dj-ink">{{ displayHours(item.completed_hours) }}</dd></div>
         <div><dt class="text-dj-muted">Tempo diário</dt><dd class="font-semibold text-dj-ink">{{ displayHours(item.daily_hours) }}</dd></div>
+        <div v-if="item.due_on"><dt class="text-dj-muted">Prazo de entrega</dt><dd class="font-semibold text-dj-ink">{{ displayDay(item.due_on) }}</dd></div>
+        <div v-if="item.scheduled_start_on && !item.started_on"><dt class="text-dj-muted">Início agendado</dt><dd class="font-semibold text-dj-ink">{{ displayDay(item.scheduled_start_on) }}</dd></div>
+        <div v-if="item.started_on"><dt class="text-dj-muted">Início realizado</dt><dd class="font-semibold text-dj-ink">{{ displayDay(item.started_on) }}</dd></div>
       </dl>
       <p v-if="item.observations" class="mt-3 line-clamp-2 whitespace-pre-wrap break-words text-xs leading-5 text-dj-muted">
         <span class="font-semibold">Observações:</span> {{ item.observations }}

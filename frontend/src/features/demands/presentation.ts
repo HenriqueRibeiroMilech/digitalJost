@@ -11,8 +11,11 @@ const statuses: Record<string, { label: string; icon: string; tone: 'brand' | 's
   em_analise: { label: 'Em análise', icon: 'pi pi-search', tone: 'brand' },
   aguardando_informacoes: { label: 'Aguardando informações', icon: 'pi pi-comment', tone: 'neutral' },
   a_fazer: { label: 'A fazer', icon: 'pi pi-list', tone: 'brand' },
+  agendado: { label: 'Início agendado', icon: 'pi pi-calendar', tone: 'brand' },
   em_andamento: { label: 'Em andamento', icon: 'pi pi-play-circle', tone: 'brand' },
   pausado: { label: 'Pausado', icon: 'pi pi-pause-circle', tone: 'neutral' },
+  em_validacao: { label: 'Em validação', icon: 'pi pi-verified', tone: 'brand' },
+  aguardando_terceiros: { label: 'Aguardando terceiros', icon: 'pi pi-users', tone: 'neutral' },
   concluido: { label: 'Concluído', icon: 'pi pi-check-circle', tone: 'success' },
   cancelado: { label: 'Cancelado', icon: 'pi pi-times-circle', tone: 'neutral' },
   recusado: { label: 'Recusado', icon: 'pi pi-ban', tone: 'neutral' },
@@ -44,6 +47,27 @@ export function workKind(kind: string) {
 export const planningLabels: Record<string, string> = {
   difficulty: 'Dificuldade', priority: 'Prioridade', estimated_hours: 'Tempo total (h)',
   daily_hours: 'Tempo diário (h)', completed_hours: 'Tempo total realizado (h)', observations: 'Observações',
+}
+export const workFieldLabels: Record<string, string> = {
+  ...planningLabels, status: 'Situação', scheduled_start_on: 'Início agendado', started_on: 'Início realizado',
+  due_on: 'Prazo de entrega', closed_at: 'Encerramento',
+}
+const workHistoryLabels: Record<string, string> = {
+  created: 'Cadastro criado', request_accepted: 'Criada a partir de solicitação aceita', planning_updated: 'Planejamento atualizado',
+  start: 'Demanda iniciada', schedule: 'Início agendado', cancel: 'Demanda cancelada', complete: 'Demanda concluída',
+  request_information: 'Mais informações solicitadas', validate: 'Validação iniciada', pause: 'Demanda pausada',
+  wait_third_party: 'Aguardando terceiros', resume: 'Demanda retomada', change_deadline: 'Prazo alterado',
+}
+export function workHistoryLabel(event: string) { return workHistoryLabels[event] ?? 'Atualização registrada' }
+
+export function displayDay(value: string) {
+  const parts = value.split('-')
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : 'Data indisponível'
+}
+export function workHistoryValue(field: string, value: string | null) {
+  if (value === null) return 'Não informado'
+  if (field === 'status') return statusLabel(value)
+  return field === 'closed_at' ? displayDate(value.replace(' ', 'T')) : displayDay(value)
 }
 export function displayHours(value: number | null) {
   return value === null ? 'Não informado' : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(value) + ' h'

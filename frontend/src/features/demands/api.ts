@@ -1,7 +1,7 @@
 import { requestJson } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
 import type { Contributor, ManagementFilters, RequestDetail, RequestFields, RequestFilters, RequestList, ReviewFields } from './types'
-import type { WorkBoard, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
+import type { WorkAction, WorkBoard, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
 
 const base = '/api/v1/demands'
 
@@ -71,6 +71,9 @@ export const workApi = {
   },
   plan(id: number, payload: WorkPlanning & { row_version: string }) {
     return requestJson<WorkDetail>(`${base}/work/${id}/planning`, { method: 'PUT', body: JSON.stringify(payload) })
+  },
+  action(id: number, payload: WorkAction) {
+    return requestJson<WorkDetail>(`${base}/work/${id}/actions`, { method: 'POST', body: JSON.stringify(payload) })
   },
   attachmentUrl(id: number, attachmentId: number) {
     return `${base}/work/${id}/attachments/${attachmentId}`

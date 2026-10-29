@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Literal
 
@@ -243,6 +243,50 @@ class WorkPlan(BaseModel):
         return RequestFields.validate_text(value, info)
 
 
+WorkActionName = Literal[
+    "start", "cancel", "schedule", "request_information", "complete", "validate",
+    "pause", "wait_third_party", "resume", "change_deadline",
+]
+
+
+class WorkAction(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+
+    action: WorkActionName
+    row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
+    scheduled_start_on: date | None = None
+    due_on: date | None = None
+    message: str | None = Field(default=None, min_length=1, max_length=4000)
+
+    @field_validator("scheduled_start_on", "due_on", mode="before")
+    @classmethod
+    def parse_day(cls, value):
+        if value is None:
+            return None
+        if not isinstance(value, str) or len(value) != 10 or value[4] != "-" or value[7] != "-":
+            raise ValueError("Informe uma data no formato AAAA-MM-DD.")
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            raise ValueError("Informe uma data válida.") from None
+
+    @field_validator("message")
+    @classmethod
+    def validate_text(cls, value, info: ValidationInfo):
+        return RequestFields.validate_text(value, info)
+
+    @model_validator(mode="after")
+    def validate_action(self):
+        needs_message = self.action in ("cancel", "request_information", "validate", "pause", "wait_third_party")
+        if needs_message != (self.message is not None):
+            raise ValueError("Informe a mensagem obrigatória somente nas ações que a solicitam.")
+        if (self.action in ("start", "schedule", "change_deadline")) != (self.due_on is not None):
+            raise ValueError("Informe o prazo somente ao iniciar, agendar ou alterar prazo.")
+        if (self.action == "schedule") != (self.scheduled_start_on is not None):
+            raise ValueError("Informe a data de início somente ao agendar.")
+        return self
+
+
 class WorkQuery(PaginationQuery):
     area: Literal["Transformação Digital"] = "Transformação Digital"
     view: Literal["users", "notices"] = "users"
@@ -286,6 +330,10 @@ class WorkItemOut(BaseModel):
     starts_at: datetime | None
     ends_at: datetime | None
     status: str
+    scheduled_start_on: date | None
+    started_on: date | None
+    due_on: date | None
+    closed_at: datetime | None
     difficulty: str | None
     priority: int | None
     estimated_hours: float | None
@@ -296,17 +344,26 @@ class WorkItemOut(BaseModel):
     updated_at: datetime
 
 
+class WorkHistoryChange(BaseModel):
+    field: str
+    before: str | None
+    after: str | None
+
+
 class WorkHistoryOut(BaseModel):
     id: int
     event_type: str
     actor_name: str | None
     created_at: datetime
     fields: list[str]
+    message: str | None
+    transitions: list[WorkHistoryChange]
 
 
 class WorkDetail(WorkItemOut):
     row_version: str
     can_update: bool
+    available_actions: list[WorkActionName]
     attachments: list[AttachmentOut]
     history: list[WorkHistoryOut]
 

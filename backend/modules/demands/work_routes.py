@@ -1,8 +1,10 @@
-"""Quadro, cadastro direto e planejamento das demandas modernas."""
+"""Quadro, cadastro direto, planejamento e execução das demandas modernas."""
 
 import json
+from datetime import datetime, timezone
 from decimal import Decimal
 from hashlib import sha256
+from zoneinfo import ZoneInfo
 
 from apiflask import APIBlueprint
 from flask import current_app, request, send_file
@@ -17,7 +19,7 @@ from backend.shared.identity import RolePermissions
 
 from .models import Demand, DemandAttachment, SharedUser, WorkAttachment, WorkHistory, WorkItem
 from .routes import AREA_ID, AREA_NAME, _responsibles_query, _validate_contributor
-from .schemas import WorkBoard, WorkCreate, WorkDetail, WorkList, WorkPlan, WorkQuery
+from .schemas import WorkAction, WorkBoard, WorkCreate, WorkDetail, WorkList, WorkPlan, WorkQuery
 from .storage import MAX_REQUEST_BYTES
 
 
@@ -29,6 +31,32 @@ permissions = RolePermissions(identity.can_access, {
 require_action = action_access(identity=identity, permissions=permissions)
 work_bp = APIBlueprint("modern_demand_work", __name__, url_prefix="/api/v1/demands/work")
 configure_api(work_bp, identity=identity, permission="GENERAL")
+
+ACTION_STATUSES = {
+    "start": "em_andamento", "schedule": "agendado", "cancel": "cancelado",
+    "request_information": "aguardando_informacoes", "complete": "concluido",
+    "validate": "em_validacao", "pause": "pausado", "wait_third_party": "aguardando_terceiros",
+    "resume": "em_andamento",
+}
+EXECUTION_FIELDS = ("status", "scheduled_start_on", "started_on", "due_on", "closed_at")
+
+
+def _available_actions(work):
+    if work["kind"] == "aviso" or not permissions.can(identity.current_actor(), "demands.work.update"):
+        return []
+    status = work["status"]
+    if status in ("a_fazer", "agendado", "aguardando_informacoes") and work["started_on"] is None:
+        actions = ["start", "cancel", "schedule", "request_information"]
+    elif status in ("em_andamento", "em_validacao", "pausado", "aguardando_terceiros", "aguardando_informacoes") and work["started_on"] is not None:
+        actions = ["complete", "cancel", "request_information", "validate", "pause", "wait_third_party"]
+        if status != "em_andamento":
+            actions.insert(0, "resume")
+    else:
+        return []
+    actions = [action for action in actions if ACTION_STATUSES[action] != status or action == "schedule"]
+    if work["started_on"] is not None or work["scheduled_start_on"] is not None:
+        actions.append("change_deadline")
+    return actions
 
 
 @work_bp.before_request
@@ -188,6 +216,58 @@ def update_work_plan(work_id, json_data):
     return result
 
 
+@work_bp.post("/<int:work_id>/actions")
+@require_action("demands.work.update")
+@work_bp.input(WorkAction)
+@work_bp.output(WorkDetail)
+def execute_work_action(work_id, json_data):
+    actor_id = str(identity.current_actor().id)
+    sessions = get_td_session_factory()
+    with sessions.begin() as session:
+        current = _get_work(session, work_id, lock=True)
+        if bytes(current["row_version"]) != bytes.fromhex(json_data.row_version):
+            raise ApiProblem(409, "A demanda mudou. Recarregue os detalhes antes de registrar outra ação.")
+        action = json_data.action
+        if action not in _available_actions(current):
+            raise ApiProblem(409, "Esta ação não está disponível na situação atual. Recarregue os detalhes.")
+        now = datetime.now(timezone.utc)
+        today = now.astimezone(ZoneInfo("America/Sao_Paulo")).date()
+        values = {}
+        if action == "start":
+            values = {"started_on": today, "scheduled_start_on": None, "due_on": json_data.due_on}
+        elif action == "schedule":
+            if json_data.scheduled_start_on < today:
+                raise ApiProblem(422, detail={"json": {"scheduled_start_on": ["O início deve ser hoje ou uma data futura."]}})
+            values = {"scheduled_start_on": json_data.scheduled_start_on, "due_on": json_data.due_on}
+        elif action == "change_deadline":
+            if json_data.due_on == current["due_on"]:
+                raise ApiProblem(422, detail={"json": {"due_on": ["Informe um prazo diferente do atual."]}})
+            values = {"due_on": json_data.due_on}
+        elif action in ("complete", "cancel"):
+            values = {"closed_at": now.replace(tzinfo=None, microsecond=now.microsecond // 1000 * 1000)}
+        if json_data.due_on is not None:
+            start = values.get("started_on") or values.get("scheduled_start_on") or current["started_on"] or current["scheduled_start_on"] or today
+            if json_data.due_on < max(today, start):
+                raise ApiProblem(422, detail={"json": {"due_on": ["O prazo deve ser igual ou posterior a hoje e ao início."]}})
+        if action != "change_deadline":
+            values["status"] = ACTION_STATUSES[action]
+        changes = {field: {"before": current[field], "after": value}
+                   for field, value in values.items() if current[field] != value}
+        if json_data.message is not None:
+            changes["message"] = json_data.message
+        updated_id = session.scalar(update(WorkItem).where(
+            WorkItem.id == work_id, WorkItem.area_id == AREA_ID,
+            WorkItem.row_version == bytes.fromhex(json_data.row_version),
+        ).values(**values, updated_at=func.sysutcdatetime()).returning(WorkItem.id))
+        if updated_id is None:
+            raise ApiProblem(409, "A demanda mudou. Recarregue os detalhes antes de registrar outra ação.")
+        session.add(WorkHistory(work_id=work_id, actor_id=actor_id, event_type=action,
+                                changes=json.dumps(changes, ensure_ascii=False, default=str)))
+        session.flush()
+        result = _work_detail(session, work_id)
+    return result
+
+
 @work_bp.get("/<int:work_id>/attachments/<int:attachment_id>")
 @require_action("demands.work.read")
 def work_attachment(work_id, attachment_id):
@@ -225,6 +305,7 @@ def _work_query():
         contributor.name.label("contributor_name"), WorkItem.urgency, WorkItem.assumptions,
         WorkItem.current_problems, WorkItem.expected_benefits, WorkItem.starts_at, WorkItem.ends_at,
         WorkItem.status, WorkItem.difficulty, WorkItem.priority, WorkItem.estimated_hours,
+        WorkItem.scheduled_start_on, WorkItem.started_on, WorkItem.due_on, WorkItem.closed_at,
         WorkItem.daily_hours, WorkItem.completed_hours, WorkItem.observations,
         WorkItem.created_at, WorkItem.updated_at, WorkItem.row_version,
     ).select_from(WorkItem).outerjoin(responsible, responsible.id == WorkItem.responsible_id).outerjoin(
@@ -246,6 +327,7 @@ def _work_detail(session, work_id):
     row = _get_work(session, work_id)
     row["row_version"] = bytes(row["row_version"]).hex()
     row["can_update"] = row["kind"] != "aviso" and permissions.can(identity.current_actor(), "demands.work.update")
+    row["available_actions"] = _available_actions(row)
     if row["source_request_id"] is not None:
         attachments = select(DemandAttachment.id, DemandAttachment.original_name, DemandAttachment.size_bytes).join(
             Demand, Demand.id == DemandAttachment.demand_id,
@@ -263,5 +345,11 @@ def _work_detail(session, work_id):
         .where(WorkHistory.work_id == work_id).order_by(WorkHistory.id.desc())).mappings():
         entry = dict(event)
         changes = json.loads(entry.pop("changes") or "{}")
-        row["history"].append({**entry, "fields": list(changes) if isinstance(changes, dict) else []})
+        if not isinstance(changes, dict):
+            changes = {}
+        transitions = [{"field": field, "before": changes[field].get("before"), "after": changes[field].get("after")}
+                       for field in EXECUTION_FIELDS if isinstance(changes.get(field), dict)]
+        row["history"].append({**entry, "fields": [field for field in changes if field != "message"],
+                               "message": changes.get("message") if isinstance(changes.get("message"), str) else None,
+                               "transitions": transitions})
     return row
