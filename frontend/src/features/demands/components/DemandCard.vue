@@ -12,26 +12,43 @@ const status = computed(() => requestStatus(props.item.status))
 </script>
 
 <template>
-  <RecordCard :title-id="'work-title-' + item.id" :title="item.title" :description="item.description" :icon="kind.icon"
+  <RecordCard :title-id="'work-title-' + item.id" :title="item.title" :description="item.description"
     :action-id="'work-open-' + item.id" :action-label="item.kind === 'aviso' ? 'Ver aviso' : 'Ver demanda'"
     :tone="item.kind === 'aviso' ? 'neutral' : status.tone" opens-dialog compact @open="$emit('open')">
-    <template #badge>
-      <Tag :value="kind.label + ' #' + item.id" severity="secondary" rounded />
+    <template #marker>
+      <span class="inline-flex items-center gap-2 text-xs font-semibold text-dj-ink">
+        <span class="inline-flex size-(--dj-card-marker-size) items-center justify-center rounded-xl bg-primary-50 text-dj-brand" aria-hidden="true"><i :class="kind.icon" /></span>
+        <span :aria-label="'Registro número ' + item.id">#{{ item.id }}</span>
+      </span>
     </template>
-    <dl class="grid gap-2 text-xs leading-5 text-dj-muted">
-      <div class="flex min-w-0 gap-2"><dt>Responsável:</dt><dd class="min-w-0 truncate text-dj-ink" :title="item.responsible_name ?? 'Usuário indisponível'">{{ item.responsible_name ?? 'Usuário indisponível' }}</dd></div>
-      <template v-if="item.kind === 'aviso'">
+    <template #badge>
+      <Tag :value="kind.label" severity="secondary" rounded />
+    </template>
+    <template v-if="item.kind === 'aviso'">
+      <dl class="grid gap-2 text-xs leading-5 text-dj-muted">
+        <div class="flex min-w-0 gap-2"><dt>Responsável:</dt><dd class="min-w-0 truncate text-dj-ink" :title="item.responsible_name ?? 'Usuário indisponível'">{{ item.responsible_name ?? 'Usuário indisponível' }}</dd></div>
         <div><dt class="font-semibold">Início</dt><dd>{{ item.starts_at ? displayDate(item.starts_at) : 'Não informado' }}</dd></div>
         <div><dt class="font-semibold">Fim</dt><dd>{{ item.ends_at ? displayDate(item.ends_at) : 'Não informado' }}</dd></div>
-      </template>
-      <template v-else>
-        <div class="flex flex-wrap gap-x-3 gap-y-1">
-          <dt class="sr-only">Situação</dt><dd>{{ status.label }}</dd>
-          <dt class="sr-only">Prioridade</dt><dd>{{ item.priority === null ? 'Sem prioridade' : 'Prioridade ' + item.priority }}</dd>
-        </div>
-        <div><dt class="sr-only">Tempo realizado e total</dt><dd>Realizado: {{ displayHours(item.completed_hours) }} · Total: {{ displayHours(item.estimated_hours) }}</dd></div>
-        <div v-if="item.source_request_id"><dt class="sr-only">Origem</dt><dd>Solicitação #{{ item.source_request_id }}</dd></div>
-      </template>
-    </dl>
+      </dl>
+    </template>
+    <template v-else>
+      <div class="flex flex-wrap gap-2">
+        <Tag :value="status.label" :icon="status.icon" severity="secondary" rounded class="dj-tone-badge text-xs" :class="'dj-tone-' + status.tone" />
+        <Tag v-if="item.priority !== null" :value="'Prioridade ' + item.priority" severity="secondary" rounded />
+        <Tag v-if="item.difficulty" :value="'Dificuldade ' + item.difficulty" severity="secondary" rounded />
+      </div>
+      <p class="mt-3 break-words text-xs leading-5 text-dj-muted">
+        {{ item.source_request_id ? 'Solicitante' : 'Criada por' }}: {{ item.requester_name ?? 'Usuário indisponível' }}
+        <span v-if="item.source_request_id"> · Solicitação #{{ item.source_request_id }}</span>
+      </p>
+      <dl class="mt-3 grid grid-cols-2 gap-3 border-t border-dj-border pt-3 text-xs leading-5">
+        <div><dt class="text-dj-muted">Tempo total</dt><dd class="font-semibold text-dj-ink">{{ displayHours(item.estimated_hours) }}</dd></div>
+        <div><dt class="text-dj-muted">Realizado</dt><dd class="font-semibold text-dj-ink">{{ displayHours(item.completed_hours) }}</dd></div>
+        <div><dt class="text-dj-muted">Tempo diário</dt><dd class="font-semibold text-dj-ink">{{ displayHours(item.daily_hours) }}</dd></div>
+      </dl>
+      <p v-if="item.observations" class="mt-3 line-clamp-2 whitespace-pre-wrap break-words text-xs leading-5 text-dj-muted">
+        <span class="font-semibold">Observações:</span> {{ item.observations }}
+      </p>
+    </template>
   </RecordCard>
 </template>

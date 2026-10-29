@@ -40,9 +40,11 @@ Cada decisão compara `row_version` sob trava, atualiza solicitação e históri
 
 ### Quadro de demandas e avisos
 
-A aba Demandas usa cards compactos em abas por responsável, com **Avisos** como primeira opção no topo. Por padrão seleciona a pessoa autenticada, quando está nas opções, ou a primeira pessoa disponível. Inclui integrantes ativos da equipe mesmo sem registros e preserva abas de pessoas inativas ou sem cadastro que ainda tenham demandas. Os contadores abrangem todos os registros da respectiva aba; busca e filtro de tipo aplicam-se à lista paginada, não a esses contadores.
+A aba Demandas segue a organização do gerenciador anterior: ações e filtros acima do quadro, **Avisos** em um mural recolhível no topo e seções recolhíveis por responsável logo abaixo, em ordem alfabética. Os componentes, cores, superfícies, cards e diálogos usam o padrão moderno. Cada seção separa projetos/melhorias/erros de atividades nos resultados da página atual. Os cards exibem situação, prioridade, dificuldade, solicitante/origem, tempos e resumo das observações; a edição continua no detalhe.
 
-`?owner=<id>` seleciona uma pessoa; `?board=avisos` seleciona Avisos; `?work=<id>` abre o detalhe da demanda ou aviso. A busca é literal por título/número, a paginação ocorre no servidor e avisos são excluídos das abas de pessoas. As demandas são ordenadas por prioridade crescente (1 é a mais alta), com prioridade não definida ao fim e desempate pelo ID mais recente.
+Inicialmente o mural fica aberto quando possui avisos; vazio, mantém apenas o cabeçalho recolhido. Se a pessoa autenticada tem demandas, sua seção fica aberta e as demais recolhidas; caso contrário, os grupos ficam abertos. Somente responsáveis com registros formam seções no quadro; o filtro inclui também integrantes ativos sem registros e preserva pessoas inativas ou sem cadastro que ainda tenham demandas. Abrir/recolher um grupo não esconde os outros; os registros são carregados ao expandi-lo. Cada grupo tem paginação independente de 12 itens no servidor e estados próprios de carregamento, vazio e falha.
+
+`?owner=<id>` filtra os grupos por responsável; `?board=avisos` abre o quadro com os grupos de pessoas recolhidos; `?work=<id>` abre o detalhe da demanda ou aviso. A busca literal por título/número aplica-se aos grupos e ao mural; tipo e responsável filtram somente demandas. Buscar ou limpar filtros expande os grupos. Os contadores dos cabeçalhos passam a refletir o total filtrado de cada consulta quando disponível; antes do carregamento exibem o total geral informado pelo quadro. As demandas são ordenadas por prioridade crescente (1 é a mais alta), com prioridade não definida ao fim e desempate pelo ID mais recente.
 
 O botão **Nova demanda ou aviso** solicita o tipo antes de mostrar os campos:
 
@@ -55,7 +57,7 @@ O botão **Nova demanda ou aviso** solicita o tipo antes de mostrar os campos:
 
 Responsável segue a mesma elegibilidade do aceite: integrante ativo, não genérico e com perfil Transformação Digital. O contribuinte segue as regras da solicitação pessoal. Título tem limite de 250 unidades UTF-16; descrição, contexto e observações, 4.000. Nos tipos com anexos opcionais, são aceitos zero a dez arquivos, com os mesmos formatos e limites por arquivo/total das solicitações. Atividades e avisos rejeitam anexos e campos exclusivos dos outros tipos.
 
-Datas do aviso são digitadas no horário local do navegador, enviadas com fuso e normalizadas para UTC pelo backend. Todas as datas desta funcionalidade são armazenadas como UTC e exibidas localmente. Os avisos permanecem consultáveis após o fim; esta entrega não os oculta automaticamente nem executa jobs de publicação/encerramento.
+Datas do aviso são digitadas no horário local do navegador, enviadas com fuso e normalizadas para UTC pelo backend. Todas as datas desta funcionalidade são armazenadas como UTC e exibidas localmente. Os avisos ficam no mural do topo, separados dos grupos por pessoa, e permanecem consultáveis após o fim; esta entrega não os oculta automaticamente nem executa jobs de publicação/encerramento.
 
 O detalhe abre em **Informações**, com conteúdo completo, pessoas, origem, documentos e os campos de planejamento. **Histórico** é a segunda aba, com criação, aceite de origem e campos alterados no planejamento. O planejamento permite dificuldade Baixa/Média/Alta, prioridade inteira de 1 a 10, tempo total, diário e realizado em horas e observações. Tempos aceitam de 0 a 99.999,99, com até duas casas decimais; realizado inicia em zero e pode superar o estimado. Os demais campos de planejamento são opcionais.
 
@@ -289,7 +291,7 @@ Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demand
 | Criação repetida | Mesmo envio simultâneo, mesmo envio após timeout, chave reutilizada com dados/ordem de arquivos alterados. |
 | Edição | Versão antiga, registro já analisado/classificado, contribuinte tentando editar, mudança para erro e histórico. |
 | Análise | GENERAL sem SYSADMIN; escopo da área e download da equipe; responsável inativo/genérico/sem perfil; classificação em demanda/erro; justificativas vazias/excessivas; decisões concorrentes e repetidas; complemento retornando a análise. |
-| Quadro | Abas por pessoa e Avisos, busca/paginação, proprietário inativo com registros, origem única por aceite, preenchimento das solicitações modernas já aceitas e isolamento do legado. |
+| Quadro | Mural e grupos recolhíveis por pessoa, separação de demandas/atividades, filtros, paginação por grupo, proprietário inativo com registros, origem única por aceite, preenchimento das solicitações modernas já aceitas e isolamento do legado. |
 | Cadastro direto | Cinco tipos, campos obrigatórios/exclusivos, responsável/contribuinte elegíveis, anexos opcionais, fuso e intervalo do aviso, envio repetido e resultado incerto. |
 | Planejamento | Horas decimais/negativas/excessivas, prioridade e dificuldade inválidas, observações UTF-16, versão antiga, edição da equipe, histórico transacional e aviso sem planejamento. |
 | Arquivos | Zero/11 arquivos, vazio, limites exatos, nome/caminho malicioso, extensão rejeitada e arquivo privado ausente. |
