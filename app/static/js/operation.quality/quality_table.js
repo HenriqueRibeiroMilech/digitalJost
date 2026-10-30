@@ -360,6 +360,14 @@
                 }
                 if (selected) { select.value = location; updateValidity(); }
             },
+            addStopReason: function (reason, selected) {
+                const field = form.elements.namedItem('stop_reason');
+                if (!Array.from(field.options).some(function (option) { return option.value === reason; })) {
+                    const option = node('option', '', reason); option.value = reason; field.appendChild(option);
+                    Array.from(field.options).slice(1).sort(function (a, b) { return a.value.localeCompare(b.value, 'pt-BR'); }).forEach(function (option) { field.appendChild(option); });
+                }
+                if (selected) { field.value = reason; updateValidity(); }
+            },
             refresh: function () { setUnit(unit.value === '0' ? select.value : freeLocation.value); ['nok', 'ok'].forEach(renderFiles); updateValidity(); },
             release: function () { clearTimeout(centerTimer); clearTimeout(productTimer); centerVersion += 1; productVersion += 1; Object.values(previews).flat().forEach(function (url) { URL.revokeObjectURL(url); }); previews.nok = []; previews.ok = []; },
         };
@@ -593,11 +601,15 @@
     const locationDialog = document.getElementById('qsb-location-dialog');
     if (locationDialog) {
         const locationForm = document.getElementById('qsb-location-form');
-        let locationController = null; let locationBusy = false;
+        let locationController = null; let locationBusy = false; let creatingStopReason = false;
         document.addEventListener('click', function (event) {
-            const button = event.target.closest('[data-create-location]');
-            if (!button) { return; }
+            const button = event.target.closest('[data-create-location], [data-create-stop-reason]');
+            if (!button || button.disabled || locationBusy) { return; }
+            creatingStopReason = button.hasAttribute('data-create-stop-reason');
             locationController = button.closest('form') === createForm ? createController : editController;
+            document.getElementById('qsb-location-title').textContent = creatingStopReason ? 'Cadastrar motivo de parada' : 'Cadastrar local específico';
+            locationForm.querySelector('label[for="qsb-location-name"]').textContent = creatingStopReason ? 'Nome do motivo' : 'Nome do local';
+            locationForm.querySelector('[type="submit"]').textContent = creatingStopReason ? 'Cadastrar motivo' : 'Cadastrar local';
             locationForm.reset(); showMessage(document.getElementById('qsb-location-error'), ''); locationDialog.showModal(); document.getElementById('qsb-location-name').focus();
         });
         document.getElementById('qsb-close-location').addEventListener('click', function () { if (!locationBusy) { locationDialog.close(); } });
@@ -606,8 +618,11 @@
             event.preventDefault(); if (locationBusy) { return; }
             locationBusy = true; const button = locationForm.querySelector('[type="submit"]'); button.disabled = true;
             try {
-                const data = await requestJSON(root.dataset.locationUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({ name: locationForm.elements.namedItem('name').value }) });
-                [createController, editController].forEach(function (controller) { controller.addLocation(data.location, controller === locationController); });
+                const data = await requestJSON(creatingStopReason ? root.dataset.stopReasonUrl : root.dataset.locationUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({ name: locationForm.elements.namedItem('name').value }) });
+                [createController, editController].forEach(function (controller) {
+                    if (creatingStopReason) { controller.addStopReason(data.reason, controller === locationController); }
+                    else { controller.addLocation(data.location, controller === locationController); }
+                });
                 locationDialog.close();
             } catch (error) { showMessage(document.getElementById('qsb-location-error'), error.message); }
             finally { locationBusy = false; button.disabled = false; }

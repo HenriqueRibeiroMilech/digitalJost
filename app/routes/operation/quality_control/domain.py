@@ -13,8 +13,6 @@ PRODUCT_FAMILIES = (
     'QR', 'QR + MESA', 'AO', 'SP 3° EIXO', 'SP SR', 'SP - Suporte',
     'EE', 'PR', 'AL', 'VT', 'EA', 'PE', 'EC',
 )
-# O PDF só define este motivo. Ampliar quando a Qualidade definir outras opções.
-STOP_REASONS = ('Problema de Qualidade',)
 CAMPINAS_WORKCENTERS = (
     'M101-Montagem Articulação De Onibus',
     'M102-Montagem Trava De Quinta Roda',
@@ -63,7 +61,16 @@ def submission_key(value):
         raise QualityControlError('Identificação do cadastro inválida. Atualize a página.')
 
 
-def validate_entry(form, caxias_locations, workcenters, previous=None):
+def validate_stop_reason_name(value):
+    name = ' '.join(str(value or '').split())
+    if not name:
+        raise QualityControlError('Informe o motivo da parada.', field='name')
+    if len(name) > 150 or '\x00' in name:
+        raise QualityControlError('O motivo deve ter até 150 caracteres e não conter caracteres inválidos.', field='name')
+    return name
+
+
+def validate_entry(form, caxias_locations, workcenters, previous=None, *, stop_reasons):
     try:
         unit = int(form.get('unidade', ''))
     except (TypeError, ValueError):
@@ -134,8 +141,10 @@ def validate_entry(form, caxias_locations, workcenters, previous=None):
     except ValueError:
         raise QualityControlError('Informe o horário no formato HH:MM.', field='stop_time')
     reason = stop_values['stop_reason']
-    if reason not in STOP_REASONS and not (previous and previous.get('stop_reason') == reason):
+    canonical_reason = {item.casefold(): item for item in stop_reasons}.get(reason.casefold())
+    if canonical_reason is None and not (previous and previous.get('stop_reason') == reason):
         raise QualityControlError('Selecione um motivo de parada válido.', field='stop_reason')
+    reason = canonical_reason or reason
     try:
         minutes = Decimal(stop_values['stop_minutes'].replace(',', '.'))
         if not minutes.is_finite() or minutes <= 0 or minutes > Decimal('9999999999.99'):

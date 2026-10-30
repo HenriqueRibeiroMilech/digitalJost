@@ -29,6 +29,17 @@ def json_snapshot(entry):
 
 
 class QualityControlRepository:
+    def list_stop_reasons(self, connection):
+        return list(connection.execute(text(
+            "SELECT name FROM dbo.JDT_OPE_QUAL_STOP_REASONS ORDER BY name"
+        )).scalars())
+
+    def insert_stop_reason(self, connection, name, actor_id):
+        connection.execute(text("""
+            INSERT INTO dbo.JDT_OPE_QUAL_STOP_REASONS (name, created_by)
+            VALUES (:name, :actor)
+        """), {'name': name, 'actor': actor_id})
+
     def product_options(self, connection, product, center):
         if product:
             return list(connection.execute(text("""

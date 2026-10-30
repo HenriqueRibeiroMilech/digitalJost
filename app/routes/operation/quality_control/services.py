@@ -7,11 +7,12 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
+from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
 from .domain import (
     QualityControlError, SNAPSHOT_FIELDS, is_flag_set, is_legacy,
-    submission_key, validate_entry,
+    submission_key, validate_entry, validate_stop_reason_name,
 )
 from .repository import QualityControlRepository, json_snapshot
 
@@ -92,6 +93,19 @@ class QualityControlService:
     def list_entries(self):
         with self.engine.connect() as connection:
             return [serialize_entry(entry) for entry in self.repository.list_entries(connection)]
+
+    def list_stop_reasons(self):
+        with self.engine.connect() as connection:
+            return self.repository.list_stop_reasons(connection)
+
+    def create_stop_reason(self, name, actor_id):
+        name = validate_stop_reason_name(name)
+        try:
+            with self.engine.begin() as connection:
+                self.repository.insert_stop_reason(connection, name, actor_id)
+        except IntegrityError:
+            raise QualityControlError('Este motivo já está cadastrado.', 409)
+        return name
 
     def detail(self, entry_id):
         with self.engine.connect() as connection:
@@ -176,7 +190,10 @@ class QualityControlService:
                     previous = self.repository.get_entry(connection, entry_id, lock=True)
                     if not form.get('revision') or form['revision'] != revision(previous):
                         raise QualityControlError('Esta ocorrência foi alterada por outra pessoa. Reabra o registro antes de salvar.', 409)
-                values = validate_entry(form, caxias_locations, workcenters, previous)
+                values = validate_entry(
+                    form, caxias_locations, workcenters, previous,
+                    stop_reasons=self.repository.list_stop_reasons(connection),
+                )
                 if previous is None:
                     key = submission_key(form.get('submission_key'))
                     fingerprint = hashlib.sha256(json.dumps({

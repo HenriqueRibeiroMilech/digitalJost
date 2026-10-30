@@ -13,7 +13,10 @@
 {% elif key == 'location_detail' %}
     <textarea id="{{ field_id }}" name="location_detail" maxlength="500" rows="3" aria-label="Detalhamento do local" placeholder="Ponto, posto ou referência adicional (opcional)..."></textarea>
 {% elif key == 'stop_reason' %}
-    <select id="{{ field_id }}" name="stop_reason" data-stop-field aria-label="Motivo da parada" required><option value="">Selecione...</option>{% for reason in stop_reasons %}<option>{{ reason }}</option>{% endfor %}</select>
+    <div class="qsb-location-field">
+        <select id="{{ field_id }}" name="stop_reason" data-stop-field aria-label="Motivo da parada" required><option value="">Selecione...</option>{% for reason in stop_reasons %}<option>{{ reason }}</option>{% endfor %}</select>
+        {% if can_manage_locations %}<button type="button" class="qsb-location-add-button" data-create-stop-reason aria-label="Cadastrar motivo da parada">+</button>{% endif %}
+    </div>
 {% elif key == 'stop_time' %}
     <input id="{{ field_id }}" name="stop_time" data-stop-field type="time" step="60" aria-label="Horário da parada" required>
 {% elif key == 'stop_minutes' %}

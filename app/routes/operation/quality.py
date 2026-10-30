@@ -20,7 +20,7 @@ from app.utils.dynamic_constants import getPlex
 from app.utils.files_utils import qsb_file
 from app.utils.permissions import get_permission
 from .quality_control import (
-    OCCURRENCE_TYPES, PRODUCT_FAMILIES, STOP_REASONS, QualityControlError,
+    OCCURRENCE_TYPES, PRODUCT_FAMILIES, QualityControlError,
     QualityControlService,
 )
 from .quality_control.domain import CAMPINAS_WORKCENTERS, is_flag_set
@@ -483,7 +483,7 @@ def quality_table_get():
         caxias_locations=_get_caxias_qsb_locations(workcenters),
         can_manage_locations=_can_manage_qsb_locations(),
         occurrence_types=OCCURRENCE_TYPES, product_families=PRODUCT_FAMILIES,
-        stop_reasons=STOP_REASONS, campinas_workcenters=CAMPINAS_WORKCENTERS,
+        stop_reasons=_quality_control().list_stop_reasons(), campinas_workcenters=CAMPINAS_WORKCENTERS,
         csrf_token=_quality_csrf_token(), submission_key=str(uuid4()),
     )
 
@@ -558,6 +558,19 @@ def quality_table_location():
     if not isinstance(request.get_json(silent=True), dict):
         raise QualityControlError('Dados do local inválidos.')
     return quality_location_post()
+
+
+@operation_quality_bp.route('/op/qualidade/tabela/motivos-parada', methods=['POST'])
+@p_quality.require(403)
+def quality_table_stop_reason():
+    if not _can_manage_qsb_locations():
+        return abort(403)
+    _validate_quality_csrf()
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or not isinstance(payload.get('name'), str):
+        raise QualityControlError('Dados do motivo de parada inválidos.')
+    reason = _quality_control().create_stop_reason(payload['name'], str(current_user.id))
+    return jsonify({'reason': reason}), 201
 
 
 @operation_quality_bp.route('/op/qualidade/add', methods=['POST'])

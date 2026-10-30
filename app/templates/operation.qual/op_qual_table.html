@@ -43,7 +43,8 @@
       data-csrf-token="{{ csrf_token }}"
       data-api-root="{{ url_for('operation_quality.quality_table_create') }}"
       data-lookup-url="{{ url_for('operation_quality.quality_table_products') }}"
-      data-location-url="{{ url_for('operation_quality.quality_table_location') }}">
+      data-location-url="{{ url_for('operation_quality.quality_table_location') }}"
+      data-stop-reason-url="{{ url_for('operation_quality.quality_table_stop_reason') }}">
     <header class="qsb-table-heading">
         <div>
             <div class="qsb-title-line"><h1>Controle de Qualidade</h1><span class="qsb-badge qsb-badge-preview">Em validação</span></div>

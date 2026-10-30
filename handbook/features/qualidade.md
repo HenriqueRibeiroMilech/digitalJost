@@ -6,7 +6,9 @@ O controle legado Flask/Jinja em `/op/qualidade/tabela` reúne cadastro horizont
 
 Cada ocorrência tem unidade, local da ocorrência, local específico, detalhamento opcional, centro de trabalho, produto, família, problema, reincidência, contenção, imagens, data e turnos. A descrição do produto é consultada no FTM; não é um novo campo persistido.
 
-Os quatro dados de parada são horário, motivo, **tempo total de todas as paradas em minutos** e quantidade. Tempo é decimal positivo com até duas casas; quantidade é inteira positiva. `STOP_REASONS`, em `app/routes/operation/quality_control/domain.py`, centraliza as opções. O PDF fornecido exemplifica apenas `Problema de Qualidade`, utilizado como opção inicial.
+Os quatro dados de parada são horário, motivo, **tempo total de todas as paradas em minutos** e quantidade. Tempo é decimal positivo com até duas casas; quantidade é inteira positiva. Os motivos são lidos do catálogo `JDT_OPE_QUAL_STOP_REASONS`; `Problema de Qualidade`, apresentado no PDF, é a opção inicial.
+
+O botão `+` de Motivo da parada, no cadastro e na edição, abre o mesmo modal de cadastro rápido do Local Específico. Após salvar, a opção fica disponível nos dois formulários e é selecionada naquele que abriu o modal. O nome aceita até 150 caracteres, normaliza espaços e rejeita vazio e duplicidade, inclusive diferenças de maiúsculas/minúsculas. O backend valida o motivo contra o catálogo ao salvar a ocorrência, preservando um motivo anterior fora da lista quando mantido sem alteração.
 
 As duas referências a local do PDF são mapeadas para local da ocorrência e local específico, já existentes. O detalhamento adicional é opcional e não duplica esses valores.
 
@@ -18,7 +20,7 @@ Os novos dados de parada são obrigatórios no novo cadastro. Um registro sem ne
 
 Visualizar abre apenas a ocorrência escolhida, com imagens e as últimas 30 entradas do histórico. Editar abre os mesmos campos no próprio modal; cancelar preserva o registro salvo. Excluir exige confirmação e faz exclusão lógica. Registros excluídos saem das listagens, pirâmide, visualização, impressão e exportação anterior.
 
-A autenticação e a permissão `GENERAL` continuam no `before_request` legado. Página, detalhes e operações da nova tela exigem `QUALITY`, que já permite gerenciar os informativos. Imagens de ocorrências publicadas também podem ser lidas por `GENERAL`, como no informativo diário; imagens não publicadas exigem `QUALITY`. As capacidades de editar/excluir retornadas pela API seguem `QUALITY`; não foram criados perfis novos. A criação de locais mantém a autorização específica já existente.
+A autenticação e a permissão `GENERAL` continuam no `before_request` legado. Página, detalhes e operações da nova tela exigem `QUALITY`, que já permite gerenciar os informativos. Imagens de ocorrências publicadas também podem ser lidas por `GENERAL`, como no informativo diário; imagens não publicadas exigem `QUALITY`. As capacidades de editar/excluir retornadas pela API seguem `QUALITY`; não foram criados perfis novos. A criação de locais mantém a autorização específica já existente. A criação de motivos reutiliza exatamente `_can_manage_qsb_locations()`, também conferida no backend; a permissão geral de editar ocorrências não concede esse cadastro automaticamente.
 
 | Endpoint | Contrato |
 |---|---|
@@ -30,6 +32,7 @@ A autenticação e a permissão `GENERAL` continuam no `before_request` legado. 
 | `GET /op/qualidade/tabela/registros/<id>/imagens/<categoria>/<nome>` | Imagem vinculada a registro ativo, com autorização |
 | `GET /op/qualidade/tabela/produtos` | Consulta parametrizada ao FTM, por produto ou centro |
 | `POST /op/qualidade/tabela/locais` | Cadastro de local com a autorização específica existente |
+| `POST /op/qualidade/tabela/motivos-parada` | JSON com `name`, CSRF e mesma autorização de locais; retorna `reason` e status 201 |
 
 Operações de escrita da nova tela exigem CSRF da sessão no header `X-CSRF-Token`. O token fica fora dos payloads de formulário capturados pelo log global legado. Campos obrigatórios, unidade/local/centro, opções Sim/Não, motivos, números, data e turnos são validados no backend. Não aplicável é exclusivo dos turnos numéricos. Um local ou centro desativado pode ser mantido em registro existente, sem permitir seu uso arbitrário em novos registros.
 
@@ -40,6 +43,8 @@ Os endpoints antigos permanecem por compatibilidade, inclusive a remoção legad
 `quality.py` mantém HTTP, autorização e composição. O pacote `app/routes/operation/quality_control/` concentra validações (`domain.py`), SQL parametrizado (`repository.py`) e coordenação/transações/anexos (`services.py`). Não há descoberta automática ou inicialização de serviço no bootstrap.
 
 `JDT_OPE_QUAL` mantém suas 16 colunas. `JDT_OPE_QUAL_CONTROL` complementa cada ID com dados de parada, publicação, autoria, atualização, chave de envio e exclusão. A relação usa representação textual do ID e é lógica, sem presumir uma FK/tipo existente. `JDT_OPE_QUAL_HISTORY` registra ação, ator, data UTC e snapshots anteriores/posteriores. Não existe histórico retroativo inventado.
+
+`JDT_OPE_QUAL_STOP_REASONS` guarda nome único, autor do cadastro e data UTC. O cadastro usa transação e chave primária sem distinção de maiúsculas/minúsculas para impedir duplicidades concorrentes; a violação de unicidade retorna 409. O motivo continua salvo como texto na ocorrência, preservando seu conteúdo histórico. Não há exclusão ou renomeação de opções nesta tela.
 
 Criação, edição e exclusão da tela nova usam uma transação por operação. A revisão é um hash dos dados atuais e da atualização dos metadados; edições e exclusões com revisão desatualizada retornam 409. Leituras de escrita travam a ocorrência com `UPDLOCK, HOLDLOCK`. A chave de envio evita duplicar um cadastro reenviado pelo mesmo usuário, conferindo também os dados e hashes dos arquivos.
 
@@ -53,8 +58,12 @@ Imagens removidas do registro e arquivos de ocorrências excluídas são preserv
 
 O script [20261028_create_qsb_control.sql](../../database/migrations/20261028_create_qsb_control.sql) é uma proposta para revisão e aplicação manual no banco `jdt`. **Não foi aplicado pelo agente nem é executado pela aplicação.**
 
+O catálogo exige também [20261030_create_qsb_stop_reasons.sql](../../database/migrations/20261030_create_qsb_stop_reasons.sql), após o script do controle e antes da publicação do código de cadastro de motivos. Ele cria a tabela e a opção inicial, sem alterar as ocorrências. Revisar e aplicar em janela autorizada; a conta da aplicação precisa de leitura e inserção no catálogo. A aplicação não executa esse script automaticamente.
+
 Antes de publicar o código correspondente, o responsável deve revisar o script, conferir no ambiente a chave/unicidade e os tipos/tamanhos reais das 16 colunas de `JDT_OPE_QUAL`, inclusive a capacidade das listas de imagens, e aplicar as tabelas complementares em janela autorizada. O código usa essas tabelas também nas consultas legadas; a publicação precisa ser coordenada. A conta da aplicação precisa poder obter `sp_getapplock` e ler/gravar as tabelas envolvidas. Não há alteração automática de schema, reflexão nem chamada a `create_all` nesta feature.
 
 Depois da aplicação autorizada, a verificação funcional deve cobrir cadastro com múltiplas paradas, publicação Sim/Não, modal com/sem imagens, edição preservando/removendo anexos, conflito entre duas edições, reenvio de cadastro sem duplicação, exclusão lógica, permissões/CSRF e os formulários anteriores. Conferir também os filtros por período, unidade e publicação e os novos dados na visualização e impressão.
+
+Para os motivos, conferir o `+` com usuário autorizado e sua ausência com usuário fora da autorização de locais; a tentativa direta deste último deve retornar 403. Cadastrar a partir da primeira linha e da edição, salvar uma ocorrência com o motivo novo e recarregar a tela para confirmar a persistência. Verificar vazio, limite de tamanho, duplicidade com variações de caixa/espaços e CSRF inválido. Confirmar que o cadastro rápido de Local Específico mantém seu comportamento.
 
 O sistema não foi executado; a validação foi somente estática. Não há afirmação de implantação ou de aprovação funcional em produção.
