@@ -1,5 +1,5 @@
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import json
 import os
@@ -236,19 +236,39 @@ def quality_post():
     return json.dumps(entries)
 
 
+def _quality_document_context():
+    try:
+        current_day = datetime.strptime(request.args.get('day', ''), '%d/%m/%Y').date()
+        # Preserva os intervalos de navegação usados pelo informativo legado.
+        previous_day = current_day - timedelta(days=2 if current_day.weekday() == 0 else 1)
+        next_day = current_day + timedelta(days=2 if current_day.weekday() == 5 else 1)
+    except (ValueError, OverflowError):
+        abort(400, 'Informe uma data válida no formato DD/MM/AAAA.')
+    selected_unit = None
+    if 'unit' in request.args:
+        try:
+            selected_unit = int(request.args['unit'])
+        except ValueError:
+            abort(400, 'Unidade inválida.')
+        if selected_unit not in (0, 1):
+            abort(400, 'Unidade inválida.')
+    filters = {'day': current_day.strftime('%d/%m/%Y')}
+    if selected_unit is not None:
+        filters['unit'] = selected_unit
+    return {
+        'file': _QUALITY_DETAIL(current_day.isoformat()), 'day': filters['day'],
+        'selected_unit': selected_unit, 'can_edit': p_quality.can(),
+        'view_url': url_for('operation_quality.quality_detail_get', **filters),
+        'print_url': url_for('operation_quality.quality_printer_get', **filters),
+        'previous_url': url_for('operation_quality.quality_detail_get', **{**filters, 'day': previous_day.strftime('%d/%m/%Y')}),
+        'next_url': url_for('operation_quality.quality_detail_get', **{**filters, 'day': next_day.strftime('%d/%m/%Y')}),
+    }
+
+
 # PÁGINA DA VISUALIZAÇÃO DOS DETALHES DO INFORMATIVO DA QUALIDADE - OPERATION MEETING
 @operation_quality_bp.route('/op/qualidade/view', methods=['GET'])
 def quality_detail_get():
-    day = request.args['day'].split('/')
-    day = f'{day[2]}-{day[1]}-{day[0]}'
-
-    file = _QUALITY_DETAIL(day)
-
-    aux = ""
-    if 'unit' in request.args:
-        aux = "&unit=" + request.args['unit']
-
-    return render_template('operation.qual/op_qual_view.html', file=file, day=request.args['day'], unit=aux)
+    return render_template('operation.qual/op_qual_view.html', print_mode=False, **_quality_document_context())
 
 # ROTA DE POST, QUE PASSA OS DADOS E ARQUIVOS RECEBIDOS PELO FORMULÁRIO AO BANCO DE DADOS SQL E AOS DIRETÓRIOS
 @operation_quality_bp.route('/op/qualidade/update', methods=['POST'])
@@ -452,11 +472,7 @@ def _save_legacy_quality_form(connection):
 # PÁGINA PARA IMPRESSÃO DO INFORMATIVO DA QUALIDADE - OPERATION MEETING
 @operation_quality_bp.route('/op/qualidade/printer', methods=['GET'])
 def quality_printer_get():
-    day = request.args['day'].split('/')
-    day = f'{day[2]}-{day[1]}-{day[0]}'
-
-    file = _QUALITY_DETAIL(day)
-    return render_template('operation.qual/op_qual_print.html', file=file, day=request.args['day'])
+    return render_template('operation.qual/op_qual_print.html', print_mode=True, **_quality_document_context())
 
 
 # PÁGINA DA ADIÇÃO DE ENTRADAS AO INFORMATIVO DA QUALIDADE - OPERATION MEETING

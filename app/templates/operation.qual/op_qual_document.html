@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Informativo da Qualidade — {{ day }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/operation_quality_details.css') }}">
+    <script src="{{ url_for('static', filename='js/operation.quality/quality_document.js') }}" defer></script>
+</head>
+<body class="qsb-view-body{% if print_mode %} qsb-print-preview{% endif %}">
+    <header class="qsb-document-toolbar">
+        <div class="qsb-document-brand"><img src="{{ url_for('static', filename='images/new_jost_logo.jpg') }}" alt="JOST"><div><strong>Informativo da Qualidade</strong><span>{{ day }}{% if selected_unit is not none %} · {{ 'Campinas' if selected_unit == 1 else 'Caxias do Sul' }}{% endif %}{% if print_mode %} · Visualização de impressão{% endif %}</span></div></div>
+        <nav class="qsb-document-actions" aria-label="Navegação do informativo">
+            {% if print_mode %}
+            <a class="qsb-document-button" href="{{ view_url }}">Voltar ao informativo</a>
+            <button class="qsb-document-button qsb-document-button-primary" type="button" data-print-document>Imprimir</button>
+            {% else %}
+            <a class="qsb-document-button" href="{{ previous_url }}" aria-label="Visualizar data anterior">← Anterior</a>
+            <a class="qsb-document-button" href="{{ next_url }}" aria-label="Visualizar próxima data">Próximo →</a>
+            <button class="qsb-document-button" type="button" data-print-document>Imprimir</button>
+            <a class="qsb-document-button qsb-document-button-primary" href="{{ url_for('operation_quality.quality_get') }}">Pirâmide</a>
+            {% endif %}
+        </nav>
+    </header>
+    <main id="op_qual_body" class="qsb-document-content">
+        {% block records %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -1,57 +1,10 @@
-{% extends 'home.html' %}
-
-{% block content %}
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/operation_quality_details.css') }}">
-    <style>
-        @media print {
-            body {
-                margin: 0;
-            }
-            table {
-                width: 100vw;
-                height: 1500px;
-                border-collapse: collapse;
-                table-layout: fixed;
-                page-break-before: always;
-            }
-            th, td {
-                border: 1px solid black;
-                padding: 8px;
-                text-align: left;
-                word-wrap: break-word;
-            }
-            th {
-                background-color: #f2f2f2;
-            }
-            .header-input {
-                width: 70px;
-            }
-            .date-input {
-                width: 50px;
-            }
-            .input-field {
-                width: 100%;
-                box-sizing: border-box;
-            }
-        }
-
-        @media screen {
-            table {
-                display: none;
-            }
-        }
-    </style>
-</head>
-
-<body id="op_qual_body">
-</body>
-
-<script src="{{ url_for('static', filename='js/operation.quality/stop_details.js') }}"></script>
-<script>
-    {% include 'operation.qual/op_qual_print.js' %}
-    window.QsbStopDetails.render(document.querySelectorAll('.qual_event'), {{ file|tojson }});
-</script>
+{% extends 'operation.qual/op_qual_document.html' %}
+{% from 'operation.qual/op_qual_record.html' import record, signoff %}
+{% block records %}
+    {% for entry in file %}
+        {{ record(entry, day, print_url, print_mode=true) }}
+        {{ signoff(entry, day) }}
+    {% else %}
+        <section class="qsb-document-empty"><h1>Nenhuma ocorrência publicada</h1><p>Não há informativos para imprimir em {{ day }} com o filtro de unidade selecionado.</p></section>
+    {% endfor %}
 {% endblock %}

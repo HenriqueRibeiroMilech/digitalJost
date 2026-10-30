@@ -1,0 +1,86 @@
+{% macro field(label, value, wide=false) -%}
+<div class="qsb-record-field{% if wide %} qsb-record-field-wide{% endif %}"><dt>{{ label }}</dt><dd>{{ value if value is not none and value|string|trim else 'Não informado' }}</dd></div>
+{%- endmacro %}
+
+{% macro record(entry, day, print_url, can_edit=false, print_mode=false) -%}
+{% set kind = entry['Local da Ocorrencia'][0] %}
+{% set themes = {'Interno': 'internal', 'Fornecedor': 'supplier', 'Cliente (Formal)': 'formal', 'Cliente (Não Formal)': 'informal', 'Cliente (Logística)': 'logistics'} %}
+{% set theme = themes.get(kind, 'internal') %}
+<article class="qsb-record qsb-record-{{ theme }}" aria-labelledby="qsb-record-title-{{ entry['ID'] }}">
+    <section class="qsb-record-panel qsb-record-problem">
+        <header class="qsb-section-heading"><span class="qsb-section-mark" aria-hidden="true">QSB</span><h1 id="qsb-record-title-{{ entry['ID'] }}">Informativo da Qualidade</h1></header>
+        <div class="qsb-record-identity"><strong>{{ day }}</strong><span>Nº {{ entry['ID'] }}</span></div>
+        <span class="qsb-occurrence-type">{{ kind }}</span>
+        <dl class="qsb-record-fields">
+            {{ field('Descrição do problema', entry['Problema'], true) }}
+            {{ field('Código do produto', entry['prodCode'], true) }}
+        </dl>
+        {% if not print_mode %}<div class="qsb-record-actions">
+            <a class="qsb-document-button" href="{{ print_url }}" target="_blank" rel="noopener">Formato de impressão</a>
+            {% if can_edit %}<a class="qsb-document-button qsb-document-button-primary" href="{{ url_for('operation_quality.quality_edit_get', entryID=entry['ID'], command='edit') }}">Editar</a>{% endif %}
+        </div>{% endif %}
+    </section>
+
+    <section class="qsb-record-panel qsb-record-details" aria-labelledby="qsb-details-title-{{ entry['ID'] }}">
+        <header class="qsb-section-heading"><h2 id="qsb-details-title-{{ entry['ID'] }}">Dados da ocorrência</h2></header>
+        <dl class="qsb-record-fields qsb-record-fields-pair">
+            {{ field('Unidade JOST', 'Campinas' if entry['unit'] == '1' else ('Caxias do Sul' if entry['unit'] == '0' else none)) }}
+            {{ field('Reincidente', entry['Reincidente']) }}
+            {{ field('Local específico', entry['Local da Ocorrencia'][1], true) }}
+            {{ field('Detalhamento do local', entry['Detalhamento do local'], true) }}
+            {{ field('Centro de trabalho', entry['Centro de Trabalho'], true) }}
+            {{ field('Família de produtos', entry['Familia do Produto']) }}
+            {% set shifts = entry['Turno'].split(',') %}
+            {% set shift_label %}{% for shift in shifts if shift|trim %}{{ 'Não aplicável' if shift|trim == 'NA' else 'Turno ' ~ shift|trim }}{% if not loop.last %}, {% endif %}{% endfor %}{% endset %}
+            {{ field('Turnos', shift_label) }}
+        </dl>
+    </section>
+
+    <aside class="qsb-record-side">
+        <section class="qsb-record-panel" aria-labelledby="qsb-containment-title-{{ entry['ID'] }}">
+            <header class="qsb-section-heading"><h2 id="qsb-containment-title-{{ entry['ID'] }}">Contenção</h2></header>
+            <dl class="qsb-record-fields">
+                {{ field('O que foi feito?', entry['Contencao']['O que']) }}
+                {{ field('Como foi feito?', entry['Contencao']['Como']) }}
+                {{ field('Quem fez?', entry['Contencao']['Quem']) }}
+            </dl>
+        </section>
+        <section class="qsb-record-panel qsb-record-stops" aria-labelledby="qsb-stops-title-{{ entry['ID'] }}">
+            <header class="qsb-section-heading"><h2 id="qsb-stops-title-{{ entry['ID'] }}">Dados da parada</h2></header>
+            <dl class="qsb-record-fields qsb-record-fields-pair">
+                {{ field('Motivo da parada', entry['Motivo da parada'], true) }}
+                {% set minutes = entry['Tempo total de parada'] %}
+                {% set duration = ('%.2f'|format(minutes)).rstrip('0').rstrip('.').replace('.', ',') ~ ' min' if minutes is not none else none %}
+                {{ field('Tempo total', duration) }}
+                {{ field('Quantidade de paradas', entry['Quantidade de paradas']) }}
+                {{ field('Horário da parada', entry['Horário da parada'], true) }}
+            </dl>
+        </section>
+    </aside>
+
+    <section class="qsb-record-panel qsb-record-images" aria-labelledby="qsb-images-title-{{ entry['ID'] }}">
+        <header class="qsb-section-heading"><h2 id="qsb-images-title-{{ entry['ID'] }}">Imagens da ocorrência</h2><span class="qsb-image-help">{% if not print_mode %}Clique para ampliar{% endif %}</span></header>
+        {% if entry['Imagens NOK'] or entry['Imagens OK'] %}
+        <div class="qsb-record-gallery">
+            {% for category in ['NOK', 'OK'] %}{% for name in entry['Imagens ' ~ category] %}
+            {% set photo_url = entry['URLs Imagens ' ~ category][loop.index0] %}
+            <figure class="qsb-record-photo qsb-record-photo-{{ category|lower }}">
+                <figcaption><strong>{{ category }}</strong><span>Imagem {{ loop.index }}</span></figcaption>
+                <a href="{{ photo_url }}" target="_blank" rel="noopener" aria-label="Ampliar imagem {{ category }} {{ loop.index }} da ocorrência {{ entry['ID'] }}"><img src="{{ photo_url }}" alt="Imagem {{ category }} {{ loop.index }} da ocorrência {{ entry['ID'] }}" loading="{{ 'eager' if print_mode else 'lazy' }}"><span class="qsb-photo-unavailable" hidden>Imagem indisponível.</span></a>
+            </figure>
+            {% endfor %}{% endfor %}
+        </div>
+        {% else %}<p class="qsb-empty-images">Nenhuma imagem anexada a esta ocorrência.</p>{% endif %}
+    </section>
+</article>
+{%- endmacro %}
+
+{% macro signoff(entry, day) -%}
+<section class="qsb-signoff" aria-labelledby="qsb-signoff-title-{{ entry['ID'] }}">
+    <h2 id="qsb-signoff-title-{{ entry['ID'] }}">Registro de ciência — Informativo da Qualidade</h2>
+    <div class="qsb-signoff-meta"><label>Informativo Nº <input value="{{ entry['ID'] }}" aria-label="Número do informativo"></label><label>Turno <input aria-label="Turno do registro de ciência"></label><label>Data <input value="{{ day }}" aria-label="Data do registro de ciência"></label></div>
+    <table><caption>Ciência da ocorrência Nº {{ entry['ID'] }}</caption><thead><tr><th scope="col">Nome do funcionário</th><th scope="col">Matrícula</th><th scope="col">Assinatura</th></tr></thead><tbody>
+        {% for number in range(1, 18) %}<tr><td><input aria-label="Nome do funcionário {{ number }}"></td><td><input aria-label="Matrícula {{ number }}"></td><td><input aria-label="Assinatura {{ number }}"></td></tr>{% endfor %}
+    </tbody></table>
+</section>
+{%- endmacro %}

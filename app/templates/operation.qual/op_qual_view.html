@@ -1,39 +1,9 @@
-{% extends 'home.html' %}
-
-{% block content %}
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/operation_quality_details.css') }}">
-</head>
-
-<style>
-    @media print {
-      #select_back, #voltar, #prox, #apresentacao, .qual_view_print {
-        display: none;
-      }
-
-      @page {
-        size: landscape;
-        margin: 20mm;
-        }
-    }
-
-</style>
-
-<body>
-    <a style="transform:translate(-22%, -22%);left:95%;position:fixed;" class="title" id="select_back" href="/op/qualidade">&times;</a>
-    <a style="transform:translate(-22%, -22%);left:88%;position:fixed;" class="title" id="voltar" onclick="changeLoc('voltar')">&#10094;</a>
-    <a style="transform:translate(-22%, -22%);left:92%;position:fixed;" class="title" id="prox" onclick="changeLoc('prox')">&#10095;</a>
-    <a><img id="apresentacao" class="title" src="/static/images/download.png" onclick="changeLoc('download')" style="transform:translate(-22%, -22%);left:82%;position:fixed;"></a>
-    <section id="op_qual_body">
-
-    </section>
-</body>
-
-<script src="{{ url_for('static', filename='js/operation.quality/stop_details.js') }}"></script>
-<script>
-    {% include 'operation.qual/op_qual_view.js' %}
-    window.QsbStopDetails.render(document.querySelectorAll('.qual_view_event'), {{ file|tojson }});
-</script>
+{% extends 'operation.qual/op_qual_document.html' %}
+{% from 'operation.qual/op_qual_record.html' import record %}
+{% block records %}
+    {% for entry in file %}
+        {{ record(entry, day, print_url, can_edit=can_edit) }}
+    {% else %}
+        <section class="qsb-document-empty"><h1>Nenhuma ocorrência publicada</h1><p>Não há informativos para {{ day }} com o filtro de unidade selecionado.</p><a class="qsb-document-button qsb-document-button-primary" href="{{ url_for('operation_quality.quality_get') }}">Voltar à pirâmide</a></section>
+    {% endfor %}
 {% endblock %}
