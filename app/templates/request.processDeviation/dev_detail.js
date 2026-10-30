@@ -351,7 +351,10 @@ function init() {
                 cell.appendChild(semAcao);
               }
 
-            } else if (tableData.length == 2 && ((entry[7] == 2 && '{{min_status}}' != '0' && '{{owner}}' == '1') || ('{{admin}}' == '1' && entry[7] != 3 && entry[7] != 4))) {
+            } else if (
+              (entry[7] == 2 && '{{owner}}' == '1') ||
+              ('{{admin}}' == '1' && entry[7] != 3 && entry[7] != 4)
+            ) {
 
               cell.style.textDecoration = "underline";
               cell.onclick = function () {
