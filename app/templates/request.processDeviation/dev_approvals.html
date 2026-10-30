@@ -6,6 +6,7 @@
   <title>Digital JOST</title>
 
   <link rel="icon" href="{{ url_for('static', filename='images/jost_icon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='CSS/request-process-deviation.css') }}">
 
   <!-- Font Awesome -->
   <link rel="stylesheet"
@@ -143,12 +144,21 @@
       </div>
     </div>
 
-    <div class="filter-container">
+    <div class="filter-container deviation-list-filters">
       <input type="text" id="filter1" placeholder="Filtrar - Nº Desvio" onkeyup="filterTable()">
       <input type="text" id="filter2" placeholder="Filtrar - Solicitante" onkeyup="filterTable()">
       <input type="text" id="filter3" placeholder="Filtrar - Motivo" onkeyup="filterTable()">
       <input type="text" id="filter4" placeholder="Filtrar - Centro de Trabalho" onkeyup="filterTable()">
       <input type="text" id="filter5" placeholder="Filtrar - Família" onkeyup="filterTable()">
+      <label class="deviation-unit-filter" for="unit_filter">
+        Unidade de aplicação
+        <select id="unit_filter" title="Caxias do Sul e Campinas incluem desvios de ambas as unidades. Ambas mostra somente os aplicáveis às duas.">
+          <option value="">Todas as unidades</option>
+          {% for code, label in units.items() %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
       <div class="dropdown">
         <button class="dropbtn" type="button">Selecione o status</button>
         <div class="dropdown-content" id="filter6">
@@ -171,6 +181,7 @@
             <th style="white-space:nowrap;">Nº Desvio</th>
             <th>Revisão</th>
             <th>Solicitante</th>
+            <th>Unidade de aplicação</th>
             <th>Motivo</th>
             <th>Centro de Trabalho</th>
             <th>Família</th>
@@ -196,6 +207,10 @@
     </div>
   </div>
 
+  <script>
+    window.deviationUnitsConfig = {{ units | tojson }};
+  </script>
+  <script src="{{ url_for('static', filename='js/request.processDeviation/units.js') }}"></script>
   <script>
     let tableData = [];
     const defaultStart = '{{start_date}}';
@@ -370,6 +385,10 @@
         cell.textContent = info['requesterName'] || '';
         row.appendChild(cell);
 
+        cell = document.createElement('td');
+        cell.textContent = deviationUnits.label(info['unit']);
+        row.appendChild(cell);
+
         // Motivo
         cell = document.createElement('td');
         cell.textContent = info['motive'] || '';
@@ -498,7 +517,8 @@
         const m4 = String(fmtList(info['workCenter'])).toLowerCase().includes(f4);
         const m5 = String(fmtList(info['families'])).toLowerCase().includes(f5);
         const m6 = f6.includes(String(info['status']));
-        return m1 && m2 && m3 && m4 && m5 && m6;
+        const m7 = deviationUnits.matches(info['unit']);
+        return m1 && m2 && m3 && m4 && m5 && m6 && m7;
       });
       populateTable(filtered);
     }
@@ -547,7 +567,7 @@
 
     /* ====== Excel ====== */
     function downloadFile(){
-      const payload = getFilters();
+      const payload = { ...getFilters(), unit: deviationUnits.selected() };
       fetch('/desvios/aprovacoes?excel=1', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
@@ -692,19 +712,12 @@
            || $all('button, a').find(el => /download\s*excel/i.test(el.textContent||'')) || null;
   }
 
-  function getValue(id){ const el=document.getElementById(id); return el && el.value ? el.value : ''; }
-
   /* -------------------- EXCEL: handler ADITIVO -------------------- */
   function onExcelClick(e){
     e.preventDefault(); e.stopPropagation();
     const btn = e.currentTarget;
 
-    // payload com filtros SE existirem (senão, manda vazio)
-    const s  = getValue('start_date');
-    const ed = getValue('end_date');
-    const payload = {};
-    if (s)  payload.start_date = s;
-    if (ed) payload.end_date   = ed;
+    const payload = { ...getFilters(), unit: deviationUnits.selected() };
 
     setLoading(btn, true);
 

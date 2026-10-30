@@ -39,6 +39,12 @@ _STATUS_DICT = {
     6: 'Vencido'
 }
 
+_DEVIATION_UNITS = {
+    0: 'JOST Caxias do Sul',
+    1: 'JOST Campinas',
+    2: 'Ambas'
+}
+
 _APPROVERS_TEAMS = [
     [0, 'Compras'],
     [1, 'Eng. Fornecedores'],
@@ -57,6 +63,14 @@ _APPROVERS_TEAMS = [
 request_processDeviation_bp = Blueprint('request_processDeviation', __name__)
 
 # ------------------------- Helpers -------------------------
+def _parse_deviation_unit(value, required=False):
+    if value in (None, '') and not required:
+        return None
+    if str(value) not in ('0', '1', '2'):
+        abort(400, description="Selecione uma unidade de aplicação válida para o desvio.")
+    return int(value)
+
+
 def _safe_list_from_str(s):
     """Converte string em lista sem usar eval."""
     if isinstance(s, list):
@@ -1349,6 +1363,9 @@ def dev_create():
         if request.method == 'POST':
             cmd = request.args.get('cmd')
 
+            if cmd in ('1', '2'):
+                _parse_deviation_unit(request.form.get('unidade'), required=True)
+
             if cmd == '1':
                 insert_data()
                 return redirect('/desvios')
@@ -1530,6 +1547,7 @@ def dev_create():
         return render_template(
             'request.processDeviation/dev_create.html',
             equipes=_APPROVERS_TEAMS,
+            units=_DEVIATION_UNITS,
             solicitante=current_user.name,
             revisao=revisao,
             cts=cts,
@@ -2059,13 +2077,14 @@ def dev_status_update():
 def dev_view_get():
     end_date = datetime.now().date()
     start_date = f"{end_date.year}-01-01"
-    return render_template('request.processDeviation/dev_view.html', end_date=end_date, start_date=start_date)
+    return render_template('request.processDeviation/dev_view.html', end_date=end_date, start_date=start_date, units=_DEVIATION_UNITS)
 
 @request_processDeviation_bp.route('/desvios/consultar', methods=['POST'])
 def dev_view_post():
     payload = request.get_json() or {}
     if 'start_date' not in payload or 'end_date' not in payload:
         abort(400, description="Missing 'start_date' or 'end_date'")
+    unit = _parse_deviation_unit(payload.get('unit'))
 
     query = """
     SELECT
@@ -2076,23 +2095,28 @@ def dev_view_post():
         T1.workCenter,
         T1.families,
         T1.finalDate,
-        T1.status
+        T1.status,
+        D.unit
     FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T1
+    JOIN JDT_REQUEST_DEV AS D ON D.deviationId = T1.deviationId
     WHERE T1.deviationId = (
         SELECT MAX(T2.deviationId)
         FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T2
         WHERE LEFT(T1.deviationId, 10) = LEFT(T2.deviationId, 10)
     )
       AND T1.openDate BETWEEN :start_date AND :end_date
+      AND (:unit IS NULL OR D.unit = :unit OR (:unit IN (0, 1) AND D.unit = 2))
     ORDER BY T1.deviationId DESC
     """
     params = {
         "start_date": payload['start_date'] + ' 00:00',
-        "end_date": payload['end_date'] + ' 23:59'
+        "end_date": payload['end_date'] + ' 23:59',
+        "unit": unit
     }
     data = engine_run_query(query, 'jdt', params=params)
 
     if request.args.get('excel'):
+        data['unit'] = data['unit'].map(_DEVIATION_UNITS).fillna('Não informada')
         data['status'] = data['status'].map(_STATUS_DICT)
         data = data.rename(columns={
             'deviationId': 'Desvio',
@@ -2101,7 +2125,8 @@ def dev_view_post():
             'motive': 'Motivo',
             'workCenter': 'Centro de Trabalho',
             'families': 'Família',
-            'finalDate': 'Data Fim'
+            'finalDate': 'Data Fim',
+            'unit': 'Unidade de aplicação'
         })
         excel_filename = _excel_path('desvios.xlsx')
         if os.path.exists(excel_filename):
@@ -2116,7 +2141,7 @@ def dev_view_post():
 def dev_approvals_get():
     end_date = datetime.now().date()
     start_date = f"{end_date.year}-01-01"
-    return render_template('request.processDeviation/dev_approvals.html', end_date=end_date, start_date=start_date)
+    return render_template('request.processDeviation/dev_approvals.html', end_date=end_date, start_date=start_date, units=_DEVIATION_UNITS)
 
 @request_processDeviation_bp.route('/desvios/aprovacoes', methods=['POST'])
 def dev_approvals_post():
@@ -2124,6 +2149,7 @@ def dev_approvals_post():
     payload = request.get_json() or {}
     if 'start_date' not in payload or 'end_date' not in payload:
         abort(400, description="Missing 'start_date' or 'end_date'")
+    unit = _parse_deviation_unit(payload.get('unit'))
 
     filter_sql = ""
     filter_params = {}
@@ -2162,24 +2188,29 @@ def dev_approvals_post():
         T3.sector,
         T2.sectorId,
         T2.status AS approvalStatus,
-        T4.name AS approverName
+        T4.name AS approverName,
+        D.unit
     FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T1
+    JOIN JDT_REQUEST_DEV AS D ON D.deviationId = T1.deviationId
     JOIN JDT_REQUEST_DEV_CONFIG_STATUS AS T2 ON T1.deviationId = T2.deviationId
     JOIN JDT_REQUEST_DEV_SECTORS AS T3 ON T2.sectorId = T3.id
     LEFT JOIN JDT_USER_DETAILS AS T4 ON T2.approverId = T4.id
     WHERE
       T1.openDate BETWEEN :start_date AND :end_date
+      AND (:unit IS NULL OR D.unit = :unit OR (:unit IN (0, 1) AND D.unit = 2))
       {filter_sql}
     ORDER BY T1.deviationId DESC
     """
     params = {
         "start_date": payload['start_date'] + ' 00:00',
         "end_date": payload['end_date'] + ' 23:59',
+        "unit": unit,
         **filter_params
     }
     data = engine_run_query(query, 'jdt', params=params)
 
     if request.args.get('excel'):
+        data['unit'] = data['unit'].map(_DEVIATION_UNITS).fillna('Não informada')
         data['status'] = data['status'].map(_STATUS_DICT)
         data['approvalStatus'] = data['approvalStatus'].map({0: 'Aguardando aprovação', 1: 'Aprovado', 2: 'Reprovado'})
         data = data.rename(columns={
@@ -2192,7 +2223,8 @@ def dev_approvals_post():
             'finalDate': 'Data Fim',
             'sector': 'Setor',
             'approvalStatus': 'Status de Aprovação',
-            'approverName': 'Aprovador'
+            'approverName': 'Aprovador',
+            'unit': 'Unidade de aplicação'
         })
         excel_filename = _excel_path('desvios.xlsx')
         if os.path.exists(excel_filename):
