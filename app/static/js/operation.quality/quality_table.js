@@ -149,10 +149,15 @@
         updateCurrentSection();
     }, { passive: true });
     function resizeScroll() {
+        // Measure both header rows so the fixed entry row also works with zoom and font changes.
+        grid.style.setProperty('--qsb-group-offset', Math.ceil(table.tHead.rows[0].getBoundingClientRect().height) + 'px');
+        grid.style.setProperty('--qsb-header-height', Math.ceil(table.tHead.getBoundingClientRect().height) + 'px');
         document.getElementById('qsb-top-scroll-width').style.width = (grid.scrollWidth + topScroll.clientWidth - grid.clientWidth) + 'px';
         updateCurrentSection();
     }
-    new ResizeObserver(resizeScroll).observe(grid);
+    const tableResizeObserver = new ResizeObserver(resizeScroll);
+    tableResizeObserver.observe(grid);
+    tableResizeObserver.observe(table.tHead);
     resizeScroll();
 
     function bindForm(form, isCreate) {
@@ -414,7 +419,7 @@
         });
         document.getElementById('qsb-table-empty').hidden = count !== 0;
         document.getElementById('qsb-table-count').textContent = count + ' de ' + records.size + ' ocorrência(s)';
-        document.getElementById('qsb-filter-totals').textContent = 'Tempo informado: ' + minutes.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' min · Paradas informadas: ' + stops.toLocaleString('pt-BR');
+        document.getElementById('qsb-filter-totals').textContent = 'Informados: ' + minutes.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' min · ' + stops.toLocaleString('pt-BR') + ' paradas';
     }
     const filters = [filterFrom, filterUntil, filterUnit, filterPublish, filterSearch];
     filters.forEach(function (filter) { filter.addEventListener('input', filterRows); });

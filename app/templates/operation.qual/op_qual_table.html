@@ -46,9 +46,7 @@
       data-location-url="{{ url_for('operation_quality.quality_table_location') }}">
     <header class="qsb-table-heading">
         <div>
-            <p class="qsb-eyebrow">OP Meeting <span aria-hidden="true">/</span> Qualidade</p>
             <div class="qsb-title-line"><h1>Controle de Qualidade</h1><span class="qsb-badge qsb-badge-preview">Em validação</span></div>
-            <p class="qsb-subtitle">Registre uma vez, acompanhe as ocorrências e escolha quais publicar na pirâmide.</p>
         </div>
         <nav class="qsb-page-links" aria-label="Telas da qualidade">
             <a class="qsb-button qsb-button-secondary" href="{{ url_for('operation_quality.quality_get') }}">Pirâmide ↗</a>
@@ -58,26 +56,25 @@
     <p id="qsb-page-status" class="qsb-table-success" role="status" hidden></p>
     <section class="qsb-workspace" aria-labelledby="qsb-workspace-title">
         <div class="qsb-workspace-heading">
-            <div><h2 id="qsb-workspace-title">Ocorrências de qualidade</h2><p>Preencha a primeira linha. <span class="qsb-required" aria-hidden="true">*</span> Campo obrigatório. Imagens: até 20 por envio e 40 MB no total.</p></div>
+            <div><h2 id="qsb-workspace-title">Ocorrências</h2><p><span class="qsb-required" aria-hidden="true">*</span> Obrigatório. Imagens: até 20 por envio e 40 MB no total.</p></div>
             <div class="qsb-form-actions">
                 <button class="qsb-button qsb-button-quiet" type="reset" form="qsb-table-form">Limpar linha</button>
                 <button class="qsb-button qsb-button-primary" type="submit" form="qsb-table-form" data-qsb-submit>+ Cadastrar ocorrência</button>
             </div>
         </div>
         <div class="qsb-table-navigation">
-            <nav class="qsb-section-links" aria-label="Ir para um grupo de campos">{% for key, label, count in groups %}<button class="qsb-section-link" type="button" data-qsb-go="{{ key }}" aria-controls="qsb-table-scroll" {% if loop.first %}aria-current="true"{% endif %}><span class="qsb-section-number" aria-hidden="true">{{ loop.index }}</span>{{ label }}</button>{% endfor %}</nav>
+            <nav class="qsb-section-links" aria-label="Ir para um grupo de campos">{% for key, label, count in groups %}<button class="qsb-section-link" type="button" data-qsb-go="{{ key }}" aria-controls="qsb-table-scroll" {% if loop.first %}aria-current="true"{% endif %}>{{ label }}</button>{% endfor %}</nav>
             <div class="qsb-form-progress"><span id="qsb-form-progress-text">Preencha os obrigatórios</span><progress id="qsb-form-progress" max="17" value="3" aria-label="Campos obrigatórios preenchidos"></progress></div>
         </div>
         <section class="qsb-table-filters" aria-label="Filtrar ocorrências">
-            <div class="qsb-filter-intro"><strong>Consultar registros</strong><span id="qsb-table-count" role="status">{{ entries|length }} ocorrência(s)</span></div>
+            <div class="qsb-filter-intro"><strong id="qsb-table-count" role="status">{{ entries|length }} ocorrência(s)</strong><span id="qsb-filter-totals" class="qsb-filter-totals"></span></div>
             <label class="qsb-search-filter">Pesquisar<input id="qsb-filter-search" type="search" placeholder="ID, produto, problema ou responsável..."></label>
             <label>De<input id="qsb-filter-from" type="date"></label><label>Até<input id="qsb-filter-until" type="date"></label>
             <label>Unidade<select id="qsb-filter-unit"><option value="">Todas</option><option value="0">Caxias do Sul</option><option value="1">Campinas</option></select></label>
             <label>Publicação<select id="qsb-filter-publish"><option value="">Todas</option><option value="1">Na pirâmide</option><option value="0">Só no controle</option></select></label>
             <button class="qsb-button qsb-button-quiet" id="qsb-clear-filters" type="button">Limpar filtros</button>
-            <span id="qsb-filter-totals" class="qsb-filter-totals"></span>
         </section>
-        <div class="qsb-scroll-guide" id="qsb-table-help"><span>Todos os campos estão na mesma linha. Use os grupos ou a barra para navegar.</span><span aria-hidden="true">← Deslize a tabela →</span></div>
+        <p class="qsb-sr-only" id="qsb-table-help">Use os grupos ou as barras para navegar. A linha de cadastro permanece visível ao rolar os registros.</p>
         <div class="qsb-top-scroll" id="qsb-top-scroll" tabindex="0" role="region" aria-label="Rolagem horizontal dos campos"><div id="qsb-top-scroll-width"></div></div>
         <form id="qsb-table-form" method="post" enctype="multipart/form-data" action="{{ url_for('operation_quality.quality_table_create') }}">
             <input type="hidden" name="submission_key" value="{{ submission_key }}">
@@ -91,7 +88,7 @@
                         <tr class="qsb-group-row"><th scope="col" rowspan="2" class="qsb-pinned">Registro</th>{% for key, label, count in groups %}<th scope="colgroup" colspan="{{ count }}" data-qsb-section="{{ key }}">{{ label }}</th>{% endfor %}</tr>
                         <tr class="qsb-column-row">{% for key, title, section, width, required in columns %}<th scope="col" data-column="{{ key }}" data-group="{{ section }}" data-label="{{ title }}">{{ title }}{% if required %} <span class="qsb-required" aria-hidden="true">*</span>{% endif %}</th>{% endfor %}</tr>
                     </thead>
-                    <tbody class="qsb-table-create"><tr><th scope="row" class="qsb-pinned"><span class="qsb-badge qsb-badge-new">+ Novo</span><span class="qsb-new-hint">Preencha esta linha</span><button class="qsb-button qsb-button-primary qsb-row-submit" type="submit" data-qsb-submit>Cadastrar</button></th>{% for key, title, section, width, required in columns %}<td>{{ entry_field(key, 'qsb-create') }}</td>{% endfor %}</tr></tbody>
+                    <tbody class="qsb-table-create"><tr><th scope="row" class="qsb-pinned"><span class="qsb-badge qsb-badge-new">+ Novo</span><button class="qsb-button qsb-button-primary qsb-row-submit" type="submit" data-qsb-submit>Cadastrar</button></th>{% for key, title, section, width, required in columns %}<td>{{ entry_field(key, 'qsb-create') }}</td>{% endfor %}</tr></tbody>
                     <tbody id="qsb-table-entries">
                         <tr class="qsb-history-divider"><td colspan="23"><span>Ocorrências cadastradas</span>Use Visualizar para consultar, editar ou excluir um registro.</td></tr>
                         {% for entry in entries %}
