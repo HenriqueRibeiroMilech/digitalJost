@@ -42,7 +42,7 @@ class QualityControlRepository:
 
     def list_entries(self, connection):
         return [dict(row) for row in connection.execute(text(
-            f"SELECT {PROJECTION} FROM dbo.JDT_OPE_QUAL q {JOIN} WHERE {VISIBLE} ORDER BY q.openDate DESC, q.id DESC"
+            f"SELECT {PROJECTION} FROM dbo.JDT_OPE_QUAL q {JOIN} WHERE {VISIBLE} ORDER BY TRY_CONVERT(BIGINT, q.id) DESC, q.id DESC"
         )).mappings()]
 
     def get_entry(self, connection, entry_id, lock=False, include_deleted=False):

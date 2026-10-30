@@ -373,7 +373,25 @@
     const filterUnit = document.getElementById('qsb-filter-unit');
     const filterPublish = document.getElementById('qsb-filter-publish');
     const filterSearch = document.getElementById('qsb-filter-search');
+    const sortOrder = document.getElementById('qsb-sort-order');
+    const compareIds = new Intl.Collator('pt-BR', { numeric: true }).compare;
     body.querySelectorAll('[data-entry-id]').forEach(function (row) { records.set(row.dataset.entryId, { row: row, text: normalize(row.textContent) }); });
+    function sortRows() {
+        const order = sortOrder.value;
+        const rows = Array.from(records.values(), function (item) { return item.row; });
+        rows.sort(function (first, second) {
+            const byId = compareIds(first.dataset.entryId, second.dataset.entryId);
+            if (order === 'date_desc' || order === 'date_asc') {
+                const byDate = first.dataset.date.localeCompare(second.dataset.date);
+                if (byDate) { return order === 'date_asc' ? byDate : -byDate; }
+                return -byId;
+            }
+            return order === 'id_asc' ? byId : -byId;
+        });
+        const fragment = document.createDocumentFragment();
+        rows.forEach(function (row) { fragment.appendChild(row); });
+        body.insertBefore(fragment, document.getElementById('qsb-table-empty'));
+    }
     function filterRows() {
         const search = normalize(filterSearch.value.trim());
         let count = 0;
@@ -392,8 +410,12 @@
     }
     const filters = [filterFrom, filterUntil, filterUnit, filterPublish, filterSearch];
     filters.forEach(function (filter) { filter.addEventListener('input', filterRows); });
-    document.getElementById('qsb-clear-filters').addEventListener('click', function () { filters.forEach(function (filter) { filter.value = ''; }); filterRows(); });
-    filterRows();
+    sortOrder.addEventListener('change', function () { sortRows(); grid.scrollTop = 0; });
+    document.getElementById('qsb-clear-filters').addEventListener('click', function () {
+        filters.forEach(function (filter) { filter.value = ''; });
+        sortOrder.value = 'id_desc'; filterRows(); sortRows(); grid.scrollTop = 0;
+    });
+    filterRows(); sortRows();
 
     function renderRow(entry) {
         const row = node('tr'); row.dataset.entryId = entry.id; row.dataset.date = entry.date_iso;
@@ -420,7 +442,7 @@
         const previous = records.get(entry.id);
         if (previous) { previous.row.replaceWith(row); }
         else { body.insertBefore(row, body.querySelector('.qsb-history-divider').nextSibling); }
-        records.set(entry.id, { row: row, text: normalize(row.textContent) }); filterRows(); resizeScroll();
+        records.set(entry.id, { row: row, text: normalize(row.textContent) }); filterRows(); sortRows(); resizeScroll();
     }
     function renderDetail(entry) {
         content.replaceChildren();
@@ -594,6 +616,6 @@
     window.addEventListener('pagehide', function (event) { if (!event.persisted) { createController.release(); editController.release(); } });
     window.addEventListener('pageshow', function (event) {
         if (event.persisted) { createController.setBusy(false); editController.setBusy(false); setRecordBusy(false); }
-        createController.refresh(); filterRows(); resizeScroll();
+        createController.refresh(); filterRows(); sortRows(); resizeScroll();
     });
 }());
