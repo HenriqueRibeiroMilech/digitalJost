@@ -1444,6 +1444,13 @@ li {
   background: rgba(28,124,84,1);
 }
 
+.side_btn.qsb-pyramid-new-entry {
+  padding-left: 1vw;
+  padding-right: 1vw;
+  font-size: 1.15vw;
+  white-space: nowrap;
+}
+
 .side_title {
   background: rgba(28,124,84,1);
   font-size: calc(1.4vh + 0.9vw);
