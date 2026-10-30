@@ -13,16 +13,12 @@
     <script src="{{ url_for('static', filename='js/operation.quality/quality_table.js') }}" defer></script>
 </head>
 <body class="qsb-table-body">
-{% set groups = [('occurrence', 'Ocorrência', 4), ('stop', 'Paradas', 4), ('product', 'Produto', 4), ('problem', 'Problema', 2), ('containment', 'Contenção', 3), ('images', 'Imagens', 2), ('date', 'Data, turnos e publicação', 3)] %}
+{% set groups = [('occurrence', 'Ocorrência', 4), ('product', 'Produto', 4), ('problem', 'Problema', 2), ('containment', 'Contenção', 3), ('images', 'Imagens', 2), ('stop', 'Paradas', 4), ('date', 'Data, turnos e publicação', 3)] %}
 {% set columns = [
     ('unit', 'Unidade JOST', 'occurrence', 'unit', true),
     ('type', 'Local da ocorrência', 'occurrence', 'type', true),
     ('typeDesc', 'Local específico', 'occurrence', 'location', true),
     ('location_detail', 'Detalhamento do local', 'occurrence', 'detail', false),
-    ('stop_reason', 'Motivo da parada', 'stop', 'reason', true),
-    ('stop_time', 'Horário da parada', 'stop', 'time', true),
-    ('stop_minutes', 'Tempo total (min)', 'stop', 'minutes', true),
-    ('stop_count', 'Quantidade de paradas', 'stop', 'count', true),
     ('workCenter', 'Centro de trabalho', 'product', 'workcenter', true),
     ('prodCode', 'Código do produto', 'product', 'code', true),
     ('product_description', 'Descrição do produto', 'product', 'description', false),
@@ -34,6 +30,10 @@
     ('text3', 'Quem fez?', 'containment', 'who', true),
     ('imgNOK', 'Imagens NOK', 'images', 'photo', false),
     ('imgOK', 'Imagens OK', 'images', 'photo', false),
+    ('stop_reason', 'Motivo da parada', 'stop', 'reason', true),
+    ('stop_minutes', 'Tempo total (min)', 'stop', 'minutes', true),
+    ('stop_count', 'Quantidade de paradas', 'stop', 'count', true),
+    ('stop_time', 'Horário da parada', 'stop', 'time', true),
     ('openDate', 'Data de abertura', 'date', 'date', true),
     ('shift', 'Turnos da ocorrência', 'date', 'shift', true),
     ('publish_qsb', 'Publicar na pirâmide?', 'date', 'publish', true)
