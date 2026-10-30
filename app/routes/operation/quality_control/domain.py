@@ -1,6 +1,6 @@
 """Validação dos dados do controle QSB, sem dependências de Flask ou banco."""
 
-from datetime import date, time
+from datetime import date, time, timedelta
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
@@ -68,6 +68,28 @@ def validate_stop_reason_name(value):
     if len(name) > 150 or '\x00' in name:
         raise QualityControlError('O motivo deve ter até 150 caracteres e não conter caracteres inválidos.', field='name')
     return name
+
+
+def entry_period(date_from=None, date_until=None):
+    if date_from is None and date_until is None:
+        today = date.today()
+        return today - timedelta(days=14), today
+    dates = []
+    for field, raw in (('date_from', date_from), ('date_until', date_until)):
+        if not raw:
+            dates.append(None)
+            continue
+        try:
+            value = date.fromisoformat(raw)
+            if value.isoformat() != raw:
+                raise ValueError
+        except (ValueError, TypeError):
+            raise QualityControlError('Informe um período com datas válidas.', field=field)
+        dates.append(value)
+    start, end = dates
+    if start and end and start > end:
+        raise QualityControlError('A data inicial não pode ser posterior à final.', field='date_from')
+    return start, end
 
 
 def validate_entry(form, caxias_locations, workcenters, previous=None, *, stop_reasons):

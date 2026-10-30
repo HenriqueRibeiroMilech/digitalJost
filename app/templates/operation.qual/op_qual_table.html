@@ -42,6 +42,7 @@
 <main class="qsb-table-page" id="qsb-control"
       data-csrf-token="{{ csrf_token }}"
       data-api-root="{{ url_for('operation_quality.quality_table_create') }}"
+      data-default-from="{{ default_from }}" data-default-until="{{ default_until }}"
       data-lookup-url="{{ url_for('operation_quality.quality_table_products') }}"
       data-location-url="{{ url_for('operation_quality.quality_table_location') }}"
       data-stop-reason-url="{{ url_for('operation_quality.quality_table_stop_reason') }}">
@@ -58,11 +59,13 @@
     <section class="qsb-workspace" aria-label="Cadastro e consulta de ocorrências">
         <section class="qsb-table-filters" aria-label="Filtrar ocorrências">
             <label class="qsb-search-filter">Pesquisar<input id="qsb-filter-search" type="search" placeholder="ID, produto, problema ou responsável..."></label>
-            <label>De<input id="qsb-filter-from" type="date"></label><label>Até<input id="qsb-filter-until" type="date"></label>
+            <label>De<input id="qsb-filter-from" type="date" value="{{ filter_from }}"></label><label>Até<input id="qsb-filter-until" type="date" value="{{ filter_until }}"></label>
+            <button class="qsb-button qsb-button-secondary" id="qsb-load-period" type="button">Buscar período</button>
             <label>Unidade<select id="qsb-filter-unit"><option value="">Todas</option><option value="0">Caxias do Sul</option><option value="1">Campinas</option></select></label>
             <label>Publicação<select id="qsb-filter-publish"><option value="">Todas</option><option value="1">Na pirâmide</option><option value="0">Só no controle</option></select></label>
             <label>Ordenar por<select id="qsb-sort-order"><option value="id_desc">ID: maior primeiro</option><option value="id_asc">ID: menor primeiro</option><option value="date_desc">Data: mais recente</option><option value="date_asc">Data: mais antiga</option></select></label>
             <button class="qsb-button qsb-button-quiet" id="qsb-clear-filters" type="button">Limpar filtros</button>
+            <span id="qsb-list-status" class="qsb-field-hint" role="status" hidden></span>
         </section>
         <p class="qsb-sr-only" id="qsb-table-help">Use as barras para navegar. A linha de cadastro permanece visível ao rolar os registros.</p>
         <div class="qsb-top-scroll" id="qsb-top-scroll" tabindex="0" role="region" aria-label="Rolagem horizontal dos campos"><div id="qsb-top-scroll-width"></div></div>

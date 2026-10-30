@@ -23,7 +23,7 @@ from .quality_control import (
     OCCURRENCE_TYPES, PRODUCT_FAMILIES, QualityControlError,
     QualityControlService,
 )
-from .quality_control.domain import CAMPINAS_WORKCENTERS, is_flag_set
+from .quality_control.domain import CAMPINAS_WORKCENTERS, entry_period, is_flag_set
 from .quality_control.repository import JOIN, PROJECTION, PUBLISHED, VISIBLE
 from .quality_control.services import image_names, safe_name
 
@@ -473,8 +473,10 @@ def quality_add_get():
 @operation_quality_bp.route('/op/qualidade/tabela', methods=['GET'])
 @p_quality.require(403)
 def quality_table_get():
+    date_from, date_until = entry_period(request.args.get('date_from'), request.args.get('date_until'))
+    default_from, default_until = entry_period()
     workcenters = _get_quality_workcenters()
-    entries = [_quality_record_urls(entry) for entry in _quality_control().list_entries()]
+    entries = [_quality_record_urls(entry) for entry in _quality_control().list_entries(date_from, date_until)]
 
     return render_template(
         'operation.qual/op_qual_table.html',
@@ -485,7 +487,24 @@ def quality_table_get():
         occurrence_types=OCCURRENCE_TYPES, product_families=PRODUCT_FAMILIES,
         stop_reasons=_quality_control().list_stop_reasons(), campinas_workcenters=CAMPINAS_WORKCENTERS,
         csrf_token=_quality_csrf_token(), submission_key=str(uuid4()),
+        filter_from=date_from.isoformat() if date_from else '',
+        filter_until=date_until.isoformat() if date_until else '',
+        default_from=default_from.isoformat(), default_until=default_until.isoformat(),
     )
+
+
+@operation_quality_bp.route('/op/qualidade/tabela/registros', methods=['GET'])
+@p_quality.require(403)
+def quality_table_entries():
+    date_from, date_until = entry_period(request.args.get('date_from'), request.args.get('date_until'))
+    entries = [_quality_record_urls(entry) for entry in _quality_control().list_entries(date_from, date_until)]
+    response = jsonify({
+        'entries': entries,
+        'date_from': date_from.isoformat() if date_from else '',
+        'date_until': date_until.isoformat() if date_until else '',
+    })
+    response.headers['Cache-Control'] = 'private, no-store'
+    return response
 
 
 @operation_quality_bp.route('/op/qualidade/tabela/registros', methods=['POST'])

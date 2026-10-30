@@ -90,9 +90,9 @@ class QualityControlService:
         self.upload_root = Path(upload_root).resolve()
         self.repository = QualityControlRepository()
 
-    def list_entries(self):
+    def list_entries(self, date_from, date_until):
         with self.engine.connect() as connection:
-            return [serialize_entry(entry) for entry in self.repository.list_entries(connection)]
+            return [serialize_entry(entry) for entry in self.repository.list_entries(connection, date_from, date_until)]
 
     def list_stop_reasons(self):
         with self.engine.connect() as connection:

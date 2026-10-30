@@ -2,6 +2,10 @@
 
 O controle legado Flask/Jinja em `/op/qualidade/tabela` reúne cadastro horizontal, consulta e edição de ocorrências. O registro é a fonte dos dados apresentados no informativo; não há integração nova com Excel. A tela é adicional: os formulários anteriores continuam disponíveis.
 
+A consulta inicial traz somente os últimos 15 dias corridos, incluindo hoje e os 14 dias anteriores, pela data de abertura (`openDate`) e pelo calendário do servidor. O período é aplicado na consulta SQL, antes de renderizar os registros e suas imagens, mantendo o maior ID primeiro. Não há paginação; todos os registros do intervalo escolhido são retornados.
+
+Para consultar o histórico, alterar `De` e `Até` e clicar em `Buscar período` (ou pressionar Enter nesses campos). A busca atualiza apenas os registros, preservando o preenchimento do cadastro. Um limite de data vazio deixa aquele lado do intervalo aberto; ambos vazios permitem consultar todo o histórico explicitamente. `Limpar filtros` restaura o período padrão da abertura da página e a ordenação por ID. Pesquisa, unidade e publicação filtram os registros do período já carregado. Uma falha de consulta preserva os resultados anteriores; a interface indica quando o novo período ainda não foi aplicado.
+
 ## Registro e publicação
 
 Cada ocorrência tem unidade, local da ocorrência, local específico, detalhamento opcional, centro de trabalho, produto, família, problema, reincidência, contenção, imagens, data e turnos. A descrição do produto é consultada no FTM; não é um novo campo persistido.
@@ -25,6 +29,7 @@ A autenticação e a permissão `GENERAL` continuam no `before_request` legado. 
 | Endpoint | Contrato |
 |---|---|
 | `GET /op/qualidade/tabela` | HTML da tela adicional |
+| `GET /op/qualidade/tabela/registros` | Consulta por `date_from`/`date_until` ISO; retorna `entries` e os limites aplicados; sem parâmetros usa os últimos 15 dias |
 | `POST /op/qualidade/tabela/registros` | Cadastro multipart com `submission_key`; retorna registro e ID |
 | `GET /op/qualidade/tabela/registros/<id>` | Um registro, revisão, permissões, imagens e histórico |
 | `PATCH /op/qualidade/tabela/registros/<id>` | Edição multipart com `revision` e remoções explícitas de imagens |
@@ -63,6 +68,8 @@ O catálogo exige também [20261030_create_qsb_stop_reasons.sql](../../database/
 Antes de publicar o código correspondente, o responsável deve revisar o script, conferir no ambiente a chave/unicidade e os tipos/tamanhos reais das 16 colunas de `JDT_OPE_QUAL`, inclusive a capacidade das listas de imagens, e aplicar as tabelas complementares em janela autorizada. O código usa essas tabelas também nas consultas legadas; a publicação precisa ser coordenada. A conta da aplicação precisa poder obter `sp_getapplock` e ler/gravar as tabelas envolvidas. Não há alteração automática de schema, reflexão nem chamada a `create_all` nesta feature.
 
 Depois da aplicação autorizada, a verificação funcional deve cobrir cadastro com múltiplas paradas, publicação Sim/Não, modal com/sem imagens, edição preservando/removendo anexos, conflito entre duas edições, reenvio de cadastro sem duplicação, exclusão lógica, permissões/CSRF e os formulários anteriores. Conferir também os filtros por período, unidade e publicação e os novos dados na visualização e impressão.
+
+Na consulta por período, conferir os dois dias de limite, a ausência inicial de registros anteriores aos 15 dias, a busca histórica e com limites vazios, intervalo invertido/inválido e retorno do período padrão em `Limpar filtros`. Confirmar que buscar não apaga o cadastro em preenchimento e que uma resposta atrasada não desfaz um cadastro/edição/exclusão recém-confirmado. Ocorrências salvas fora do período permanecem gravadas, com aviso na tela para ajustar a consulta. Medir o carregamento no ambiente autorizado; não houve medição dinâmica pelo agente.
 
 Para os motivos, conferir o `+` com usuário autorizado e sua ausência com usuário fora da autorização de locais; a tentativa direta deste último deve retornar 403. Cadastrar a partir da primeira linha e da edição, salvar uma ocorrência com o motivo novo e recarregar a tela para confirmar a persistência. Verificar vazio, limite de tamanho, duplicidade com variações de caixa/espaços e CSRF inválido. Confirmar que o cadastro rápido de Local Específico mantém seu comportamento.
 

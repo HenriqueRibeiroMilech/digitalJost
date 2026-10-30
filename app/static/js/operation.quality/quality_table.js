@@ -382,6 +382,12 @@
     const filterPublish = document.getElementById('qsb-filter-publish');
     const filterSearch = document.getElementById('qsb-filter-search');
     const sortOrder = document.getElementById('qsb-sort-order');
+    const loadPeriodButton = document.getElementById('qsb-load-period');
+    const listStatus = document.getElementById('qsb-list-status');
+    const loadedPeriod = { from: filterFrom.defaultValue, until: filterUntil.defaultValue };
+    let listSequence = 0;
+    let listRequest = null;
+    let recordsVersion = 0;
     const compareIds = new Intl.Collator('pt-BR', { numeric: true }).compare;
     body.querySelectorAll('[data-entry-id]').forEach(function (row) { records.set(row.dataset.entryId, { row: row, text: normalize(row.textContent) }); });
     function sortRows() {
@@ -400,14 +406,16 @@
         rows.forEach(function (row) { fragment.appendChild(row); });
         body.insertBefore(fragment, document.getElementById('qsb-table-empty'));
     }
+    function inLoadedPeriod(value) {
+        return (!loadedPeriod.from || value >= loadedPeriod.from) && (!loadedPeriod.until || value <= loadedPeriod.until);
+    }
     function filterRows() {
         const search = normalize(filterSearch.value.trim());
         let count = 0;
         records.forEach(function (item) {
             const row = item.row;
             row.hidden = Boolean(
-                (filterFrom.value && row.dataset.date < filterFrom.value) ||
-                (filterUntil.value && row.dataset.date > filterUntil.value) ||
+                !inLoadedPeriod(row.dataset.date) ||
                 (filterUnit.value && row.dataset.unit !== filterUnit.value) ||
                 (filterPublish.value && row.dataset.publish !== filterPublish.value) ||
                 (search && !item.text.includes(search))
@@ -416,16 +424,69 @@
         });
         document.getElementById('qsb-table-empty').hidden = count !== 0;
     }
-    const filters = [filterFrom, filterUntil, filterUnit, filterPublish, filterSearch];
+    function cancelPeriodRequest() {
+        listSequence += 1;
+        if (listRequest) { listRequest.abort(); listRequest = null; }
+        loadPeriodButton.disabled = false; body.removeAttribute('aria-busy');
+    }
+    function periodChanged() {
+        cancelPeriodRequest(); filterFrom.setCustomValidity(''); filterUntil.setCustomValidity('');
+        const changed = filterFrom.value !== loadedPeriod.from || filterUntil.value !== loadedPeriod.until;
+        showMessage(listStatus, changed ? 'Clique em Buscar período para atualizar os registros.' : '');
+    }
+    async function loadPeriod() {
+        cancelPeriodRequest(); filterFrom.setCustomValidity(''); filterUntil.setCustomValidity('');
+        if (filterFrom.value && filterUntil.value && filterFrom.value > filterUntil.value) {
+            filterFrom.setCustomValidity('A data inicial não pode ser posterior à final.');
+        }
+        if (!filterFrom.reportValidity() || !filterUntil.reportValidity()) { return; }
+        const sequence = listSequence;
+        const version = recordsVersion;
+        const controller = new AbortController(); listRequest = controller;
+        const url = new URL(root.dataset.apiRoot, window.location.origin);
+        url.searchParams.set('date_from', filterFrom.value); url.searchParams.set('date_until', filterUntil.value);
+        loadPeriodButton.disabled = true; body.setAttribute('aria-busy', 'true');
+        showMessage(listStatus, 'Carregando ocorrências...');
+        try {
+            const data = await requestJSON(url, { signal: controller.signal, cache: 'no-store' });
+            if (sequence !== listSequence) { return; }
+            if (version !== recordsVersion) { return loadPeriod(); }
+            if (!Array.isArray(data.entries)) { throw new Error('Resposta inesperada ao consultar o período.'); }
+            const nextRows = data.entries.map(function (entry) {
+                const row = buildRecordRow(entry);
+                return { id: entry.id, row: row, text: normalize(row.textContent) };
+            });
+            const fragment = document.createDocumentFragment();
+            records.forEach(function (item) { item.row.remove(); }); records.clear();
+            nextRows.forEach(function (item) {
+                records.set(item.id, { row: item.row, text: item.text }); fragment.appendChild(item.row);
+            });
+            body.insertBefore(fragment, document.getElementById('qsb-table-empty'));
+            loadedPeriod.from = data.date_from; loadedPeriod.until = data.date_until;
+            filterRows(); sortRows(); resizeScroll(); grid.scrollTop = 0;
+            showMessage(listStatus, '');
+        } catch (error) {
+            if (sequence === listSequence) { showMessage(listStatus, 'Não foi possível atualizar o período. Os resultados anteriores foram mantidos. ' + error.message); }
+        } finally {
+            if (sequence === listSequence) { listRequest = null; loadPeriodButton.disabled = false; body.removeAttribute('aria-busy'); }
+        }
+    }
+    [filterFrom, filterUntil].forEach(function (field) {
+        field.addEventListener('input', periodChanged);
+        field.addEventListener('keydown', function (event) { if (event.key === 'Enter') { event.preventDefault(); loadPeriod(); } });
+    });
+    loadPeriodButton.addEventListener('click', loadPeriod);
+    const filters = [filterUnit, filterPublish, filterSearch];
     filters.forEach(function (filter) { filter.addEventListener('input', filterRows); });
     sortOrder.addEventListener('change', function () { sortRows(); grid.scrollTop = 0; });
     document.getElementById('qsb-clear-filters').addEventListener('click', function () {
         filters.forEach(function (filter) { filter.value = ''; });
-        sortOrder.value = 'id_desc'; filterRows(); sortRows(); grid.scrollTop = 0;
+        filterFrom.value = root.dataset.defaultFrom; filterUntil.value = root.dataset.defaultUntil;
+        sortOrder.value = 'id_desc'; filterRows(); sortRows(); loadPeriod();
     });
     filterRows(); sortRows();
 
-    function renderRow(entry) {
+    function buildRecordRow(entry) {
         const row = node('tr'); row.dataset.entryId = entry.id; row.dataset.date = entry.date_iso;
         row.dataset.unit = entry.unit; row.dataset.publish = entry.publish_qsb ? '1' : '0';
         const pinned = node('th', 'qsb-pinned'); pinned.scope = 'row'; pinned.appendChild(node('span', 'qsb-record-id', '#' + entry.id));
@@ -447,10 +508,15 @@
             } else { cell.appendChild(node('div', 'qsb-cell-text', displayValue(column.key, entry[column.key]))); }
             row.appendChild(cell);
         });
+        return row;
+    }
+    function renderRow(entry) {
+        const row = buildRecordRow(entry);
         const previous = records.get(entry.id);
         if (previous) { previous.row.replaceWith(row); }
         else { body.insertBefore(row, body.querySelector('.qsb-history-divider').nextSibling); }
-        records.set(entry.id, { row: row, text: normalize(row.textContent) }); filterRows(); sortRows(); resizeScroll();
+        records.set(entry.id, { row: row, text: normalize(row.textContent) });
+        recordsVersion += 1; filterRows(); sortRows(); resizeScroll();
     }
     function renderDetail(entry) {
         content.replaceChildren();
@@ -552,13 +618,16 @@
                 method: isCreate ? 'POST' : 'PATCH', headers: { 'X-CSRF-Token': csrf }, body: data,
             });
             renderRow(entry);
-            if (isCreate) { form.reset(); announce('Ocorrência #' + entry.id + ' cadastrada. A primeira linha está pronta para um novo registro.'); }
+            if (isCreate) {
+                form.reset();
+                announce('Ocorrência #' + entry.id + ' cadastrada. A primeira linha está pronta para um novo registro.' + (inLoadedPeriod(entry.date_iso) ? '' : ' Ela está fora do período consultado; altere as datas para visualizá-la.'));
+            }
             else {
                 activeRecord = entry;
                 try { activeRecord = await requestJSON(recordUrl(entry.id)); } catch (error) { activeRecord.historyUnavailable = true; }
                 renderRow(activeRecord); renderDetail(activeRecord);
                 const success = node('p', 'qsb-modal-success', 'Alterações salvas.'); success.setAttribute('role', 'status'); content.prepend(success);
-                announce('Ocorrência #' + entry.id + ' atualizada.');
+                announce('Ocorrência #' + entry.id + ' atualizada.' + (inLoadedPeriod(activeRecord.date_iso) ? '' : ' Ela está fora do período consultado; altere as datas para visualizá-la.'));
             }
         } catch (error) { controller.showError(error); }
         finally { controller.setBusy(false); if (!isCreate) { setRecordBusy(false); } }
@@ -574,6 +643,7 @@
         setRecordBusy(true); const button = this; button.disabled = true; showMessage(recordError, '');
         try {
             await requestJSON(recordUrl(activeRecord.id), { method: 'DELETE', headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: activeRecord.revision }) });
+            recordsVersion += 1;
             const item = records.get(activeRecord.id); if (item) { item.row.remove(); records.delete(activeRecord.id); }
             announce('Ocorrência #' + activeRecord.id + ' excluída do controle e da pirâmide.'); filterRows(); dialog.close();
             createForm.querySelector('[data-unit]').focus({ preventScroll: true });
@@ -628,9 +698,10 @@
             finally { locationBusy = false; button.disabled = false; }
         });
     }
-    window.addEventListener('pagehide', function (event) { if (!event.persisted) { createController.release(); editController.release(); } });
+    window.addEventListener('pagehide', function (event) { cancelPeriodRequest(); if (!event.persisted) { createController.release(); editController.release(); } });
     window.addEventListener('pageshow', function (event) {
         if (event.persisted) { createController.setBusy(false); editController.setBusy(false); setRecordBusy(false); }
         createController.refresh(); filterRows(); sortRows(); resizeScroll();
+        if (event.persisted || !listRequest) { periodChanged(); }
     });
 }());

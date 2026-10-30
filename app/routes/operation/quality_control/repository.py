@@ -1,7 +1,7 @@
 """SQL parametrizado. A conexão e a transação são controladas pelo coordenador."""
 
 import json
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import text
 
@@ -51,10 +51,19 @@ class QualityControlRepository:
             """), {'center': center.split('-')[0]}).scalars())
         return []
 
-    def list_entries(self, connection):
+    def list_entries(self, connection, date_from, date_until):
+        conditions = [VISIBLE]
+        params = {}
+        if date_from is not None:
+            conditions.append('q.openDate >= :date_from')
+            params['date_from'] = date_from
+        if date_until is not None and date_until < date.max:
+            conditions.append('q.openDate < :date_before')
+            params['date_before'] = date_until + timedelta(days=1)
+        where = ' AND '.join(conditions)
         return [dict(row) for row in connection.execute(text(
-            f"SELECT {PROJECTION} FROM dbo.JDT_OPE_QUAL q {JOIN} WHERE {VISIBLE} ORDER BY TRY_CONVERT(BIGINT, q.id) DESC, q.id DESC"
-        )).mappings()]
+            f"SELECT {PROJECTION} FROM dbo.JDT_OPE_QUAL q {JOIN} WHERE {where} ORDER BY TRY_CONVERT(BIGINT, q.id) DESC, q.id DESC"
+        ), params).mappings()]
 
     def get_entry(self, connection, entry_id, lock=False, include_deleted=False):
         hint = ' WITH (UPDLOCK, HOLDLOCK)' if lock else ''
