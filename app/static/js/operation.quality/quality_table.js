@@ -12,7 +12,6 @@
         return { key: cell.dataset.column, label: cell.dataset.label, group: cell.dataset.group };
     });
     const sections = Array.from(table.querySelectorAll('[data-qsb-section]'));
-    const sectionButtons = Array.from(root.querySelectorAll('[data-qsb-go]'));
     const campinasCenters = Array.from(document.getElementById('qsb-campinas-centers').options, function (item) { return item.value; });
     const descriptions = new Map();
     const records = new Map();
@@ -121,24 +120,6 @@
         const animate = smooth && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         grid.scrollTo({ left: Math.max(0, left), behavior: animate ? 'smooth' : 'auto' });
     }
-    function updateCurrentSection() {
-        const pinnedWidth = table.querySelector('.qsb-pinned').getBoundingClientRect().width;
-        let current = sections[0].dataset.qsbSection;
-        sections.forEach(function (section) {
-            if (section.getBoundingClientRect().left - grid.getBoundingClientRect().left <= pinnedWidth + 20) { current = section.dataset.qsbSection; }
-        });
-        if (grid.scrollLeft >= grid.scrollWidth - grid.clientWidth - 2) { current = sections[sections.length - 1].dataset.qsbSection; }
-        sectionButtons.forEach(function (button) {
-            if (button.dataset.qsbGo === current) { button.setAttribute('aria-current', 'true'); }
-            else { button.removeAttribute('aria-current'); }
-        });
-    }
-    sectionButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-            scrollToField(sections.find(function (section) { return section.dataset.qsbSection === button.dataset.qsbGo; }), true);
-            grid.scrollTop = 0;
-        });
-    });
     topScroll.addEventListener('scroll', function () {
         if (skipTopScroll) { skipTopScroll = false; return; }
         if (Math.abs(grid.scrollLeft - topScroll.scrollLeft) > 1) { skipGridScroll = true; grid.scrollLeft = topScroll.scrollLeft; }
@@ -146,14 +127,12 @@
     grid.addEventListener('scroll', function () {
         if (skipGridScroll) { skipGridScroll = false; }
         else if (Math.abs(topScroll.scrollLeft - grid.scrollLeft) > 1) { skipTopScroll = true; topScroll.scrollLeft = grid.scrollLeft; }
-        updateCurrentSection();
     }, { passive: true });
     function resizeScroll() {
         // Measure both header rows so the fixed entry row also works with zoom and font changes.
         grid.style.setProperty('--qsb-group-offset', Math.ceil(table.tHead.rows[0].getBoundingClientRect().height) + 'px');
         grid.style.setProperty('--qsb-header-height', Math.ceil(table.tHead.getBoundingClientRect().height) + 'px');
         document.getElementById('qsb-top-scroll-width').style.width = (grid.scrollWidth + topScroll.clientWidth - grid.clientWidth) + 'px';
-        updateCurrentSection();
     }
     const tableResizeObserver = new ResizeObserver(resizeScroll);
     tableResizeObserver.observe(grid);
@@ -215,14 +194,6 @@
             const hasStop = stopFields.some(function (field) { return field.value.trim() !== ''; });
             stopFields.forEach(function (field) { field.required = !legacy || hasStop; });
             shifts[0].setCustomValidity(shifts.some(function (shift) { return shift.checked; }) ? '' : 'Selecione um turno ou Não aplicável.');
-            if (isCreate) {
-                const required = Array.from(form.querySelectorAll('[required]')).filter(function (field) { return !field.disabled; });
-                const total = required.length + 1;
-                const complete = required.filter(function (field) { return field.validity.valid; }).length + (shifts[0].validity.valid ? 1 : 0);
-                const progress = document.getElementById('qsb-form-progress');
-                progress.max = total; progress.value = complete;
-                document.getElementById('qsb-form-progress-text').textContent = complete + ' de ' + total + ' obrigatórios preenchidos';
-            }
         }
         function showError(error) {
             showMessage(formError, error.message || 'Não foi possível salvar. Os dados foram preservados.');
@@ -405,7 +376,7 @@
     body.querySelectorAll('[data-entry-id]').forEach(function (row) { records.set(row.dataset.entryId, { row: row, text: normalize(row.textContent) }); });
     function filterRows() {
         const search = normalize(filterSearch.value.trim());
-        let count = 0; let minutes = 0; let stops = 0;
+        let count = 0;
         records.forEach(function (item) {
             const row = item.row;
             row.hidden = Boolean(
@@ -415,11 +386,9 @@
                 (filterPublish.value && row.dataset.publish !== filterPublish.value) ||
                 (search && !item.text.includes(search))
             );
-            if (!row.hidden) { count += 1; minutes += Number(row.dataset.minutes || 0); stops += Number(row.dataset.count || 0); }
+            if (!row.hidden) { count += 1; }
         });
         document.getElementById('qsb-table-empty').hidden = count !== 0;
-        document.getElementById('qsb-table-count').textContent = count + ' de ' + records.size + ' ocorrência(s)';
-        document.getElementById('qsb-filter-totals').textContent = 'Informados: ' + minutes.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' min · ' + stops.toLocaleString('pt-BR') + ' paradas';
     }
     const filters = [filterFrom, filterUntil, filterUnit, filterPublish, filterSearch];
     filters.forEach(function (filter) { filter.addEventListener('input', filterRows); });
@@ -429,8 +398,6 @@
     function renderRow(entry) {
         const row = node('tr'); row.dataset.entryId = entry.id; row.dataset.date = entry.date_iso;
         row.dataset.unit = entry.unit; row.dataset.publish = entry.publish_qsb ? '1' : '0';
-        row.dataset.minutes = entry.stop_minutes === null ? '' : entry.stop_minutes;
-        row.dataset.count = entry.stop_count === null ? '' : entry.stop_count;
         const pinned = node('th', 'qsb-pinned'); pinned.scope = 'row'; pinned.appendChild(node('span', 'qsb-record-id', '#' + entry.id));
         const view = node('button', 'qsb-button qsb-button-secondary qsb-edit-link', 'Visualizar'); view.type = 'button'; view.dataset.viewRecord = entry.id; pinned.appendChild(view);
         if (entry.permissions.edit) { const edit = node('button', 'qsb-description-button qsb-row-edit', 'Editar'); edit.type = 'button'; edit.dataset.editRecord = entry.id; pinned.appendChild(edit); }
