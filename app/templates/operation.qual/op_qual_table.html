@@ -75,9 +75,18 @@
                     {% for group, label, count in groups %}<colgroup>{% for key, title, section, width, required in columns if section == group %}<col class="qsb-col-{{ width }}">{% endfor %}</colgroup>{% endfor %}
                     <thead>
                         <tr class="qsb-group-row"><th scope="col" rowspan="2" class="qsb-pinned">Registro</th>{% for key, label, count in groups %}<th scope="colgroup" colspan="{{ count }}" data-qsb-section="{{ key }}">{{ label }}</th>{% endfor %}</tr>
-                        <tr class="qsb-column-row">{% for key, title, section, width, required in columns %}<th scope="col" data-column="{{ key }}" data-group="{{ section }}" data-label="{{ title }}">{{ title }}{% if required %} <span class="qsb-required" aria-hidden="true">*</span>{% endif %}</th>{% endfor %}</tr>
+                        <tr class="qsb-column-row">
+                            {% for group, label, count in groups %}{% for key, title, section, width, required in columns if section == group %}
+                            <th scope="col"{% if loop.last %} class="qsb-group-end"{% endif %} data-column="{{ key }}" data-group="{{ section }}" data-label="{{ title }}">{{ title }}{% if required %} <span class="qsb-required" aria-hidden="true">*</span>{% endif %}</th>
+                            {% endfor %}{% endfor %}
+                        </tr>
                     </thead>
-                    <tbody class="qsb-table-create"><tr><th scope="row" class="qsb-pinned"><span class="qsb-badge qsb-badge-new">+ Novo</span><button class="qsb-button qsb-button-primary qsb-row-submit" type="submit" data-qsb-submit>Cadastrar</button></th>{% for key, title, section, width, required in columns %}<td>{{ entry_field(key, 'qsb-create') }}</td>{% endfor %}</tr></tbody>
+                    <tbody class="qsb-table-create"><tr>
+                        <th scope="row" class="qsb-pinned"><span class="qsb-badge qsb-badge-new">+ Novo</span><button class="qsb-button qsb-button-primary qsb-row-submit" type="submit" data-qsb-submit>Cadastrar</button></th>
+                        {% for group, label, count in groups %}{% for key, title, section, width, required in columns if section == group %}
+                        <td{% if loop.last %} class="qsb-group-end"{% endif %}>{{ entry_field(key, 'qsb-create') }}</td>
+                        {% endfor %}{% endfor %}
+                    </tr></tbody>
                     <tbody id="qsb-table-entries">
                         <tr class="qsb-history-divider"><td colspan="23"><span>Ocorrências cadastradas</span>Use Visualizar para consultar, editar ou excluir um registro.</td></tr>
                         {% for entry in entries %}

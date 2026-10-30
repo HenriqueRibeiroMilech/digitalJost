@@ -118,12 +118,13 @@
 .qsb-col-publish { width: 160px; }
 .qsb-table th, .qsb-table td { border-right: 1px solid #e8ede9; border-bottom: 1px solid #e4ebe6; padding: 10px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
 .qsb-table thead th { position: sticky; z-index: 4; font-weight: 600; }
-.qsb-table .qsb-group-row th { top: 0; height: var(--qsb-group-height); padding: 5px 10px; background: #edf2ef; color: #5d7365; font-size: 10px; letter-spacing: .03em; border-right-color: #d5dfd8; }
+.qsb-table .qsb-group-row th { top: 0; height: var(--qsb-group-height); padding: 5px 10px; background: #ddebe2; color: #3d6049; font-size: 10px; letter-spacing: .03em; border-right: 3px solid #8eb59e; }
 .qsb-table .qsb-column-row th { top: var(--qsb-group-offset); height: 42px; padding: 6px 10px; background: #f8faf8; color: #425c4d; font-size: 10px; white-space: normal; }
 .qsb-table .qsb-pinned { position: sticky; left: 0; z-index: 2; width: var(--qsb-pinned-width); background: #fff; border-right: 1px solid #ccd9d0; box-shadow: 3px 0 5px #31513b05; }
 .qsb-table thead .qsb-pinned { z-index: 5; vertical-align: middle; background: #e7eee9; }
 .qsb-table-create { position: sticky; top: var(--qsb-header-height); z-index: 3; }
-.qsb-table-create td, .qsb-table-create .qsb-pinned { background: #f5fbf7; border-bottom: 2px solid #acd4bc; padding-top: 10px; padding-bottom: 10px; }
+.qsb-table-create td, .qsb-table-create .qsb-pinned { background: #e4f2e9; border-right-color: #c2d9ca; border-bottom: 3px solid #81b394; padding-top: 10px; padding-bottom: 10px; }
+.qsb-table .qsb-group-end { border-right: 3px solid #8eb59e; }
 .qsb-table-create .qsb-pinned { box-shadow: inset 3px 0 #3a9763, 3px 0 5px #31513b05; }
 .qsb-table-create .qsb-row-submit { margin-top: 10px; }
 .qsb-new-hint { display: block; color: #7b9182; font-size: 10px; font-weight: 400; margin: 9px 0 14px; }
