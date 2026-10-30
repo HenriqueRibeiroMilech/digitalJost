@@ -40,9 +40,9 @@ _STATUS_DICT = {
 }
 
 _DEVIATION_UNITS = {
-    0: 'JOST Caxias do Sul',
-    1: 'JOST Campinas',
-    2: 'Ambas'
+    0: 'Caxias do Sul',
+    1: 'Campinas',
+    2: 'Todas'
 }
 
 _APPROVERS_TEAMS = [
@@ -63,8 +63,8 @@ _APPROVERS_TEAMS = [
 request_processDeviation_bp = Blueprint('request_processDeviation', __name__)
 
 # ------------------------- Helpers -------------------------
-def _parse_deviation_unit(value, required=False):
-    if value in (None, '') and not required:
+def _parse_deviation_unit(value):
+    if value in (None, ''):
         return None
     if str(value) not in ('0', '1', '2'):
         abort(400, description="Selecione uma unidade de aplicação válida para o desvio.")
@@ -1363,9 +1363,6 @@ def dev_create():
         if request.method == 'POST':
             cmd = request.args.get('cmd')
 
-            if cmd in ('1', '2'):
-                _parse_deviation_unit(request.form.get('unidade'), required=True)
-
             if cmd == '1':
                 insert_data()
                 return redirect('/desvios')
@@ -1547,7 +1544,6 @@ def dev_create():
         return render_template(
             'request.processDeviation/dev_create.html',
             equipes=_APPROVERS_TEAMS,
-            units=_DEVIATION_UNITS,
             solicitante=current_user.name,
             revisao=revisao,
             cts=cts,

@@ -132,8 +132,8 @@
             <input type="text" id="filter5" placeholder="Filtrar - Família" onkeyup="filterTable()">
             <label class="deviation-unit-filter" for="unit_filter">
                 Unidade de aplicação
-                <select id="unit_filter" title="Caxias do Sul e Campinas incluem desvios de ambas as unidades. Ambas mostra somente os aplicáveis às duas.">
-                    <option value="">Todas as unidades</option>
+                <select id="unit_filter" title="Caxias do Sul e Campinas incluem desvios registrados como Todas. A opção Todas mostra somente os aplicáveis às duas unidades.">
+                    <option value="">Sem filtro de unidade</option>
                     {% for code, label in units.items() %}
                     <option value="{{ code }}">{{ label }}</option>
                     {% endfor %}

@@ -16,7 +16,7 @@
         <div class="side_wrapper">
                 <p class="topics_title">Informações Gerais</p>
                 <p class="paint" id="paint_equipe"><i class='far fa-circle'></i> Equipe</p>
-                <p class="paint" id="paint_unidade"><i class='far fa-circle'></i> Unidade de aplicação do desvio</p>
+                <p class="paint" id="paint_unidade"><i class='far fa-circle'></i> Unidade JOST</p>
                 <p class="paint" id="paint_ct"><i class='far fa-circle'></i> Centro de Trabalho</p>
                 <p class="paint" id="paint_produto"><i class='far fa-circle'></i> Codigo do Produto</p>
                 <p class="paint" id="paint_familia"><i class='far fa-circle'></i> Familia do Produto</p>
@@ -56,12 +56,12 @@
                     {% endfor %}
                 </select>
 
-                <label class="desv_label" for="unidade">Unidade de aplicação do desvio</label>
+                <span class="desv_label">Aplicação da Concessão</span>
                 <select oninput="paint(this.name)" required name="unidade" id="unidade">
                     <option value="" disabled selected>Selecione uma opção...</option>
-                    {% for code, label in units.items() %}
-                    <option value="{{ code }}">{{ label }}</option>
-                    {% endfor %}
+                    <option value="0" >Caxias do Sul</option>
+                    <option value="1" >Campinas</option>
+                    <option value="2" >Todas</option>
                 </select>
 
                 <span class="desv_label">Centro de Trabalho</span>
@@ -281,7 +281,7 @@
   bindTip(document.getElementById('equipe_input'),
           'Equipe', 'Setor responsável pelo desvio. Defina corretamente para rotear as aprovações.');
   bindTip(document.getElementById('unidade'),
-          'Unidade de aplicação do desvio', 'Escolha JOST Caxias do Sul, JOST Campinas ou Ambas.');
+          'Aplicação da Concessão', 'Escolha a unidade onde a concessão se aplica (ou “Todas”).');
 
   // CT / Produto / Família — botões Adicionar
   const btnAddCT       = Array.from(document.querySelectorAll('button.desv_submit'))
