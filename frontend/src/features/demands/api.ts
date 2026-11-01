@@ -1,7 +1,7 @@
 import { requestJson } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
 import type { Contributor, ManagementFilters, RequestDetail, RequestFields, RequestFilters, RequestList, ReviewFields } from './types'
-import type { WorkAction, WorkBoard, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
+import type { TaskFields, TaskList, TaskStatus, WorkAction, WorkBoard, WorkContent, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
 
 const base = '/api/v1/demands'
 
@@ -48,16 +48,19 @@ export const demandsApi = {
   },
 }
 
+function workQuery(filters: WorkFilters) {
+  const query = new URLSearchParams()
+  Object.entries(filters).forEach(([key, value]) => { if (value !== null) query.set(key, value) })
+  return query
+}
+
 export const workApi = {
-  board() {
-    return requestJson<WorkBoard>(`${base}/work/board`, { cache: 'no-store' })
+  board(filters: WorkFilters) {
+    return requestJson<WorkBoard>(`${base}/work/board?${workQuery(filters)}`, { cache: 'no-store' })
   },
   list(page: number, perPage: number, filters: WorkFilters) {
     const query = paginationQuery(page, perPage)
-    query.set('view', filters.view)
-    if (filters.owner_id) query.set('owner_id', filters.owner_id)
-    query.set('search', filters.search)
-    query.set('kind', filters.kind)
+    workQuery(filters).forEach((value, key) => query.set(key, value))
     return requestJson<WorkList>(`${base}/work?${query}`, { cache: 'no-store' })
   },
   get(id: number) {
@@ -71,6 +74,26 @@ export const workApi = {
   },
   plan(id: number, payload: WorkPlanning & { row_version: string }) {
     return requestJson<WorkDetail>(`${base}/work/${id}/planning`, { method: 'PUT', body: JSON.stringify(payload) })
+  },
+  updateContent(id: number, payload: WorkContent) {
+    return requestJson<WorkDetail>(`${base}/work/${id}/content`, { method: 'PUT', body: JSON.stringify(payload) })
+  },
+  finalizeNotice(id: number, row_version: string) {
+    return requestJson<WorkDetail>(`${base}/work/${id}/notice/finalize`, { method: 'POST', body: JSON.stringify({ row_version }) })
+  },
+  tasks(id: number, page: number, perPage: number, status: TaskStatus) {
+    const query = paginationQuery(page, perPage)
+    query.set('status', status)
+    return requestJson<TaskList>(`${base}/work/${id}/tasks?${query}`, { cache: 'no-store' })
+  },
+  createTask(id: number, payload: TaskFields & { row_version: string; submission_key: string }) {
+    return requestJson<WorkDetail>(`${base}/work/${id}/tasks`, { method: 'POST', body: JSON.stringify(payload) })
+  },
+  updateTask(id: number, taskId: number, payload: TaskFields & { row_version: string; task_row_version: string }) {
+    return requestJson<WorkDetail>(`${base}/work/${id}/tasks/${taskId}`, { method: 'PUT', body: JSON.stringify(payload) })
+  },
+  deleteTask(id: number, taskId: number, row_version: string, task_row_version: string) {
+    return requestJson<WorkDetail>(`${base}/work/${id}/tasks/${taskId}`, { method: 'DELETE', body: JSON.stringify({ row_version, task_row_version }) })
   },
   action(id: number, payload: WorkAction) {
     return requestJson<WorkDetail>(`${base}/work/${id}/actions`, { method: 'POST', body: JSON.stringify(payload) })

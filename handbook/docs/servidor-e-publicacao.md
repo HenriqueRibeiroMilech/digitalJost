@@ -121,8 +121,11 @@ Não imprimir todo o ambiente para diagnóstico. No Windows, fornecer o arquivo 
 | `DJ_LDAP_USE_SSL` | false; aceita true/false/1/0. Com SSL, o cliente exige certificado válido. |
 | `DJ_LDAP_PORT` | 389 sem SSL, 636 com SSL; de 1 a 65.535. |
 | `DJ_LDAP_CONNECT_TIMEOUT`, `DJ_LDAP_RECEIVE_TIMEOUT` | Dois segundos cada; inteiros positivos. |
+| `DJ_DEMAND_WORK_AUTOSTART_ENABLED` | false; aceita true/false/1/0. Habilita o início agendado moderno no processo `RunAutoScheduler`, após aplicar a migration específica de Demandas. |
 
 Pool é por instância/processo, separado do legado. Essas opções não alteram automaticamente os pools antigos. Se faltar usuário ou senha LDAP, o adaptador moderno fica sem configuração e presenças retornam indisponibilidade; não presumir que isso permite iniciar todo o legado ou registrar presença sem identificação.
+
+O início automático moderno usa a configuração TD do ambiente do `RunAutoScheduler`, com pool próprio de uma conexão, criado no primeiro ciclo habilitado. Não inicializa Flask ou chama `create_app()`. Aplicar a migration de [evolução do trabalho](../../database/migrations/20261101_expand_demand_work.sql), publicar backend/build compatíveis e configurar a opção no ambiente privado do serviço antes da ativação autorizada. O ciclo verifica até 100 demandas por minuto; detalhes e condições ficam em [Demandas](../features/demandas.md).
 
 O histórico também registra `PYTHON_DOTENV_DISABLED`, controle da biblioteca que pode impedir leitura por `load_dotenv`; ele não é um seletor implementado pela aplicação. Se existir no ambiente, conferir seu efeito na versão instalada em verificação autorizada. Não confundi-lo com `FLASK_SKIP_DOTENV`.
 

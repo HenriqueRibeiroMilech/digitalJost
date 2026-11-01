@@ -19,30 +19,33 @@ const saving = ref(false)
 const message = ref('')
 const start = ref('')
 const deadline = ref('')
+const expectedReturn = ref('')
 const serverError = ref('')
 const form = ref<HTMLFormElement | null>(null)
 const prefix = 'work-actions-' + props.work.id
-const errorKeys = ['action', 'scheduled_start_on', 'due_on', 'message', 'row_version'] as const
+const errorKeys = ['action', 'scheduled_start_on', 'due_on', 'expected_return_on', 'message', 'row_version'] as const
 const errors = reactive(Object.fromEntries(errorKeys.map(key => [key, ''])) as Record<typeof errorKeys[number], string>)
 const locked = computed(() => props.disabled || saving.value)
 const options: { value: WorkActionName; label: string; icon: string; tone: 'success' | 'danger' | 'brand' | 'neutral'; message?: string }[] = [
   { value: 'start', label: 'Iniciar', icon: 'pi pi-play', tone: 'success' },
   { value: 'resume', label: 'Retomar', icon: 'pi pi-play', tone: 'success' },
+  { value: 'reopen', label: 'Reabrir demanda', icon: 'pi pi-replay', tone: 'brand', message: 'Motivo da reabertura' },
   { value: 'complete', label: 'Concluir', icon: 'pi pi-check', tone: 'success' },
   { value: 'cancel', label: 'Cancelar demanda', icon: 'pi pi-times', tone: 'danger', message: 'Justificativa do cancelamento' },
   { value: 'schedule', label: props.work.scheduled_start_on ? 'Alterar agendamento' : 'Agendar início', icon: 'pi pi-calendar-plus', tone: 'brand' },
+  { value: 'cancel_schedule', label: 'Cancelar agendamento', icon: 'pi pi-calendar-times', tone: 'neutral' },
   { value: 'request_information', label: 'Solicitar mais informações', icon: 'pi pi-comment', tone: 'neutral', message: 'Informações necessárias' },
   { value: 'validate', label: 'Iniciar validação', icon: 'pi pi-verified', tone: 'brand', message: 'Orientações para a validação' },
   { value: 'pause', label: 'Pausar', icon: 'pi pi-pause', tone: 'neutral', message: 'Motivo da pausa' },
   { value: 'wait_third_party', label: 'Aguardar terceiros', icon: 'pi pi-users', tone: 'neutral', message: 'Pendências com terceiros' },
-  { value: 'change_deadline', label: 'Alterar prazo', icon: 'pi pi-calendar', tone: 'brand' },
+  { value: 'change_deadline', label: 'Alterar prazo', icon: 'pi pi-calendar', tone: 'brand', message: 'Justificativa do novo prazo' },
 ]
-const primary = computed(() => options.filter(option => ['start', 'resume', 'complete', 'cancel'].includes(option.value)
+const primary = computed(() => options.filter(option => ['start', 'resume', 'complete', 'cancel', 'reopen'].includes(option.value)
   && props.work.available_actions.includes(option.value)))
-const secondary = computed(() => options.filter(option => !['start', 'resume', 'complete', 'cancel', 'change_deadline'].includes(option.value)
+const secondary = computed(() => options.filter(option => !['start', 'resume', 'complete', 'cancel', 'reopen', 'change_deadline'].includes(option.value)
   && props.work.available_actions.includes(option.value)))
 const selected = computed(() => options.find(option => option.value === action.value))
-const needsDeadline = computed(() => action.value !== null && ['start', 'schedule', 'change_deadline'].includes(action.value))
+const needsDeadline = computed(() => action.value !== null && ['start', 'schedule', 'change_deadline', 'reopen'].includes(action.value))
 function today() {
   const parts = new Intl.DateTimeFormat('en', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
   return ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value ?? '').join('-')
@@ -61,6 +64,7 @@ async function choose(value: WorkActionName) {
   message.value = ''
   start.value = props.work.scheduled_start_on ?? ''
   deadline.value = props.work.due_on ?? ''
+  expectedReturn.value = props.work.expected_return_on ?? ''
   serverError.value = ''
   errorKeys.forEach(key => { errors[key] = '' })
   await nextTick()
@@ -85,6 +89,7 @@ async function submit() {
   serverError.value = ''
   if (action.value === 'schedule' && (!start.value || start.value < today())) errors.scheduled_start_on = 'Selecione hoje ou uma data futura.'
   if (needsDeadline.value && (!deadline.value || deadline.value < earliestDeadline.value)) errors.due_on = 'Informe um prazo igual ou posterior a hoje e ao início.'
+  if (action.value === 'pause' && (!expectedReturn.value || expectedReturn.value < today())) errors.expected_return_on = 'Informe hoje ou uma data futura para a previsão de retorno.'
   if (selected.value?.message && !message.value.trim()) errors.message = 'Preencha este campo para registrar a ação.'
   if (errorKeys.some(key => errors[key])) { await focusError(); return }
   saving.value = true
@@ -92,7 +97,8 @@ async function submit() {
   try {
     saved = await workApi.action(props.work.id, { action: action.value, row_version: props.work.row_version,
       scheduled_start_on: action.value === 'schedule' ? start.value : null,
-      due_on: needsDeadline.value ? deadline.value : null, message: selected.value?.message ? message.value.trim() : null })
+      due_on: needsDeadline.value ? deadline.value : null, expected_return_on: action.value === 'pause' ? expectedReturn.value : null,
+      message: selected.value?.message ? message.value.trim() : null })
   } catch (error) {
     serverError.value = error instanceof Error ? error.message : 'Não foi possível registrar a ação.'
     if (error instanceof ApiError) {
@@ -128,7 +134,9 @@ async function submit() {
       <Message v-if="serverError" :id="prefix + '-error'" severity="error" tabindex="-1" role="alert">{{ serverError }}</Message>
       <Message v-if="errors.row_version || errors.action" severity="error">{{ errors.row_version || errors.action }}</Message>
       <p v-if="action === 'start'" class="text-sm text-dj-muted">O início será registrado com a data de hoje, no horário de Brasília.</p>
-      <p v-if="action === 'schedule'" class="text-sm text-dj-muted">Registre o início planejado e o prazo. Na data combinada, use Iniciar para confirmar a execução.</p>
+      <p v-if="action === 'schedule'" class="text-sm text-dj-muted">Defina o início e o prazo. A demanda será iniciada automaticamente na data agendada.</p>
+      <p v-if="action === 'cancel_schedule'" class="text-sm text-dj-muted">O início agendado e seu prazo serão removidos. A demanda voltará para A fazer.</p>
+      <p v-if="action === 'reopen'" class="text-sm text-dj-muted">Informe um novo prazo e o motivo. A demanda voltará para Em andamento, preservando o início original e o histórico.</p>
       <p v-if="action === 'resume'" class="text-sm text-dj-muted">A demanda voltará a ficar em andamento, mantendo o início e o prazo atuais.</p>
       <p v-if="action === 'complete'" class="text-sm text-dj-muted">Confirme a conclusão da demanda. O encerramento ficará registrado no histórico.</p>
       <div v-if="needsDeadline" class="grid gap-4 sm:grid-cols-2">
@@ -139,6 +147,9 @@ async function submit() {
           <InputText v-model="deadline" v-bind="controlProps" type="date" :min="earliestDeadline" max="9999-12-31" required :disabled="locked" class="w-full" />
         </FormField>
       </div>
+      <FormField v-if="action === 'pause'" :id="prefix + '-return'" label="Previsão de retorno *" :error="errors.expected_return_on" v-slot="{ controlProps }">
+        <InputText v-model="expectedReturn" v-bind="controlProps" type="date" :min="today()" max="9999-12-31" required :disabled="locked" class="w-full" />
+      </FormField>
       <FormField v-if="selected.message" :id="prefix + '-message'" :label="selected.message + ' *'" :error="errors.message" v-slot="{ controlProps }">
         <Textarea v-model="message" v-bind="controlProps" required :rows="4" :maxlength="4000" :disabled="locked" class="w-full" />
       </FormField>

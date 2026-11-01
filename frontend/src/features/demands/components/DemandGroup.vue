@@ -17,22 +17,21 @@ const props = defineProps<{
   total: number
   expanded: boolean
   disabled: boolean
-  search: string
-  kind: WorkFilters['kind']
+  filters: WorkFilters
 }>()
 defineEmits<{ toggle: []; open: [id: number] }>()
 const notices = computed(() => props.ownerId === undefined)
 const id = computed(() => 'work-group-' + (props.ownerId === undefined ? 'notices'
   : 'owner-' + encodeURIComponent(props.ownerId).replace(/-/g, '%2D')))
 const { page, perPage, resetPage } = usePagination()
-const filters = computed<WorkFilters>(() => ({ view: notices.value ? 'notices' : 'users', owner_id: props.ownerId ?? null,
-  search: props.search, kind: notices.value ? 'todos' : props.kind }))
+const filters = computed<WorkFilters>(() => ({ ...props.filters, view: notices.value ? 'notices' : 'users', owner_id: props.ownerId ?? null,
+  kind: notices.value ? 'todos' : props.filters.kind }))
 const { data, isPending, isError, error, refetch } = useQuery({
   queryKey: ['demands', 'work', 'list', filters, page],
   queryFn: () => workApi.list(page.value, perPage, filters.value), enabled: computed(() => props.expanded),
-  retry: false, refetchOnWindowFocus: false,
+  retry: false, refetchOnWindowFocus: false, refetchInterval: computed<number | false>(() => props.disabled ? false : 60_000), refetchIntervalInBackground: false,
 })
-watch(() => [props.search, props.kind], resetPage)
+watch(() => props.filters, resetPage)
 watch(data, result => {
   if (result) page.value = Math.min(page.value, Math.max(1, Math.ceil(result.total / perPage)))
 })

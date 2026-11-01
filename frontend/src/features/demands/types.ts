@@ -64,13 +64,14 @@ export interface ReviewFields {
 
 export type WorkKind = 'projeto' | 'melhoria' | 'erro' | 'atividade' | 'aviso'
 export type WorkActionName = 'start' | 'cancel' | 'schedule' | 'request_information' | 'complete'
-  | 'validate' | 'pause' | 'wait_third_party' | 'resume' | 'change_deadline'
+  | 'validate' | 'pause' | 'wait_third_party' | 'resume' | 'change_deadline' | 'reopen' | 'cancel_schedule'
 
 export interface WorkAction {
   action: WorkActionName
   row_version: string
   scheduled_start_on: string | null
   due_on: string | null
+  expected_return_on: string | null
   message: string | null
 }
 
@@ -86,8 +87,11 @@ export interface WorkCreate {
   expected_benefits: string | null
   starts_at: string | null
   ends_at: string | null
+  hide_after_end: boolean
   submission_key: string
 }
+
+export type WorkContent = Omit<WorkCreate, 'submission_key'> & { row_version: string }
 
 export interface WorkPlanning {
   difficulty: 'Baixa' | 'Média' | 'Alta' | null
@@ -105,6 +109,8 @@ export interface WorkItem extends WorkPlanning {
   title: string
   description: string
   responsible_id: string
+  requester_id: string
+  contributor_id: string | null
   responsible_name: string | null
   requester_name: string | null
   contributor_name: string | null
@@ -114,10 +120,15 @@ export interface WorkItem extends WorkPlanning {
   expected_benefits: string | null
   starts_at: string | null
   ends_at: string | null
+  hide_after_end: boolean
+  notice_finalized_at: string | null
+  notice_state: 'active' | 'upcoming' | 'expired' | 'finalized' | null
   status: string
   scheduled_start_on: string | null
   started_on: string | null
   due_on: string | null
+  expected_return_on: string | null
+  is_overdue: boolean
   closed_at: string | null
   created_at: string
   updated_at: string
@@ -126,6 +137,8 @@ export interface WorkItem extends WorkPlanning {
 export interface WorkDetail extends WorkItem {
   row_version: string
   can_update: boolean
+  can_edit_content: boolean
+  can_manage_tasks: boolean
   available_actions: WorkActionName[]
   attachments: RequestDetail['attachments']
   history: { id: number; event_type: string; actor_name: string | null; created_at: string; fields: string[]
@@ -144,5 +157,27 @@ export interface WorkFilters {
   owner_id: string | null
   search: string
   kind: 'todos' | Exclude<WorkKind, 'aviso'>
+  status: 'todos' | 'ativos' | 'atrasados' | 'a_fazer' | 'agendado' | 'em_andamento' | 'aguardando_informacoes'
+    | 'em_validacao' | 'pausado' | 'aguardando_terceiros' | 'concluido' | 'cancelado'
+  difficulty: 'todas' | 'Baixa' | 'Média' | 'Alta'
+  sort: 'priority' | 'deadline' | 'newest'
+  notice_state: 'visible' | 'all' | 'active' | 'upcoming' | 'expired' | 'finalized'
 }
 export type WorkList = PaginatedResponse<WorkItem, { can_create: boolean }>
+
+export interface TaskFields {
+  title: string
+  description: string | null
+  responsible_id: string
+  priority: number | null
+  due_on: string | null
+  completed: boolean
+}
+export interface TaskItem extends Omit<TaskFields, 'completed'> {
+  id: number
+  responsible_name: string | null
+  completed_at: string | null
+  row_version: string
+}
+export type TaskStatus = 'all' | 'pending' | 'completed'
+export type TaskList = PaginatedResponse<TaskItem, { can_update: boolean }>

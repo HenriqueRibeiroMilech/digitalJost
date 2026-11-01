@@ -160,7 +160,7 @@ class ContributorsOut(BaseModel):
 WorkKind = Literal["projeto", "melhoria", "erro", "atividade", "aviso"]
 
 
-class WorkCreate(BaseModel):
+class WorkFields(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
 
     kind: WorkKind
@@ -174,7 +174,7 @@ class WorkCreate(BaseModel):
     expected_benefits: str | None = Field(default=None, max_length=4000)
     starts_at: datetime | None = None
     ends_at: datetime | None = None
-    submission_key: str = Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+    hide_after_end: bool = True
 
     @field_validator("title", "description", "responsible_id", "contributor_id", "assumptions", "current_problems", "expected_benefits")
     @classmethod
@@ -216,7 +216,22 @@ class WorkCreate(BaseModel):
                 raise ValueError("Atividade e aviso usam título, descrição e responsável.")
         elif self.urgency is None:
             raise ValueError("Informe a urgência da demanda.")
+        if self.kind != "aviso":
+            self.hide_after_end = False
         return self
+
+
+class WorkCreate(WorkFields):
+    submission_key: str = Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+class WorkVersion(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+    row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
+
+
+class WorkContent(WorkFields, WorkVersion):
+    pass
 
 
 class WorkPlan(BaseModel):
@@ -245,7 +260,7 @@ class WorkPlan(BaseModel):
 
 WorkActionName = Literal[
     "start", "cancel", "schedule", "request_information", "complete", "validate",
-    "pause", "wait_third_party", "resume", "change_deadline",
+    "pause", "wait_third_party", "resume", "change_deadline", "reopen", "cancel_schedule",
 ]
 
 
@@ -256,9 +271,10 @@ class WorkAction(BaseModel):
     row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
     scheduled_start_on: date | None = None
     due_on: date | None = None
+    expected_return_on: date | None = None
     message: str | None = Field(default=None, min_length=1, max_length=4000)
 
-    @field_validator("scheduled_start_on", "due_on", mode="before")
+    @field_validator("scheduled_start_on", "due_on", "expected_return_on", mode="before")
     @classmethod
     def parse_day(cls, value):
         if value is None:
@@ -277,13 +293,15 @@ class WorkAction(BaseModel):
 
     @model_validator(mode="after")
     def validate_action(self):
-        needs_message = self.action in ("cancel", "request_information", "validate", "pause", "wait_third_party")
+        needs_message = self.action in ("cancel", "request_information", "validate", "pause", "wait_third_party", "reopen", "change_deadline")
         if needs_message != (self.message is not None):
             raise ValueError("Informe a mensagem obrigatória somente nas ações que a solicitam.")
-        if (self.action in ("start", "schedule", "change_deadline")) != (self.due_on is not None):
-            raise ValueError("Informe o prazo somente ao iniciar, agendar ou alterar prazo.")
+        if (self.action in ("start", "schedule", "change_deadline", "reopen")) != (self.due_on is not None):
+            raise ValueError("Informe o prazo somente ao iniciar, agendar, reabrir ou alterar prazo.")
         if (self.action == "schedule") != (self.scheduled_start_on is not None):
             raise ValueError("Informe a data de início somente ao agendar.")
+        if (self.action == "pause") != (self.expected_return_on is not None):
+            raise ValueError("Informe a previsão de retorno somente ao pausar.")
         return self
 
 
@@ -293,6 +311,11 @@ class WorkQuery(PaginationQuery):
     owner_id: str | None = Field(default=None, min_length=1, max_length=128)
     search: str = Field(default="", max_length=250)
     kind: Literal["todos", "projeto", "melhoria", "erro", "atividade"] = "todos"
+    status: Literal["todos", "ativos", "atrasados", "a_fazer", "agendado", "em_andamento", "aguardando_informacoes",
+                    "em_validacao", "pausado", "aguardando_terceiros", "concluido", "cancelado"] = "ativos"
+    difficulty: Literal["todas", "Baixa", "Média", "Alta"] = "todas"
+    sort: Literal["priority", "deadline", "newest"] = "priority"
+    notice_state: Literal["visible", "all", "active", "upcoming", "expired", "finalized"] = "visible"
 
     @field_validator("owner_id", "search")
     @classmethod
@@ -320,6 +343,8 @@ class WorkItemOut(BaseModel):
     title: str
     description: str
     responsible_id: str
+    requester_id: str
+    contributor_id: str | None
     responsible_name: str | None
     requester_name: str | None
     contributor_name: str | None
@@ -329,10 +354,15 @@ class WorkItemOut(BaseModel):
     expected_benefits: str | None
     starts_at: datetime | None
     ends_at: datetime | None
+    hide_after_end: bool
+    notice_finalized_at: datetime | None
+    notice_state: str | None
     status: str
     scheduled_start_on: date | None
     started_on: date | None
     due_on: date | None
+    expected_return_on: date | None
+    is_overdue: bool
     closed_at: datetime | None
     difficulty: str | None
     priority: int | None
@@ -363,6 +393,8 @@ class WorkHistoryOut(BaseModel):
 class WorkDetail(WorkItemOut):
     row_version: str
     can_update: bool
+    can_edit_content: bool
+    can_manage_tasks: bool
     available_actions: list[WorkActionName]
     attachments: list[AttachmentOut]
     history: list[WorkHistoryOut]
@@ -373,4 +405,60 @@ class WorkCapabilities(BaseModel):
 
 
 class WorkList(PaginatedResponse[WorkItemOut, WorkCapabilities]):
+    pass
+
+
+class TaskFields(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
+    title: str = Field(min_length=1, max_length=250)
+    description: str | None = Field(default=None, max_length=4000)
+    responsible_id: str = Field(min_length=1, max_length=128)
+    priority: int | None = Field(default=None, ge=1, le=10)
+    due_on: date | None = None
+    completed: bool = False
+
+    @field_validator("title", "description", "responsible_id")
+    @classmethod
+    def validate_text(cls, value, info: ValidationInfo):
+        return RequestFields.validate_text(value, info)
+
+    @field_validator("due_on", mode="before")
+    @classmethod
+    def parse_day(cls, value):
+        return WorkAction.parse_day(value)
+
+
+class TaskCreate(TaskFields, WorkVersion):
+    submission_key: str = Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+class TaskUpdate(TaskFields, WorkVersion):
+    task_row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
+
+
+class TaskDelete(WorkVersion):
+    task_row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
+
+
+class TaskQuery(PaginationQuery):
+    status: Literal["all", "pending", "completed"] = "pending"
+
+
+class TaskOut(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    responsible_id: str
+    responsible_name: str | None
+    priority: int | None
+    due_on: date | None
+    completed_at: datetime | None
+    row_version: str
+
+
+class TaskCapabilities(BaseModel):
+    can_update: bool
+
+
+class TaskList(PaginatedResponse[TaskOut, TaskCapabilities]):
     pass

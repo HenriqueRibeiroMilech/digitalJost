@@ -15,7 +15,7 @@ import win32event
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app.services.jobs import mon_mon_auto_demandManagement, mon_mon_auto_laboratory
+from app.services.jobs import mon_mon_auto_demandManagement, mon_mon_auto_laboratory, mon_mon_auto_modern_demands
 from app.utils.teams_utils import send_system_teams_alert
 
 
@@ -83,6 +83,10 @@ class SchedulerService(win32serviceutil.ServiceFramework):
         self.scheduler.add_job(
             func=lambda: self.log_and_alert_job('Agendamentos automáticos: Demandas', mon_mon_auto_demandManagement.default),
             trigger=trigger_1min
+        )
+        self.scheduler.add_job(
+            func=lambda: self.log_and_alert_job('Agendamentos automáticos: Demandas modernas', mon_mon_auto_modern_demands.default),
+            trigger=trigger_1min, max_instances=1, coalesce=True
         )
 
 if __name__ == '__main__':

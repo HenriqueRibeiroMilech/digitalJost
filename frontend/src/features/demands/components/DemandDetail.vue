@@ -14,9 +14,11 @@ import Textarea from '@/volt/Textarea.vue'
 import Message from '@/volt/Message.vue'
 import Tag from '@/volt/Tag.vue'
 import { workApi } from '../api'
-import { displayDate, displayDay, fileSize, planningLabels, statusLabel, workFieldLabels, workHistoryLabel, workHistoryValue, workKind } from '../presentation'
+import { displayDate, displayDay, fileSize, noticeStateLabel, planningLabels, statusLabel, workFieldLabels, workHistoryLabel, workHistoryValue, workKind } from '../presentation'
 import type { WorkDetail, WorkPlanning } from '../types'
 import DemandActions from './DemandActions.vue'
+import DemandCreateDialog from './DemandCreateDialog.vue'
+import DemandTasks from './DemandTasks.vue'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{ closed: []; changed: []; busy: [value: boolean] }>()
@@ -25,10 +27,13 @@ const saving = ref(false)
 const reloading = ref(false)
 const actionSaving = ref(false)
 const actionEditing = ref(false)
+const editingContent = ref(false)
+const taskBusy = ref(false)
+const noticeConfirm = ref(false)
 const reloadKey = ref(0)
-const busy = computed(() => saving.value || reloading.value || actionSaving.value)
+const busy = computed(() => saving.value || reloading.value || actionSaving.value || editingContent.value || taskBusy.value || noticeConfirm.value)
 const needsReload = ref(false)
-const tab = ref<'info' | 'history'>('info')
+const tab = ref<'info' | 'tasks' | 'history'>('info')
 const serverError = ref('')
 const feedback = ref('')
 const form = ref<HTMLFormElement | null>(null)
@@ -67,6 +72,7 @@ async function reload() {
   try {
     const result = await refetch()
     if (result.isSuccess) {
+      await client.invalidateQueries({ queryKey: ['demands', 'work', 'tasks', props.id] })
       needsReload.value = false
       actionEditing.value = false
       reloadKey.value++
@@ -122,11 +128,47 @@ async function actionSaved(item: WorkDetail) {
   await nextTick()
   document.getElementById(prefix + '-feedback')?.focus()
 }
+function contentSaved(item: WorkDetail) {
+  const changed = data.value?.row_version !== item.row_version
+  client.setQueryData(queryKey, item)
+  feedback.value = changed ? 'Dados atualizados. A alteração ficou registrada no histórico.' : 'Os dados já estavam atualizados; nenhuma alteração foi necessária.'
+  emit('changed')
+}
+async function contentClosed() {
+  editingContent.value = false
+  await nextTick()
+  const target = document.getElementById(prefix + (needsReload.value ? '-reload' : '-edit')) ?? document.getElementById(prefix + '-feedback')
+  target?.focus()
+}
+async function taskSaved(item: WorkDetail) {
+  client.setQueryData(queryKey, item)
+  emit('changed')
+}
+async function finalizeNotice() {
+  if (actionSaving.value || needsReload.value || !data.value?.can_edit_content || data.value.kind !== 'aviso') return
+  actionSaving.value = true
+  serverError.value = ''
+  try {
+    const item = await workApi.finalizeNotice(props.id, data.value.row_version)
+    client.setQueryData(queryKey, item)
+    feedback.value = 'Aviso finalizado. Ele continua disponível no filtro de avisos finalizados.'
+    noticeConfirm.value = false
+    emit('changed')
+  } catch (error) {
+    serverError.value = error instanceof Error ? error.message : 'Não foi possível finalizar o aviso.'
+    needsReload.value = !(error instanceof ApiError) || [0, 401, 403, 409].includes(error.status) || error.status >= 500 || (error.status >= 200 && error.status < 300)
+  } finally { actionSaving.value = false }
+}
+async function noticeClosed() {
+  await nextTick()
+  const target = document.getElementById(prefix + (needsReload.value ? '-reload' : '-finalize')) ?? document.getElementById(prefix + '-feedback')
+  target?.focus()
+}
 </script>
 
 <template>
   <AppDialog :id="prefix" :visible="visible" :title="data ? workKind(data.kind).label + ' #' + id : 'Demanda #' + id"
-    subtitle="Informações, planejamento e histórico" :icon="data ? workKind(data.kind).icon : 'pi pi-briefcase'"
+    :subtitle="data?.kind === 'aviso' ? 'Informações e histórico do aviso' : 'Informações, tarefas e acompanhamento'" :icon="data ? workKind(data.kind).icon : 'pi pi-briefcase'"
     :busy="busy" @update:visible="close" @closed="emit('closed')">
     <RequestState :loading="isPending" :failed="isError" :error="error" :empty="false" loading-label="Carregando detalhes…"
       error-message="Não foi possível carregar a demanda ou aviso." not-found-message="Registro não encontrado para seu acesso." @retry="reload">
@@ -134,6 +176,8 @@ async function actionSaved(item: WorkDetail) {
         <div class="flex flex-wrap gap-2">
           <Tag :value="workKind(data.kind).label" />
           <Tag v-if="data.kind !== 'aviso'" :value="statusLabel(data.status)" severity="secondary" />
+          <Tag v-else :value="noticeStateLabel(data.notice_state)" severity="secondary" />
+          <Tag v-if="data.is_overdue" value="Atrasada" severity="danger" icon="pi pi-clock" />
           <Tag v-if="data.source_request_id" :value="'Solicitação #' + data.source_request_id" severity="secondary" />
         </div>
         <h3 class="mt-4 break-words text-xl font-semibold text-dj-ink">{{ data.title }}</h3>
@@ -142,6 +186,9 @@ async function actionSaved(item: WorkDetail) {
         <nav aria-label="Detalhes da demanda" class="my-5 flex flex-wrap gap-2 rounded-xl border border-dj-border bg-dj-canvas p-2">
           <Button type="button" label="Informações" icon="pi pi-info-circle" :outlined="tab !== 'info'" :disabled="busy"
             :aria-current="tab === 'info' ? 'page' : undefined" :aria-controls="prefix + '-info'" @click="tab = 'info'" />
+          <Button v-if="data.kind !== 'aviso'" type="button" label="Tarefas" icon="pi pi-check-square" :outlined="tab !== 'tasks'"
+            :disabled="busy || Boolean(planningDirty) || actionEditing" :aria-current="tab === 'tasks' ? 'page' : undefined"
+            :aria-controls="prefix + '-tasks'" @click="tab = 'tasks'" />
           <Button type="button" label="Histórico" icon="pi pi-history" :outlined="tab !== 'history'" :disabled="busy"
             :aria-current="tab === 'history' ? 'page' : undefined" :aria-controls="prefix + '-history'" @click="tab = 'history'" />
         </nav>
@@ -156,15 +203,18 @@ async function actionSaved(item: WorkDetail) {
             <template v-if="data.kind === 'aviso'">
               <div><dt class="text-xs text-dj-muted">Data e hora de início</dt><dd class="mt-1">{{ data.starts_at ? displayDate(data.starts_at) : 'Não informado' }}</dd></div>
               <div><dt class="text-xs text-dj-muted">Data e hora de fim</dt><dd class="mt-1">{{ data.ends_at ? displayDate(data.ends_at) : 'Não informado' }}</dd></div>
+              <div><dt class="text-xs text-dj-muted">Ocultar após o fim</dt><dd class="mt-1">{{ data.hide_after_end ? 'Sim' : 'Não' }}</dd></div>
+              <div v-if="data.notice_finalized_at"><dt class="text-xs text-dj-muted">Finalizado em</dt><dd class="mt-1">{{ displayDate(data.notice_finalized_at) }}</dd></div>
             </template>
             <template v-else>
               <div v-if="data.scheduled_start_on"><dt class="text-xs text-dj-muted">Início agendado</dt><dd class="mt-1">{{ displayDay(data.scheduled_start_on) }}</dd></div>
               <div v-if="data.started_on"><dt class="text-xs text-dj-muted">Início realizado</dt><dd class="mt-1">{{ displayDay(data.started_on) }}</dd></div>
               <div><dt class="text-xs text-dj-muted">Prazo de entrega</dt><dd class="mt-1">{{ data.due_on ? displayDay(data.due_on) : 'Não definido' }}</dd></div>
               <div v-if="data.closed_at"><dt class="text-xs text-dj-muted">Encerramento</dt><dd class="mt-1">{{ displayDate(data.closed_at) }}</dd></div>
+              <div v-if="data.expected_return_on"><dt class="text-xs text-dj-muted">Previsão de retorno</dt><dd class="mt-1">{{ displayDay(data.expected_return_on) }}</dd></div>
             </template>
           </dl>
-          <p v-if="planningDirty && data.can_update" class="mt-4 text-sm text-dj-muted">Salve o planejamento antes de registrar uma ação da demanda.</p>
+          <p v-if="planningDirty && data.can_update" class="mt-4 text-sm text-dj-muted">Salve o planejamento antes de registrar uma ação, editar o conteúdo ou abrir as tarefas.</p>
           <DemandActions v-if="data.can_update" :key="data.row_version + ':' + reloadKey" :work="data"
             :disabled="busy || isFetching || isError || needsReload || Boolean(planningDirty)" @busy="actionSaving = $event"
             @editing="actionEditing = $event" @uncertain="needsReload = true" @saved="actionSaved" />
@@ -215,25 +265,44 @@ async function actionSaved(item: WorkDetail) {
             </FormField>
           </form>
         </section>
+        <section v-if="tab === 'tasks' && data.kind !== 'aviso'" :id="prefix + '-tasks'" aria-label="Tarefas da demanda">
+          <DemandTasks :key="id + ':' + reloadKey" :work="data" :disabled="needsReload || isFetching || Boolean(planningDirty)"
+            @saved="taskSaved" @busy="taskBusy = $event" @uncertain="needsReload = true" />
+        </section>
         <section v-show="tab === 'history'" :id="prefix + '-history'" aria-label="Histórico da demanda">
           <ol class="space-y-4 text-sm">
             <li v-for="event in data.history" :key="event.id" class="border-l-2 border-dj-border pl-3">
               <p class="font-medium">{{ workHistoryLabel(event.event_type) }}</p>
               <p v-if="event.fields.length" class="mt-1 text-dj-muted">Campos: {{ event.fields.map(field => workFieldLabels[field] ?? field).join(', ') }}.</p>
-              <p v-for="change in event.transitions" :key="change.field" class="mt-1 text-xs leading-5 text-dj-muted">
+              <p v-for="change in event.transitions" :key="change.field" class="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-dj-muted">
                 {{ workFieldLabels[change.field] ?? change.field }}: {{ workHistoryValue(change.field, change.before) }} → {{ workHistoryValue(change.field, change.after) }}
               </p>
               <p v-if="event.message" class="mt-2 whitespace-pre-wrap break-words leading-6">{{ event.message }}</p>
-              <p class="mt-1 text-xs text-dj-muted">{{ event.actor_name ?? 'Usuário indisponível' }} · {{ displayDate(event.created_at) }}</p>
+              <p class="mt-1 text-xs text-dj-muted">{{ event.event_type === 'auto_started' ? 'Sistema' : event.actor_name ?? 'Usuário indisponível' }} · {{ displayDate(event.created_at) }}</p>
             </li>
           </ol>
           <p v-if="!data.history.length" class="text-sm text-dj-muted">Nenhum evento registrado.</p>
         </section>
       </template>
     </RequestState>
+    <DemandCreateDialog v-if="editingContent && data" :work="data" @saved="contentSaved" @closed="contentClosed" @uncertain="needsReload = true" />
+    <AppDialog :id="prefix + '-notice-confirm'" :visible="noticeConfirm" title="Finalizar aviso" icon="pi pi-check" tone="neutral"
+      :busy="actionSaving" :initial-focus-id="prefix + '-notice-cancel'" @update:visible="noticeConfirm = false" @closed="noticeClosed">
+      <Message v-if="serverError" severity="error" role="alert" class="mb-4">{{ serverError }}</Message>
+      <p class="break-words text-sm leading-6">Finalizar o aviso “{{ data?.title }}”? Ele sairá do mural padrão e continuará disponível para consulta nos avisos finalizados.</p>
+      <p v-if="needsReload" class="mt-3 text-sm text-dj-muted">Feche esta confirmação e recarregue os detalhes antes de tentar novamente.</p>
+      <template #footer>
+        <Button type="button" label="Finalizar aviso" :loading="actionSaving" :disabled="actionSaving || needsReload" @click="finalizeNotice" />
+        <SecondaryButton :id="prefix + '-notice-cancel'" type="button" label="Cancelar" outlined :disabled="actionSaving" @click="noticeConfirm = false" />
+      </template>
+    </AppDialog>
     <template #footer>
-      <Button v-if="needsReload" type="button" label="Recarregar detalhes" icon="pi pi-refresh" :loading="reloading" :disabled="busy" @click="reload" />
+      <Button v-if="needsReload" :id="prefix + '-reload'" type="button" label="Recarregar detalhes" icon="pi pi-refresh" :loading="reloading" :disabled="busy" @click="reload" />
       <Button v-else-if="data?.can_update && !isError && tab === 'info' && !actionEditing" type="submit" :form="prefix + '-form'" label="Salvar planejamento" icon="pi pi-save" :loading="saving" :disabled="locked" />
+      <Button v-if="data?.can_edit_content && !isError && tab === 'info' && !actionEditing" :id="prefix + '-edit'" type="button"
+        label="Editar dados e responsável" icon="pi pi-pencil" outlined :disabled="busy || isFetching || needsReload || Boolean(planningDirty)" @click="editingContent = true" />
+      <Button v-if="data?.kind === 'aviso' && data.can_edit_content && !isError && tab === 'info'" :id="prefix + '-finalize'" type="button"
+        label="Finalizar aviso" icon="pi pi-check" outlined :disabled="busy || isFetching || needsReload" @click="serverError = ''; noticeConfirm = true" />
       <SecondaryButton type="button" label="Fechar" outlined :disabled="busy" @click="close" />
     </template>
   </AppDialog>

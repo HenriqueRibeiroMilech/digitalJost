@@ -44,7 +44,7 @@ A aba Demandas segue a organização do gerenciador anterior: ações e filtros 
 
 Inicialmente o mural fica aberto quando possui avisos; vazio, mantém apenas o cabeçalho recolhido. Se a pessoa autenticada tem demandas, sua seção fica aberta e as demais recolhidas; caso contrário, os grupos ficam abertos. Somente responsáveis com registros formam seções no quadro; o filtro inclui também integrantes ativos sem registros e preserva pessoas inativas ou sem cadastro que ainda tenham demandas. Abrir/recolher um grupo não esconde os outros; os registros são carregados ao expandi-lo. Cada grupo tem paginação independente de 12 itens no servidor e estados próprios de carregamento, vazio e falha.
 
-`?owner=<id>` filtra os grupos por responsável; `?board=avisos` abre o quadro com os grupos de pessoas recolhidos; `?work=<id>` abre o detalhe da demanda ou aviso. A busca literal por título/número aplica-se aos grupos e ao mural; tipo e responsável filtram somente demandas. Buscar ou limpar filtros expande os grupos. Os contadores dos cabeçalhos passam a refletir o total filtrado de cada consulta quando disponível; antes do carregamento exibem o total geral informado pelo quadro. As demandas são ordenadas por prioridade crescente (1 é a mais alta), com prioridade não definida ao fim e desempate pelo ID mais recente.
+`?owner=<id>` filtra os grupos por responsável; `?board=avisos` abre o quadro com os grupos de pessoas recolhidos; `?work=<id>` abre o detalhe da demanda ou aviso. A busca literal por título/número aplica-se aos grupos e ao mural. Tipo, responsável, situação e dificuldade filtram demandas; o filtro do mural permite avisos visíveis, todos, em vigor, agendados, vencidos ou finalizados. Demandas começam em **Em aberto**; **Atrasadas** considera prazo anterior a hoje em Brasília e exclui concluídas/canceladas. Ordenação por prioridade crescente (1 é a mais alta), prazo mais próximo ou registros recentes; valores ausentes ficam ao fim e o ID desempata. Filtros, contagens e paginação são de servidor, inclusive nos grupos recolhidos. Buscar ou limpar filtros expande os grupos. Quadro e grupos abertos consultam novamente a cada minuto, pausando durante operações; isso não executa transições no navegador.
 
 O botão **Nova demanda ou aviso** solicita o tipo antes de mostrar os campos:
 
@@ -57,34 +57,50 @@ O botão **Nova demanda ou aviso** solicita o tipo antes de mostrar os campos:
 
 Responsável segue a mesma elegibilidade do aceite: integrante ativo, não genérico e com perfil Transformação Digital. O contribuinte segue as regras da solicitação pessoal. Título tem limite de 250 unidades UTF-16; descrição, contexto e observações, 4.000. Nos tipos com anexos opcionais, são aceitos zero a dez arquivos, com os mesmos formatos e limites por arquivo/total das solicitações. Atividades e avisos rejeitam anexos e campos exclusivos dos outros tipos.
 
-Datas/horas do aviso são digitadas no horário local do navegador, enviadas com fuso e normalizadas para UTC pelo backend. Instantes de criação, atualização, encerramento e histórico também são UTC, exibidos localmente. As datas de início e prazo da execução são dias de calendário (`DATE`), sem conversão de fuso; o backend define hoje pelo horário de Brasília (`America/Sao_Paulo`). Os avisos ficam no mural do topo, separados dos grupos por pessoa, e permanecem consultáveis após o fim; esta entrega não os oculta automaticamente nem executa jobs de publicação/encerramento.
+Datas/horas do aviso são digitadas no horário local do navegador, enviadas com fuso e normalizadas para UTC pelo backend. Instantes de criação, atualização, encerramento e histórico também são UTC, exibidos localmente. As datas de início e prazo da execução são dias de calendário (`DATE`), sem conversão de fuso; o backend define hoje pelo horário de Brasília (`America/Sao_Paulo`). Avisos têm a opção **Ocultar do mural após o fim**, inicialmente marcada. A consulta padrão exclui finalizados e vencidos com essa opção; todos permanecem disponíveis pelos filtros. A equipe pode editar conteúdo, responsável, período e opção de ocultação. **Finalizar aviso** exige confirmação, registra autor/data/histórico e retira o aviso do mural padrão, sem excluir o registro. Finalizados são somente consulta. O fim do período é calculado nas consultas, sem job de exclusão ou finalização automática.
 
-O detalhe abre em **Informações**, com conteúdo completo, pessoas, origem, documentos e os campos de planejamento. **Histórico** é a segunda aba, com criação, aceite de origem e campos alterados no planejamento. O planejamento permite dificuldade Baixa/Média/Alta, prioridade inteira de 1 a 10, tempo total, diário e realizado em horas e observações. Tempos aceitam de 0 a 99.999,99, com até duas casas decimais; realizado inicia em zero e pode superar o estimado. Os demais campos de planejamento são opcionais.
+O detalhe abre em **Informações**, com conteúdo completo, pessoas, origem, documentos e os campos de planejamento. Demandas têm também **Tarefas** e **Histórico**; avisos usam Informações e Histórico. O planejamento permite dificuldade Baixa/Média/Alta, prioridade inteira de 1 a 10, tempo total, diário e realizado em horas e observações. Tempos aceitam de 0 a 99.999,99, com até duas casas decimais; realizado inicia em zero e pode superar o estimado. Os demais campos de planejamento são opcionais.
 
-Responsável e equipe podem editar o planejamento e registrar ações. Atualmente todos os responsáveis elegíveis pertencem à equipe e o quadro/API exige GENERAL e SYSADMIN; não há concessão de edição a terceiros pelo payload ou pela aba selecionada. A gravação compara a versão sob UPDLOCK/HOLDLOCK e confirma alteração e histórico juntos. Conflito ou resultado incerto bloqueia nova escrita até recarregar. Avisos exibem suas informações e período sem planejamento ou ações de execução. Edição do conteúdo inicial, reatribuição e tarefas ainda não fazem parte desta entrega.
+Responsável e equipe podem editar o planejamento e registrar ações. Atualmente todos os responsáveis elegíveis pertencem à equipe e o quadro/API exige GENERAL e SYSADMIN; não há concessão de edição a terceiros pelo payload ou pela aba selecionada. A gravação compara a versão sob UPDLOCK/HOLDLOCK e confirma alteração e histórico juntos. Conflito ou resultado incerto bloqueia nova escrita até recarregar. Avisos não possuem planejamento ou ações de execução.
+
+**Editar dados e responsável** reutiliza o formulário de cadastro, sem troca de tipo, origem ou anexos. Permite título, descrição, contexto, urgência, contribuinte e responsável conforme o tipo; no aviso inclui período e ocultação. Novo responsável deve ser ativo, não genérico e da equipe; o atual pode ser preservado se deixar de ser elegível. O contribuinte alterado é validado contra o solicitante original. A edição atua no trabalho, preservando o conteúdo da solicitação de origem. Histórico registra valores anteriores/posteriores, incluindo pessoas. Salvar o planejamento é necessário antes de abrir edição ou tarefas, para evitar descarte implícito de alterações.
 
 O cadastro direto começa em `a_fazer`, usa UUID de envio e fingerprint dos dados/arquivos, trava e índice único para evitar duplicidade. Após resposta incerta, mantém dados e arquivos bloqueados e permite confirmar o mesmo envio. Fechar o diálogo ou recarregar perde esse rascunho/chave; conferir o quadro antes de iniciar outro cadastro. Sucesso confirmado atualiza a aba correspondente e não depende de a renovação da listagem também funcionar.
 
 ### Ações dentro da demanda
 
-O detalhe oferece ações principais e o grupo expansível **Outras ações**, com formulário e confirmação no próprio diálogo. A API calcula `available_actions` pela situação e permissão; a escrita verifica novamente ambas, a área e a versão. Alterações pendentes no planejamento devem ser salvas antes de abrir uma ação. Não há execução automática de e-mails, jobs ou integrações.
+O detalhe oferece ações principais e o grupo expansível **Outras ações**, com formulário e confirmação no próprio diálogo. A API calcula `available_actions` pela situação e permissão; a escrita verifica novamente ambas, a área e a versão. Alterações pendentes no planejamento devem ser salvas antes de abrir uma ação. Não há envio de e-mails; o início automático é descrito abaixo e depende da ativação autorizada do scheduler.
 
 | Ação | Disponibilidade, entrada e resultado |
 |---|---|
 | Iniciar | Antes do primeiro início; prazo obrigatório igual ou posterior a hoje. Registra `started_on` com hoje em Brasília, limpa o início agendado e muda para `em_andamento`. |
-| Agendar início / Alterar agendamento | Antes do primeiro início; data de início igual ou posterior a hoje e prazo igual ou posterior ao início. Grava `scheduled_start_on`, `due_on` e `agendado`. O agendamento é um registro de planejamento: na data combinada, usar **Iniciar** manualmente; não há job moderno de início automático. |
+| Agendar início / Alterar agendamento | Antes do primeiro início; data igual ou posterior a hoje e prazo igual ou posterior ao início. Grava `scheduled_start_on`, `due_on` e `agendado`. O scheduler habilitado inicia automaticamente na data; Iniciar continua disponível para antecipação manual. |
+| Cancelar agendamento | Antes do primeiro início, com data agendada; limpa início planejado e prazo e retorna para `a_fazer`, sem cancelar a demanda. |
 | Cancelar demanda | Antes ou depois do início, enquanto aberta; justificativa obrigatória. Muda para `cancelado` e registra encerramento. |
 | Solicitar mais informações | Enquanto aberta, exceto se já aguarda informações; mensagem obrigatória. Muda para `aguardando_informacoes`, preservando início/agendamento e prazo. A mensagem fica no histórico do trabalho; não cria um fluxo de complemento na solicitação de origem. |
 | Concluir | Após o início, enquanto aberta; confirmação. Muda para `concluido` e registra encerramento, sem recalcular horas. |
 | Iniciar validação | Após o início; orientações obrigatórias. Muda para `em_validacao`. |
-| Pausar | Após o início; motivo obrigatório. Muda para `pausado`. |
+| Pausar | Após o início; motivo obrigatório e previsão de retorno igual ou posterior a hoje. Muda para `pausado`; a previsão não retoma automaticamente a demanda. |
 | Aguardar terceiros | Após o início; pendências obrigatórias. Muda para `aguardando_terceiros`. |
-| Retomar | Em validação, pausa ou espera após o início; mantém início e prazo, retornando a `em_andamento`. Não reabre demandas encerradas. |
-| Alterar prazo | Enquanto aberta, com início realizado ou agendado; novo prazo obrigatório, diferente do atual, igual ou posterior a hoje e ao início. Não muda a situação. |
+| Retomar | Em validação, pausa ou espera após o início; mantém início e prazo, limpa previsão de retorno e volta a `em_andamento`. |
+| Reabrir demanda | Somente concluídas; justificativa e novo prazo válidos são obrigatórios. Preserva início e histórico, limpa encerramento e volta a `em_andamento`. Canceladas não são reabertas. |
+| Alterar prazo | Enquanto aberta, com início realizado ou agendado; justificativa e novo prazo obrigatórios, diferente do atual e igual ou posterior a hoje e ao início. Não muda a situação. |
 
-Validação, pausa e espera não oferecem novamente a ação que já representa sua situação. Demandas ainda não iniciadas e aguardando informações continuam oferecendo início, agendamento e cancelamento. Demandas concluídas/canceladas permanecem consultáveis sem ações de execução. As mesmas regras são usadas para projetos, melhorias, erros e atividades; avisos não participam desse fluxo.
+Validação, pausa e espera não oferecem novamente a ação que já representa sua situação. Demandas ainda não iniciadas e aguardando informações continuam oferecendo início, agendamento e cancelamento. Concluídas oferecem somente Reabrir demanda; canceladas são somente consulta para execução. As mesmas regras são usadas para projetos, melhorias, erros e atividades; avisos não participam desse fluxo.
 
 Mensagens exigidas têm até 4.000 unidades UTF-16. O histórico mostra ação, pessoa, instante, mensagem e valores anteriores/posteriores de situação e datas. Planejamento continua expondo somente nomes dos campos alterados. O POST não é repetido automaticamente: a versão anterior impede reaplicar uma ação já confirmada; após rede/5xx/conflito, recarregar e conferir o histórico antes de outra escrita. Cards e detalhes exibem início e prazo, mantendo os dias digitados.
+
+### Tarefas da demanda
+
+A aba **Tarefas** é dedicada às entregas de um projeto, melhoria, erro ou atividade. Possui filtro Pendentes/Concluídas/Todas, total filtrado e paginação de 12 itens no servidor. Pendentes aparecem antes de concluídas, com prioridade crescente, prazo e ID para desempate. Tarefa possui título obrigatório (250 unidades UTF-16), descrição/observações opcionais (4.000), responsável obrigatório da equipe, prioridade opcional de 1 a 10 e prazo opcional. Prazo da tarefa não altera o prazo da demanda. Concluir ou reabrir tarefa preserva seus outros campos; excluir exige confirmação e mantém o evento no histórico da demanda.
+
+Demanda encerrada permite consultar tarefas, mas não criá-las, alterá-las ou excluí-las. Reabrir uma demanda concluída permite novamente gerenciá-las. A tarefa tem ROWVERSION própria; cada escrita também compara e avança a versão do trabalho sob a mesma trava/transação, com auditoria. Criação usa UUID e fingerprint únicos por demanda/autor para recuperar repetição do mesmo envio. Conflito ou resposta incerta bloqueia alterações até recarregar os detalhes e conferir a lista; não há retry automático. Transferir a demanda não reatribui silenciosamente suas tarefas.
+
+### Início automático no scheduler
+
+O [adaptador moderno](../../app/services/jobs/mon_mon_auto_modern_demands.py) está registrado no `RunAutoScheduler`, separado do job legado. Por padrão, `DJ_DEMAND_WORK_AUTOSTART_ENABLED=false`: não abre conexão TD nem inicia demandas. Após revisar/aplicar a migration, publicar os arquivos/build e configurar o serviço no ambiente autorizado, habilitar com `true` ou `1`. O processo carrega a mesma configuração privada TD, com pool próprio de uma conexão, sem chamar a factory Flask. Alterações no ambiente privado exigem reinício autorizado do serviço.
+
+[scheduling.py](../../backend/modules/demands/scheduling.py) recebe a factory de sessões explicitamente. A cada minuto processa até 100 trabalhos da área, não avisos, em `agendado`, sem início realizado e com data agendada atingida em Brasília. Travas UPDLOCK/READPAST/ROWLOCK coordenam instâncias e ações manuais. Atualiza situação, início, versão e histórico na mesma transação; uma segunda rodada não reaplica a transição. Usa a data planejada como início, inclusive após indisponibilidade, e preserva o prazo; os próximos ciclos recuperam o restante do lote. Histórico identifica o sistema. Pausas, cancelamentos e pedidos de informações não são iniciados automaticamente. Nenhuma recorrência é criada e nenhuma tabela legada é alterada por esse job.
 
 ## 2. Campos e limites
 
@@ -215,7 +231,7 @@ O POST aceita somente a chave de formulário `payload` e a chave de arquivos `fi
 
 O módulo aplica `Cache-Control: private, no-store` a suas respostas. Downloads são links autenticados para a rota de anexo; o servidor responde como `application/octet-stream`, attachment, sem resposta condicional e com `X-Content-Type-Options: nosniff`. Não servir o armazenamento por uma URL estática.
 
-O POST de análise aceita `action` igual a `accept`, `reject` ou `request_information`. Aceite exige responsável; demanda exige `melhoria` ou `projeto`, enquanto erro rejeita classificação. Recusa e pedido de informações exigem mensagem e rejeitam responsável/classificação; aceite rejeita mensagem. Campos extras são proibidos. Não há DELETE moderno. A execução é tratada pela API do quadro, sem sincronizar a situação da solicitação de origem.
+O POST de análise aceita `action` igual a `accept`, `reject` ou `request_information`. Aceite exige responsável; demanda exige `melhoria` ou `projeto`, enquanto erro rejeita classificação. Recusa e pedido de informações exigem mensagem e rejeitam responsável/classificação; aceite rejeita mensagem. Campos extras são proibidos. Não há exclusão de solicitações ou trabalhos; o DELETE moderno remove somente tarefas. A execução é tratada pela API do quadro, sem sincronizar a situação da solicitação de origem.
 
 ### API do quadro
 
@@ -223,13 +239,19 @@ Base `/api/v1/demands/work`, com guarda GENERAL, ações `demands.work.read/crea
 
 | Método e caminho relativo | Contrato |
 |---|---|
-| GET `/board` | Responsáveis e totais, quantidade de avisos, identidade atual e capacidade de criar. |
-| GET `""` | `page`, `per_page`, `view=users/notices`, `owner_id`, `search`, `kind=todos/projeto/melhoria/erro/atividade`; lista paginada. |
+| GET `/board` | Responsáveis e totais filtrados, quantidade de avisos, identidade atual e capacidade de criar. Recebe os filtros do quadro. Pessoas elegíveis ou com registros continuam no seletor, mesmo com total filtrado zero. |
+| GET `""` | `page`, `per_page`, `view=users/notices`, `owner_id`, `search`, `kind`, `status`, `difficulty`, `sort` e `notice_state`; lista paginada. |
 | POST `""` | Multipart com `payload` (`WorkCreate`) e `files` opcionais; detalhe e HTTP 201 após commit. Não aceita campos de planejamento ou status arbitrário. |
-| GET `/<work_id>` | Campos completos, datas de execução, versão, `can_update`, `available_actions`, anexos e histórico. |
+| GET `/<work_id>` | Campos completos, estado/ocultação do aviso, atraso, datas de execução/retorno, versão, `can_update`, `can_edit_content`, `can_manage_tasks`, `available_actions`, anexos e histórico. |
+| PUT `/<work_id>/content` | `WorkContent`: campos do cadastro sem chave de envio, com `row_version`; tipo deve permanecer igual. Edita conteúdo/pessoas/período, sem alterar a solicitação original. |
+| POST `/<work_id>/notice/finalize` | `row_version`; finaliza aviso aberto com histórico e devolve detalhe. |
 | PUT `/<work_id>/planning` | Campos completos de `WorkPlan`, incluindo `row_version` e tempo realizado; atualiza somente planejamento, sem trocar responsável, tipo, origem ou conteúdo inicial. |
-| POST `/<work_id>/actions` | `WorkAction`: `action`, `row_version` e campos condicionais `scheduled_start_on`, `due_on`, `message`; detalhe após commit. Datas são strings `AAAA-MM-DD`, extras e campos incompatíveis com a ação são rejeitados. |
+| POST `/<work_id>/actions` | `WorkAction`: `action`, `row_version` e campos condicionais `scheduled_start_on`, `due_on`, `expected_return_on`, `message`; detalhe após commit. Datas são strings `AAAA-MM-DD`, extras e campos incompatíveis com a ação são rejeitados. |
 | GET `/<work_id>/attachments/<attachment_id>` | Download autorizado do arquivo direto ou da solicitação de origem, sem expor caminho/chave privada. |
+| GET `/<work_id>/tasks` | `page`, `per_page`, `status=pending/completed/all`; tarefas paginadas com nomes públicos, versão e capacidade de edição. |
+| POST `/<work_id>/tasks` | `TaskCreate`: campos da tarefa, UUID `submission_key` e `row_version` do trabalho; detalhe do trabalho após commit, HTTP 201. |
+| PUT `/<work_id>/tasks/<task_id>` | `TaskUpdate`: campos completos, `row_version` do trabalho e `task_row_version`; detalhe após commit. |
+| DELETE `/<work_id>/tasks/<task_id>` | JSON com ambas as versões; exige vínculo da tarefa ao trabalho e permissão de escrita; detalhe após commit. |
 
 ## 5. Arquivos, transações e dados
 
@@ -253,8 +275,9 @@ Se `save()` falhar com erro de filesystem, tenta remover apenas os arquivos novo
 | `DJ_DEMAND_ATTACHMENTS` | Metadados, tamanho, SHA-256 e chave privada dos arquivos. |
 | `DJ_DEMAND_HISTORY` | Criação, edição e decisões (`accepted`, `rejected`, `information_requested`, `information_provided`); autor, data, mudanças e mensagens em JSON. |
 | `DJ_DEMAND_WORK` | Cadastros diretos e fotografia de solicitações aceitas, responsável, planejamento, situação e datas de execução, período de avisos, versão e idempotência. |
-| `DJ_DEMAND_WORK_HISTORY` | Criação, aceite de origem, mudanças do planejamento e execução, com autor/data e valores anteriores/posteriores em JSON. A API expõe nomes dos campos, mensagens e transições de situação/datas, sem devolver o JSON completo. |
+| `DJ_DEMAND_WORK_HISTORY` | Criação, aceite de origem, conteúdo/reatribuição, avisos, tarefas, planejamento e execução, com autor/data e valores anteriores/posteriores em JSON. A API expõe nomes dos campos, mensagens e transições de conteúdo/pessoas/situação/datas, sem devolver o JSON completo. |
 | `DJ_DEMAND_WORK_ATTACHMENTS` | Metadados de anexos do cadastro direto. Entradas originadas em solicitação leem os documentos originais, sem copiar/mover arquivos. |
+| `DJ_DEMAND_WORK_TASKS` | Tarefas, responsável, prioridade/prazo, conclusão, versão própria e idempotência de criação. FK do trabalho sem exclusão em cascata. |
 | `JDT_USER_DETAILS` | Consulta compartilhada de nomes e colaboradores; não substitui as tabelas modernas. |
 
 O [script de criação](../../database/migrations/20261019_create_dj_demands.sql) prevê IDENTITY, índices, FKs dos anexos/histórico e unicidade de `(area_id, requester_id, submission_key)`. É sujeito a revisão/aplicação explícita; esta documentação não comprova sua execução. A API depende desses objetos e não aplica o script automaticamente.
@@ -267,13 +290,15 @@ O [script do quadro](../../database/migrations/20261029_create_demand_work.sql),
 
 O [script de ações](../../database/migrations/20261029_add_demand_work_actions.sql), proposto e não executado, deve ser revisado/aplicado após o script do quadro e antes de publicar esta versão do backend. Acrescenta `scheduled_start_on`, `started_on` e `due_on` como `DATE NULL`, e `closed_at` como `DATETIME2(3) NULL`, com checks de situações e datas. Não preenche início ou prazo dos cadastros existentes. As verificações permitem repetir a criação de colunas/constraints; o `GO` separa a criação das colunas dos checks, mantendo uma única transação na mesma conexão SSMS/sqlcmd. Nenhum job legado lê essas colunas.
 
+O [script de evolução do trabalho](../../database/migrations/20261101_expand_demand_work.sql), proposto e não executado, deve ser aplicado após os anteriores e antes do backend/build desta entrega. Acrescenta previsão de retorno, ocultação/finalização de avisos, tabela de tarefas e índices. Avisos existentes recebem ocultação após o fim habilitada e continuam consultáveis pelos filtros. Não importa o legado nem inicia demandas durante a migration. Manter a automação moderna desabilitada até confirmar schema, configuração TD da conta Windows e publicação compatível; ativá-la requer a janela autorizada do serviço.
+
 A migration inclui checks de área positiva, participantes, entrada/classificação, texto obrigatório, urgência e detalhes de demanda. Anexos/histórico possuem FK para a solicitação **sem cascade de exclusão**. IDs de usuário são referências lógicas ao cadastro compartilhado: nenhuma FK foi presumida sem confirmar tipo/chave reais. Não substituir IDENTITY por `MAX(id) + 1`.
 
 A coluna `classification` permite `melhoria`, `projeto` ou `atividade` para entrada demanda; a análise implementada utiliza somente `melhoria` e `projeto`. Erro permanece sem classificação. `status` tem default `em_analise` e check de texto não vazio; as transições da análise são controladas pelo backend, com autorização, concorrência e histórico.
 
 ## 6. Onde alterar e publicar
 
-- [Backend](../../backend/modules/demands/): solicitações/análise em `routes.py`; quadro, cadastro direto e planejamento em `work_routes.py`; contratos em `schemas.py`, mapeamentos em `models.py` e armazenamento/limites dos anexos em `storage.py`. Os erros usam o `ApiProblem` compartilhado. Ambos os blueprints são registrados explicitamente em `backend/modules/__init__.py`.
+- [Backend](../../backend/modules/demands/): solicitações/análise em `routes.py`; quadro, conteúdo, avisos, planejamento e ações em `work_routes.py`; tarefas em `task_routes.py`, registradas explicitamente no mesmo blueprint por `__init__.py`; início automático em `scheduling.py`, com sessões recebidas pelo adaptador do scheduler. Contratos em `schemas.py`, mapeamentos em `models.py` e armazenamento/limites dos anexos em `storage.py`. Os erros usam o `ApiProblem` compartilhado.
 - [Frontend](../../frontend/src/features/demands/): página, formulário, detalhe, cards, tipos e cliente HTTP.
 - [Inicialização do backend](../../backend/__init__.py): prepara o armazenamento; as rotas o utilizam na criação e no download. A factory ORM reutiliza o engine moderno do TD.
 
@@ -291,7 +316,7 @@ Publicação inicial: revisar/aplicar o script autorizado antes de usar a API; c
 
 ## 7. Limites e verificações pendentes
 
-Ainda não estão implementados no gerenciador moderno: tarefas, início automático de agendamentos, reatribuição, indicadores, notificações e migração das demandas antigas. A análise registra as decisões e a aba Demandas oferece cadastro direto, avisos, planejamento, ações de execução e horas realizadas informadas manualmente. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias e decisões pendentes; não deve ser tratada como funcionalidade pronta ou schema aprovado.
+Ainda não estão implementados no gerenciador moderno: indicadores, notificações, gestão posterior de anexos, sincronização da execução com a consulta pessoal da solicitação e migração das demandas antigas. Tarefas, edição/reatribuição, filtros, avisos e complementos da execução estão no código; início automático depende da migration e da habilitação autorizada do serviço. Horas realizadas continuam informadas manualmente. A [proposta anterior](../historico/handbook/proposta-gerenciador-demandas.md) preserva ideias e decisões pendentes; não comprova schema aprovado ou implantação.
 
 ### O que permanece da proposta e o que mudou
 
@@ -299,12 +324,12 @@ Ainda não estão implementados no gerenciador moderno: tarefas, início automá
 |---|---|
 | Armazenamento | A decisão posterior escolheu tabelas `DJ_*` novas. A antiga ideia de unificar tudo em `JDT_REQUEST_IMPROVEMENTS_SMALL` foi superada. |
 | Entrada/classificação | Solicitante escolhe demanda ou erro; equipe classifica demanda como Melhoria ou Projeto ao aceitar. Erro preserva seu tipo sem classificação. |
-| Atividades e execução | Ações, mensagens, início, agendamento manual, prazo e encerramento implementados no trabalho moderno; tarefas, reatribuição e automação permanecem pendentes. O aceite atribui o responsável inicial. |
+| Atividades e execução | Tarefas em aba dedicada, edição/reatribuição, ações, previsão de retorno, reabertura e cancelamento de agendamento implementados; início automático depende de schema e ativação autorizada. O aceite atribui o responsável inicial. |
 | Recorrências | Retirá-las é direção do novo produto, não autorização para desligar a automação antiga. Agendamento e recorrência precisam ser separados. |
 | Migração | Não realizada. Exige levantamento do schema real, mapeamento de IDs/participantes/status, anexos, histórico e plano de conciliação/retorno. |
 | Indicadores/notificações | Propostas, sem efeito nas solicitações modernas de hoje. |
 
-Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demandManagement](../../app/routes/demandManagement/) e o [job automático](../../app/services/jobs/mon_mon_auto_demandManagement.py) continuam ligados às tabelas legadas. Não foram encontradas referências aos `DJ_DEMAND*` nos jobs pesquisados. Isso não desativa jobs antigos nem elimina seus efeitos sobre as demandas antigas.
+Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demandManagement](../../app/routes/demandManagement/) e o [job automático legado](../../app/services/jobs/mon_mon_auto_demandManagement.py) continuam ligados às tabelas legadas. O novo adaptador de início automático usa somente `DJ_DEMAND_WORK` e seu histórico. Os dois jobs são separados; adicionar o moderno não desativa os antigos.
 
 ### Cenários essenciais para validação autorizada
 
@@ -319,6 +344,10 @@ Os fluxos antigos em [demandRequests](../../app/routes/demandRequests/), [demand
 | Cadastro direto | Cinco tipos, campos obrigatórios/exclusivos, responsável/contribuinte elegíveis, anexos opcionais, fuso e intervalo do aviso, envio repetido e resultado incerto. |
 | Planejamento | Horas decimais/negativas/excessivas, prioridade e dificuldade inválidas, observações UTF-16, versão antiga, edição da equipe, histórico transacional e aviso sem planejamento. |
 | Execução | Início com hoje em Brasília, agendamento futuro/manual, prazos inválidos/inalterados, mensagens vazias/excessivas, espera antes/depois de iniciar, retomada, estados encerrados, avisos, campos extras, versão antiga, concorrência, resposta incerta e histórico com datas/mensagem. |
+| Complementos | Reabrir concluída com justificativa/novo prazo; rejeitar cancelada; cancelar agendamento; retorno da pausa passado/ausente; justificar alteração de prazo; preservar início e histórico. |
+| Conteúdo e avisos | Edição de cada tipo sem troca de tipo/origem; novo responsável inativo/genérico/fora da equipe; preservar responsável atual inativo; contribuinte igual ao solicitante; período/fuso; finalização concorrente; consulta de vencidos/finalizados; ocultação padrão. |
+| Tarefas | Aba própria; paginação/filtros; criar/editar/concluir/reabrir/excluir; responsável elegível; prazo independente; tarefa de outro trabalho; versões do pai/filho antigas; UUID repetido com dados iguais/diferentes; demanda encerrada; resposta incerta sem retry. |
+| Início automático | Opção desligada sem abrir pool; data em Brasília; múltiplas instâncias e disputa com ação manual; pausa/cancelamento; indisponibilidade e mais de 100 pendentes; repetição sem duplicar histórico; ausência de alterações nas tabelas legadas. |
 | Arquivos | Zero/11 arquivos, vazio, limites exatos, nome/caminho malicioso, extensão rejeitada e arquivo privado ausente. |
 | Falhas | Erro ao salvar arquivo, inserir metadados, montar resposta e confirmar transação; conferir SQL e arquivos juntos. |
 | Interface | Rascunho entre seções, envio incerto bloqueado, foco, URL do detalhe, volta da página e sucesso com falha de renovação. |

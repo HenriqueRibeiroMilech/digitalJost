@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import RecordCard from '@/shared/components/RecordCard.vue'
 import Tag from '@/volt/Tag.vue'
-import { displayDate, displayDay, displayHours, requestStatus, workKind } from '../presentation'
+import { displayDate, displayDay, displayHours, noticeStateLabel, requestStatus, workKind } from '../presentation'
 import type { WorkItem } from '../types'
 
 const props = defineProps<{ item: WorkItem }>()
@@ -25,6 +25,7 @@ const status = computed(() => requestStatus(props.item.status))
       <Tag :value="kind.label" severity="secondary" rounded />
     </template>
     <template v-if="item.kind === 'aviso'">
+      <Tag :value="noticeStateLabel(item.notice_state)" severity="secondary" rounded class="mb-3" />
       <dl class="grid gap-2 text-xs leading-5 text-dj-muted">
         <div class="flex min-w-0 gap-2"><dt>Responsável:</dt><dd class="min-w-0 truncate text-dj-ink" :title="item.responsible_name ?? 'Usuário indisponível'">{{ item.responsible_name ?? 'Usuário indisponível' }}</dd></div>
         <div><dt class="font-semibold">Início</dt><dd>{{ item.starts_at ? displayDate(item.starts_at) : 'Não informado' }}</dd></div>
@@ -36,6 +37,7 @@ const status = computed(() => requestStatus(props.item.status))
         <Tag :value="status.label" :icon="status.icon" severity="secondary" rounded class="dj-tone-badge text-xs" :class="'dj-tone-' + status.tone" />
         <Tag v-if="item.priority !== null" :value="'Prioridade ' + item.priority" severity="secondary" rounded />
         <Tag v-if="item.difficulty" :value="'Dificuldade ' + item.difficulty" severity="secondary" rounded />
+        <Tag v-if="item.is_overdue" value="Atrasada" severity="danger" rounded icon="pi pi-clock" />
       </div>
       <p class="mt-3 break-words text-xs leading-5 text-dj-muted">
         {{ item.source_request_id ? 'Solicitante' : 'Criada por' }}: {{ item.requester_name ?? 'Usuário indisponível' }}
@@ -48,6 +50,7 @@ const status = computed(() => requestStatus(props.item.status))
         <div v-if="item.due_on"><dt class="text-dj-muted">Prazo de entrega</dt><dd class="font-semibold text-dj-ink">{{ displayDay(item.due_on) }}</dd></div>
         <div v-if="item.scheduled_start_on && !item.started_on"><dt class="text-dj-muted">Início agendado</dt><dd class="font-semibold text-dj-ink">{{ displayDay(item.scheduled_start_on) }}</dd></div>
         <div v-if="item.started_on"><dt class="text-dj-muted">Início realizado</dt><dd class="font-semibold text-dj-ink">{{ displayDay(item.started_on) }}</dd></div>
+        <div v-if="item.expected_return_on"><dt class="text-dj-muted">Previsão de retorno</dt><dd class="font-semibold text-dj-ink">{{ displayDay(item.expected_return_on) }}</dd></div>
       </dl>
       <p v-if="item.observations" class="mt-3 line-clamp-2 whitespace-pre-wrap break-words text-xs leading-5 text-dj-muted">
         <span class="font-semibold">Observações:</span> {{ item.observations }}

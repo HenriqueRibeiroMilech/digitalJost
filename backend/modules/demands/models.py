@@ -100,10 +100,13 @@ class WorkItem(Base):
     expected_benefits: Mapped[str | None] = mapped_column(NVARCHAR(4000))
     starts_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     ends_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
+    hide_after_end: Mapped[bool] = mapped_column(BIT, server_default="1")
+    notice_finalized_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     status: Mapped[str] = mapped_column(NVARCHAR(32), server_default="a_fazer")
     scheduled_start_on: Mapped[date | None] = mapped_column(Date)
     started_on: Mapped[date | None] = mapped_column(Date)
     due_on: Mapped[date | None] = mapped_column(Date)
+    expected_return_on: Mapped[date | None] = mapped_column(Date)
     closed_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
     difficulty: Mapped[str | None] = mapped_column(NVARCHAR(10))
     priority: Mapped[int | None] = mapped_column(Integer)
@@ -145,3 +148,23 @@ class WorkAttachment(Base):
     sha256: Mapped[str] = mapped_column(CHAR(64))
     created_by: Mapped[str] = mapped_column(NVARCHAR(128))
     created_at: Mapped[datetime] = mapped_column(DATETIME2(precision=3), server_default=func.sysutcdatetime())
+
+
+class WorkTask(Base):
+    __tablename__ = "DJ_DEMAND_WORK_TASKS"
+    __table_args__ = {"schema": "dbo"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    work_id: Mapped[int] = mapped_column(ForeignKey("dbo.DJ_DEMAND_WORK.id"))
+    title: Mapped[str] = mapped_column(NVARCHAR(250))
+    description: Mapped[str | None] = mapped_column(NVARCHAR(4000))
+    responsible_id: Mapped[str] = mapped_column(NVARCHAR(128))
+    priority: Mapped[int | None] = mapped_column(Integer)
+    due_on: Mapped[date | None] = mapped_column(Date)
+    completed_at: Mapped[datetime | None] = mapped_column(DATETIME2(precision=3))
+    created_by: Mapped[str] = mapped_column(NVARCHAR(128))
+    submission_key: Mapped[str] = mapped_column(CHAR(36))
+    submission_fingerprint: Mapped[str] = mapped_column(CHAR(64))
+    created_at: Mapped[datetime] = mapped_column(DATETIME2(precision=3), server_default=func.sysutcdatetime())
+    updated_at: Mapped[datetime] = mapped_column(DATETIME2(precision=3), server_default=func.sysutcdatetime())
+    row_version: Mapped[bytes] = mapped_column(ROWVERSION, server_default=FetchedValue(), server_onupdate=FetchedValue())
