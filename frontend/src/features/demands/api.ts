@@ -1,7 +1,7 @@
 import { requestJson } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
 import type { Contributor, ManagementFilters, RequestDetail, RequestFields, RequestFilters, RequestList, ReviewFields } from './types'
-import type { TaskFields, TaskList, TaskStatus, WorkAction, WorkBoard, WorkContent, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
+import type { TaskFields, TaskList, TaskSort, TaskStatus, WorkAction, WorkBoard, WorkContent, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
 
 const base = '/api/v1/demands'
 
@@ -81,9 +81,10 @@ export const workApi = {
   finalizeNotice(id: number, row_version: string) {
     return requestJson<WorkDetail>(`${base}/work/${id}/notice/finalize`, { method: 'POST', body: JSON.stringify({ row_version }) })
   },
-  tasks(id: number, page: number, perPage: number, status: TaskStatus) {
+  tasks(id: number, page: number, perPage: number, status: TaskStatus, sort: TaskSort) {
     const query = paginationQuery(page, perPage)
     query.set('status', status)
+    query.set('sort', sort)
     return requestJson<TaskList>(`${base}/work/${id}/tasks?${query}`, { cache: 'no-store' })
   },
   createTask(id: number, payload: TaskFields & { row_version: string; submission_key: string }) {

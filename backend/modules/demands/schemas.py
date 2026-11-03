@@ -442,6 +442,7 @@ class TaskDelete(WorkVersion):
 
 class TaskQuery(PaginationQuery):
     status: Literal["all", "pending", "completed"] = "pending"
+    sort: Literal["priority", "deadline"] = "priority"
 
 
 class TaskOut(BaseModel):

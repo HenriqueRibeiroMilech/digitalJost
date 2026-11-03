@@ -180,4 +180,5 @@ export interface TaskItem extends Omit<TaskFields, 'completed'> {
   row_version: string
 }
 export type TaskStatus = 'all' | 'pending' | 'completed'
+export type TaskSort = 'priority' | 'deadline'
 export type TaskList = PaginatedResponse<TaskItem, { can_update: boolean }>

@@ -52,9 +52,11 @@ def list_tasks(work_id, query_data):
         if query_data.status != "all":
             statement = statement.where(WorkTask.completed_at.is_(None) if query_data.status == "pending"
                                         else WorkTask.completed_at.is_not(None))
+        priority = (case((WorkTask.priority.is_(None), 1), else_=0), WorkTask.priority)
+        deadline = (case((WorkTask.due_on.is_(None), 1), else_=0), WorkTask.due_on)
+        ordering = (*deadline, *priority) if query_data.sort == "deadline" else (*priority, *deadline)
         result = paginate(session, statement.order_by(case((WorkTask.completed_at.is_(None), 0), else_=1),
-            case((WorkTask.priority.is_(None), 1), else_=0), WorkTask.priority,
-            case((WorkTask.due_on.is_(None), 1), else_=0), WorkTask.due_on, WorkTask.id), query_data)
+            *ordering, WorkTask.id), query_data)
         for task in result["items"]:
             task["row_version"] = bytes(task["row_version"]).hex()
     return {**result, "capabilities": {"can_update": _editable(work) and permissions.can(identity.current_actor(), "demands.work.update")}}
