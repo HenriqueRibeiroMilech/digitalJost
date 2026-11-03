@@ -1,9 +1,0 @@
-REGISTRO HISTÓRICO: comandos e caminhos de uma entrega anterior.
-Consulte handbook/README.md e handbook/docs/servidor-e-publicacao.md para o procedimento atual.
-Este arquivo não autoriza execução pelo agente.
-
-REM CMD do PC com internet, na raiz do projeto. Nao executar no servidor.
-REM Atualizacao incremental de c3838b0 para 6eeffa8: somente python-dotenv.
-REM Alvo registrado: Windows 64 bits, CPython 3.13. Confirmar antes da publicacao.
-REM Usar uma pasta de pacotes desta entrega, separada de pacotes antigos.
-".venv\Scripts\python.exe" -m pip --disable-pip-version-check download --dest "pacotes-modernizacao" --only-binary=:all: --no-deps --platform win_amd64 --python-version 3.13 --implementation cp --abi cp313 "python-dotenv==1.2.4"
