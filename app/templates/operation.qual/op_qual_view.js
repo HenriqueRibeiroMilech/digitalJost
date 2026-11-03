@@ -21,7 +21,7 @@ function init() {
                             <p class="qual_view_p"><b>Problema: </b>` + entry['Problema'] + `</p>
                             <p class="qual_view_p"><b>Código Prod: </b>` + entry['prodCode'] + `</p>
                             <button class="qual_view_print" onclick="printer()">Formato de Impressão</button>
-                            <button class="qual_view_print" onclick="editar(` + entry['ID'] + `)">Editar</button>
+                            {% if can_edit %}<button class="qual_view_print" onclick="editar(` + entry['ID'] + `)">Editar</button>{% endif %}
                         </div>
 
                         <div class="qual_view_other_info">
@@ -63,7 +63,7 @@ removeNav();
 init();
 
 function printer () {
-    window.open('/op/qualidade/printer?day=' + {{day |tojson}} + '{{unit}}')
+    window.open({{ print_url | tojson }})
 }
 
 function changeLoc(acao) {
