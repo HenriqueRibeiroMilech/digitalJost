@@ -4,7 +4,7 @@ Procedimento manual para levar uma versão aprovada do GitHub ao repositório Az
 
 Os comandos abaixo são para o responsável em ambiente autorizado. Não concedem autorização de push, exclusão, instalação ou execução a um agente; para agentes valem as restrições de [AGENTS.md](../../AGENTS.md).
 
-Revisão em **20/10/2026**, comparando o [procedimento anterior](../historico/handbook/publicacao-azure.md), a organização atual do repositório e o [`.gitignore`](../../.gitignore). O roteiro usa Git e manipulação manual de arquivos, sem conexão com banco, build ou inicialização do portal. Não foi executado nesta revisão.
+O roteiro usa Git e manipulação manual de arquivos, sem conexão com banco, build ou inicialização do portal. A lista de exclusões mantém os filtros do [procedimento anterior](../historico/handbook/publicacao-azure.md) e inclui o destino atual do build Vue.
 
 ### O que este fluxo preserva
 
@@ -21,12 +21,24 @@ Não é merge dos históricos nem garantia de igualdade byte a byte entre reposi
 
 ## 1. Preparar os caminhos e a versão
 
-Usar PowerShell, mantendo a mesma janela. Estes caminhos são exemplos sem identificação pessoal; substituir pelos diretórios reais:
+Use **PowerShell** e mantenha a mesma janela durante o procedimento. Se estiver no CMD, entre no PowerShell primeiro:
+
+```cmd
+powershell -NoProfile
+```
+
+Os caminhos ficam na pasta `dev\codes\td` do seu perfil do Windows, como no procedimento anterior. `$env:USERPROFILE` resolve `C:\Users\` seguido do seu usuário, sem precisar preencher esse nome no documento:
+
+| Uso | Caminho relativo ao perfil do Windows |
+|---|---|
+| GitHub | `dev\codes\td\digitalJost` |
+| Azure | `dev\codes\td\digitalJostAzure` |
+| ZIPs | `dev\codes\td\exportacoes` |
 
 ```powershell
-$origem = 'C:\dev\digitalJost'
-$destinoAzure = 'C:\dev\digitalJostAzure'
-$exportacoes = 'C:\dev\exportacoes'
+$origem = Join-Path $env:USERPROFILE 'dev\codes\td\digitalJost'
+$destinoAzure = Join-Path $env:USERPROFILE 'dev\codes\td\digitalJostAzure'
+$exportacoes = Join-Path $env:USERPROFILE 'dev\codes\td\exportacoes'
 Set-Location $origem
 git branch --show-current
 git status --short
@@ -44,7 +56,7 @@ Confirmar `main`, árvore limpa e commit aprovado já disponível no GitHub. O c
 - Identificação da versão desejada e confirmação do responsável de que ela está disponível na origem remota. `git log -1` sozinho não comprova envio ao GitHub.
 - Hooks ativos conferidos como texto, sem executar scripts de inicialização/teste/publicação como efeito inesperado do Git.
 
-Use a mesma janela PowerShell para manter as variáveis. CMD interpreta esses blocos de outra forma; se necessário, abrir PowerShell primeiro. Os caminhos são exemplos, não diretórios pessoais a reproduzir literalmente.
+Execute os blocos na ordem e pare se houver erro. Use a mesma janela PowerShell para manter as variáveis; CMD interpreta esses blocos de outra forma.
 
 ## 2. Gerar o ZIP filtrado
 
@@ -139,23 +151,38 @@ Mostrar itens ocultos no Explorador. No clone **exclusivo de código do Azure**,
 
 No Windows 11, usar **Exibir → Mostrar → Itens ocultos**; no Windows 10, a opção correspondente na aba Exibir. Conferir a pasta de destino pela barra de endereço, não apenas pelo nome da janela.
 
-Em um clone exclusivo de código, retirar somente arquivos/pastas de código aprovados para substituição e copiar o conteúdo extraído. Preservar `.git` em qualquer hipótese e preservar itens privados/operacionais que eventualmente estejam ali. Arquivo antigo removido do projeto precisa aparecer como exclusão no diff; apenas sobrepor arquivos não remove código abandonado.
+Para o responsável, em um clone **exclusivo de código**, depois de conferir que não há configuração privada nem dados operacionais:
 
-Uma exclusão ampla só pode ser decidida pelo responsável após conferir o conteúdo real. Este guia não fornece comando recursivo de limpeza e não autoriza apagar dados para tornar o clone igual ao ZIP. Não alterar branches históricas para acomodar a publicação atual.
+1. Abra a pasta `digitalJostAzure` no Explorador e confira o caminho completo na barra de endereço.
+2. Use **Ctrl+A** para selecionar os itens.
+3. Segure **Ctrl** e clique na pasta **.git** para retirá-la da seleção.
+4. Confira que **.git não está selecionada** e pressione **Delete**, sem Shift+Delete.
+5. Copie o conteúdo da pasta extraída do ZIP para `digitalJostAzure`, incluindo `.gitignore`.
+6. Confira que `main.py`, `app/`, `backend/` e `frontend/` estão diretamente na raiz, ao lado da `.git` preservada.
+
+Copie o conteúdo extraído, não a pasta externa de extração. Se houver itens privados ou operacionais, pare antes da seleção/exclusão geral e preserve-os. Arquivo antigo removido do projeto precisa aparecer como exclusão no diff; apenas sobrepor arquivos não remove código abandonado. Não alterar branches históricas para acomodar a publicação atual.
 
 Na raiz Azure, revisar o resultado:
 
 ```powershell
+Set-Location $destinoAzure
+git branch --show-current
 git status --short
 git diff --check
 git diff
 ```
 
-Preparar somente os caminhos revisados, incluindo os arquivos removidos, com `git add -- CAMINHO_1 CAMINHO_2` — substituir os marcadores pela lista real. Depois:
+Confirme `main` e que só aparecem as alterações desejadas. Para este procedimento manual do responsável, na raiz do clone Azure exclusivo de código, prepare os arquivos novos, modificados e removidos após revisar a lista:
 
 ```powershell
+git add .
 git diff --cached --check
 git diff --cached
+```
+
+Confira o patch preparado completo, inclusive o conteúdo dos arquivos novos. Depois, execute uma linha por vez:
+
+```powershell
 git commit -m "DESCRICAO DA VERSAO"
 git push origin main
 ```
@@ -169,7 +196,7 @@ O push é a etapa explícita do responsável nesse procedimento, não uma autori
 1. Conferir que a branch e o diretório continuam corretos.
 2. Comparar a relação de arquivos com o escopo aprovado, incluindo exclusões/renomeações.
 3. Verificar ausência de configuração preenchida, credenciais embutidas, dados pessoais, uploads, logs e artefatos excluídos.
-4. Adicionar caminhos específicos; não usar `git add .`, `-A` ou commit com `-a` como atalho.
+4. No procedimento manual acima, usar `git add .` somente após revisar todos os itens do clone Azure exclusivo de código. Agentes continuam sujeitos à adição individual de arquivos prevista no AGENTS.md.
 5. Executar a conferência de whitespace e ler o patch preparado. Validação de diff não substitui teste de funcionamento.
 6. Usar mensagem que identifique a entrega; registrar também o SHA de origem para permitir rastreio posterior.
 7. Confirmar o commit/push somente segundo a autorização e política do destino. Nenhum comando de force push faz parte do procedimento.
@@ -192,4 +219,4 @@ O ZIP e o push não comprovam funcionamento da aplicação. Publicar build, conf
 
 Se for preciso retornar uma versão, escolher um estado aprovado e preparar outra atualização revisada pelo fluxo da equipe, preservando os históricos. Não apagar `.git`, recriar o repositório, reescrever commits publicados ou executar rollback de dados como parte de uma correção do ZIP.
 
-**O sistema não foi executado; a validação foi somente estática.** Não foram gerados ZIPs, alterados clones Azure, feitos commits ou enviados pushes nesta revisão.
+Este guia descreve o procedimento manual; sua edição não gera ZIPs, altera clones Azure nem envia pushes. **O sistema não foi executado; a validação foi somente estática.**
