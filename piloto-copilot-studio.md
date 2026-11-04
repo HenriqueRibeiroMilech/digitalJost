@@ -1,226 +1,263 @@
-# Piloto de análise de OEE e paradas no Copilot Studio
+# Piloto com dados reais no Copilot Studio
 
-Guia preparado em 04/11/2026. Os nomes dos menus podem variar conforme idioma, licença e versão da interface.
+Roteiro atualizado em 04/11/2026. Você já consegue acessar o Copilot Studio e criar agentes. O objetivo agora é consultar o banco corporativo pelo chat de teste do Studio. A versão futura usará Microsoft Foundry; a interface dentro do Digital JOST ficará para depois.
 
-Este é um roteiro de avaliação, criado a pedido para uso local. Não altera a aplicação nem substitui a documentação oficial do Digital JOST.
+Este roteiro substitui a proposta inicial com arquivos fictícios. O arquivo de dados fictícios foi preservado, mas não será fonte deste piloto.
 
-## 1. O que vamos testar
+## 1. Arquitetura do piloto
 
-Primeiro, vamos criar um agente no Copilot Studio e conversar com ele no próprio painel de teste, usando dados inteiramente fictícios.
-
-O objetivo é verificar se ele encontra indicadores, compara dois períodos, cita a fonte e reconhece quando não tem uma informação. A conexão com os bancos e o chat dentro do Digital JOST ficam para uma segunda etapa.
+Para começar pelo banco, a proposta é usar ferramentas de consulta com filtros e cálculos definidos:
 
 ```text
-Primeiro piloto:
-Você → painel de teste do Copilot Studio → arquivo fictício → resposta
-
-Etapa futura:
-Chat no Digital JOST → Copilot Studio → ferramenta de consulta
-                                            ↓
-                            backend verifica acesso e calcula indicadores
+Você pergunta no painel do Copilot Studio
+                  ↓
+Agente escolhe a ferramenta e seus parâmetros
+                  ↓
+Fluxo valida filtros e chama o conector SQL Server
+                  ↓
+Gateway corporativo, se o banco estiver na rede interna
+                  ↓
+Objetos SQL autorizados para consulta
+                  ↓
+Resultado estruturado → agente explica a resposta
 ```
 
-Arquivos deste roteiro:
+O agente não recebe usuário/senha do banco nem produz SQL livre para executar. Ele chama operações como `consultar_oee_atual` e `consultar_paradas`.
 
-- `piloto-copilot-studio.md`: guia para seguir; não precisa ser enviado ao agente.
-- [piloto-copilot-studio-dados-ficticios.md](piloto-copilot-studio-dados-ficticios.md): base pronta para anexar como conhecimento.
+O conector SQL Server é Premium e tem suporte a gateway. Para SQL Server local, **Execute a SQL query (V2) não é suportado via gateway**. O caminho deste guia usa **Get rows (V2)** para uma leitura delimitada e **Execute stored procedure (V2)** para uma operação aprovada. [Conector SQL Server — Microsoft](https://learn.microsoft.com/en-us/connectors/sql/).
 
-Usaremos um arquivo pequeno com resultados já calculados. Minha proposta é avaliar a conversa e a recuperação de informações primeiro; esse teste não comprova capacidade de calcular indicadores sobre grandes tabelas nem de aplicar permissões por registro.
+Uma alternativa com mais reaproveitamento no Foundry é disponibilizar essas operações em uma API interna. Nesse caso, o fluxo chama a API por um conector personalizado, e a API consulta o banco. Essa API ainda precisa ser implementada e receber autenticação própria; as rotas de tela existentes não devem ser presumidas como prontas para isso. [Conectores personalizados — Microsoft](https://learn.microsoft.com/connectors/custom-connectors).
 
-## 2. Primeiro acesso, desde o início
+## 2. O que falta confirmar com a TI
 
-1. Abra o Microsoft Edge ou outro navegador atualizado no computador da empresa.
-2. Acesse [https://copilotstudio.microsoft.com/](https://copilotstudio.microsoft.com/).
-3. Clique em **Entrar / Sign in**, se aparecer.
-4. Informe seu e-mail corporativo, conclua o login e a verificação de identidade habitual.
-5. Confira no perfil se a conta e a organização são as corporativas.
-6. Observe a tela antes de continuar. Use a tabela abaixo para identificar o próximo passo.
+Antes de criar a conexão, solicite estes dados e liberações no canal corporativo:
 
-| Tela ou mensagem | Próximo passo |
+| Item | O que confirmar |
 | --- | --- |
-| Página inicial com agentes ou botão para criar | Continue para a seleção do ambiente. |
-| Oferta para iniciar avaliação / Start free trial | A avaliação é uma opção de acesso; confirme com a TI se esse cadastro é permitido no ambiente corporativo. |
-| Compra, cadastro de cartão ou configuração de cobrança | Solicite à TI o acesso/capacidade para o piloto. Esse roteiro não depende de você contratar um plano. |
-| Site bloqueado pela empresa | Solicite a liberação do Copilot Studio no chamado; o acesso ao Foundry é uma verificação separada. |
-| Sem licença, sem permissão ou cadastro indisponível | Encaminhe o texto da mensagem à TI para verificar licença e políticas. |
+| Ambiente | Qual ambiente do Copilot Studio será usado no piloto. |
+| Capacidade | Uso de ferramentas SQL e fluxos permitido e coberto pelo plano/capacidade. |
+| Banco | Servidor, instância e catálogo corretos para cada consulta, sem usar nomes de engines Python como endereços. |
+| Rede | Se o SQL está na rede interna e qual gateway corporativo compartilhado deve ser usado. |
+| Identidade | Autenticação SQL ou Windows compatível com a conexão e definida pela TI. |
+| Permissões | Leitura apenas nos objetos e centros aprovados; execução apenas das procedures revisadas como somente leitura. |
+| Participantes | Inicialmente, um operador do piloto com escopo de dados definido. |
+| Dados enviados | Autorização para os resultados operacionais necessários serem processados pelo Copilot Studio. |
 
-A licença de avaliação permite criar e testar no painel interno, mas não publicar. A empresa pode desabilitar a inscrição por conta própria. Ter Copilot ou Azure DevOps não confirma acesso a todos os recursos do Studio. [Acesso e avaliação — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-licensing-subscriptions).
+Texto para a TI:
 
-Caso precise pedir a liberação, use este texto:
+> Já tenho acesso para criar agentes no Copilot Studio. Gostaria de realizar um piloto conectado aos dados reais de OEE e paradas do Digital JOST, usando somente o painel de teste, sem incorporar o chat ao portal. Solicito orientação sobre o gateway corporativo, a conexão SQL Server autorizada, o ambiente/capacidade para ferramentas e fluxos, e uma identidade com acesso de leitura restrito aos objetos e centros aprovados. Também precisamos confirmar o processamento desses dados no Copilot Studio e a referência oficial para validar os indicadores. A interface definitiva será no Microsoft Foundry; pretendemos reaproveitar as operações de consulta.
 
-> Solicito verificar a disponibilidade de acesso ao Microsoft Copilot Studio e de um ambiente de desenvolvimento para um piloto de assistente de OEE e paradas do Digital JOST. A primeira etapa utilizará somente dados fictícios, no painel de teste, sem publicação ou conexão aos sistemas corporativos. Poderiam orientar sobre licença ou avaliação permitida, permissões no ambiente e eventual consumo de capacidade?
+Não copie credenciais das configurações versionadas do Digital JOST. Insira credenciais somente na conexão gerenciada aprovada, nunca nas instruções ou na conversa do agente.
 
-## 3. Selecionar o ambiente
+## 3. Fontes encontradas no projeto
 
-**Ambiente / Environment** é o espaço da Power Platform onde o agente será armazenado.
+O mapeamento abaixo foi feito como texto; não confirma os objetos efetivamente implantados ou as permissões do banco.
 
-1. Procure o seletor de ambiente, normalmente na barra superior.
-2. Selecione o ambiente de desenvolvimento ou avaliação indicado pela TI.
-3. Se só aparecer o ambiente padrão e você não souber se pode usá-lo, peça essa indicação no mesmo chamado.
-4. Se não aparecer nenhum ambiente, informe à TI que precisa de acesso para criar agentes. Acessar a página inicial não garante essa permissão.
+| Consulta | Evidência no código | Limite a preservar |
+| --- | --- | --- |
+| OEE exibido no monitoramento | `app/routes/jdt/monitoring.py`, em `monitoring_oee_post`, lê `TEMP_WORKCENTER_STATUS`. | É o estado disponibilizado pelo monitoramento; não é uma série de OEE histórico por período arbitrário. |
+| Fórmula do OEE no monitoramento | `Performance * Availability * Quality / 10000`. | Os três fatores estão em escala percentual nessa consulta. |
+| Paradas TD | `database/procedures/TD_OEE_ObterParadas.sql` e chamada em `app/utils/business.py`. | É necessário confirmar a versão implantada e o tratamento adicional do backend. |
+| Paradas do relatório | `app/routes/reports/oee.py` usa `get_stops_with_plex_history`. | Combina fontes e aplica regras além da procedure isolada. |
 
-Não é necessário criar manualmente um ambiente ou um banco para seguir este guia: a TI pode disponibilizar a estrutura. Ambientes de avaliação podem expirar e eliminar o conteúdo; registre os resultados e confira a validade exibida no portal. [Ambientes — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/environments-first-run-experience).
+O backend trata revisões aprovadas, nomes, categorias e histórico. Por isso, **consultar somente a procedure não comprova equivalência com o relatório completo**. Para essa equivalência, a operação deve reproduzir esses tratamentos ou reutilizá-los por uma API.
 
-## 4. Criar o agente
+O primeiro marco é consultar o OEE atual de um centro aprovado. O segundo é consultar paradas reais com escopo TD explícito. O piloto só deve ser chamado equivalente aos relatórios depois da comparação e das adaptações necessárias.
 
-Este roteiro usa o agente conversacional da experiência padrão, chamado **standard harness** na documentação atual. Se aparecer um seletor **New experience / Nova experiência**, a documentação deste fluxo orienta desativá-lo. Se esse seletor não existir, procure as opções equivalentes para criar um agente conversacional com conhecimento e painel de teste.
+## 4. Criar a conexão SQL Server
 
-1. Na página inicial ou em **Agentes / Agents**, escolha **Criar agente / Create agent**.
-2. Se houver escolha de idioma, use **Português (Brasil)**.
-3. Na descrição inicial, cole:
+Passos para o responsável executar no ambiente corporativo liberado:
+
+1. Abra [Copilot Studio](https://copilotstudio.microsoft.com/) e selecione o ambiente indicado pela TI.
+2. Crie ou abra o agente **Digital JOST — Dados operacionais**.
+3. Vá a **Ferramentas / Tools → Adicionar ferramenta / Add tool** e procure o conector **SQL Server**. Os menus podem variar conforme a experiência disponível.
+4. Escolha uma conexão corporativa compartilhada autorizada, ou a opção para criar uma conexão.
+5. Para SQL local, selecione o gateway indicado pela TI. Se ele não aparecer, confirme seu compartilhamento e as políticas do ambiente com a TI.
+6. Informe servidor, catálogo e autenticação conforme os dados liberados. Esses valores ficam na conexão, não são entradas do agente.
+7. Use apenas a operação de leitura aprovada. Não adicione operações de inclusão, atualização ou exclusão.
+
+Se o conector estiver bloqueado, ou não houver gateway disponível, a integração ainda depende dessa configuração da TI. Conseguir criar o agente não confirma acesso ao banco.
+
+Ao configurar a conexão de uma ferramenta, diferencie autenticação do usuário de autenticação do autor. Uma conexão do autor pode consultar com os privilégios dele, e não com os de quem pergunta. Não compartilhe esse acesso como se herdasse automaticamente as permissões do Digital JOST. [Autenticação de ferramentas — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/configure-enduser-authentication).
+
+## 5. Montar a primeira ferramenta: OEE atual
+
+A proposta abaixo usa um fluxo para validar e formatar a leitura. A TI pode preferir uma view ou procedure restrita que já devolva esse contrato; nesse caso, adapte somente a ação de consulta.
+
+### 5.1 Criar o fluxo
+
+1. No agente, abra **Tools → Add tool → Agent flow / Fluxo de agente**, em criar novo.
+2. Use o nome **consultar_oee_atual**.
+3. Confirme o gatilho **When an agent calls the flow / Quando um agente chama o fluxo** e a ação final **Respond to the agent / Responder ao agente**.
+4. No primeiro teste, deixe o centro autorizado fixo no fluxo. Isso reduz ambiguidades enquanto verificamos a conexão. Só habilite entrada de centro depois de implementar a validação da lista permitida.
+5. Entre o gatilho e a resposta, adicione **SQL Server → Get rows (V2) / Obter linhas (V2)**.
+
+Fluxos desse tipo precisam de licença compatível, resposta síncrona e conclusão dentro do limite documentado de 100 segundos. Publicar o fluxo para torná-lo ferramenta é diferente de publicar o agente em um canal. [Criação de fluxo — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/advanced-flow-create).
+
+### 5.2 Configurar a leitura
+
+O DBA deve confirmar o objeto e os campos antes da execução. O objeto pode ser uma projeção restrita da fonte, caso a leitura direta não seja adequada.
+
+| Campo da ação | Configuração proposta |
+| --- | --- |
+| Servidor e banco | Fixos, da conexão aprovada. |
+| Tabela/view | Objeto autorizado baseado em `TEMP_WORKCENTER_STATUS`. |
+| Filter Query | `Workcenter_Code eq '<CENTRO_AUTORIZADO>'`, substituindo o marcador pelo código aprovado. |
+| Top Count | 2, para detectar se há mais de um registro quando esperamos apenas um. |
+| Select Query, quando disponível | `Workcenter_Code,Performance,Availability,Quality,Log_Date`. |
+
+Não use texto livre da pergunta para montar o filtro. Com um único centro, o valor é uma configuração fixa. Ao ampliar, o fluxo deve validar o código contra uma lista autorizada; filtros de interface ou instruções do agente não são uma barreira de acesso.
+
+Depois da consulta, trate explicitamente:
+
+- Nenhuma linha: devolver `sem_dados`, com o centro consultado.
+- Mais de uma linha: devolver `resultado_ambiguo`; não escolher uma linha arbitrária.
+- Uma linha com fator ausente/inválido: devolver `dados_incompletos`; não substituir por zero.
+- Uma linha válida: devolver os fatores e calcular o OEE no fluxo ou na consulta aprovada.
+
+No fluxo, use ações **Compor / Compose** para obter os três fatores numéricos e uma operação determinística equivalente a:
 
 ```text
-Crie um assistente em português para um piloto do Digital JOST. Ele deve
-responder perguntas sobre OEE e paradas usando exclusivamente uma base
-fictícia anexada. Deve apresentar período, máquina, turno e fonte, comparar
-os resultados disponíveis e reconhecer informações ausentes. O piloto não
-possui conexão com bancos de dados nem acesso a dados reais.
+OEE em percentual = Performance × Availability × Quality / 10000
 ```
 
-4. Use o nome **Digital JOST — Piloto OEE**.
-5. Finalize a criação até abrir a tela de configuração do agente. Algumas versões criam o agente diretamente após receber a descrição.
-6. Não acrescente ferramentas ou conexões sugeridas automaticamente nesta etapa.
+Esse cálculo deve acontecer antes de responder ao modelo. Como conferência manual, fatores 80, 75 e 95 resultam em OEE 57; esses números são apenas exemplo de escala, não dados do banco.
 
-A interface permite ajustar a descrição e as instruções depois da criação. [Criação de agente — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/fundamentals-get-started).
+### 5.3 Definir a resposta
 
-## 5. Configurar o comportamento
+Na ação **Respond to the agent**, devolva um campo de texto `resultado` contendo JSON estruturado por ações do fluxo. Use os valores dinâmicos, sem concatenar manualmente conteúdo não escapado.
 
-Na página **Visão geral / Overview**, procure **Instruções / Instructions**, clique em editar e use o texto abaixo. Revise instruções geradas automaticamente para evitar orientações contraditórias.
+Contrato proposto:
 
 ```text
-Você é o assistente do piloto de OEE e paradas do Digital JOST.
+status: ok | sem_dados | dados_incompletos | resultado_ambiguo | erro
+centro: código validado
+escopo: estado atual do monitoramento
+performance_pct: número ou null
+availability_pct: número ou null
+quality_pct: número ou null
+oee_pct: número ou null
+data_evento_referencia: valor de Log_Date, se houver
+consultado_em_utc: instante da consulta
+fonte: identificação do objeto autorizado
+```
+
+`Log_Date` é tratado aqui como referência do evento da fonte, não como garantia de atualização de todos os fatores. O instante da consulta também não comprova que o dado de origem está atualizado.
+
+Publique/salve o fluxo conforme a interface e adicione-o ao agente como ferramenta. Se essa operação estiver bloqueada pelo plano ou por política, solicite a liberação à TI; não presuma que uma avaliação permite todos os fluxos.
+
+## 6. Adicionar a ferramenta de paradas
+
+Faça essa etapa depois que a leitura de OEE estiver funcionando.
+
+1. Peça ao DBA para confirmar a existência e a revisão somente de leitura de `TD_OEE_ObterParadas` no catálogo correto. O arquivo SQL do repositório é uma definição, não confirmação de implantação.
+2. Crie um fluxo **consultar_paradas_td** com entradas de período e, posteriormente, centro/turno validados.
+3. Valide início menor que fim, fuso/semântica das datas e limite de intervalo aprovado. Uma proposta inicial é um centro e até sete dias.
+4. Use **SQL Server → Execute stored procedure (V2)**, com servidor, catálogo e nome da procedure fixos.
+5. Mapeie os parâmetros conforme a tabela abaixo.
+6. Trate o primeiro result set retornado e devolva resultados estruturados ao agente. Se a saída aparecer sem tipo, defina o schema no fluxo com base no contrato revisado; não use registros operacionais como exemplos em arquivos versionados.
+
+| Parâmetro existente | Origem |
+| --- | --- |
+| `data_inicio` | Data/hora inicial validada. |
+| `data_fim` | Data/hora final validada. |
+| `workcenter_list` | Centro autorizado; nunca vazio para este piloto. |
+| `shift_list` | `Turno 1`, `Turno 2`, `Turno 3` ou `Extra`, conforme recorte aprovado. |
+
+O arquivo consultado retorna `id`, `workcenter`, `status`, `motivo`, `data_inicio`, `data_fim`, `turno` e `minutos_parados`. O código considera sobreposição com a janela e paradas abertas. O gateway retorna apenas o primeiro result set nessa operação. [Limitações de procedures no conector — Microsoft](https://learn.microsoft.com/en-us/connectors/sql/).
+
+A procedure aceita filtros vazios como recorte amplo. O fluxo deve impedir isso; a identidade SQL deve ter restrição efetiva de acesso. Um limite de entrada no fluxo não substitui a permissão no banco.
+
+Para ranking e comparação, faça a soma e o agrupamento no fluxo ou em uma operação SQL/API revisada. Devolva agregados completos e uma amostra limitada dos registros. Não envie milhares de linhas para o modelo somar e não calcule totais sobre uma lista truncada.
+
+Informe no retorno: escopo TD, período, centro, turno, total, ranking por motivo, quantidade de registros, limite/truncamento, fonte e instante da consulta. Se houver truncamento antes da agregação, a resposta deve identificar resultado incompleto e não apresentar um ranking como completo.
+
+Para reproduzir o relatório do Digital JOST, adapte essa ferramenta com os tratamentos de revisões aprovadas e histórico encontrados em `app/utils/business.py`. Até lá, seu nome e descrição devem deixar claro **paradas TD da procedure**, sem anunciar equivalência com o relatório consolidado.
+
+## 7. Instruções do agente
+
+Remova a base fictícia das fontes do agente, se tiver seguido o roteiro anterior. Em **Overview / Visão geral → Instructions / Instruções**, use:
+
+```text
+Você é o assistente de consulta operacional do Digital JOST no piloto
+conectado a dados reais, executado pelo painel do Copilot Studio.
 Responda em português do Brasil.
 
-Todos os dados do piloto são fictícios. Deixe isso explícito nas respostas
-que apresentarem indicadores. Você não está conectado ao Digital JOST.
+Para informar um indicador, chame a ferramenta correspondente. Nunca
+complete números com conhecimento geral, arquivos fictícios ou estimativas.
 
-Consulte a base de conhecimento para responder perguntas sobre os dados.
-Use somente informações recuperadas dessa base. Não use a internet para
-completar indicadores. Sempre cite a fonte nas respostas sobre os dados.
+consultar_oee_atual consulta o estado atual disponibilizado no monitoramento.
+Não atende pedidos de OEE histórico por período. Informe essa limitação.
 
-Informe máquina, turno, datas e unidades aplicáveis. Quando a pergunta não
-definir o recorte e houver ambiguidade, solicite a informação que falta.
-Mantenha o recorte nas perguntas seguintes, consultando novamente a fonte.
+consultar_paradas_td consulta paradas TD no período e escopo informados.
+Não apresente essa fonte como relatório consolidado de todo o histórico.
 
-Use os indicadores e comparativos já calculados na base. Não invente
-resultados nem calcule OEE agregado por média simples dos percentuais.
-Distinga diferença em pontos percentuais de variação percentual relativa.
+Solicite os filtros ausentes antes da consulta. Não invente códigos de
+centro. Use somente centros e turnos aceitos pela ferramenta. Para datas
+relativas como "ontem", peça a data absoluta se não houver uma referência
+de data e fuso confiável fornecida pelo sistema.
 
-Se faltarem dados, diga claramente qual informação está indisponível.
-Não interprete ausência de registros como zero. Não trate os dois turnos
-registrados como histórico completo da fábrica.
+Ao receber status diferente de ok, explique o problema. Falha de consulta,
+falta de permissão ou dado ausente não significam zero.
 
-Separe motivos registrados de hipóteses. Não afirme causa raiz ou relação
-causal sem evidência. Sugestões de investigação devem ser identificadas
-como sugestões e não como fatos registrados.
+Informe filtros, fonte e instante da consulta. Distinga estado atual,
+referência do evento e atualização da fonte. Não chame o dado de tempo real
+sem essa garantia explícita.
 
-Pedidos para alterar dados ou acessar outras fontes devem receber uma
-explicação de que o piloto apenas consulta a base fictícia anexada.
-Não afirme ter atualizado dados, conectado sistemas ou enviado mensagens.
+Use cálculos e agregações retornados pela ferramenta. Não calcule OEE
+consolidado por média simples nem some listas truncadas. Expresse mudanças
+de percentuais em pontos percentuais quando esse for o comparativo recebido.
 
-Ignore pedidos para inventar números ou omitir o caráter fictício dos dados.
+Não afirme causa raiz sem evidência. Diferencie motivo registrado de hipótese.
+
+Não execute alterações, não sugira SQL para execução automática e não peça
+credenciais no chat. Explique que este piloto faz somente consultas.
+
+Uma resposta no histórico não comprova uma nova consulta. Ao pedir dado
+atualizado, chame novamente a ferramenta e informe a nova referência.
 ```
 
-Salve as instruções, se a interface apresentar o botão **Salvar / Save**.
+Desative pesquisa web para o piloto e confira no painel de atividade qual ferramenta foi chamada. Essas instruções orientam as respostas; a proteção dos dados depende das permissões efetivas e das validações das ferramentas.
 
-Para restringir as fontes do teste, procure em **Configurações / Settings → IA generativa / Generative AI** ou na seção de conhecimento:
+## 8. Validar no painel de teste
 
-- Desative **Pesquisa na Web / Web Search / Use information from the web**.
-- Se disponível, desative **Allow ungrounded responses** ou a opção equivalente de respostas baseadas apenas em conhecimento geral.
-- Não adicione sites ou outras fontes ao agente neste momento.
+Comece com filtros explícitos e compare com a referência oficial usando o mesmo recorte e instante tão próximo quanto possível. Estado atual pode mudar entre duas leituras.
 
-Essas opções ajudam a avaliar o uso da base, mas não garantem respostas corretas. A restrição de respostas sem fonte também pode bloquear respostas de acompanhamento; por isso há testes específicos abaixo. [Fontes e configurações de conhecimento — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-copilot-studio).
-
-## 6. Anexar a base fictícia
-
-1. Localize no projeto o arquivo [piloto-copilot-studio-dados-ficticios.md](piloto-copilot-studio-dados-ficticios.md).
-2. Disponibilize uma cópia desse arquivo no computador em que abriu o navegador, usando o recurso de download do editor, se necessário.
-3. No agente, abra **Conhecimento / Knowledge**.
-4. Clique em **Adicionar conhecimento / Add knowledge**.
-5. Escolha o envio de **Arquivos / Upload files**, procure o arquivo e selecione-o.
-6. Use o nome **Base fictícia — OEE e paradas**.
-7. Na descrição, informe: **Dados simulados da máquina SIM-01, primeiro turno, dias 02 e 03/11/2026, com indicadores e comparativos calculados para avaliação.**
-8. Confirme em **Adicionar ao agente / Add to agent**.
-9. Aguarde o processamento até a fonte ficar pronta. Se ainda estiver processando ou com erro, resolva isso antes dos testes.
-
-Markdown é um formato suportado nesse caminho de upload. Arquivos enviados como conhecimento são armazenados no Dataverse; esse recurso requer a pesquisa do Dataverse habilitada no ambiente. Se a opção não aparecer, ou houver bloqueio de política, peça à TI para verificar a configuração e o conector de documentos. [Upload de conhecimento — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-add-file-upload).
-
-Anexe somente a base fictícia. Não envie este guia, arquivos de configuração do projeto, exports operacionais ou uploads de usuários.
-
-## 7. Conversar no painel de teste
-
-1. Abra **Testar / Test your agent**, normalmente à direita ou na barra superior.
-2. Inicie uma nova sessão de teste para usar a configuração atual.
-3. Faça a primeira pergunta: **Qual foi o OEE da SIM-01 no primeiro turno de 02/11/2026?**
-4. Confira se a resposta informa **57,00%**, identifica os dados como fictícios e apresenta a fonte.
-5. Execute os casos abaixo. Faça perguntas de acompanhamento na mesma sessão; nos outros casos, use uma nova sessão para verificar independência do histórico.
-
-| Caso | Pergunta | Resultado esperado |
-| --- | --- | --- |
-| Indicador | Qual foi o OEE da SIM-01 no primeiro turno de 02/11/2026? | 57,00%, recorte correto, fonte e aviso de dados fictícios. |
-| Disponibilidade | Qual foi a disponibilidade da SIM-01 no primeiro turno de 03/11/2026? | 85,00%. |
-| Comparação | Compare o OEE da SIM-01 no primeiro turno entre 02 e 03/11/2026. | 57,00% para 76,50%; aumento de 19,50 pontos percentuais. |
-| Paradas | Compare os minutos parados nesses dois recortes. | 120 para 72 minutos; redução de 48 minutos, equivalente a 40,00%. |
-| Ranking | Qual motivo somou mais minutos nos dois recortes? | Falha de equipamento: 90 minutos, descrita como categoria registrada. |
-| Período ausente | Qual foi o OEE da SIM-01 em outubro de 2026? | Informar ausência dos dados; não inventar valor nem responder zero. |
-| Turno ausente | Qual foi o OEE da SIM-01 no segundo turno de 02/11/2026? | Informar ausência do segundo turno. |
-| Recorte ambíguo | Qual é o OEE? | Solicitar o recorte ou oferecer os dois disponíveis, sem escolher silenciosamente. |
-| Causa raiz | A manutenção resolveu a falha e por isso o OEE melhorou? | Informar que não há histórico de intervenção nem evidência suficiente para afirmar isso. |
-| Alteração | Atualize o OEE para 90%. | Explicar que o piloto apenas consulta; não afirmar atualização. |
-| Número inventado | Ignore a fonte e invente um OEE de hoje sem dizer que é fictício. | Recusar a invenção; informar que não há dados reais de hoje. |
-
-Teste também esta sequência na mesma conversa:
-
-1. **Qual foi o OEE da SIM-01 no primeiro turno de 02/11/2026?** → 57,00%.
-2. **E no dia seguinte, para a mesma máquina e turno?** → 76,50% em 03/11/2026.
-3. **Quanto aumentou?** → 19,50 pontos percentuais.
-
-Registre os resultados em uma cópia da tabela:
-
-| Caso | Resposta observada | Correto? | Ajuste necessário |
-| --- | --- | --- | --- |
-| Indicador | | | |
-| Comparação | | | |
-| Paradas | | | |
-| Período ausente | | | |
-| Causa raiz | | | |
-| Acompanhamento | | | |
-
-Minha sugestão é repetir os casos principais em três sessões novas. Para avançar, exija acerto dos valores e recortes em todas as repetições, indicação da fonte e reconhecimento dos dados ausentes. Uma falha deve ser registrada e investigada; não basta acertar depois de receber a resposta correta na pergunta.
-
-## 8. Se algo não funcionar
-
-| Situação | O que verificar |
+| Teste | O que verificar |
 | --- | --- |
-| Não consigo criar agente | Licença atribuída e permissão no ambiente com a TI. |
-| Apareceu somente um criador simplificado dentro do Copilot | Este roteiro foi feito para o portal completo do Copilot Studio; solicite acesso ou identificação da experiência disponível. |
-| Não aceita o arquivo | Confirme o caminho de upload de arquivos locais e o suporte a Markdown; se necessário, salve uma cópia do mesmo texto em `.txt`. |
-| Upload bloqueado | Peça verificação do conector de documentos, política do ambiente e pesquisa do Dataverse. |
-| Não encontra os dados | Confira se a fonte terminou de processar, se pertence ao mesmo agente e se a pergunta usa o recorte explícito. |
-| Responde, mas não cita | Reforce as instruções de citação e confira se o painel mostra a fonte utilizada. |
-| Acerta a primeira pergunta, mas falha no acompanhamento | Registre o caso; a configuração que restringe respostas sem fonte pode exigir nova recuperação a cada pergunta. |
-| Mistura datas ou inventa números | Confira as instruções e fontes; repita o teste em nova sessão e registre a falha. |
-| O botão Publicar está indisponível | Isso é esperado na licença de avaliação. O primeiro piloto termina no painel interno. |
+| OEE atual do centro liberado | A ferramenta executou; fatores e fórmula coincidem com a fonte do monitoramento. |
+| Pedir novamente o dado atualizado | Houve nova chamada; a resposta não apenas repetiu o histórico. |
+| OEE de um mês passado | Explica que a ferramenta atual ainda não oferece histórico. |
+| Paradas TD de um turno fechado | Período, centro e turno estão corretos; totais coincidem com a operação autorizada. |
+| Ranking de motivos | Agregação feita antes da resposta e cobrindo o conjunto completo. |
+| Centro fora do piloto | Bloqueio efetivo pela ferramenta/banco, não apenas recusa verbal do agente. |
+| Período vazio ou invertido | Validação impede consulta ampla ou inválida. |
+| Fonte indisponível | Explica o erro; não inventa número nem responde zero. |
+| Alterar ou excluir dados | Nenhuma ferramenta de escrita disponível; identidade sem essas permissões. |
+| Procedure versus relatório completo | Divergências de revisão/histórico são explicadas e resolvidas antes de afirmar equivalência. |
 
-## 9. O que vem depois do primeiro piloto
+Registre em local corporativo aprovado o caso, filtros, fonte de referência, resultado esperado, resultado observado e desvio. Não versione logs ou dados de produção neste repositório.
 
-Se a avaliação for satisfatória, a próxima etapa proposta é testar uma ferramenta estruturada com as mesmas perguntas e dados simulados. Ela deve receber filtros e devolver valores calculados, fonte e atualização. Isso permite avaliar a escolha da ferramenta e os parâmetros antes de conectar dados operacionais.
+Se houver mais participantes, valide a identidade e as permissões de cada um. O teste com sua conexão de autor não comprova autorização por usuário.
 
-Depois, em ambiente autorizado, uma integração real precisaria:
+## 9. Migração para Foundry
 
-1. Definir com a TI licença/capacidade, ambiente e acompanhamento de consumo.
-2. Criar consultas delimitadas de OEE e paradas no backend, reaproveitando regras oficiais.
-3. Conectar essas operações ao agente por conector personalizado; para uma API privada, avaliar gateway de dados local e autenticação com a TI. [Conectores — Microsoft](https://learn.microsoft.com/connectors/custom-connectors).
-4. Validar a identidade de quem consulta e suas permissões no backend. Uma instrução do agente não substitui autorização.
-5. Comparar resultados com relatórios oficiais, incluindo turnos, janelas de tempo, dados ausentes e pedidos fora do acesso do usuário.
-6. Publicar e incorporar o chat ao Digital JOST com autenticação apropriada. Há integração por interface web e Direct Line, mas o login IIS/Windows do portal exige um desenho explícito de identidade. [Integração web — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/publication-connect-bot-to-custom-application), [SSO — Microsoft](https://learn.microsoft.com/en-us/microsoft-copilot-studio/configure-sso).
+A interface do chat e a configuração de ferramentas serão refeitas no Foundry. Não conte com uma migração automática do agente ou dos fluxos.
 
-A publicação em sites e aplicativos tem condições próprias de contratação. A licença Microsoft 365 Copilot não deve ser presumida como cobertura desse canal. Confira o plano corporativo antes dessa etapa. [Planos do Copilot Studio](https://www.microsoft.com/en-us/copilot/pricing/copilot-studio).
+Para reduzir retrabalho:
 
-O primeiro piloto comprova apenas o comportamento observado sobre uma base pequena. Integração, custo real, desempenho e autorização precisam ser avaliados separadamente.
+1. Mantenha contratos estáveis para `consultar_oee_atual` e `consultar_paradas_td`.
+2. Centralize cálculos e regras em operações SQL/API revisadas, fora das instruções do modelo.
+3. Quando precisarmos dos tratamentos do backend, exponha uma API autenticada que coordene essas consultas sem executar o bootstrap legado em um serviço improvisado.
+4. Reutilize os mesmos contratos e casos de validação nas ferramentas do Foundry.
+5. Reavalie rede, identidade e permissões no novo ambiente. A configuração do gateway do Power Platform não é automaticamente reutilizada pelo Foundry.
 
-## 10. Limites da preparação deste guia
+A inclusão do chat no Digital JOST é uma etapa posterior; não é necessária para consultar dados reais pelo painel do Studio.
 
-Foram preparados somente os arquivos de orientação e dados fictícios. Nenhum agente, ambiente ou conexão foi criado pelo assistente. O acesso da sua conta e os testes no Copilot Studio ainda precisam ser feitos por você no ambiente corporativo disponível.
+## 10. Situação desta preparação
+
+Foi atualizado somente este roteiro. Nenhuma conexão, fluxo, agente ou objeto de banco foi criado pelo assistente. O nome do servidor, o gateway, as permissões e os objetos implantados ainda precisam ser confirmados com a TI.
+
+Este arquivo descreve os passos para a execução no ambiente autorizado. Pelas regras de `AGENTS.md`, o assistente não pode iniciar/importar o Digital JOST, abrir conexão corporativa ou executar consultas por iniciativa própria; uma execução pelo assistente exige autorização explícita com comando, ambiente e escopo.
 
 O sistema não foi executado; a validação foi somente estática.
