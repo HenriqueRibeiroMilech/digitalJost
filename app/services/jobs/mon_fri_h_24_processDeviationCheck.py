@@ -300,10 +300,17 @@ def default(logger):
     def deviation_automatic_refusal(row):
         cursor.execute(
             """
-            UPDATE JDT_REQUEST_DEV
+            UPDATE D
             SET status = 2
-            WHERE deviationId = ?
-            AND status = 0
+            FROM JDT_REQUEST_DEV AS D
+            WHERE D.deviationId = ?
+              AND D.status = 0
+              AND EXISTS (
+                  SELECT 1
+                  FROM JDT_REQUEST_DEV_CONFIG_STATUS AS C
+                  WHERE C.deviationId = D.deviationId
+                    AND ISNULL(C.status, 0) <> 1
+              )
             """,
             (row['deviationId'],)
         )
@@ -592,7 +599,18 @@ def default(logger):
 
     # ------------- Atualizações por desvio (tabela principal) -------------
     try:
-        df = pd.read_sql("SELECT * FROM JDT_REQUEST_DEV", cnnx)
+        df = pd.read_sql(
+            """
+            SELECT D.*,
+                   CASE WHEN EXISTS (
+                       SELECT 1 FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+                       WHERE C.deviationId = D.deviationId
+                         AND ISNULL(C.status, 0) <> 1
+                   ) THEN 1 ELSE 0 END AS hasUnapprovedSectors
+            FROM JDT_REQUEST_DEV D
+            """,
+            cnnx
+        )
     except Exception as e:
         logger.error("Falha ao ler JDT_REQUEST_DEV: %s", e)
         df = pd.DataFrame()
@@ -620,12 +638,16 @@ def default(logger):
 
         df[mask_valid_final & mask_within_5_days & mask_status_56].apply(send_email_revision, axis=1)
 
-        # recusa automática se aberto há 48h e status geral = 0
+        # Status 0 também representa espera de liberação após todas as aprovações.
+        # Recusar por prazo somente quando ainda houver setor não aprovado.
         mask_valid_open     = df['openDate'].notna()
         mask_over_48h_gen   = df['openDate'].apply(lambda d: business_hours_between(d, now) >= 48)
         mask_status_0       = df['status'].eq(0)
+        mask_unapproved     = df['hasUnapprovedSectors'].eq(1)
 
-        df[mask_valid_open & mask_over_48h_gen & mask_status_0].apply(deviation_automatic_refusal, axis=1)
+        df[mask_valid_open & mask_over_48h_gen & mask_status_0 & mask_unapproved].apply(
+            deviation_automatic_refusal, axis=1
+        )
 
         '''
         # aprovado (1) e com initDate já alcançada -> EM ANDAMENTO (5)

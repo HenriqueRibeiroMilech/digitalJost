@@ -777,7 +777,9 @@ def _can_user_edit_deviation(cnnx, deviation_id: str) -> bool:
 
     return False
 
-def _release_waiting_revision_if_ready(cnnx, deviation_id_or_base: str) -> bool:
+def _release_waiting_revision_if_ready(
+    cnnx, deviation_id_or_base: str, *, only_deviation_id: Optional[str] = None
+) -> bool:
     """
     Libera revisão aguardando para "Em andamento" quando:
     - não existir nenhuma revisão ativa da mesma base em status 5 ou 6;
@@ -828,6 +830,11 @@ def _release_waiting_revision_if_ready(cnnx, deviation_id_or_base: str) -> bool:
         revisions['status'].eq(0)
     ].sort_values('revisionNumber')
 
+    if only_deviation_id is not None:
+        waiting_revisions = waiting_revisions[
+            waiting_revisions['deviationId'].eq(only_deviation_id)
+        ]
+
     for _, row in waiting_revisions.iterrows():
         waiting_id = row['deviationId']
 
@@ -835,7 +842,7 @@ def _release_waiting_revision_if_ready(cnnx, deviation_id_or_base: str) -> bool:
             text("""
                 SELECT
                     COUNT(1) AS total,
-                    SUM(CASE WHEN ISNULL(status, 0) = 1 THEN 1 ELSE 0 END) AS approved
+                    COALESCE(SUM(CASE WHEN ISNULL(status, 0) = 1 THEN 1 ELSE 0 END), 0) AS approved
                 FROM JDT_REQUEST_DEV_CONFIG_STATUS
                 WHERE deviationId = :did
             """),
@@ -847,7 +854,7 @@ def _release_waiting_revision_if_ready(cnnx, deviation_id_or_base: str) -> bool:
         approved = int(approvals['approved'].iloc[0] or 0)
 
         if total > 0 and total == approved:
-            cnnx.execute(
+            result = cnnx.execute(
                 text("""
                     UPDATE JDT_REQUEST_DEV
                        SET status = 5,
@@ -858,10 +865,27 @@ def _release_waiting_revision_if_ready(cnnx, deviation_id_or_base: str) -> bool:
                            END
                      WHERE deviationId = :did
                        AND status = 0
+                       AND EXISTS (
+                           SELECT 1 FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+                           WHERE C.deviationId = :did
+                       )
+                       AND NOT EXISTS (
+                           SELECT 1 FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+                           WHERE C.deviationId = :did
+                             AND ISNULL(C.status, 0) <> 1
+                       )
+                       AND NOT EXISTS (
+                           SELECT 1
+                           FROM JDT_REQUEST_DEV AS active_revision WITH (UPDLOCK, HOLDLOCK)
+                           WHERE active_revision.deviationId LIKE :prefix
+                             AND active_revision.deviationId <> :did
+                             AND active_revision.status IN (5, 6)
+                       )
                 """),
-                {"did": waiting_id}
+                {"did": waiting_id, "prefix": f"{base_id}-%"}
             )
-            return True
+            if result.rowcount == 1:
+                return True
 
     return False
 
@@ -1899,54 +1923,51 @@ def dev_status_update():
                     # aprova o setor atual
                     cnnx.execute(
                         text("""UPDATE JDT_REQUEST_DEV_CONFIG_STATUS
-                                   SET status = 1, approverId = :uid
+                                   SET status = 1, approverId = :uid, textDenied = NULL
                                  WHERE deviationId = :did AND sectorId = :sid"""),
                         {"uid": current_user.id, "did": request.args['id'], "sid": int(userSector)}
                     )
                     cnnx.commit()
 
-                    # se todos setores aprovaram -> status geral = 5
-                    dev_min_status = pd.read_sql(
-                        text("""SELECT MIN(status) AS status
+                    # Todos os registros setoriais devem estar aprovados.
+                    approval_summary = pd.read_sql(
+                        text("""SELECT COUNT(1) AS total,
+                                       COALESCE(SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END), 0) AS approved
                                 FROM JDT_REQUEST_DEV_CONFIG_STATUS
                                 WHERE deviationId = :did"""),
                         cnnx, params={"did": request.args['id']}
-                    )['status'][0]
+                    )
+                    total = int(approval_summary['total'].iloc[0])
+                    approved = int(approval_summary['approved'].iloc[0])
 
-                    if dev_min_status == 1:
+                    if total > 0 and total == approved:
+                        # Recupera também uma revisão recusada que acabou de ser
+                        # totalmente aprovada. A liberação usa a mesma regra do
+                        # GET de detalhes e da finalização da revisão anterior.
+                        result = cnnx.execute(
+                            text("""
+                                UPDATE JDT_REQUEST_DEV
+                                   SET status = 0
+                                 WHERE deviationId = :did
+                                   AND status IN (0, 2)
+                                   AND EXISTS (
+                                       SELECT 1 FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+                                       WHERE C.deviationId = :did
+                                   )
+                                   AND NOT EXISTS (
+                                       SELECT 1 FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+                                       WHERE C.deviationId = :did
+                                         AND ISNULL(C.status, 0) <> 1
+                                   )
+                            """),
+                            {"did": request.args['id']}
+                        )
+                        released = result.rowcount == 1 and _release_waiting_revision_if_ready(
+                            cnnx, request.args['id'], only_deviation_id=request.args['id']
+                        )
+                        cnnx.commit()
 
-                        # =====================================================
-                        # REGRA DE REVISÃO:
-                        # Se for revisão nova e a revisão anterior ainda estiver
-                        # ativa, mantém esta revisão aguardando liberação.
-                        #
-                        # Ativa = status 5 (Em andamento) ou 6 (Atrasado).
-                        # =====================================================
-                        hold_new_revision = False
-
-                        try:
-                            revision_number = int(str(request.args['id']).split('-')[-1])
-
-                            if revision_number > 0:
-                                previous_id = f"{base_dev(request.args['id'])}-{revision_number - 1}"
-
-                                previous_df = pd.read_sql(
-                                    text("""
-                                        SELECT status
-                                        FROM JDT_REQUEST_DEV
-                                        WHERE deviationId = :did
-                                    """),
-                                    cnnx,
-                                    params={"did": previous_id}
-                                )
-
-                                if not previous_df.empty and int(previous_df['status'].iloc[0]) in (5, 6):
-                                    hold_new_revision = True
-
-                        except Exception:
-                            hold_new_revision = False
-
-                        if not hold_new_revision:
+                        if released:
                             requester_mail = pd.read_sql(
                                 text("""
                                     SELECT companyEmail
@@ -1970,18 +1991,6 @@ def dev_status_update():
                                 """),
                                 cnnx, params={"did": request.args['id']}
                             )['approverEmail'].dropna().astype(str).tolist()
-
-                            cnnx.execute(
-                                text("""UPDATE JDT_REQUEST_DEV SET status = 5 WHERE deviationId = :did"""),
-                                {"did": request.args['id']}
-                            )
-                            cnnx.execute(
-                                text("""UPDATE JDT_REQUEST_DEV
-                                           SET initDate = CONVERT(DATE, GETDATE())
-                                         WHERE deviationId = :did AND initDate <= CAST(GETDATE() AS DATE)"""),
-                                {"did": request.args['id']}
-                            )
-                            cnnx.commit()
 
                             msg = Message(
                                 f"Pedido de desvio - ID {request.args['id']}",
@@ -2334,7 +2343,15 @@ def dev_detail():
                     status AS 'STATUS',
                     sector, name, openDate,
                     DATEDIFF(day, GETDATE(), CONVERT(DATE, finalDate, 103)) AS diff_days, attachment,
-                    (SELECT MIN(T2.status) FROM JDT_REQUEST_DEV_CONFIG_STATUS AS T2 WHERE T2.deviationId = T1.deviationId) AS min_status
+                    (SELECT MIN(T2.status) FROM JDT_REQUEST_DEV_CONFIG_STATUS AS T2 WHERE T2.deviationId = T1.deviationId) AS min_status,
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+                        WHERE C.deviationId = T1.deviationId
+                    ) AND NOT EXISTS (
+                        SELECT 1 FROM JDT_REQUEST_DEV_CONFIG_STATUS C
+                        WHERE C.deviationId = T1.deviationId
+                          AND ISNULL(C.status, 0) <> 1
+                    ) THEN 1 ELSE 0 END AS all_approved
                 FROM JDT_VIEW_REQUEST_DEV_DETAILS AS T1
                 WHERE deviationId LIKE :prefix
                 ORDER BY deviationId DESC
@@ -2346,6 +2363,10 @@ def dev_detail():
             userName = user_data['name'][0]
             firstDate = pd.to_datetime(user_data['openDate']).min().strftime('%d/%m/%Y')
             min_status = user_data['min_status'][0]
+            approved_waiting_ids = user_data.loc[
+                user_data['STATUS'].eq(0) & user_data['all_approved'].eq(1),
+                'DETALHES REVISÃO'
+            ].astype(str).tolist()
 
             user_data = user_data[['DETALHES REVISÃO', 'REVISÃO', 'MOTIVO', 'CENTRO DE TRABALHO', 'FAMÍLIA', 'DATA DE INICIO', 'DATA FIM', 'STATUS', 'diff_days', 'attachment']]
             user_data['CENTRO DE TRABALHO'] = user_data['CENTRO DE TRABALHO'].apply(_LIST_UPDATE)
@@ -2383,6 +2404,7 @@ def dev_detail():
                 table=table,
                 userName=userName,
                 min_status=min_status,
+                approved_waiting_ids=approved_waiting_ids,
                 idReq=requestId,
                 admin=admin,
                 sector=sector,

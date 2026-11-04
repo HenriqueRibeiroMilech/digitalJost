@@ -11,6 +11,7 @@ var actionsSummary = {{ actions_summary | default({
 
 var actionsPendingText = "{{ actions_pending_text | default('0 ações pendentes') }}";
 var mails = {{ mails | default([]) | tojson }};
+var approvedWaitingIds = {{ approved_waiting_ids | default([]) | tojson }};
 
 
 // ===== ADIÇÃO: DATA FIM RENOVADA =====
@@ -140,7 +141,9 @@ function init() {
             cell.style.color = "black";
             cell.style.border = "0";
             cell.style.outline = "0";
-            cell.innerHTML = 'Aguardando Aprovação';
+            cell.innerHTML = approvedWaitingIds.includes(entry[0])
+              ? 'Aprovado; aguardando liberação'
+              : 'Aguardando Aprovação';
           } else if (info == 1) {
             cell.style.backgroundColor = "#228c22";
             cell.style.color = "white";
