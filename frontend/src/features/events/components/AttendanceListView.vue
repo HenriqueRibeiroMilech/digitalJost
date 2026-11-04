@@ -19,6 +19,8 @@ const emit = defineEmits<{ back: []; busy: [value: boolean] }>()
 const readerOpen = ref(false)
 const action = ref<AttendanceAction | null>(null)
 const exportError = ref('')
+// Oculto temporariamente até revisar a geração do PDF no servidor.
+const showPdfDownload = false
 const { mutateAsync: loadExport, isPending: exporting, variables: exportFormat } = useMutation({
   mutationFn: (format: 'pdf' | 'xlsx') => format === 'pdf'
     ? attendanceApi.pdf(props.eventId, props.listId)
@@ -173,7 +175,7 @@ async function actionClosed(changed: boolean) {
           </div>
           <div class="flex min-w-0 flex-wrap items-center gap-3 lg:shrink-0 lg:justify-end">
             <div class="flex min-w-0 max-w-full flex-wrap gap-2">
-              <Button v-if="list.capabilities.can_export" id="attendance-download-pdf" type="button"
+              <Button v-if="showPdfDownload && list.capabilities.can_export" id="attendance-download-pdf" type="button"
                 :label="exporting && exportFormat === 'pdf' ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf"
                 :loading="exporting && exportFormat === 'pdf'"
                 :disabled="managing" class="dj-accent-action" pt:root:class="max-w-full rounded-xl"
