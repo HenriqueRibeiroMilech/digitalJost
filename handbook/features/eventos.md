@@ -94,7 +94,7 @@ Durante captura, gestão da lista ou geração do PDF/Excel, o diálogo do event
 
 ### Identificação LDAP
 
-`EmployeeDirectory.find_by_badge` extrai os oito dígitos finais apenas para identificar a matrícula. No filtro de busca, remove zeros iniciais, mantendo `0` se todos forem zero, e escapa caracteres do filtro. Faz bind NTLM em conexão própria, somente leitura, sem referrals, limitada a dois resultados e ao timeout configurado.
+`EmployeeDirectory.find_by_badge` extrai os oito dígitos finais apenas para identificar a matrícula. No filtro de candidatos, remove zeros iniciais, mantendo `0` se todos forem zero, e escapa caracteres do filtro. Em descrições com `;`, procura a sequência depois de um separador; sem separadores, mantém a busca no atributo inteiro. Assim, uma ocorrência apenas no primeiro campo de uma descrição composta não entra na busca, e as variações de zeros e espaços continuam chegando à comparação exata. Faz bind NTLM em conexão própria, somente leitura, sem referrals, limitada a 200 candidatos e ao timeout configurado.
 
 São solicitados `description`, `displayName`, `department` e `physicalDeliveryOfficeName`. O segundo campo de `description`, separado por `;`, contém a matrícula; sem separador, o atributo inteiro é avaliado. São aceitos um a oito dígitos ASCII, completados com zeros até oito e comparados por igualdade. Uma substring em outro campo, sinal ou número maior não identifica a pessoa.
 
@@ -104,7 +104,9 @@ São solicitados `description`, `displayName`, `department` e `physicalDeliveryO
 | Setor | `department` |
 | Empresa | `physicalDeliveryOfficeName` |
 
-Dados opcionais vazios, inválidos ou acima de 200 unidades UTF-16 ficam nulos. Zero correspondências válidas gera `not_found`; mais de uma ou resultado truncado gera `ambiguous`. Falha de bind/rede/timeout ou configuração ausente gera `unavailable`. Não escolher o primeiro candidato nem cadastrar uma presença sem correspondência única.
+O limite da consulta conta candidatos, não matrículas exatas. Até 200 candidatos podem ser comparados após a conclusão da busca, evitando que o limite anterior de dois candidatos interrompa a comparação de uma matrícula curta. A confirmação exige exatamente uma correspondência exata em uma busca completa; ultrapassar o limite continua bloqueando a leitura, mesmo que a parte recebida contenha uma matrícula compatível.
+
+Dados opcionais vazios, inválidos ou acima de 200 unidades UTF-16 ficam nulos. Zero correspondências válidas gera `not_found`; mais de uma exata ou resultado truncado gera `ambiguous`. Falha de bind/rede/timeout ou configuração ausente gera `unavailable`. Não escolher o primeiro candidato nem cadastrar uma presença sem correspondência única.
 
 Não existe whitelist de prefixos de empresa. O código original de 12 dígitos fica salvo; a busca por oito dígitos pode retornar uma presença com outro prefixo, que é preservada. Campos preenchidos não são atualizados automaticamente com mudanças do diretório; somente ausências podem ser completadas. `lookup_status` final considera os campos persistidos após essa composição.
 
@@ -206,7 +208,7 @@ No ambiente autorizado, conferir campos/limites e registros antigos; filtros/sta
 | Período e status | Limites exatos de início/fim, fuso rejeitado, filtros, relógio TD e registro antigo sem período. |
 | Tipos concorrentes | Nomes equivalentes reutilizados; exclusão disputada com novo vínculo sem perder integridade. |
 | Presença repetida | Mesma matrícula com prefixos diferentes não aumenta total via fluxo normal; só completa ausências. |
-| LDAP | Matrícula com zeros, ocorrência em campo errado, parcial, duas pessoas, truncamento, bind/timeout. |
+| LDAP | Matrículas de três, quatro e cinco dígitos com zeros; números maiores contendo a sequência; ocorrência em campo errado; espaços; duas pessoas com matrícula exata; limite de candidatos, truncamento e bind/timeout. |
 | Concorrência | Registro contra exclusão de lista/evento e PDF contra escritas, sem órfãos ou confirmação indevida. |
 | Interface | Enter tardio, perda de foco, leitura longa, partes durante envio e fechamento durante estabilização/API. |
 | PDF | Lista vazia, várias páginas, textos longos, caracteres de markup, logo e MIME/cabeçalhos privados. |

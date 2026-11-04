@@ -12,6 +12,9 @@ from ldap3.utils.conv import escape_filter_chars
 from backend.config import LdapDirectoryConfig
 
 
+_MAX_LOOKUP_CANDIDATES = 200
+
+
 EmployeeLookupStatus = Literal[
     "complete", "partial", "not_found", "unavailable", "ambiguous", "unsupported_badge",
 ]
@@ -61,7 +64,8 @@ class EmployeeDirectory:
                 attributes=[
                     "description", "displayName", "department", "physicalDeliveryOfficeName",
                 ],
-                size_limit=2, time_limit=self.config.receive_timeout,
+                # O limite conta candidatos; a unicidade usa a matrícula exata abaixo.
+                size_limit=_MAX_LOOKUP_CANDIDATES, time_limit=self.config.receive_timeout,
             )
             result_code = connection.result.get("result")
             # Não selecionar a primeira pessoa quando há mais de uma ou truncamento.
@@ -97,8 +101,16 @@ class EmployeeDirectory:
     def _registration_filter(registration):
         # O LDAP pode guardar a matrícula sem os zeros de preenchimento do crachá.
         # Mantém um dígito para que uma matrícula zerada não gere um filtro vazio.
-        value = registration.lstrip("0") or "0"
-        return f"(&(objectCategory=Person)(description=*{escape_filter_chars(value)}*))"
+        value = escape_filter_chars(registration.lstrip("0") or "0")
+        # Com separadores, a matrícula precisa ocorrer depois de um ';'. Sem eles,
+        # preserva o atributo contendo somente a matrícula, inclusive com espaços.
+        # Os candidatos ainda passam pela comparação exata do segundo campo.
+        return (
+            "(&(objectCategory=Person)(|"
+            f"(description=*;*{value}*)"
+            f"(&(description=*{value}*)(!(description=*;*)))"
+            "))"
+        )
 
     @classmethod
     def _matches_registration(cls, entry, registration):
