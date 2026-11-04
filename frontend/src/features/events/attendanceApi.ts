@@ -1,4 +1,4 @@
-import { requestJson, requestPdf } from '@/shared/api/client'
+import { requestExcel, requestJson, requestPdf } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
 import type {
   AttendanceEntries, AttendanceListDetail, AttendanceListItem, AttendanceLists, AttendanceRegistered,
@@ -10,6 +10,9 @@ const listPath = (eventId: number, listId: number) => `${listsPath(eventId)}/${l
 export const attendanceApi = {
   pdf(eventId: number, listId: number) {
     return requestPdf(`${listPath(eventId, listId)}/pdf`)
+  },
+  excel(eventId: number, listId: number) {
+    return requestExcel(`${listPath(eventId, listId)}/excel`)
   },
   list(eventId: number, page: number, perPage: number) {
     return requestJson<AttendanceLists>(`${listsPath(eventId)}?${paginationQuery(page, perPage)}`)

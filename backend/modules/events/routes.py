@@ -285,6 +285,35 @@ def export_attendance_pdf(event_id, list_id):
     return response
 
 
+@events_bp.get("/<int:event_id>/attendance-lists/<int:list_id>/excel")
+@require_action("events.attendance.export")
+def export_attendance_excel(event_id, list_id):
+    sessions = get_td_session_factory()
+    with sessions.begin() as session:
+        _require_event(session, event_id, lock=True)
+        attendance_list = _attendance_list(session, event_id, list_id, lock=True)
+        now = session.scalar(select(func.sysdatetime()))
+        event = _event(session, event_id, now=now)
+        # Inclui todos os participantes, com a mesma ordem e os mesmos campos do PDF.
+        entries = [dict(row) for row in session.execute(
+            _entries_query().where(AttendanceEntry.list_id == list_id).order_by(AttendanceEntry.id.desc()),
+        ).mappings()]
+    # A planilha é montada em memória depois de liberar conexão e travas.
+    try:
+        from .attendance_excel import build_attendance_excel
+        document = build_attendance_excel(event, attendance_list, entries, generated_at=now)
+    except (ImportError, OSError) as error:
+        raise ApiProblem(503, "Geração de Excel indisponível. Solicite ao responsável conferir os recursos no servidor.") from error
+    response = send_file(document, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                         as_attachment=True,
+                         download_name=f"lista-presenca-evento-{event_id}-lista-{list_id}.xlsx",
+                         conditional=False, max_age=0)
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
 @events_bp.post("/<int:event_id>/attendance-lists/<int:list_id>/entries")
 @require_action("events.attendance.register")
 @events_bp.input(AttendanceCreate)

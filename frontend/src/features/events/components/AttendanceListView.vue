@@ -19,8 +19,10 @@ const emit = defineEmits<{ back: []; busy: [value: boolean] }>()
 const readerOpen = ref(false)
 const action = ref<AttendanceAction | null>(null)
 const exportError = ref('')
-const { mutateAsync: loadPdf, isPending: exporting } = useMutation({
-  mutationFn: () => attendanceApi.pdf(props.eventId, props.listId),
+const { mutateAsync: loadExport, isPending: exporting, variables: exportFormat } = useMutation({
+  mutationFn: (format: 'pdf' | 'xlsx') => format === 'pdf'
+    ? attendanceApi.pdf(props.eventId, props.listId)
+    : attendanceApi.excel(props.eventId, props.listId),
   retry: false,
 })
 const managing = computed(() => readerOpen.value || action.value !== null || exporting.value)
@@ -91,16 +93,17 @@ function openAction(next: AttendanceAction) {
   if (!managing.value) action.value = next
 }
 
-async function exportPdf() {
+async function exportList(format: 'pdf' | 'xlsx') {
   if (managing.value || !list.value?.capabilities.can_export) return
   exportError.value = ''
+  const label = format === 'pdf' ? 'PDF' : 'Excel'
   try {
-    const blob = await loadPdf()
+    const blob = await loadExport(format)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     try {
       link.href = url
-      link.download = `lista-presenca-evento-${props.eventId}-lista-${props.listId}.pdf`
+      link.download = `lista-presenca-evento-${props.eventId}-lista-${props.listId}.${format}`
       document.body.appendChild(link)
       link.click()
     } finally {
@@ -110,11 +113,11 @@ async function exportPdf() {
     }
   } catch (error) {
     exportError.value = error instanceof ApiError && error.status === 503
-      ? 'A geração de PDF está indisponível. Tente novamente ou chame o responsável pelo sistema.'
-      : error instanceof Error ? error.message : 'Não foi possível baixar a lista em PDF.'
+      ? `A geração de ${label} está indisponível. Tente novamente ou chame o responsável pelo sistema.`
+      : error instanceof Error ? error.message : `Não foi possível baixar a lista em ${label}.`
   } finally {
     await nextTick()
-    document.getElementById('attendance-download-pdf')?.focus()
+    document.getElementById(format === 'pdf' ? 'attendance-download-pdf' : 'attendance-download-excel')?.focus()
   }
 }
 
@@ -171,9 +174,15 @@ async function actionClosed(changed: boolean) {
           <div class="flex min-w-0 flex-wrap items-center gap-3 lg:shrink-0 lg:justify-end">
             <div class="flex min-w-0 max-w-full flex-wrap gap-2">
               <Button v-if="list.capabilities.can_export" id="attendance-download-pdf" type="button"
-                :label="exporting ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf" :loading="exporting"
+                :label="exporting && exportFormat === 'pdf' ? 'Gerando PDF…' : 'Baixar PDF'" icon="pi pi-file-pdf"
+                :loading="exporting && exportFormat === 'pdf'"
                 :disabled="managing" class="dj-accent-action" pt:root:class="max-w-full rounded-xl"
-                pt:label:class="min-w-0 whitespace-normal" @click="exportPdf" />
+                pt:label:class="min-w-0 whitespace-normal" @click="exportList('pdf')" />
+              <SecondaryButton v-if="list.capabilities.can_export" id="attendance-download-excel" type="button"
+                :label="exporting && exportFormat === 'xlsx' ? 'Gerando Excel…' : 'Baixar Excel'" icon="pi pi-file-excel"
+                :loading="exporting && exportFormat === 'xlsx'" :disabled="managing" outlined
+                pt:root:class="max-w-full rounded-xl" pt:label:class="min-w-0 whitespace-normal"
+                @click="exportList('xlsx')" />
               <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
                 label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
                 pt:root:class="max-w-full rounded-xl" pt:label:class="min-w-0 whitespace-normal" @click="readerOpen = true" />

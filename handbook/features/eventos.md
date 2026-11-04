@@ -62,7 +62,7 @@ O formulário mantém dados em falha e associa 422 aos campos. Cadastro de tipo 
 
 Dentro do evento, **Listas de presença** permite criar, renomear, excluir listas e remover participantes. Nome da lista: 1 a 120 caracteres após trim. A coleção usa seis itens por página; participantes, 25. Excluir uma lista remove suas presenças; excluir o evento também remove suas listas, pelas cascatas previstas no schema.
 
-O leitor usa a sessão autenticada do responsável, com a mesma autorização e CSRF; não é uma página pública. O crachá deve ter exatamente 12 dígitos ASCII, preservados na API e no banco. A tabela e o PDF mostram Empresa, Matrícula, Nome e Setor; a matrícula visível contém os oito dígitos finais, com zeros.
+O leitor usa a sessão autenticada do responsável, com a mesma autorização e CSRF; não é uma página pública. O crachá deve ter exatamente 12 dígitos ASCII, preservados na API e no banco. A tabela, o PDF e o Excel mostram Empresa, Matrícula, Nome e Setor; a matrícula visível contém os oito dígitos finais, com zeros.
 
 O registro consulta o LDAP em toda tentativa, inclusive repetida. A identificação aceita somente uma pessoa compatível com a matrícula; não há exigência de um prefixo fixo de empresa. Na mesma lista, repetição pelos oito dígitos finais não cria outra linha e pode completar dados faltantes sem sobrescrever os preenchidos. Outra lista pode receber a mesma pessoa.
 
@@ -88,7 +88,7 @@ O PDF contém o evento e a lista completa, independentemente da página aberta. 
 
 Falhas 400/401/403/404 bloqueiam a captura e pedem intervenção do responsável. Identificação rejeitada ou diretório indisponível informa que aquela tentativa não foi gravada. Rede/timeout genérico deixa resultado incerto; uma nova aproximação manual confere a presença pela regra de repetição. Não afirmar que um timeout desfez o commit.
 
-Durante captura, gestão da lista ou geração do PDF, o diálogo do evento bloqueia fechamento/troca de aba/ações incompatíveis. Renomear lista e excluir participante/lista usam confirmação própria; exclusões avisam o alcance e priorizam Cancelar no foco inicial.
+Durante captura, gestão da lista ou geração do PDF/Excel, o diálogo do evento bloqueia fechamento/troca de aba/ações incompatíveis. Renomear lista e excluir participante/lista usam confirmação própria; exclusões avisam o alcance e priorizam Cancelar no foco inicial.
 
 ### Identificação LDAP
 
@@ -108,7 +108,7 @@ Não existe whitelist de prefixos de empresa. O código original de 12 dígitos 
 
 A verificação cadastral não comprova quem apresentou fisicamente o crachá. O código não exige que a captura ocorra apenas durante o período do evento. Não documentar essas restrições como implementadas.
 
-### Consulta, atualização e PDF
+### Consulta, atualização e exportação
 
 As listas são exibidas por ID decrescente, seis por página; participantes, também do mais recente ao mais antigo, 25 por página. Confirmação de presença atualiza a primeira página/cache e totais sem refazer a escrita. Sem captura/gestão/exportação, a tabela consulta a cada cinco segundos com a aba ativa. Retornar da captura ou fechar uma ação invalida as consultas para conciliar outra sessão ou resposta incerta.
 
@@ -117,6 +117,10 @@ Remover o último participante de uma página pode recuar a página. Excluir lis
 O PDF inclui nome/tipo/instrutor/período/descrição/conteúdo programático, total e todos os participantes. Tem logo em cada página, cabeçalho da tabela repetido e emissão pelo horário TD; campos ausentes mostram “Não informado”. Não exibe IDs de evento/lista no conteúdo, e gera documento vazio com total zero quando necessário.
 
 A rota trava evento e lista enquanto captura os dados; renderiza depois de liberar SQL. Textos são escapados antes de entrar no markup do ReportLab. Retorna attachment `lista-presenca-evento-<id>-lista-<id>.pdf`, MIME PDF, `Cache-Control: private, no-store`, `Pragma: no-cache` e `nosniff`. O cliente aguarda 30 segundos, exige conteúdo PDF em sucesso e não baixa HTML/JSON como documento. Falta de biblioteca/logo tratada pela rota gera 503.
+
+**Baixar Excel** exporta os mesmos campos em `lista-presenca-evento-<id>-lista-<id>.xlsx`. A aba **Evento** contém nome do evento/lista, tipo, instrutor, período, descrição, conteúdo programático, total e emissão pelo horário TD. A aba **Participantes** contém Empresa, Matrícula, Nome e Setor, na mesma ordem do PDF, incluindo a lista inteira mesmo quando a tela está paginada. Matrículas são texto de oito dígitos, preservando zeros iniciais; datas e total usam tipos próprios do Excel. Campos ausentes mostram “Não informado”; uma lista vazia mantém total zero e somente o cabeçalho dos participantes.
+
+A rota Excel usa a mesma permissão de exportação, valida o vínculo evento/lista e captura os dados com as mesmas travas do PDF. Gera a planilha em memória após liberar SQL, usando `openpyxl`, sem depender de ReportLab ou logo. Textos são gravados como valores literais, sem interpretação de fórmulas, e caracteres de controle incompatíveis com XML são removidos. O download mantém os cabeçalhos privados; o cliente aguarda 30 segundos e exige o MIME XLSX em sucesso. Falta de biblioteca ou falha de recurso tratada pela rota gera 503.
 
 ## 3. API e autorização
 
@@ -137,6 +141,7 @@ Todas as ações atuais são mapeadas para GENERAL, inclusive editar/excluir. N�
 | GET / POST `/<event_id>/attendance-lists/<list_id>/entries` | Listar / registrar crachá; `events.attendance.read/register`. |
 | DELETE `/<event_id>/attendance-lists/<list_id>/entries/<entry_id>` | Remover presença; `events.attendance.delete_entry`. |
 | GET `/<event_id>/attendance-lists/<list_id>/pdf` | Download privado; `events.attendance.export`. |
+| GET `/<event_id>/attendance-lists/<list_id>/excel` | Download XLSX privado; `events.attendance.export`. |
 
 Nos caminhos acima, os IDs são inteiros nos decorators Flask. Lista/evento incompatíveis ou participante ausente retornam 404. PDF e downloads devem conservar os cabeçalhos privados e a validação de tipo de conteúdo do cliente.
 
@@ -157,10 +162,11 @@ Schema inválido retorna 422; período/tipo inválido também usa `detail.json`.
 
 | Local | Responsabilidade |
 |---|---|
-| [Módulo backend](../../backend/modules/events/) | `routes.py` com operações/auxiliares ORM, `schemas.py`, `models.py` e apresentação PDF específica. |
+| [Módulo backend](../../backend/modules/events/) | `routes.py` com operações/auxiliares ORM, `schemas.py`, `models.py` e apresentações PDF/Excel específicas. |
 | [Feature Vue](../../frontend/src/features/events/) | Página, filtros, formulários, tipos, listas, leitor e clientes da API. |
 | [Diretório](../../backend/shared/employee_directory.py) | Consulta LDAP somente leitura, configuração separada do login antigo. |
 | [PDF](../../backend/modules/events/attendance_pdf.py) | Renderização em memória; depende de ReportLab e do logo em `assets/`. |
+| [Excel](../../backend/modules/events/attendance_excel.py) | Planilha em memória com dados do evento/lista e participantes; depende de openpyxl. |
 
 Tabelas: `DJ_EVENTS`, `DJ_EVENT_TYPES`, `DJ_EVENT_ATTENDANCE_LISTS` e `DJ_EVENT_ATTENDANCE_ENTRIES`. Types usa chave única; presença tem vínculos/FKs e proteção por lista/matrícula. O período, o tipo e o uso de um tipo são validados nas transações correspondentes. A edição do evento não possui o mesmo controle `row_version` de Demandas; não presumir essa proteção.
 
@@ -202,6 +208,7 @@ No ambiente autorizado, conferir campos/limites e registros antigos; filtros/sta
 | Concorrência | Registro contra exclusão de lista/evento e PDF contra escritas, sem órfãos ou confirmação indevida. |
 | Interface | Enter tardio, perda de foco, leitura longa, partes durante envio e fechamento durante estabilização/API. |
 | PDF | Lista vazia, várias páginas, textos longos, caracteres de markup, logo e MIME/cabeçalhos privados. |
+| Excel | Lista vazia e completa, duas abas, matrículas com zeros, datas, textos literais iniciados por `=`, controles XML e MIME/cabeçalhos privados. |
 
 Ao mudar um campo, revisar schemas, modelos e rotas ORM, tipos TypeScript, formulário/detalhe/PDF e schema correspondente. Ao mudar captura, revisar também LDAP, mensagens, cache e atalhos. Uma mudança geral de grade/diálogo vai para o [padrão visual](../docs/padrao-visual.md), sem copiar regras de presença para componentes comuns.
 

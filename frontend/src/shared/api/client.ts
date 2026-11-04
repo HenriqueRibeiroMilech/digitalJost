@@ -9,16 +9,22 @@ export class ApiError extends Error {
   }
 }
 
+const documentTypes = {
+  pdf: 'application/pdf',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+}
+
 async function requestBody(
   path: string,
   options: RequestInit = {},
-  format: 'json' | 'pdf' = 'json',
+  format: 'json' | 'pdf' | 'xlsx' = 'json',
   timeoutMs = 10000,
 ): Promise<unknown> {
   const method = (options.method ?? 'GET').toUpperCase()
   const writing = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   const headers = new Headers(options.headers)
-  headers.set('Accept', format === 'pdf' ? 'application/pdf, application/json' : 'application/json')
+  const documentType = format === 'json' ? null : documentTypes[format]
+  headers.set('Accept', documentType ? `${documentType}, application/json` : 'application/json')
   // FormData precisa do boundary multipart definido pelo próprio navegador.
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (writing) {
@@ -42,15 +48,15 @@ async function requestBody(
       throw new ApiError('A sessão precisa ser renovada. Acesse novamente o portal.', 401)
     }
     const contentType = response.headers.get('content-type') ?? ''
-    const pdf = response.ok && format === 'pdf'
-    if (!contentType.includes(pdf ? 'application/pdf' : 'application/json')) {
+    const expectedContentType = response.ok && documentType ? documentType : 'application/json'
+    if (!contentType.includes(expectedContentType)) {
       throw new ApiError(
         writing ? 'Resposta inesperada. Confira os dados antes de repetir a operação.'
           : 'O servidor devolveu uma resposta inesperada.',
         response.status,
       )
     }
-    body = pdf ? await response.blob() : await response.json()
+    body = response.ok && documentType ? await response.blob() : await response.json()
   } catch (error) {
     if (error instanceof ApiError) throw error
     throw new ApiError(
@@ -80,4 +86,8 @@ export async function requestJson<T>(path: string, options: RequestInit = {}, ti
 
 export async function requestPdf(path: string): Promise<Blob> {
   return await requestBody(path, { cache: 'no-store' }, 'pdf', 30000) as Blob
+}
+
+export async function requestExcel(path: string): Promise<Blob> {
+  return await requestBody(path, { cache: 'no-store' }, 'xlsx', 30000) as Blob
 }
