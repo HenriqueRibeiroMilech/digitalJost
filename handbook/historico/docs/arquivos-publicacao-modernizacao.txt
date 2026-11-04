@@ -1,0 +1,55 @@
+REGISTRO HISTÓRICO: comandos e caminhos de uma entrega anterior.
+Consulte handbook/README.md e handbook/docs/servidor-e-publicacao.md para o procedimento atual.
+Este arquivo não autoriza execução pelo agente.
+
+# Inventario de runtime: c3838b077a51329f5ed52e899fa46aca3ffb5127 -> 6eeffa8.
+# Caminhos relativos a I:\IIS\Digital_Jost. Referencia, nao script de copia.
+# ADICIONAR o pacote backend completo abaixo; incluir tambem o build nao versionado.
+backend/__init__.py
+backend/bootstrap.py
+backend/config.py
+backend/compatibility/__init__.py
+backend/compatibility/identity.py
+backend/modules/__init__.py
+backend/modules/events/__init__.py
+backend/modules/events/repository.py
+backend/modules/events/routes.py
+backend/modules/events/schemas.py
+backend/modules/events/services.py
+backend/platform/__init__.py
+backend/platform/csrf.py
+backend/platform/database.py
+backend/platform/environment.py
+backend/platform/http.py
+backend/platform/identity.py
+backend/platform/schemas.py
+backend/platform/vue_shell.py
+backend/templates/app/shell.html
+# ADICIONAR/SUBSTITUIR: backend/static/app/ inteiro do novo build,
+# incluindo .vite/manifest.json e todos os assets; Git nao fornece esse diretorio.
+
+# SUBSTITUIR estes 13 arquivos legados; conferir customizacoes do servidor antes.
+app/config.py
+app/errors.py
+app/routes/auth_routes.py
+app/routes/jdt/temp.py
+app/routes/reports/maintenance.py
+app/routes/reports/oee.py
+app/routes/reports/productiveHours.py
+app/routes/request/workcentersLogChange.py
+app/services/jobs/mon_mon_h_24_userCheck.py
+app/templates/reports.oee/oee_signal.html
+app/utils/azure_utils.py
+app/utils/constants.py
+app/utils/security_utils.py
+
+# SUBSTITUIR registro de dependencias; copiar nao instala os pacotes.
+requirements.txt
+# EDITAR o web.config efetivo, preservando opcoes do servidor; nao copiar cegamente.
+web.config
+
+# CONFIGURACAO PRIVADA: transferencia separada, fora do site e do pacote comum.
+# Nao colocar o .env preenchido neste inventario ou dentro de backend/.
+# DESENVOLVIMENTO/DOCUMENTACAO: frontend/, docs/, README.md, .gitignore e
+# .env.example vazio podem acompanhar o fonte; nao sao novos dados operacionais.
+# ARQUIVOS ANTIGOS: guardar para retorno; conferir secao 7 do guia antes de arquivar.
