@@ -10,6 +10,7 @@ import DataTable from '@/volt/DataTable.vue'
 import Message from '@/volt/Message.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import { attendanceApi } from '../attendanceApi'
+import { formatAttendanceDateTime } from '../dates'
 import type { AttendanceAction, AttendanceEntries, AttendanceListDetail, AttendanceLists, AttendanceRegistered } from '../types'
 import AttendanceActionDialog from './AttendanceActionDialog.vue'
 import AttendanceReader from './AttendanceReader.vue'
@@ -180,10 +181,13 @@ async function actionClosed(changed: boolean) {
                 :loading="exporting && exportFormat === 'pdf'"
                 :disabled="managing" class="dj-accent-action" pt:root:class="max-w-full rounded-xl"
                 pt:label:class="min-w-0 whitespace-normal" @click="exportList('pdf')" />
-              <SecondaryButton v-if="list.capabilities.can_export" id="attendance-download-excel" type="button"
+              <Button v-if="list.capabilities.can_export" id="attendance-download-excel" type="button"
                 :label="exporting && exportFormat === 'xlsx' ? 'Gerando Excel…' : 'Baixar Excel'" icon="pi pi-file-excel"
-                :loading="exporting && exportFormat === 'xlsx'" :disabled="managing" outlined
-                pt:root:class="max-w-full rounded-xl" pt:label:class="min-w-0 whitespace-normal"
+                :loading="exporting && exportFormat === 'xlsx'" :disabled="managing"
+                pt:root:class="max-w-full rounded-xl border-dj-success bg-dj-success text-white
+                  enabled:hover:border-dj-success enabled:hover:bg-dj-success/90
+                  enabled:active:border-dj-success enabled:active:bg-dj-success/80 focus-visible:outline-dj-success"
+                pt:label:class="min-w-0 whitespace-normal"
                 @click="exportList('xlsx')" />
               <Button v-if="list.capabilities.can_register" id="attendance-start-reader" type="button"
                 label="Iniciar preenchimento por leitor" icon="pi pi-id-card" :disabled="managing"
@@ -207,7 +211,7 @@ async function actionClosed(changed: boolean) {
         loading-label="Carregando presenças…" @retry="refetchEntries()">
         <div class="overflow-x-auto rounded-2xl border border-dj-border">
           <DataTable :value="entries?.items ?? []" data-key="id" :table-props="{ 'aria-label': 'Participantes da lista ' + list.name }"
-            :table-style="{ minWidth: '48rem' }">
+            :table-style="{ minWidth: '60rem' }">
             <Column field="company" header="Empresa">
               <template #body="{ data: entry }"><span :class="{ 'text-dj-muted': !entry.company }">{{ entry.company || 'Não informado' }}</span></template>
             </Column>
@@ -219,6 +223,9 @@ async function actionClosed(changed: boolean) {
             </Column>
             <Column field="department" header="Setor">
               <template #body="{ data: entry }"><span :class="{ 'text-dj-muted': !entry.department }">{{ entry.department || 'Não informado' }}</span></template>
+            </Column>
+            <Column field="created_at" header="Leitura (Brasília)" body-class="whitespace-nowrap tabular-nums">
+              <template #body="{ data: entry }"><time :datetime="entry.created_at">{{ formatAttendanceDateTime(entry.created_at) }}</time></template>
             </Column>
             <Column v-if="list.capabilities.can_delete_entry" header="Ações" body-class="whitespace-nowrap">
               <template #body="{ data: entry }">

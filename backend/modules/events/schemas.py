@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -159,6 +159,13 @@ class AttendanceOut(BaseModel):
     name: str | None
     department: str | None
     company: str | None
+    created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def attendance_created_at_utc(cls, value):
+        # O DATETIME2 salvo por SYSUTCDATETIME não carrega o fuso; a API o explicita.
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
 
 
 class AttendanceEntries(PaginatedResponse[AttendanceOut, AttendanceCapabilities]):

@@ -64,6 +64,8 @@ Dentro do evento, **Listas de presença** permite criar, renomear, excluir lista
 
 O leitor usa a sessão autenticada do responsável, com a mesma autorização e CSRF; não é uma página pública. O crachá deve ter exatamente 12 dígitos ASCII, preservados na API e no banco. A tabela, o PDF e o Excel mostram Empresa, Matrícula, Nome e Setor; a matrícula visível contém os oito dígitos finais, com zeros.
 
+A tabela e o Excel acrescentam **Leitura (Brasília)**, com data e hora até segundos da primeira presença confirmada. A origem é `DJ_EVENT_ATTENDANCE_ENTRIES.created_at`, já gravado em UTC por `SYSUTCDATETIME()`; a API expõe `created_at` com fuso UTC, e a apresentação converte para `America/Sao_Paulo`. Releituras preservam esse horário, inclusive quando completam dados opcionais. Não há alteração de schema nem atualização dos horários existentes.
+
 O registro consulta o LDAP em toda tentativa, inclusive repetida. A identificação aceita somente uma pessoa compatível com a matrícula; não há exigência de um prefixo fixo de empresa. Na mesma lista, repetição pelos oito dígitos finais não cria outra linha e pode completar dados faltantes sem sobrescrever os preenchidos. Outra lista pode receber a mesma pessoa.
 
 | Resultado da identificação | Resposta e efeito |
@@ -118,7 +120,7 @@ O PDF inclui nome/tipo/instrutor/período/descrição/conteúdo programático, t
 
 A rota trava evento e lista enquanto captura os dados; renderiza depois de liberar SQL. Textos são escapados antes de entrar no markup do ReportLab. Retorna attachment `lista-presenca-evento-<id>-lista-<id>.pdf`, MIME PDF, `Cache-Control: private, no-store`, `Pragma: no-cache` e `nosniff`. O cliente aguarda 30 segundos, exige conteúdo PDF em sucesso e não baixa HTML/JSON como documento. Falta de biblioteca/logo tratada pela rota gera 503.
 
-**Baixar Excel** exporta os mesmos campos em `lista-presenca-evento-<id>-lista-<id>.xlsx`. A aba **Evento** contém nome do evento/lista, tipo, instrutor, período, descrição, conteúdo programático, total e emissão pelo horário TD. A aba **Participantes** contém Empresa, Matrícula, Nome e Setor, na mesma ordem do PDF, incluindo a lista inteira mesmo quando a tela está paginada. Matrículas são texto de oito dígitos, preservando zeros iniciais; datas e total usam tipos próprios do Excel. Campos ausentes mostram “Não informado”; uma lista vazia mantém total zero e somente o cabeçalho dos participantes.
+**Baixar Excel** exporta os campos do PDF, acrescidos do horário da leitura, em `lista-presenca-evento-<id>-lista-<id>.xlsx`. A aba **Evento** contém nome do evento/lista, tipo, instrutor, período, descrição, conteúdo programático, total e emissão pelo horário TD. A aba **Participantes** contém Empresa, Matrícula, Nome, Setor e Leitura (Brasília), na mesma ordem de participantes do PDF, incluindo a lista inteira mesmo quando a tela está paginada. Matrículas são texto de oito dígitos, preservando zeros iniciais; datas e total usam tipos próprios do Excel. Campos ausentes mostram “Não informado”; uma lista vazia mantém total zero e somente o cabeçalho dos participantes.
 
 A rota Excel usa a mesma permissão de exportação, valida o vínculo evento/lista e captura os dados com as mesmas travas do PDF. Gera a planilha em memória após liberar SQL, usando `openpyxl`, sem depender de ReportLab ou logo. Textos são gravados como valores literais, sem interpretação de fórmulas, e caracteres de controle incompatíveis com XML são removidos. O download mantém os cabeçalhos privados; o cliente aguarda 30 segundos e exige o MIME XLSX em sucesso. Falta de biblioteca ou falha de recurso tratada pela rota gera 503.
 
@@ -152,7 +154,7 @@ GET na base recebe `page` ≥ 1, `per_page` de 1 a 100 (padrão 12), `search` at
 | `EventOut` | ID, nome, descrição, tipo ID/nome, instrutor, conteúdo, início/fim e status. |
 | `EventList`, `EventDetail` | Ambos incluem `capabilities` com `can_create`, `can_update` e `can_delete`; lista acrescenta paginação. |
 | `AttendanceListOut` | ID, evento, nome e total; detalhe inclui capacidades da presença. |
-| `AttendanceEntries` | Paginação, capacidades e registros com ID, código completo, nome, setor e empresa. |
+| `AttendanceEntries` | Paginação, capacidades e registros com ID, código completo, nome, setor, empresa e `created_at` em UTC. |
 | `AttendanceRegistered` | `item`, `created` e `lookup_status`; POST retorna 200 inclusive quando criou. |
 | Exclusões | `{id}`; não retornam 204 no contrato atual. |
 
@@ -208,7 +210,7 @@ No ambiente autorizado, conferir campos/limites e registros antigos; filtros/sta
 | Concorrência | Registro contra exclusão de lista/evento e PDF contra escritas, sem órfãos ou confirmação indevida. |
 | Interface | Enter tardio, perda de foco, leitura longa, partes durante envio e fechamento durante estabilização/API. |
 | PDF | Lista vazia, várias páginas, textos longos, caracteres de markup, logo e MIME/cabeçalhos privados. |
-| Excel | Lista vazia e completa, duas abas, matrículas com zeros, datas, textos literais iniciados por `=`, controles XML e MIME/cabeçalhos privados. |
+| Excel | Lista vazia e completa, duas abas, matrículas com zeros, datas, leitura em Brasília igual à tela e preservada nas releituras, textos literais iniciados por `=`, controles XML e MIME/cabeçalhos privados. |
 
 Ao mudar um campo, revisar schemas, modelos e rotas ORM, tipos TypeScript, formulário/detalhe/PDF e schema correspondente. Ao mudar captura, revisar também LDAP, mensagens, cache e atalhos. Uma mudança geral de grade/diálogo vai para o [padrão visual](../docs/padrao-visual.md), sem copiar regras de presença para componentes comuns.
 

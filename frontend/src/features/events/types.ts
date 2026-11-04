@@ -91,6 +91,7 @@ export interface AttendanceEntry {
   name: string | null
   department: string | null
   company: string | null
+  created_at: string
 }
 
 export type AttendanceAction =

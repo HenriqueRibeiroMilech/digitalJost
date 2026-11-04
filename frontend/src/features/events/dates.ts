@@ -16,3 +16,14 @@ export function formatEventDateTime(value: string | null): string {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   }).format(date) : 'Não informado'
 }
+
+export function formatAttendanceDateTime(value: string | null | undefined): string {
+  if (!value) return 'Não informado'
+  // A API explicita UTC; tela e Excel mostram a primeira presença no fuso de Brasília.
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 'Não informado' : new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo', hourCycle: 'h23',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).format(date)
+}

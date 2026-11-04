@@ -294,7 +294,7 @@ def export_attendance_excel(event_id, list_id):
         attendance_list = _attendance_list(session, event_id, list_id, lock=True)
         now = session.scalar(select(func.sysdatetime()))
         event = _event(session, event_id, now=now)
-        # Inclui todos os participantes, com a mesma ordem e os mesmos campos do PDF.
+        # Inclui todos os participantes na ordem do PDF, além do horário de registro.
         entries = [dict(row) for row in session.execute(
             _entries_query().where(AttendanceEntry.list_id == list_id).order_by(AttendanceEntry.id.desc()),
         ).mappings()]
@@ -441,7 +441,7 @@ def _attendance_list(session, event_id, list_id, *, lock=False):
 
 def _entry_columns():
     return (AttendanceEntry.id, AttendanceEntry.registration, AttendanceEntry.name,
-            AttendanceEntry.department, AttendanceEntry.company)
+            AttendanceEntry.department, AttendanceEntry.company, AttendanceEntry.created_at)
 
 
 def _entries_query():

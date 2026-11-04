@@ -1,6 +1,8 @@
 """Apresentação da lista de presença em Excel, sem acesso a Flask ou banco."""
 
+from datetime import timezone
 from io import BytesIO
+from zoneinfo import ZoneInfo
 
 from openpyxl import Workbook
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
@@ -48,9 +50,10 @@ def build_attendance_excel(event, attendance_list, entries, *, generated_at):
             summary.row_dimensions[row].height = min(409, max(30, lines * 15))
 
     participants = workbook.create_sheet("Participantes")
-    participants.append(["Empresa", "Matrícula", "Nome", "Setor"])
-    for column, width in (("A", 30), ("B", 16), ("C", 50), ("D", 35)):
+    participants.append(["Empresa", "Matrícula", "Nome", "Setor", "Leitura (Brasília)"])
+    for column, width in (("A", 30), ("B", 16), ("C", 50), ("D", 35), ("E", 25)):
         participants.column_dimensions[column].width = width
+    attendance_timezone = ZoneInfo("America/Sao_Paulo")
     for row, entry in enumerate(entries, start=2):
         for column, value in enumerate((
             entry["company"], entry["registration"][-8:], entry["name"], entry["department"],
@@ -58,7 +61,13 @@ def build_attendance_excel(event, attendance_list, entries, *, generated_at):
             _write_cell(participants, row, column, value)
         # Matrícula permanece texto, preservando os oito dígitos e zeros iniciais.
         participants.cell(row=row, column=2).number_format = "@"
-    participants.auto_filter.ref = f"A1:D{participants.max_row}"
+        recorded_at = entry["created_at"]
+        if recorded_at.tzinfo is None:
+            recorded_at = recorded_at.replace(tzinfo=timezone.utc)
+        # Excel não suporta fuso; descarta frações para exibir os mesmos segundos da tela.
+        recorded_at = recorded_at.astimezone(attendance_timezone).replace(tzinfo=None, microsecond=0)
+        _write_cell(participants, row, 5, recorded_at).number_format = "dd/mm/yyyy hh:mm:ss"
+    participants.auto_filter.ref = f"A1:E{participants.max_row}"
 
     for sheet in workbook.worksheets:
         sheet.freeze_panes = "A2"
