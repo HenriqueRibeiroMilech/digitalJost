@@ -13,7 +13,7 @@ const controlProps = computed(() => ({
 
 <template>
   <div>
-    <label :for="id" class="dj-field-label mb-2 block text-sm font-medium">{{ label }}</label>
+    <label :for="id" class="mb-2 block text-sm font-medium">{{ label }}</label>
     <slot :controlProps="controlProps" />
     <Message v-if="error" :id="id + '-error'" severity="error" variant="simple"
       size="small" class="mt-2">{{ error }}</Message>

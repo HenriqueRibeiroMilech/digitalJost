@@ -5,7 +5,6 @@ import { ApiError } from '@/shared/api/client'
 import { validationMessages } from '@/shared/api/validation'
 import RequestState from '@/shared/components/RequestState.vue'
 import AppDialog from '@/shared/components/AppDialog.vue'
-import RecordOverview from '@/shared/components/RecordOverview.vue'
 import Button from '@/volt/Button.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import Message from '@/volt/Message.vue'
@@ -132,7 +131,7 @@ async function deleteEvent() {
 
 <template>
   <AppDialog id="event-dialog" :visible="visible" :title="title" :subtitle="subtitle" :icon="dialogIcon"
-    :busy="busy" :tone="dialogTone" :size="view === 'delete' ? 'small' : 'standard'"
+    :busy="busy" :tone="dialogTone"
     :description-id="view === 'create' || view === 'edit' ? 'event-form-help' : undefined"
     @update:visible="updateVisibility" @closed="emit('closed')">
     <div ref="contentElement">
@@ -164,33 +163,46 @@ async function deleteEvent() {
           </div>
 
           <div v-else>
-            <RecordOverview :title="event.name" title-id="event-details-title" :tone="dialogTone">
-              <template #badges><EventStatusBadge :status="event.status" /></template>
-              <div><dt>Tipo de evento</dt><dd>{{ event.event_type_name || 'Não informado' }}</dd></div>
-              <div><dt>Instrutor</dt><dd>{{ event.instructor || 'Não informado' }}</dd></div>
-              <div><dt>Início</dt><dd>{{ formatEventDateTime(event.starts_at) }}</dd></div>
-              <div><dt>Fim</dt><dd>{{ formatEventDateTime(event.ends_at) }}</dd></div>
-            </RecordOverview>
-            <Tabs v-model:value="activeTab" class="dj-dialog-tabs" scrollable>
+            <div class="mb-5 flex flex-wrap items-center gap-3">
+              <EventStatusBadge :status="event.status" />
+            </div>
+            <h3 id="event-details-title" tabindex="-1" class="break-words text-2xl leading-8 font-bold tracking-tight text-dj-ink">{{ event.name }}</h3>
+            <Tabs v-model:value="activeTab" class="mt-4">
               <TabList>
                 <Tab value="details" :disabled="busy || isFetching">Informações</Tab>
                 <Tab value="attendance" :disabled="busy || isFetching"><i class="pi pi-users mr-2" aria-hidden="true" />Listas de presença</Tab>
               </TabList>
-              <TabPanels pt:root:class="dj-tab-panels">
+              <TabPanels pt:root:class="px-0 pt-5 pb-0">
                 <TabPanel value="details">
-                  <Message v-if="event.status === 'unscheduled'" severity="info" class="mb-4">
+                  <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-tag" aria-hidden="true" /> Tipo de evento</dt>
+                      <dd class="mt-3 break-words text-sm font-semibold text-dj-ink">{{ event.event_type_name || 'Não informado' }}</dd>
+                    </div>
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-user" aria-hidden="true" /> Instrutor</dt>
+                      <dd class="mt-3 break-words text-sm font-semibold text-dj-ink">{{ event.instructor || 'Não informado' }}</dd>
+                    </div>
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-calendar" aria-hidden="true" /> Início</dt>
+                      <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.starts_at) }}</dd>
+                    </div>
+                    <div class="rounded-2xl border border-dj-border bg-dj-canvas p-4">
+                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-clock" aria-hidden="true" /> Fim</dt>
+                      <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.ends_at) }}</dd>
+                    </div>
+                  </dl>
+                  <Message v-if="event.status === 'unscheduled'" severity="info" class="mt-4">
                     Preencha as datas na edição para que o evento acompanhe os status de realização.
                   </Message>
-                  <div class="dj-detail-layout">
-                    <section class="dj-detail-panel">
-                      <h4 class="dj-panel-heading"><i class="pi pi-align-left" aria-hidden="true" />Sobre o evento</h4>
-                      <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ event.description }}</p>
-                    </section>
-                    <section class="dj-detail-panel dj-detail-panel-muted">
-                      <h4 class="dj-panel-heading"><i class="pi pi-list" aria-hidden="true" />Conteúdo programático</h4>
-                      <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ event.syllabus || 'Não informado' }}</p>
-                    </section>
-                  </div>
+                  <section class="mt-6 rounded-2xl border border-dj-border p-5">
+                    <h4 class="mb-3 text-xs font-semibold tracking-wide text-dj-muted uppercase">Sobre o evento</h4>
+                    <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-ink">{{ event.description }}</p>
+                  </section>
+                  <section class="mt-4 rounded-2xl border border-dj-border p-5">
+                    <h4 class="mb-3 text-xs font-semibold tracking-wide text-dj-muted uppercase">Conteúdo programático</h4>
+                    <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-ink">{{ event.syllabus || 'Não informado' }}</p>
+                  </section>
                 </TabPanel>
                 <TabPanel value="attendance">
                   <EventAttendance v-if="activeTab === 'attendance'" :event-id="event.id" :event-name="event.name"

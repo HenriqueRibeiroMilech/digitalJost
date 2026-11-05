@@ -14,6 +14,7 @@ import type { WorkActionName, WorkDetail } from '../types'
 const props = defineProps<{ work: WorkDetail; disabled: boolean }>()
 const emit = defineEmits<{ saved: [item: WorkDetail]; busy: [value: boolean]; editing: [value: boolean]; uncertain: [] }>()
 const action = ref<WorkActionName | null>(null)
+const more = ref(false)
 const saving = ref(false)
 const message = ref('')
 const start = ref('')
@@ -39,7 +40,10 @@ const options: { value: WorkActionName; label: string; icon: string; tone: 'succ
   { value: 'wait_third_party', label: 'Aguardar terceiros', icon: 'pi pi-users', tone: 'neutral', message: 'Pendências com terceiros' },
   { value: 'change_deadline', label: 'Alterar prazo', icon: 'pi pi-calendar', tone: 'brand', message: 'Justificativa do novo prazo' },
 ]
-const available = computed(() => options.filter(option => props.work.available_actions.includes(option.value)))
+const primary = computed(() => options.filter(option => ['start', 'resume', 'complete', 'cancel', 'reopen'].includes(option.value)
+  && props.work.available_actions.includes(option.value)))
+const secondary = computed(() => options.filter(option => !['start', 'resume', 'complete', 'cancel', 'reopen', 'change_deadline'].includes(option.value)
+  && props.work.available_actions.includes(option.value)))
 const selected = computed(() => options.find(option => option.value === action.value))
 const needsDeadline = computed(() => action.value !== null && ['start', 'schedule', 'change_deadline', 'reopen'].includes(action.value))
 function today() {
@@ -70,6 +74,7 @@ async function back() {
   if (locked.value) return
   const previous = action.value
   action.value = null
+  if (secondary.value.some(option => option.value === previous)) more.value = true
   await nextTick()
   document.getElementById(prefix + '-choose-' + previous)?.focus()
 }
@@ -107,15 +112,24 @@ async function submit() {
 </script>
 
 <template>
-  <section :aria-labelledby="prefix + '-title'">
-    <h5 :id="prefix + '-title'" class="text-xs font-semibold text-dj-muted">Ações da demanda</h5>
+  <section class="mt-6 rounded-2xl border border-dj-border bg-dj-canvas p-4" :aria-labelledby="prefix + '-title'">
+    <h4 :id="prefix + '-title'" class="text-sm font-semibold">Ações da demanda</h4>
     <p v-if="!work.available_actions.length" class="mt-2 text-sm text-dj-muted">Não há ações disponíveis para esta situação.</p>
-    <div v-else-if="!action" class="mt-2 flex flex-wrap gap-2" role="group" aria-label="Ações principais">
-      <Button v-for="option in available" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
+    <div v-else class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Ações principais">
+      <Button v-for="option in primary" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
         :label="option.label" :icon="option.icon" :disabled="locked" :aria-pressed="action === option.value"
-        :aria-controls="prefix + '-form'" class="demand-work-action justify-center rounded-lg" :class="'dj-tone-' + option.tone" @click="choose(option.value)" />
+        :aria-controls="prefix + '-form'" class="demand-work-action rounded-xl px-4 py-2.5" :class="'dj-tone-' + option.tone" @click="choose(option.value)" />
+      <SecondaryButton v-if="secondary.length" type="button" label="Outras ações" :icon="more ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+        :disabled="locked" :aria-expanded="more" :aria-controls="prefix + '-more'" @click="more = !more" />
+      <Button v-if="work.available_actions.includes('change_deadline')" :id="prefix + '-choose-change_deadline'" type="button" label="Alterar prazo"
+        icon="pi pi-calendar" outlined :disabled="locked" :aria-pressed="action === 'change_deadline'" :aria-controls="prefix + '-form'" @click="choose('change_deadline')" />
     </div>
-    <form v-if="action && selected" :id="prefix + '-form'" ref="form" novalidate class="mt-3 space-y-3" @submit.prevent="submit">
+    <div v-show="more && secondary.length" :id="prefix + '-more'" class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Outras ações da demanda">
+      <Button v-for="option in secondary" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
+        :label="option.label" :icon="option.icon" outlined :disabled="locked" :aria-pressed="action === option.value"
+        :aria-controls="prefix + '-form'" @click="choose(option.value)" />
+    </div>
+    <form v-if="action && selected" :id="prefix + '-form'" ref="form" novalidate class="mt-5 space-y-4 border-t border-dj-border pt-4" @submit.prevent="submit">
       <h5 class="text-sm font-semibold">{{ selected.label }}</h5>
       <Message v-if="serverError" :id="prefix + '-error'" severity="error" tabindex="-1" role="alert">{{ serverError }}</Message>
       <Message v-if="errors.row_version || errors.action" severity="error">{{ errors.row_version || errors.action }}</Message>
@@ -137,7 +151,7 @@ async function submit() {
         <InputText v-model="expectedReturn" v-bind="controlProps" type="date" :min="today()" max="9999-12-31" required :disabled="locked" class="w-full" />
       </FormField>
       <FormField v-if="selected.message" :id="prefix + '-message'" :label="selected.message + ' *'" :error="errors.message" v-slot="{ controlProps }">
-        <Textarea v-model="message" v-bind="controlProps" required :rows="3" :maxlength="4000" :disabled="locked" class="w-full" />
+        <Textarea v-model="message" v-bind="controlProps" required :rows="4" :maxlength="4000" :disabled="locked" class="w-full" />
       </FormField>
       <p v-if="selected.message" class="text-xs leading-5 text-dj-muted">A mensagem ficará registrada no histórico da demanda.</p>
       <div class="flex flex-wrap gap-3">
@@ -152,13 +166,17 @@ async function submit() {
 <style scoped>
 .demand-work-action {
   color: var(--dj-tone);
-  border-color: var(--dj-tone-border);
-  background: var(--dj-tone-soft);
+  border-color: color-mix(in srgb, var(--dj-tone) 55%, var(--color-dj-surface));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--dj-tone) 28%, var(--color-dj-surface)),
+    color-mix(in srgb, var(--dj-tone) 12%, var(--color-dj-surface)));
 }
 .demand-work-action:enabled:hover,
 .demand-work-action[aria-pressed='true'] {
   border-color: var(--dj-tone);
-  background: color-mix(in srgb, var(--dj-tone-soft) 90%, var(--dj-tone));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--dj-tone) 38%, var(--color-dj-surface)),
+    color-mix(in srgb, var(--dj-tone) 20%, var(--color-dj-surface)));
 }
 .demand-work-action:focus-visible {
   outline: 2px solid var(--dj-tone);
