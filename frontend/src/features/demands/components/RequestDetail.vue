@@ -2,6 +2,7 @@
 import { nextTick, ref, watch } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import AppDialog from '@/shared/components/AppDialog.vue'
+import RecordOverview from '@/shared/components/RecordOverview.vue'
 import RequestState from '@/shared/components/RequestState.vue'
 import Button from '@/volt/Button.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
@@ -68,32 +69,36 @@ async function reviewed(request: RequestDetail) {
       loading-label="Carregando solicitação…" error-message="Não foi possível carregar a solicitação."
       not-found-message="Solicitação não encontrada para seu acesso." @retry="refetch()">
       <div v-if="data">
-        <div class="flex flex-wrap items-center gap-2">
-          <Tag :value="statusLabel(data.status)" severity="secondary" />
-          <Tag :value="kindLabel(data.entry_kind)" />
-        </div>
-        <h3 class="dj-detail-title">{{ data.title }}</h3>
+        <RecordOverview :title="data.title" :title-id="'request-record-title-' + id" :tone="data.status === 'recusado' ? 'neutral' : 'brand'">
+          <template #badges>
+            <Tag :value="statusLabel(data.status)" severity="secondary" />
+            <Tag :value="kindLabel(data.entry_kind)" />
+          </template>
+          <div><dt>Solicitante</dt><dd>{{ data.requester_name ?? 'Não informado' }}</dd></div>
+          <div><dt>Urgência</dt><dd>{{ data.urgency }}</dd></div>
+          <div><dt>Enviada em</dt><dd>{{ displayDate(data.created_at) }}</dd></div>
+        </RecordOverview>
         <dl class="dj-detail-grid mt-4">
-          <div><dt class="text-xs text-dj-muted">Solicitante</dt><dd class="mt-1">{{ data.requester_name ?? 'Não informado' }}</dd></div>
           <div><dt class="text-xs text-dj-muted">Contribuinte</dt><dd class="mt-1">{{ data.contributor_name ?? 'Sem contribuinte' }}</dd></div>
-          <div><dt class="text-xs text-dj-muted">Urgência</dt><dd class="mt-1">{{ data.urgency }}</dd></div>
-          <div><dt class="text-xs text-dj-muted">Enviada em</dt><dd class="mt-1">{{ displayDate(data.created_at) }}</dd></div>
           <div v-if="data.responsible_id"><dt class="text-xs text-dj-muted">Responsável</dt><dd class="mt-1">{{ data.responsible_name ?? 'Usuário indisponível' }}</dd></div>
           <div v-if="data.classification"><dt class="text-xs text-dj-muted">Classificação</dt><dd class="mt-1">{{ data.classification === 'projeto' ? 'Projeto' : data.classification === 'melhoria' ? 'Melhoria' : data.classification }}</dd></div>
           <div><dt class="text-xs text-dj-muted">Atualizada em</dt><dd class="mt-1">{{ displayDate(data.updated_at) }}</dd></div>
         </dl>
-        <section class="dj-detail-section" :aria-labelledby="'request-description-' + id">
-          <h4 :id="'request-description-' + id" class="mb-2 text-sm font-semibold">{{ data.entry_kind === 'erro' ? 'Descrição do erro' : 'Objetivo da demanda' }}</h4>
+        <section class="dj-detail-panel mt-4" :aria-labelledby="'request-description-' + id">
+          <h4 :id="'request-description-' + id" class="dj-panel-heading"><i class="pi pi-align-left" aria-hidden="true" />{{ data.entry_kind === 'erro' ? 'Descrição do erro' : 'Objetivo da demanda' }}</h4>
           <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data.description }}</p>
         </section>
-        <template v-if="data.entry_kind === 'demanda'">
-          <section v-for="field in details" :key="field.key" class="dj-detail-section" :aria-labelledby="'request-' + id + '-' + field.key">
-            <h4 :id="'request-' + id + '-' + field.key" class="mb-2 text-sm font-semibold">{{ field.label }}</h4>
-            <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data[field.key] ?? 'Não informado' }}</p>
-          </section>
-        </template>
-        <section class="dj-detail-section" :aria-labelledby="'request-attachments-' + id">
-          <h4 :id="'request-attachments-' + id" class="mb-3 text-sm font-semibold">Documentos</h4>
+        <section v-if="data.entry_kind === 'demanda'" class="dj-detail-panel mt-4">
+          <h4 class="dj-panel-heading"><i class="pi pi-sitemap" aria-hidden="true" />Contexto da solicitação</h4>
+          <div class="space-y-4">
+            <section v-for="field in details" :key="field.key" :aria-labelledby="'request-' + id + '-' + field.key">
+              <h5 :id="'request-' + id + '-' + field.key" class="mb-1 text-xs font-semibold text-dj-ink">{{ field.label }}</h5>
+              <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data[field.key] ?? 'Não informado' }}</p>
+            </section>
+          </div>
+        </section>
+        <section class="dj-detail-panel mt-4" :aria-labelledby="'request-attachments-' + id">
+          <h4 :id="'request-attachments-' + id" class="dj-panel-heading"><i class="pi pi-paperclip" aria-hidden="true" />Documentos</h4>
           <ul class="space-y-2">
             <li v-for="attachment in data.attachments" :key="attachment.id">
               <a :href="demandsApi.attachmentUrl(id, attachment.id, management)" class="inline-flex max-w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-dj-brand underline underline-offset-4">
@@ -104,8 +109,8 @@ async function reviewed(request: RequestDetail) {
           </ul>
           <p v-if="!data.attachments.length" class="text-sm text-dj-muted">Nenhum documento disponível.</p>
         </section>
-        <section class="dj-detail-section" :aria-labelledby="'request-history-' + id">
-          <h4 :id="'request-history-' + id" class="mb-3 text-sm font-semibold">Histórico</h4>
+        <section class="dj-detail-panel dj-detail-panel-muted mt-4" :aria-labelledby="'request-history-' + id">
+          <h4 :id="'request-history-' + id" class="dj-panel-heading"><i class="pi pi-history" aria-hidden="true" />Histórico</h4>
           <ol class="space-y-3 text-sm">
             <li v-for="event in data.history" :key="event.id" class="border-l-2 border-dj-border pl-3">
               <p>{{ historyLabel(event.event_type) }}</p>

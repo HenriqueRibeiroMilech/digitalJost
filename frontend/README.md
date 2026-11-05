@@ -75,6 +75,7 @@ volt/Card
 | Paginação | `usePagination`, `ListPagination` e o total retornado pela API. |
 | Campo com rótulo e erro | `FormField` com o controle Volt apropriado. |
 | Diálogo | `AppDialog` com conteúdo e ações da feature. |
+| Resumo do registro no detalhe | `RecordOverview` com título, status e metadados principais fornecidos pela feature. |
 
 As variações atuais do card são densidade padrão ou `compact`, e tons `brand`, `success` ou `neutral`. `EventCard` usa a densidade padrão; `RequestCard` usa a compacta. O significado de cada status e seu texto pertencem à feature.
 

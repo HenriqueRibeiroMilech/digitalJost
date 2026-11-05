@@ -6,6 +6,7 @@ import { validationMessages } from '@/shared/api/validation'
 import AppDialog from '@/shared/components/AppDialog.vue'
 import FormField from '@/shared/components/FormField.vue'
 import RequestState from '@/shared/components/RequestState.vue'
+import RecordOverview from '@/shared/components/RecordOverview.vue'
 import Button from '@/volt/Button.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import Select from '@/volt/Select.vue'
@@ -178,98 +179,115 @@ async function noticeClosed() {
     <RequestState :loading="isPending" :failed="isError" :error="error" :empty="false" loading-label="Carregando detalhes…"
       error-message="Não foi possível carregar a demanda ou aviso." not-found-message="Registro não encontrado para seu acesso." @retry="reload">
       <template v-if="data">
-        <div class="flex flex-wrap gap-2">
-          <Tag :value="workKind(data.kind).label" />
-          <Tag v-if="data.kind !== 'aviso'" :value="statusLabel(data.status)" severity="secondary" />
-          <Tag v-else :value="noticeStateLabel(data.notice_state)" severity="secondary" />
-          <Tag v-if="data.is_overdue" value="Atrasada" severity="danger" icon="pi pi-clock" />
-          <Tag v-if="data.source_request_id" :value="'Solicitação #' + data.source_request_id" severity="secondary" />
-        </div>
-        <h3 class="dj-detail-title">{{ data.title }}</h3>
+        <RecordOverview :title="data.title" :title-id="prefix + '-record-title'"
+          :tone="data.status === 'concluido' ? 'success' : ['pausado', 'cancelado'].includes(data.status) || data.notice_finalized_at ? 'neutral' : 'brand'">
+          <template #badges>
+            <Tag :value="workKind(data.kind).label" />
+            <Tag v-if="data.kind !== 'aviso'" :value="statusLabel(data.status)" severity="secondary" />
+            <Tag v-else :value="noticeStateLabel(data.notice_state)" severity="secondary" />
+            <Tag v-if="data.is_overdue" value="Atrasada" severity="danger" icon="pi pi-clock" />
+            <Tag v-if="data.source_request_id" :value="'Solicitação #' + data.source_request_id" severity="secondary" />
+          </template>
+          <div><dt>Responsável</dt><dd>{{ data.responsible_name ?? 'Usuário indisponível' }}</dd></div>
+          <template v-if="data.kind === 'aviso'">
+            <div><dt>Início do aviso</dt><dd>{{ data.starts_at ? displayDate(data.starts_at) : 'Não informado' }}</dd></div>
+            <div><dt>Fim do aviso</dt><dd>{{ data.ends_at ? displayDate(data.ends_at) : 'Não informado' }}</dd></div>
+          </template>
+          <template v-else>
+            <div><dt>Prazo de entrega</dt><dd :class="{ 'text-dj-danger': data.is_overdue }">{{ data.due_on ? displayDay(data.due_on) : 'Não definido' }}</dd></div>
+            <div><dt>Solicitante</dt><dd>{{ data.requester_name ?? 'Usuário indisponível' }}</dd></div>
+          </template>
+        </RecordOverview>
         <Message v-if="feedback" :id="prefix + '-feedback'" tabindex="-1" severity="success" role="status" class="mt-4">{{ feedback }}</Message>
         <p v-if="needsReload" role="status" class="mt-4 text-sm leading-6 text-dj-muted">Recarregue e confira os detalhes e o histórico antes de registrar outra alteração.</p>
         <Tabs v-model:value="tab" class="dj-dialog-tabs" scrollable :lazy="false">
           <TabList aria-label="Detalhes da demanda">
             <Tab value="info" :disabled="busy">Informações</Tab>
-            <Tab v-if="data.kind !== 'aviso'" value="execution" :disabled="busy">Execução</Tab>
             <Tab v-if="data.kind !== 'aviso'" value="tasks" :disabled="busy || Boolean(planningDirty) || actionEditing">Tarefas</Tab>
             <Tab value="history" :disabled="busy">Histórico</Tab>
           </TabList>
           <TabPanels pt:root:class="dj-tab-panels">
             <TabPanel value="info">
-              <dl class="dj-detail-grid">
-                <div><dt class="text-xs text-dj-muted">Responsável</dt><dd class="mt-1">{{ data.responsible_name ?? 'Usuário indisponível' }}</dd></div>
-                <div><dt class="text-xs text-dj-muted">Solicitante</dt><dd class="mt-1">{{ data.requester_name ?? 'Usuário indisponível' }}</dd></div>
-                <div v-if="data.urgency"><dt class="text-xs text-dj-muted">Urgência</dt><dd class="mt-1">{{ data.urgency }}</dd></div>
-                <div v-if="data.contributor_name"><dt class="text-xs text-dj-muted">Contribuinte</dt><dd class="mt-1">{{ data.contributor_name }}</dd></div>
-                <div><dt class="text-xs text-dj-muted">Criada em</dt><dd class="mt-1">{{ displayDate(data.created_at) }}</dd></div>
-                <div><dt class="text-xs text-dj-muted">Atualizada em</dt><dd class="mt-1">{{ displayDate(data.updated_at) }}</dd></div>
-                <template v-if="data.kind === 'aviso'">
-                  <div><dt class="text-xs text-dj-muted">Data e hora de início</dt><dd class="mt-1">{{ data.starts_at ? displayDate(data.starts_at) : 'Não informado' }}</dd></div>
-                  <div><dt class="text-xs text-dj-muted">Data e hora de fim</dt><dd class="mt-1">{{ data.ends_at ? displayDate(data.ends_at) : 'Não informado' }}</dd></div>
-                  <div><dt class="text-xs text-dj-muted">Ocultar após o fim</dt><dd class="mt-1">{{ data.hide_after_end ? 'Sim' : 'Não' }}</dd></div>
-                  <div v-if="data.notice_finalized_at"><dt class="text-xs text-dj-muted">Finalizado em</dt><dd class="mt-1">{{ displayDate(data.notice_finalized_at) }}</dd></div>
-                </template>
-                <template v-else>
-                  <div v-if="data.scheduled_start_on"><dt class="text-xs text-dj-muted">Início agendado</dt><dd class="mt-1">{{ displayDay(data.scheduled_start_on) }}</dd></div>
-                  <div v-if="data.started_on"><dt class="text-xs text-dj-muted">Início realizado</dt><dd class="mt-1">{{ displayDay(data.started_on) }}</dd></div>
-                  <div><dt class="text-xs text-dj-muted">Prazo de entrega</dt><dd class="mt-1">{{ data.due_on ? displayDay(data.due_on) : 'Não definido' }}</dd></div>
-                  <div v-if="data.closed_at"><dt class="text-xs text-dj-muted">Encerramento</dt><dd class="mt-1">{{ displayDate(data.closed_at) }}</dd></div>
-                  <div v-if="data.expected_return_on"><dt class="text-xs text-dj-muted">Previsão de retorno</dt><dd class="mt-1">{{ displayDay(data.expected_return_on) }}</dd></div>
-                </template>
-              </dl>
-              <section class="dj-detail-section">
-                <h4 class="mb-2 text-sm font-semibold">{{ data.kind === 'erro' ? 'Descrição do erro' : ['projeto', 'melhoria'].includes(data.kind) ? 'Objetivo da demanda' : 'Descrição' }}</h4>
-                <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data.description }}</p>
-              </section>
-              <template v-if="data.kind === 'projeto' || data.kind === 'melhoria'">
-                <section v-for="field in contextFields" :key="field.key" class="dj-detail-section">
-                  <h4 class="mb-2 text-sm font-semibold">{{ field.label }}</h4>
-                  <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data[field.key] ?? 'Não informado' }}</p>
-                </section>
-              </template>
-              <section v-if="data.attachments.length" class="dj-detail-section">
-                <h4 class="mb-2 text-sm font-semibold">Documentos e evidências</h4>
-                <ul class="space-y-2 text-sm">
-                  <li v-for="attachment in data.attachments" :key="attachment.id">
-                    <a :href="workApi.attachmentUrl(id, attachment.id)" class="inline-flex max-w-full items-center gap-2 rounded-lg px-2 py-2 text-dj-brand underline underline-offset-4">
-                      <i class="pi pi-download shrink-0" aria-hidden="true" /><span class="min-w-0 break-words">{{ attachment.original_name }} ({{ fileSize(attachment.size_bytes) }})</span>
-                    </a>
-                  </li>
-                </ul>
-              </section>
-            </TabPanel>
-            <TabPanel v-if="data.kind !== 'aviso'" value="execution">
-              <p v-if="planningDirty && data.can_update" class="mb-3 text-sm text-dj-muted">Salve o planejamento antes de registrar uma ação, editar o conteúdo ou abrir as tarefas.</p>
-              <DemandActions v-if="data.can_update" :key="data.row_version + ':' + reloadKey" :work="data"
-                :disabled="busy || isFetching || isError || needsReload || Boolean(planningDirty)" @busy="actionSaving = $event"
-                @editing="actionEditing = $event" @uncertain="needsReload = true" @saved="actionSaved" />
-              <form :id="prefix + '-form'" ref="form" novalidate class="dj-detail-section" @submit.prevent="save">
-                <h4>Planejamento e acompanhamento</h4>
-                <p v-if="isFetching" role="status" class="mb-4 text-sm text-dj-muted">Atualizando informações…</p>
-                <Message v-if="serverError" severity="error" role="alert" class="mb-4">{{ serverError }}</Message>
-                <Message v-if="errors.row_version" severity="error" class="mb-4">{{ errors.row_version }}</Message>
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <FormField :id="prefix + '-difficulty'" label="Dificuldade" :error="errors.difficulty" v-slot="{ controlProps }">
-                    <Select v-model="plan.difficulty" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="['Baixa', 'Média', 'Alta']"
-                      :pt:label:aria-describedby="controlProps['aria-describedby']" show-clear :disabled="locked" placeholder="Não informada" class="w-full" />
-                  </FormField>
-                  <FormField :id="prefix + '-priority'" label="Prioridade (1 a 10)" :error="errors.priority" v-slot="{ controlProps }">
-                    <InputNumber v-model="plan.priority" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="1" :max="10" :max-fraction-digits="0" :use-grouping="false"
-                      :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informada" class="w-full" pt:pcInputText:root:class="w-full" />
-                  </FormField>
-                  <FormField v-for="field in hourFields" :key="field" :id="prefix + '-' + field" :label="planningLabels[field] ?? field" :error="errors[field]" v-slot="{ controlProps }">
-                    <InputNumber v-if="field === 'completed_hours'" v-model="completed" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
-                      :max-fraction-digits="2" locale="pt-BR" :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" class="w-full" pt:pcInputText:root:class="w-full" />
-                    <InputNumber v-else v-model="plan[field]" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
-                      :max-fraction-digits="2" locale="pt-BR" :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informado" class="w-full" pt:pcInputText:root:class="w-full" />
-                  </FormField>
+              <div :class="{ 'dj-detail-layout': data.kind !== 'aviso' }">
+                <div class="min-w-0 space-y-4">
+                  <section class="dj-detail-panel">
+                    <h4 class="dj-panel-heading"><i class="pi pi-align-left" aria-hidden="true" />{{ data.kind === 'erro' ? 'Descrição do erro' : ['projeto', 'melhoria'].includes(data.kind) ? 'Objetivo da demanda' : 'Descrição' }}</h4>
+                    <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data.description }}</p>
+                  </section>
+                  <section v-if="data.kind === 'projeto' || data.kind === 'melhoria'" class="dj-detail-panel">
+                    <h4 class="dj-panel-heading"><i class="pi pi-sitemap" aria-hidden="true" />Contexto da demanda</h4>
+                    <div class="space-y-4">
+                      <section v-for="field in contextFields" :key="field.key">
+                        <h5 class="mb-1 text-xs font-semibold text-dj-ink">{{ field.label }}</h5>
+                        <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data[field.key] ?? 'Não informado' }}</p>
+                      </section>
+                    </div>
+                  </section>
+                  <section v-if="data.attachments.length" class="dj-detail-panel">
+                    <h4 class="dj-panel-heading"><i class="pi pi-paperclip" aria-hidden="true" />Documentos e evidências</h4>
+                    <ul class="space-y-2 text-sm">
+                      <li v-for="attachment in data.attachments" :key="attachment.id">
+                        <a :href="workApi.attachmentUrl(id, attachment.id)" class="inline-flex max-w-full items-center gap-2 rounded-lg px-2 py-2 text-dj-brand underline underline-offset-4">
+                          <i class="pi pi-download shrink-0" aria-hidden="true" /><span class="min-w-0 break-words">{{ attachment.original_name }} ({{ fileSize(attachment.size_bytes) }})</span>
+                        </a>
+                      </li>
+                    </ul>
+                  </section>
+                  <section class="dj-detail-panel">
+                    <h4 class="dj-panel-heading"><i class="pi pi-info-circle" aria-hidden="true" />Sobre o registro</h4>
+                    <dl class="grid gap-3 text-sm sm:grid-cols-2">
+                      <div v-if="data.kind === 'aviso'"><dt class="text-xs text-dj-muted">Solicitante</dt><dd class="mt-1 break-words">{{ data.requester_name ?? 'Usuário indisponível' }}</dd></div>
+                      <div v-if="data.urgency"><dt class="text-xs text-dj-muted">Urgência</dt><dd class="mt-1">{{ data.urgency }}</dd></div>
+                      <div v-if="data.contributor_name"><dt class="text-xs text-dj-muted">Contribuinte</dt><dd class="mt-1 break-words">{{ data.contributor_name }}</dd></div>
+                      <div><dt class="text-xs text-dj-muted">Criada em</dt><dd class="mt-1">{{ displayDate(data.created_at) }}</dd></div>
+                      <div><dt class="text-xs text-dj-muted">Atualizada em</dt><dd class="mt-1">{{ displayDate(data.updated_at) }}</dd></div>
+                      <template v-if="data.kind === 'aviso'">
+                        <div><dt class="text-xs text-dj-muted">Ocultar após o fim</dt><dd class="mt-1">{{ data.hide_after_end ? 'Sim' : 'Não' }}</dd></div>
+                        <div v-if="data.notice_finalized_at"><dt class="text-xs text-dj-muted">Finalizado em</dt><dd class="mt-1">{{ displayDate(data.notice_finalized_at) }}</dd></div>
+                      </template>
+                    </dl>
+                  </section>
                 </div>
-                <p class="mt-2 text-xs leading-5 text-dj-muted">Prioridade 1 é a mais alta. Os tempos são informados em horas; o total realizado pode superar a estimativa.</p>
-                <FormField :id="prefix + '-observations'" label="Observações" :error="errors.observations" class="mt-4" v-slot="{ controlProps }">
-                  <Textarea v-model="plan.observations" v-bind="controlProps" :rows="3" :maxlength="4000" :disabled="locked" class="w-full" />
-                </FormField>
-              </form>
+                <section v-if="data.kind !== 'aviso'" class="dj-detail-panel dj-detail-panel-muted" :aria-labelledby="prefix + '-execution-title'">
+                  <h4 :id="prefix + '-execution-title'" class="dj-panel-heading"><i class="pi pi-sliders-h" aria-hidden="true" />Execução e planejamento</h4>
+                  <p v-if="planningDirty && data.can_update" class="mb-3 text-xs leading-5 text-dj-muted">Salve o planejamento antes de registrar uma ação, editar o conteúdo ou abrir as tarefas.</p>
+                  <DemandActions v-if="data.can_update" :key="data.row_version + ':' + reloadKey" :work="data"
+                    :disabled="busy || isFetching || isError || needsReload || Boolean(planningDirty)" @busy="actionSaving = $event"
+                    @editing="actionEditing = $event" @uncertain="needsReload = true" @saved="actionSaved" />
+                  <dl v-if="data.scheduled_start_on || data.started_on || data.expected_return_on || data.closed_at" class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                    <div v-if="data.scheduled_start_on"><dt class="text-xs text-dj-muted">Início agendado</dt><dd class="mt-1">{{ displayDay(data.scheduled_start_on) }}</dd></div>
+                    <div v-if="data.started_on"><dt class="text-xs text-dj-muted">Início realizado</dt><dd class="mt-1">{{ displayDay(data.started_on) }}</dd></div>
+                    <div v-if="data.expected_return_on"><dt class="text-xs text-dj-muted">Previsão de retorno</dt><dd class="mt-1">{{ displayDay(data.expected_return_on) }}</dd></div>
+                    <div v-if="data.closed_at"><dt class="text-xs text-dj-muted">Encerramento</dt><dd class="mt-1">{{ displayDate(data.closed_at) }}</dd></div>
+                  </dl>
+                  <form :id="prefix + '-form'" ref="form" novalidate class="mt-4 border-t border-dj-border pt-4" @submit.prevent="save">
+                    <p v-if="isFetching" role="status" class="mb-3 text-sm text-dj-muted">Atualizando informações…</p>
+                    <Message v-if="serverError" severity="error" role="alert" class="mb-3">{{ serverError }}</Message>
+                    <Message v-if="errors.row_version" severity="error" class="mb-3">{{ errors.row_version }}</Message>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <FormField :id="prefix + '-difficulty'" label="Dificuldade" :error="errors.difficulty" v-slot="{ controlProps }">
+                        <Select v-model="plan.difficulty" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="['Baixa', 'Média', 'Alta']"
+                          :pt:label:aria-describedby="controlProps['aria-describedby']" show-clear :disabled="locked" placeholder="Não informada" class="w-full" />
+                      </FormField>
+                      <FormField :id="prefix + '-priority'" label="Prioridade (1 a 10)" :error="errors.priority" v-slot="{ controlProps }">
+                        <InputNumber v-model="plan.priority" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="1" :max="10" :max-fraction-digits="0" :use-grouping="false"
+                          :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informada" class="w-full" pt:pcInputText:root:class="w-full" />
+                      </FormField>
+                      <FormField v-for="field in hourFields" :key="field" :id="prefix + '-' + field" :label="planningLabels[field] ?? field" :error="errors[field]"
+                        :class="{ 'sm:col-span-2': field === 'completed_hours' }" v-slot="{ controlProps }">
+                        <InputNumber v-if="field === 'completed_hours'" v-model="completed" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
+                          :max-fraction-digits="2" locale="pt-BR" :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" class="w-full" pt:pcInputText:root:class="w-full" />
+                        <InputNumber v-else v-model="plan[field]" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
+                          :max-fraction-digits="2" locale="pt-BR" :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informado" class="w-full" pt:pcInputText:root:class="w-full" />
+                      </FormField>
+                    </div>
+                    <p class="mt-2 text-xs leading-5 text-dj-muted">Prioridade 1 é a mais alta. Tempos em horas; o realizado pode superar a estimativa.</p>
+                    <FormField :id="prefix + '-observations'" label="Observações" :error="errors.observations" class="mt-3" v-slot="{ controlProps }">
+                      <Textarea v-model="plan.observations" v-bind="controlProps" :rows="3" :maxlength="4000" :disabled="locked" class="w-full" />
+                    </FormField>
+                  </form>
+                </section>
+              </div>
             </TabPanel>
             <TabPanel v-if="data.kind !== 'aviso'" value="tasks">
               <DemandTasks v-if="tab === 'tasks'" :key="id + ':' + reloadKey" :work="data" :disabled="needsReload || isFetching || Boolean(planningDirty)"
@@ -306,7 +324,7 @@ async function noticeClosed() {
     </AppDialog>
     <template #footer>
       <Button v-if="needsReload" :id="prefix + '-reload'" type="button" label="Recarregar detalhes" icon="pi pi-refresh" :loading="reloading" :disabled="busy" @click="reload" />
-      <Button v-else-if="data?.can_update && !isError && tab === 'execution' && !actionEditing" type="submit" :form="prefix + '-form'" label="Salvar planejamento" icon="pi pi-save" :loading="saving" :disabled="locked" />
+      <Button v-else-if="data?.can_update && !isError && tab === 'info' && !actionEditing" type="submit" :form="prefix + '-form'" label="Salvar planejamento" icon="pi pi-save" :loading="saving" :disabled="locked" />
       <Button v-if="data?.can_edit_content && !isError && tab === 'info' && !actionEditing" :id="prefix + '-edit'" type="button"
         label="Editar dados e responsável" icon="pi pi-pencil" outlined :disabled="busy || isFetching || needsReload || Boolean(planningDirty)" @click="editingContent = true" />
       <Button v-if="data?.kind === 'aviso' && data.can_edit_content && !isError && tab === 'info'" :id="prefix + '-finalize'" type="button"

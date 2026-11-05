@@ -125,6 +125,91 @@
   letter-spacing: -0.02em;
 }
 
+.dj-record-overview {
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--dj-tone-border);
+  border-top: 3px solid var(--dj-tone);
+  border-radius: 1rem;
+  background: linear-gradient(115deg, var(--dj-tone-soft), var(--color-dj-surface) 75%);
+}
+
+.dj-record-overview-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 1rem;
+}
+
+.dj-record-overview .dj-detail-title {
+  flex: 1 1 18rem;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.dj-record-overview-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 0.75rem 1rem;
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--color-dj-border);
+}
+
+.dj-record-overview-facts > div {
+  min-width: 0;
+}
+
+.dj-record-overview-facts dt {
+  margin-bottom: 0.25rem;
+  color: var(--color-dj-muted);
+  font-size: 0.75rem;
+}
+
+.dj-record-overview-facts dd {
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.375rem;
+}
+
+.dj-detail-layout {
+  display: grid;
+  align-items: start;
+  gap: 1rem;
+}
+
+.dj-detail-layout > * {
+  min-width: 0;
+}
+
+.dj-detail-panel {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-dj-border);
+  border-radius: 0.875rem;
+  background: var(--color-dj-surface);
+}
+
+.dj-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+  color: var(--color-dj-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.dj-panel-heading > i {
+  color: var(--color-dj-brand);
+}
+
+.dj-detail-panel-muted {
+  background: var(--color-dj-canvas);
+}
+
 .dj-detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
@@ -207,6 +292,10 @@
 }
 
 @media (min-width: 60rem) {
+  .dj-detail-layout {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+  }
+
   .dj-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

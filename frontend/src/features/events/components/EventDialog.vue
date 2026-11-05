@@ -5,6 +5,7 @@ import { ApiError } from '@/shared/api/client'
 import { validationMessages } from '@/shared/api/validation'
 import RequestState from '@/shared/components/RequestState.vue'
 import AppDialog from '@/shared/components/AppDialog.vue'
+import RecordOverview from '@/shared/components/RecordOverview.vue'
 import Button from '@/volt/Button.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import Message from '@/volt/Message.vue'
@@ -163,10 +164,13 @@ async function deleteEvent() {
           </div>
 
           <div v-else>
-            <div class="flex flex-wrap items-center gap-2">
-              <EventStatusBadge :status="event.status" />
-            </div>
-            <h3 id="event-details-title" tabindex="-1" class="dj-detail-title">{{ event.name }}</h3>
+            <RecordOverview :title="event.name" title-id="event-details-title" :tone="dialogTone">
+              <template #badges><EventStatusBadge :status="event.status" /></template>
+              <div><dt>Tipo de evento</dt><dd>{{ event.event_type_name || 'Não informado' }}</dd></div>
+              <div><dt>Instrutor</dt><dd>{{ event.instructor || 'Não informado' }}</dd></div>
+              <div><dt>Início</dt><dd>{{ formatEventDateTime(event.starts_at) }}</dd></div>
+              <div><dt>Fim</dt><dd>{{ formatEventDateTime(event.ends_at) }}</dd></div>
+            </RecordOverview>
             <Tabs v-model:value="activeTab" class="dj-dialog-tabs" scrollable>
               <TabList>
                 <Tab value="details" :disabled="busy || isFetching">Informações</Tab>
@@ -174,35 +178,19 @@ async function deleteEvent() {
               </TabList>
               <TabPanels pt:root:class="dj-tab-panels">
                 <TabPanel value="details">
-                  <dl class="dj-detail-grid">
-                    <div>
-                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-tag" aria-hidden="true" /> Tipo de evento</dt>
-                      <dd class="mt-3 break-words text-sm font-semibold text-dj-ink">{{ event.event_type_name || 'Não informado' }}</dd>
-                    </div>
-                    <div>
-                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-user" aria-hidden="true" /> Instrutor</dt>
-                      <dd class="mt-3 break-words text-sm font-semibold text-dj-ink">{{ event.instructor || 'Não informado' }}</dd>
-                    </div>
-                    <div>
-                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-calendar" aria-hidden="true" /> Início</dt>
-                      <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.starts_at) }}</dd>
-                    </div>
-                    <div>
-                      <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-clock" aria-hidden="true" /> Fim</dt>
-                      <dd class="mt-3 text-sm font-semibold text-dj-ink tabular-nums">{{ formatEventDateTime(event.ends_at) }}</dd>
-                    </div>
-                  </dl>
-                  <Message v-if="event.status === 'unscheduled'" severity="info" class="mt-4">
+                  <Message v-if="event.status === 'unscheduled'" severity="info" class="mb-4">
                     Preencha as datas na edição para que o evento acompanhe os status de realização.
                   </Message>
-                  <section class="dj-detail-section">
-                    <h4>Sobre o evento</h4>
-                    <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ event.description }}</p>
-                  </section>
-                  <section class="dj-detail-section">
-                    <h4>Conteúdo programático</h4>
-                    <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ event.syllabus || 'Não informado' }}</p>
-                  </section>
+                  <div class="dj-detail-layout">
+                    <section class="dj-detail-panel">
+                      <h4 class="dj-panel-heading"><i class="pi pi-align-left" aria-hidden="true" />Sobre o evento</h4>
+                      <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ event.description }}</p>
+                    </section>
+                    <section class="dj-detail-panel dj-detail-panel-muted">
+                      <h4 class="dj-panel-heading"><i class="pi pi-list" aria-hidden="true" />Conteúdo programático</h4>
+                      <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ event.syllabus || 'Não informado' }}</p>
+                    </section>
+                  </div>
                 </TabPanel>
                 <TabPanel value="attendance">
                   <EventAttendance v-if="activeTab === 'attendance'" :event-id="event.id" :event-name="event.name"
