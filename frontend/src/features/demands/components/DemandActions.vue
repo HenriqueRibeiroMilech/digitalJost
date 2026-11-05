@@ -10,6 +10,7 @@ import Textarea from '@/volt/Textarea.vue'
 import Message from '@/volt/Message.vue'
 import Select from '@/volt/Select.vue'
 import { workApi } from '../api'
+import { requestStatus } from '../presentation'
 import type { WorkActionName, WorkDetail } from '../types'
 
 const props = defineProps<{ work: WorkDetail; disabled: boolean }>()
@@ -28,9 +29,9 @@ const prefix = 'work-actions-' + props.work.id
 const errorKeys = ['action', 'scheduled_start_on', 'due_on', 'expected_return_on', 'message', 'row_version'] as const
 const errors = reactive(Object.fromEntries(errorKeys.map(key => [key, ''])) as Record<typeof errorKeys[number], string>)
 const locked = computed(() => props.disabled || saving.value)
-const options: { value: WorkActionName; label: string; icon: string; tone: 'success' | 'danger' | 'brand' | 'neutral' | 'warning'; message?: string }[] = [
+const options = computed<{ value: WorkActionName; label: string; icon: string; tone: ReturnType<typeof requestStatus>['tone']; message?: string }[]>(() => [
   { value: 'start', label: 'Iniciar', icon: 'pi pi-play', tone: 'success' },
-  { value: 'resume', label: 'Retomar', icon: 'pi pi-play', tone: 'warning' },
+  { value: 'resume', label: 'Retomar', icon: 'pi pi-play', tone: requestStatus(props.work.status).tone },
   { value: 'reopen', label: 'Reabrir demanda', icon: 'pi pi-replay', tone: 'brand', message: 'Motivo da reabertura' },
   { value: 'complete', label: 'Concluir', icon: 'pi pi-check', tone: 'success' },
   { value: 'cancel', label: 'Cancelar demanda', icon: 'pi pi-times', tone: 'danger', message: 'Justificativa do cancelamento' },
@@ -41,12 +42,12 @@ const options: { value: WorkActionName; label: string; icon: string; tone: 'succ
   { value: 'pause', label: 'Pausar', icon: 'pi pi-pause', tone: 'neutral', message: 'Motivo da pausa' },
   { value: 'wait_third_party', label: 'Aguardar terceiros', icon: 'pi pi-users', tone: 'neutral', message: 'Pendências com terceiros' },
   { value: 'change_deadline', label: 'Alterar prazo', icon: 'pi pi-calendar', tone: 'brand', message: 'Justificativa do novo prazo' },
-]
-const primary = computed(() => options.filter(option => ['start', 'resume', 'complete', 'cancel', 'reopen'].includes(option.value)
+])
+const primary = computed(() => options.value.filter(option => ['start', 'resume', 'complete', 'cancel', 'reopen'].includes(option.value)
   && props.work.available_actions.includes(option.value)))
-const secondary = computed(() => options.filter(option => !['start', 'resume', 'complete', 'cancel', 'reopen', 'change_deadline'].includes(option.value)
+const secondary = computed(() => options.value.filter(option => !['start', 'resume', 'complete', 'cancel', 'reopen', 'change_deadline'].includes(option.value)
   && props.work.available_actions.includes(option.value)))
-const selected = computed(() => options.find(option => option.value === action.value))
+const selected = computed(() => options.value.find(option => option.value === action.value))
 const needsDeadline = computed(() => action.value !== null && ['start', 'schedule', 'change_deadline', 'reopen'].includes(action.value))
 function today() {
   const parts = new Intl.DateTimeFormat('en', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
