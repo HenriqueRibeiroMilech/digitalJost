@@ -7,13 +7,13 @@ export const entryOptions = [
 export const urgencyOptions = ['Alta', 'Média', 'Baixa']
 export const fileAccept = '.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp'
 
-const statuses: Record<string, { label: string; icon: string; tone: 'brand' | 'success' | 'neutral' }> = {
+const statuses: Record<string, { label: string; icon: string; tone: 'brand' | 'success' | 'neutral' | 'warning' }> = {
   em_analise: { label: 'Em análise', icon: 'pi pi-search', tone: 'brand' },
   aguardando_informacoes: { label: 'Aguardando informações', icon: 'pi pi-comment', tone: 'neutral' },
   a_fazer: { label: 'A fazer', icon: 'pi pi-list', tone: 'brand' },
   agendado: { label: 'Início agendado', icon: 'pi pi-calendar', tone: 'brand' },
   em_andamento: { label: 'Em andamento', icon: 'pi pi-play-circle', tone: 'brand' },
-  pausado: { label: 'Pausado', icon: 'pi pi-pause-circle', tone: 'neutral' },
+  pausado: { label: 'Pausado', icon: 'pi pi-pause-circle', tone: 'warning' },
   em_validacao: { label: 'Em validação', icon: 'pi pi-verified', tone: 'brand' },
   aguardando_terceiros: { label: 'Aguardando terceiros', icon: 'pi pi-users', tone: 'neutral' },
   concluido: { label: 'Concluído', icon: 'pi pi-check-circle', tone: 'success' },
@@ -62,7 +62,8 @@ const workHistoryLabels: Record<string, string> = {
   request_information: 'Mais informações solicitadas', validate: 'Validação iniciada', pause: 'Demanda pausada',
   wait_third_party: 'Aguardando terceiros', resume: 'Demanda retomada', change_deadline: 'Prazo alterado',
   reopen: 'Demanda reaberta', cancel_schedule: 'Agendamento cancelado', content_updated: 'Conteúdo e pessoas atualizados',
-  notice_finalized: 'Aviso finalizado', task_created: 'Tarefa criada', task_updated: 'Tarefa atualizada', task_deleted: 'Tarefa excluída',
+  responsible_updated: 'Responsável alterado', notice_finalized: 'Aviso finalizado',
+  task_created: 'Tarefa criada', task_updated: 'Tarefa atualizada', task_deleted: 'Tarefa excluída',
   auto_started: 'Início automático pelo agendamento',
 }
 export function workHistoryLabel(event: string) { return workHistoryLabels[event] ?? 'Atualização registrada' }

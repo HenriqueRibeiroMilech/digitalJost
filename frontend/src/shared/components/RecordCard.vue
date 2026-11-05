@@ -10,7 +10,7 @@ withDefaults(defineProps<{
   actionId?: string
   opensDialog?: boolean
   compact?: boolean
-  tone?: 'brand' | 'success' | 'neutral'
+  tone?: 'brand' | 'success' | 'neutral' | 'warning'
 }>(), { tone: 'brand', compact: false })
 defineEmits<{ open: [] }>()
 </script>

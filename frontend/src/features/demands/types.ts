@@ -91,8 +91,6 @@ export interface WorkCreate {
   submission_key: string
 }
 
-export type WorkContent = Omit<WorkCreate, 'submission_key'> & { row_version: string }
-
 export interface WorkPlanning {
   difficulty: 'Baixa' | 'Média' | 'Alta' | null
   priority: number | null
@@ -138,6 +136,8 @@ export interface WorkDetail extends WorkItem {
   row_version: string
   can_update: boolean
   can_edit_content: boolean
+  can_reassign: boolean
+  can_finalize_notice: boolean
   can_manage_tasks: boolean
   available_actions: WorkActionName[]
   attachments: RequestDetail['attachments']

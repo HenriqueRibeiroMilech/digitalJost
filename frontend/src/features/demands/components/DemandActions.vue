@@ -28,9 +28,9 @@ const prefix = 'work-actions-' + props.work.id
 const errorKeys = ['action', 'scheduled_start_on', 'due_on', 'expected_return_on', 'message', 'row_version'] as const
 const errors = reactive(Object.fromEntries(errorKeys.map(key => [key, ''])) as Record<typeof errorKeys[number], string>)
 const locked = computed(() => props.disabled || saving.value)
-const options: { value: WorkActionName; label: string; icon: string; tone: 'success' | 'danger' | 'brand' | 'neutral'; message?: string }[] = [
+const options: { value: WorkActionName; label: string; icon: string; tone: 'success' | 'danger' | 'brand' | 'neutral' | 'warning'; message?: string }[] = [
   { value: 'start', label: 'Iniciar', icon: 'pi pi-play', tone: 'success' },
-  { value: 'resume', label: 'Retomar', icon: 'pi pi-play', tone: 'success' },
+  { value: 'resume', label: 'Retomar', icon: 'pi pi-play', tone: 'warning' },
   { value: 'reopen', label: 'Reabrir demanda', icon: 'pi pi-replay', tone: 'brand', message: 'Motivo da reabertura' },
   { value: 'complete', label: 'Concluir', icon: 'pi pi-check', tone: 'success' },
   { value: 'cancel', label: 'Cancelar demanda', icon: 'pi pi-times', tone: 'danger', message: 'Justificativa do cancelamento' },

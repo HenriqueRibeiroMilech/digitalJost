@@ -19,7 +19,7 @@ from backend.shared.identity import RolePermissions
 
 from .models import Demand, DemandAttachment, SharedUser, WorkAttachment, WorkHistory, WorkItem
 from .routes import AREA_ID, AREA_NAME, _responsibles_query, _validate_contributor
-from .schemas import WorkAction, WorkBoard, WorkContent, WorkCreate, WorkDetail, WorkList, WorkPlan, WorkQuery, WorkVersion
+from .schemas import WorkAction, WorkBoard, WorkCreate, WorkDetail, WorkList, WorkPlan, WorkQuery, WorkResponsible, WorkVersion
 from .storage import MAX_REQUEST_BYTES
 
 
@@ -248,23 +248,25 @@ def get_work(work_id):
 
 @work_bp.put("/<int:work_id>/content")
 @require_action("demands.work.update")
-@work_bp.input(WorkContent)
+def update_work_content(work_id):
+    raise ApiProblem(403, "O conteúdo do cadastro não pode ser alterado. Somente o responsável pode ser trocado.")
+
+
+@work_bp.put("/<int:work_id>/responsible")
+@require_action("demands.work.update")
+@work_bp.input(WorkResponsible)
 @work_bp.output(WorkDetail)
-def update_work_content(work_id, json_data):
+def update_work_responsible(work_id, json_data):
     actor_id = str(identity.current_actor().id)
     sessions = get_td_session_factory()
     with sessions.begin() as session:
         current = _get_work(session, work_id, lock=True)
         _check_version(current, json_data.row_version)
-        if current["kind"] != json_data.kind:
-            raise ApiProblem(422, detail={"json": {"kind": ["O tipo não pode ser alterado após o cadastro."]}})
         if current["notice_finalized_at"] is not None:
             raise ApiProblem(409, "O aviso foi finalizado e não pode mais ser editado.")
         if json_data.responsible_id != current["responsible_id"]:
             _validate_responsible(session, json_data.responsible_id)
-        if json_data.contributor_id != current["contributor_id"]:
-            _validate_contributor(session, json_data.contributor_id, current["requester_id"])
-        values = json_data.model_dump(exclude={"row_version", "kind"})
+        values = {"responsible_id": json_data.responsible_id}
         changes = {field: {"before": current[field], "after": value} for field, value in values.items() if current[field] != value}
         if changes:
             updated_id = session.scalar(update(WorkItem).where(WorkItem.id == work_id, WorkItem.area_id == AREA_ID,
@@ -272,7 +274,7 @@ def update_work_content(work_id, json_data):
                 .values(**values, updated_at=func.sysutcdatetime()).returning(WorkItem.id))
             if updated_id is None:
                 raise ApiProblem(409, "O registro mudou. Recarregue os detalhes.")
-            session.add(WorkHistory(work_id=work_id, actor_id=actor_id, event_type="content_updated",
+            session.add(WorkHistory(work_id=work_id, actor_id=actor_id, event_type="responsible_updated",
                 changes=json.dumps(changes, ensure_ascii=False, default=str)))
             session.flush()
         result = _work_detail(session, work_id)
@@ -313,6 +315,9 @@ def update_work_plan(work_id, json_data):
         current = _get_work(session, work_id, lock=True)
         if current["kind"] == "aviso":
             raise ApiProblem(409, "Avisos não possuem planejamento de demanda.")
+        _check_version(current, json_data.row_version)
+        if json_data.responsible_id != current["responsible_id"]:
+            _validate_responsible(session, json_data.responsible_id)
         values = json_data.model_dump(exclude={"row_version"})
         for field in ("estimated_hours", "daily_hours", "completed_hours"):
             if values[field] is not None:
@@ -458,7 +463,9 @@ def _work_detail(session, work_id):
     row = _get_work(session, work_id)
     row["row_version"] = bytes(row["row_version"]).hex()
     row["can_update"] = row["kind"] != "aviso" and permissions.can(identity.current_actor(), "demands.work.update")
-    row["can_edit_content"] = row["notice_finalized_at"] is None and permissions.can(identity.current_actor(), "demands.work.update")
+    row["can_edit_content"] = False
+    row["can_reassign"] = row["notice_finalized_at"] is None and permissions.can(identity.current_actor(), "demands.work.update")
+    row["can_finalize_notice"] = row["kind"] == "aviso" and row["can_reassign"]
     row["can_manage_tasks"] = row["can_update"] and row["status"] not in ("concluido", "cancelado")
     row["available_actions"] = _available_actions(row)
     if row["source_request_id"] is not None:

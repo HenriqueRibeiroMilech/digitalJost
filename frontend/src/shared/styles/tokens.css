@@ -15,6 +15,9 @@
   --color-dj-success: #087f5b;
   --color-dj-success-soft: #e9f8f1;
   --color-dj-success-border: #a8dcc5;
+  --color-dj-warning: #854d0e;
+  --color-dj-warning-soft: #fefce8;
+  --color-dj-warning-border: #fef08a;
   --container-dj-page: 110rem;
   --radius-dj-card: 1.25rem;
   --shadow-dj-card: 0 2px 4px rgb(16 38 86 / 2%), 0 8px 24px rgb(16 38 86 / 4%);

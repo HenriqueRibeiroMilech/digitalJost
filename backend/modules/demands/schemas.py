@@ -230,14 +230,16 @@ class WorkVersion(BaseModel):
     row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
 
 
-class WorkContent(WorkFields, WorkVersion):
-    pass
+class WorkResponsible(WorkVersion):
+    responsible_id: str = Field(min_length=1, max_length=128)
+
+    @field_validator("responsible_id")
+    @classmethod
+    def validate_responsible_id(cls, value, info: ValidationInfo):
+        return RequestFields.validate_text(value, info)
 
 
-class WorkPlan(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, strict=True)
-
-    row_version: str = Field(pattern=r"^[0-9a-fA-F]{16}$")
+class WorkPlan(WorkResponsible):
     difficulty: Literal["Baixa", "Média", "Alta"] | None = None
     priority: int | None = Field(default=None, ge=1, le=10)
     estimated_hours: float | None = Field(default=None, ge=0, le=99999.99, allow_inf_nan=False)
@@ -394,6 +396,8 @@ class WorkDetail(WorkItemOut):
     row_version: str
     can_update: bool
     can_edit_content: bool
+    can_reassign: bool
+    can_finalize_notice: bool
     can_manage_tasks: bool
     available_actions: list[WorkActionName]
     attachments: list[AttachmentOut]

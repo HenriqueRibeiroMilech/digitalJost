@@ -12,28 +12,28 @@ import InputText from '@/volt/InputText.vue'
 import Textarea from '@/volt/Textarea.vue'
 import Message from '@/volt/Message.vue'
 import { demandsApi, workApi } from '../api'
-import { fileAccept, fileSize, noticeInputTime, urgencyOptions, workKindOptions } from '../presentation'
+import { fileAccept, fileSize, urgencyOptions, workKindOptions } from '../presentation'
 import type { WorkCreate, WorkDetail, WorkKind } from '../types'
 
-const props = defineProps<{ ownerId?: string | null; work?: WorkDetail }>()
+const props = defineProps<{ ownerId?: string | null }>()
 const emit = defineEmits<{
-  closed: []; busy: [value: boolean]; saved: [item: WorkDetail]; inspect: [kind: WorkKind, owner: string]; uncertain: []
+  closed: []; busy: [value: boolean]; saved: [item: WorkDetail]; inspect: [kind: WorkKind, owner: string]
 }>()
 const visible = ref(true)
 const saving = ref(false)
 const uncertain = ref(false)
 const locked = computed(() => saving.value || uncertain.value)
-const kind = ref<WorkKind | null>(props.work?.kind ?? null)
-const fields = reactive({ title: props.work?.title ?? '', description: props.work?.description ?? '', responsible_id: props.work?.responsible_id ?? props.ownerId ?? null,
-  contributor_id: props.work?.contributor_id ?? null, urgency: (props.work?.urgency ?? 'Média') as 'Alta' | 'Média' | 'Baixa',
-  assumptions: props.work?.assumptions ?? '', current_problems: props.work?.current_problems ?? '', expected_benefits: props.work?.expected_benefits ?? '',
-  starts_at: noticeInputTime(props.work?.starts_at ?? null), ends_at: noticeInputTime(props.work?.ends_at ?? null), hide_after_end: props.work?.hide_after_end ?? true })
+const kind = ref<WorkKind | null>(null)
+const fields = reactive({ title: '', description: '', responsible_id: props.ownerId ?? null,
+  contributor_id: null as string | null, urgency: 'Média' as 'Alta' | 'Média' | 'Baixa',
+  assumptions: '', current_problems: '', expected_benefits: '',
+  starts_at: '', ends_at: '', hide_after_end: true })
 const key = crypto.randomUUID()
 const files = ref<File[]>([])
 const form = ref<HTMLFormElement | null>(null)
 const serverError = ref('')
 const errorKeys = ['kind', 'title', 'description', 'responsible_id', 'contributor_id', 'urgency',
-  'assumptions', 'current_problems', 'expected_benefits', 'starts_at', 'ends_at', 'hide_after_end', 'files', 'submission_key', 'row_version'] as const
+  'assumptions', 'current_problems', 'expected_benefits', 'starts_at', 'ends_at', 'hide_after_end', 'files', 'submission_key'] as const
 const errors = reactive(Object.fromEntries(errorKeys.map(field => [field, ''])) as Record<typeof errorKeys[number], string>)
 const complex = computed(() => kind.value !== null && !['atividade', 'aviso'].includes(kind.value))
 const context = computed(() => kind.value === 'projeto' || kind.value === 'melhoria')
@@ -45,19 +45,11 @@ const owners = useQuery({ queryKey: ['demands', 'management', 'responsibles'], q
   retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false })
 const contributors = useQuery({ queryKey: ['demands', 'contributors'], queryFn: demandsApi.contributors,
   enabled: complex, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false })
-const ownerOptions = computed(() => {
-  const items = owners.data.value?.items ?? []
-  return props.work && !items.some(person => person.id === props.work?.responsible_id)
-    ? [...items, { id: props.work.responsible_id, name: props.work.responsible_name ?? 'Responsável atual' }] : items
-})
-const contributorOptions = computed(() => {
-  const items = (contributors.data.value?.items ?? []).filter(person => !props.work || person.id !== props.work.requester_id)
-  return props.work?.contributor_id && !items.some(person => person.id === props.work?.contributor_id)
-    ? [...items, { id: props.work.contributor_id, name: props.work.contributor_name ?? 'Contribuinte atual' }] : items
-})
+const ownerOptions = computed(() => owners.data.value?.items ?? [])
+const contributorOptions = computed(() => contributors.data.value?.items ?? [])
 watch(saving, value => emit('busy', value), { flush: 'sync' })
 watch(owners.data, result => {
-  if (result && fields.responsible_id && fields.responsible_id !== props.work?.responsible_id && !result.items.some(person => person.id === fields.responsible_id)) {
+  if (result && fields.responsible_id && !result.items.some(person => person.id === fields.responsible_id)) {
     fields.responsible_id = null
   }
 }, { immediate: true })
@@ -77,7 +69,7 @@ async function focusError() {
   form.value?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
 }
 async function submit() {
-  if (saving.value || (props.work && uncertain.value)) return
+  if (saving.value) return
   errorKeys.forEach(field => { errors[field] = '' })
   serverError.value = ''
   if (!kind.value) errors.kind = 'Selecione o tipo do cadastro.'
@@ -91,7 +83,7 @@ async function submit() {
     if (!starts) errors.starts_at = 'Informe a data e hora de início.'
     if (!ends || (starts && ends <= starts)) errors.ends_at = 'Informe um fim posterior ao início.'
   }
-  const selectedFiles = complex.value && !props.work ? files.value : []
+  const selectedFiles = complex.value ? files.value : []
   const allowed = fileAccept.split(',')
   if (selectedFiles.length > 10 || selectedFiles.some(file => file.size === 0 || file.size > 10 * 1024 * 1024
     || !allowed.includes('.' + (file.name.split('.').pop() ?? '').toLowerCase()))
@@ -110,10 +102,7 @@ async function submit() {
   saving.value = true
   let saved: WorkDetail | undefined
   try {
-    if (props.work) {
-      const { submission_key: _key, ...content } = payload
-      saved = await workApi.updateContent(props.work.id, { ...content, row_version: props.work.row_version })
-    } else saved = await workApi.create(payload, selectedFiles)
+    saved = await workApi.create(payload, selectedFiles)
     uncertain.value = false
   } catch (error) {
     serverError.value = error instanceof Error ? error.message : 'Não foi possível cadastrar.'
@@ -122,7 +111,6 @@ async function submit() {
       uncertain.value = uncertain.value || error.status === 0 || error.status === 409 || error.status >= 500
         || (error.status >= 200 && error.status < 300)
     } else uncertain.value = true
-    if (props.work && uncertain.value) emit('uncertain')
   } finally { saving.value = false }
   if (saved) { emit('saved', saved); close() }
   else await focusError()
@@ -135,13 +123,13 @@ function inspect() {
 </script>
 
 <template>
-  <AppDialog id="work-create-dialog" :visible="visible" :title="work ? 'Editar dados e responsável' : 'Nova demanda ou aviso'"
-    :subtitle="work ? work.source_request_id ? 'Atualize o trabalho da equipe. Os dados enviados na solicitação original serão preservados.' : 'Atualize o conteúdo e as pessoas deste registro.' : 'Escolha o tipo e preencha as informações do cadastro.'"
-    :icon="work ? 'pi pi-pencil' : 'pi pi-plus'" :busy="saving" :initial-focus-id="work ? 'work-create-title' : 'work-create-kind'" @update:visible="close" @closed="emit('closed')">
+  <AppDialog id="work-create-dialog" :visible="visible" title="Nova demanda ou aviso"
+    subtitle="Escolha o tipo e preencha as informações do cadastro."
+    icon="pi pi-plus" :busy="saving" initial-focus-id="work-create-kind" @update:visible="close" @closed="emit('closed')">
     <form id="work-create-form" ref="form" class="space-y-5" novalidate @submit.prevent="submit">
       <Message v-if="serverError" severity="error" role="alert">{{ serverError }}</Message>
-      <Message v-if="uncertain" severity="warn" role="status">{{ work ? 'Feche esta edição e recarregue os detalhes para conferir o resultado antes de salvar novamente.' : 'O resultado do envio precisa ser conferido. Você pode confirmar o mesmo envio sem alterar os dados ou fechar para consultar o quadro antes de iniciar outro cadastro.' }}</Message>
-      <FormField v-if="!work" id="work-create-kind" label="Tipo *" :error="errors.kind" v-slot="{ controlProps }">
+      <Message v-if="uncertain" severity="warn" role="status">O resultado do envio precisa ser conferido. Você pode confirmar o mesmo envio sem alterar os dados ou fechar para consultar o quadro antes de iniciar outro cadastro.</Message>
+      <FormField id="work-create-kind" label="Tipo *" :error="errors.kind" v-slot="{ controlProps }">
         <Select v-model="kind" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="workKindOptions" option-label="label" option-value="value"
           :pt:label:aria-describedby="controlProps['aria-describedby']" pt:label:aria-required="true" :disabled="locked" placeholder="Projeto, Melhoria, Erro, Atividade ou Aviso" class="w-full" />
       </FormField>
@@ -196,7 +184,7 @@ function inspect() {
           </label>
           <p class="text-xs text-dj-muted sm:col-span-2">Informe os horários locais. Avisos vencidos e finalizados continuam disponíveis nos filtros do mural.</p>
         </div>
-        <FormField v-if="complex && !work" id="work-create-files" label="Documentos e evidências (opcional)" :error="errors.files" v-slot="{ controlProps }">
+        <FormField v-if="complex" id="work-create-files" label="Documentos e evidências (opcional)" :error="errors.files" v-slot="{ controlProps }">
           <input v-bind="controlProps" type="file" multiple :accept="fileAccept" :disabled="locked"
             class="block w-full rounded-xl border border-dj-border p-3 text-sm" @change="selectFiles" />
           <p class="mt-2 text-xs leading-5 text-dj-muted">Até 10 documentos ou imagens; 10 MB por arquivo e 40 MB no total.</p>
@@ -210,9 +198,9 @@ function inspect() {
       </template>
     </form>
     <template #footer>
-      <Button type="submit" form="work-create-form" :label="work ? 'Salvar alterações' : uncertain ? 'Confirmar mesmo envio' : kind === 'aviso' ? 'Criar aviso' : 'Criar demanda'"
-        :loading="saving" :disabled="saving || (Boolean(work) && uncertain) || !kind || owners.isPending.value || owners.isError.value || !ownerOptions.length" />
-      <SecondaryButton v-if="uncertain && !work" type="button" label="Fechar e conferir quadro" :disabled="saving" @click="inspect" />
+      <Button type="submit" form="work-create-form" :label="uncertain ? 'Confirmar mesmo envio' : kind === 'aviso' ? 'Criar aviso' : 'Criar demanda'"
+        :loading="saving" :disabled="saving || !kind || owners.isPending.value || owners.isError.value || !ownerOptions.length" />
+      <SecondaryButton v-if="uncertain" type="button" label="Fechar e conferir quadro" :disabled="saving" @click="inspect" />
       <SecondaryButton v-else type="button" :label="uncertain ? 'Fechar' : 'Cancelar'" outlined :disabled="saving" @click="close" />
     </template>
   </AppDialog>

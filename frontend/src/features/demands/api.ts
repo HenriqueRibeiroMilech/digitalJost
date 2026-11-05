@@ -1,7 +1,7 @@
 import { requestJson } from '@/shared/api/client'
 import { paginationQuery } from '@/shared/api/pagination'
 import type { Contributor, ManagementFilters, RequestDetail, RequestFields, RequestFilters, RequestList, ReviewFields } from './types'
-import type { TaskFields, TaskList, TaskSort, TaskStatus, WorkAction, WorkBoard, WorkContent, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
+import type { TaskFields, TaskList, TaskSort, TaskStatus, WorkAction, WorkBoard, WorkCreate, WorkDetail, WorkFilters, WorkList, WorkPlanning } from './types'
 
 const base = '/api/v1/demands'
 
@@ -72,11 +72,11 @@ export const workApi = {
     files.forEach(file => body.append('files', file))
     return requestJson<WorkDetail>(`${base}/work`, { method: 'POST', body }, 60000)
   },
-  plan(id: number, payload: WorkPlanning & { row_version: string }) {
+  plan(id: number, payload: WorkPlanning & { responsible_id: string; row_version: string }) {
     return requestJson<WorkDetail>(`${base}/work/${id}/planning`, { method: 'PUT', body: JSON.stringify(payload) })
   },
-  updateContent(id: number, payload: WorkContent) {
-    return requestJson<WorkDetail>(`${base}/work/${id}/content`, { method: 'PUT', body: JSON.stringify(payload) })
+  assignResponsible(id: number, payload: { responsible_id: string; row_version: string }) {
+    return requestJson<WorkDetail>(`${base}/work/${id}/responsible`, { method: 'PUT', body: JSON.stringify(payload) })
   },
   finalizeNotice(id: number, row_version: string) {
     return requestJson<WorkDetail>(`${base}/work/${id}/notice/finalize`, { method: 'POST', body: JSON.stringify({ row_version }) })

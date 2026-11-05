@@ -76,7 +76,7 @@ volt/Card
 | Campo com rótulo e erro | `FormField` com o controle Volt apropriado. |
 | Diálogo | `AppDialog` com conteúdo e ações da feature. |
 
-As variações atuais do card são densidade padrão ou `compact`, e tons `brand`, `success` ou `neutral`. `EventCard` usa a densidade padrão; `RequestCard` usa a compacta. O significado de cada status e seu texto pertencem à feature.
+As variações atuais do card são densidade padrão ou `compact`, e tons `brand`, `success`, `neutral` ou `warning`. `EventCard` usa a densidade padrão; `RequestCard` usa a compacta. O significado de cada status e seu texto pertencem à feature.
 
 As medidas de densidade ficam em `shared/styles/layout.css` e são consumidas por `RecordCard` e `CardGridSkeleton`. Um marcador próprio usa `--dj-card-marker-size` para acompanhar essa densidade. Não repetir padding e tamanhos do card em cada feature; manter `compact` igual no card e no skeleton correspondente.
 

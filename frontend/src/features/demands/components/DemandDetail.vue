@@ -13,11 +13,10 @@ import InputNumber from '@/volt/InputNumber.vue'
 import Textarea from '@/volt/Textarea.vue'
 import Message from '@/volt/Message.vue'
 import Tag from '@/volt/Tag.vue'
-import { workApi } from '../api'
+import { demandsApi, workApi } from '../api'
 import { displayDate, displayDay, fileSize, noticeStateLabel, planningLabels, statusLabel, workFieldLabels, workHistoryLabel, workHistoryValue, workKind } from '../presentation'
 import type { WorkDetail, WorkPlanning } from '../types'
 import DemandActions from './DemandActions.vue'
-import DemandCreateDialog from './DemandCreateDialog.vue'
 import DemandTasks from './DemandTasks.vue'
 
 const props = defineProps<{ id: number }>()
@@ -27,11 +26,10 @@ const saving = ref(false)
 const reloading = ref(false)
 const actionSaving = ref(false)
 const actionEditing = ref(false)
-const editingContent = ref(false)
 const taskBusy = ref(false)
 const noticeConfirm = ref(false)
 const reloadKey = ref(0)
-const busy = computed(() => saving.value || reloading.value || actionSaving.value || editingContent.value || taskBusy.value || noticeConfirm.value)
+const busy = computed(() => saving.value || reloading.value || actionSaving.value || taskBusy.value || noticeConfirm.value)
 const needsReload = ref(false)
 const tab = ref<'info' | 'tasks' | 'history'>('info')
 const serverError = ref('')
@@ -43,12 +41,21 @@ const queryKey = ['demands', 'work', 'detail', props.id]
 const { data, isPending, isFetching, isError, error, refetch } = useQuery({ queryKey, queryFn: () => workApi.get(props.id),
   retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false })
 const plan = reactive<WorkPlanning>({ difficulty: null, priority: null, estimated_hours: null, daily_hours: null, completed_hours: 0, observations: null })
+const responsible = ref<string | null>(null)
 const completed = ref<number | null>(0)
-const errorKeys = ['difficulty', 'priority', 'estimated_hours', 'daily_hours', 'completed_hours', 'observations', 'row_version'] as const
+const errorKeys = ['responsible_id', 'difficulty', 'priority', 'estimated_hours', 'daily_hours', 'completed_hours', 'observations', 'row_version'] as const
 const errors = reactive(Object.fromEntries(errorKeys.map(key => [key, ''])) as Record<typeof errorKeys[number], string>)
-const locked = computed(() => busy.value || actionEditing.value || isFetching.value || needsReload.value || !data.value?.can_update)
-const planningDirty = computed(() => data.value && (completed.value !== data.value.completed_hours
+const locked = computed(() => busy.value || actionEditing.value || isFetching.value || needsReload.value || !(data.value?.can_update || data.value?.can_reassign))
+const planningDirty = computed(() => data.value && (responsible.value !== data.value.responsible_id || completed.value !== data.value.completed_hours
   || Object.entries(plan).some(([field, value]) => value !== data.value?.[field as keyof WorkPlanning])))
+const owners = useQuery({ queryKey: ['demands', 'management', 'responsibles'], queryFn: demandsApi.responsibles,
+  enabled: computed(() => Boolean(data.value?.can_reassign)), retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false })
+const ownerOptions = computed(() => {
+  const items = owners.data.value?.items ?? []
+  const current = data.value
+  return current && !items.some(person => person.id === current.responsible_id)
+    ? [...items, { id: current.responsible_id, name: current.responsible_name ?? 'Responsável atual' }] : items
+})
 const hourFields = ['estimated_hours', 'daily_hours', 'completed_hours'] as const
 const priorityOptions = Array.from({ length: 10 }, (_, index) => ({ label: String(index + 1), value: index + 1 }))
 const contextFields = [{ key: 'assumptions', label: 'Premissas' }, { key: 'current_problems', label: 'Problemas atuais' },
@@ -58,6 +65,7 @@ watch(data, item => {
     Object.assign(plan, { difficulty: item.difficulty, priority: item.priority, estimated_hours: item.estimated_hours,
       daily_hours: item.daily_hours, completed_hours: item.completed_hours, observations: item.observations })
     completed.value = item.completed_hours
+    responsible.value = item.responsible_id
   }
 }, { immediate: true })
 watch(busy, value => emit('busy', value), { flush: 'sync' })
@@ -86,6 +94,7 @@ async function reload() {
           estimated_hours: result.data.estimated_hours, daily_hours: result.data.daily_hours,
           completed_hours: result.data.completed_hours, observations: result.data.observations })
         completed.value = result.data.completed_hours
+        responsible.value = result.data.responsible_id
       }
       emit('changed')
       await nextTick()
@@ -98,18 +107,21 @@ async function save() {
   errorKeys.forEach(key => { errors[key] = '' })
   feedback.value = ''
   serverError.value = ''
+  if (!responsible.value) errors.responsible_id = 'Selecione o responsável.'
   if (completed.value === null) errors.completed_hours = 'Informe o tempo total realizado; use zero se ainda não houve execução.'
-  if (errorKeys.some(key => errors[key]) || completed.value === null) { await focusError(); return }
+  if (errorKeys.some(key => errors[key]) || completed.value === null || !responsible.value) { await focusError(); return }
   saving.value = true
   let saved = false
   try {
-    const item = await workApi.plan(props.id, { ...plan, completed_hours: completed.value,
-      observations: plan.observations?.trim() || null, row_version: data.value.row_version })
+    const item = data.value.kind === 'aviso'
+      ? await workApi.assignResponsible(props.id, { responsible_id: responsible.value, row_version: data.value.row_version })
+      : await workApi.plan(props.id, { ...plan, responsible_id: responsible.value, completed_hours: completed.value,
+        observations: plan.observations?.trim() || null, row_version: data.value.row_version })
     client.setQueryData(queryKey, item)
-    feedback.value = 'Planejamento e observações salvos.'
+    feedback.value = data.value.kind === 'aviso' ? 'Responsável salvo.' : 'Responsável, planejamento e observações salvos.'
     saved = true
   } catch (error) {
-    serverError.value = error instanceof Error ? error.message : 'Não foi possível salvar o planejamento.'
+    serverError.value = error instanceof Error ? error.message : 'Não foi possível salvar as alterações.'
     if (error instanceof ApiError) {
       Object.assign(errors, validationMessages(error.detail, errorKeys))
       needsReload.value = [0, 401, 403, 409].includes(error.status) || error.status >= 500 || (error.status >= 200 && error.status < 300)
@@ -129,24 +141,12 @@ async function actionSaved(item: WorkDetail) {
   await nextTick()
   document.getElementById(prefix + '-feedback')?.focus()
 }
-function contentSaved(item: WorkDetail) {
-  const changed = data.value?.row_version !== item.row_version
-  client.setQueryData(queryKey, item)
-  feedback.value = changed ? 'Dados atualizados. A alteração ficou registrada no histórico.' : 'Os dados já estavam atualizados; nenhuma alteração foi necessária.'
-  emit('changed')
-}
-async function contentClosed() {
-  editingContent.value = false
-  await nextTick()
-  const target = document.getElementById(prefix + (needsReload.value ? '-reload' : '-edit')) ?? document.getElementById(prefix + '-feedback')
-  target?.focus()
-}
 async function taskSaved(item: WorkDetail) {
   client.setQueryData(queryKey, item)
   emit('changed')
 }
 async function finalizeNotice() {
-  if (actionSaving.value || needsReload.value || !data.value?.can_edit_content || data.value.kind !== 'aviso') return
+  if (actionSaving.value || needsReload.value || planningDirty.value || !data.value?.can_finalize_notice || data.value.kind !== 'aviso') return
   actionSaving.value = true
   serverError.value = ''
   try {
@@ -242,41 +242,52 @@ async function noticeClosed() {
             <div><dt class="inline">Ocultar após o fim: </dt><dd class="inline">{{ data.hide_after_end ? 'Sim' : 'Não' }}</dd></div>
             <div v-if="data.notice_finalized_at"><dt class="inline">Finalizado em: </dt><dd class="inline">{{ displayDate(data.notice_finalized_at) }}</dd></div>
           </dl>
-          <p v-if="planningDirty && data.can_update" class="mt-4 text-sm text-dj-muted">Salve o planejamento antes de registrar uma ação, editar o conteúdo ou abrir as tarefas.</p>
+          <p v-if="planningDirty && (data.can_update || data.can_reassign)" class="mt-4 text-sm text-dj-muted">{{ data.kind === 'aviso' ? 'Salve o responsável antes de finalizar o aviso.' : 'Salve o responsável e o planejamento antes de registrar uma ação ou abrir as tarefas.' }}</p>
           <DemandActions v-if="data.can_update" :key="data.row_version + ':' + reloadKey" :work="data"
             :disabled="busy || isFetching || isError || needsReload || Boolean(planningDirty)" @busy="actionSaving = $event"
             @editing="actionEditing = $event" @uncertain="needsReload = true" @saved="actionSaved" />
-          <form v-if="data.kind !== 'aviso'" :id="prefix + '-form'" ref="form" novalidate class="mt-6 border-t border-dj-border pt-5" @submit.prevent="save">
-            <h4 class="mb-4 text-sm font-semibold">Planejamento e acompanhamento</h4>
+          <form :id="prefix + '-form'" ref="form" novalidate class="mt-6 border-t border-dj-border pt-5" @submit.prevent="save">
+            <h4 class="mb-4 text-sm font-semibold">{{ data.kind === 'aviso' ? 'Responsável pelo aviso' : 'Planejamento e acompanhamento' }}</h4>
             <p v-if="isFetching" role="status" class="mb-4 text-sm text-dj-muted">Atualizando informações…</p>
             <Message v-if="serverError" severity="error" role="alert" class="mb-4">{{ serverError }}</Message>
             <Message v-if="errors.row_version" severity="error" class="mb-4">{{ errors.row_version }}</Message>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <FormField :id="prefix + '-difficulty'" label="Dificuldade" :error="errors.difficulty" v-slot="{ controlProps }">
+            <div class="grid gap-4" :class="data.kind !== 'aviso' ? 'sm:grid-cols-4' : undefined">
+              <FormField :id="prefix + '-responsible'" label="Responsável" :error="errors.responsible_id" class="min-w-0" :class="data.kind !== 'aviso' ? 'sm:col-span-2' : undefined" v-slot="{ controlProps }">
+                <Select v-model="responsible" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="ownerOptions" option-label="name" option-value="id" filter
+                  :loading="owners.isFetching.value" :disabled="locked || !data.can_reassign || owners.isPending.value || owners.isError.value"
+                  :pt:label:aria-describedby="controlProps['aria-describedby']" pt:label:aria-required="true" placeholder="Selecione o responsável" class="w-full" />
+              </FormField>
+              <FormField v-if="data.kind !== 'aviso'" :id="prefix + '-difficulty'" label="Dificuldade" :error="errors.difficulty" class="min-w-0" v-slot="{ controlProps }">
                 <Select v-model="plan.difficulty" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="['Baixa', 'Média', 'Alta']"
                   :pt:label:aria-describedby="controlProps['aria-describedby']" show-clear :disabled="locked" placeholder="Não informada" class="w-full" />
               </FormField>
-              <FormField :id="prefix + '-priority'" label="Prioridade (1 a 10)" :error="errors.priority" v-slot="{ controlProps }">
+              <FormField v-if="data.kind !== 'aviso'" :id="prefix + '-priority'" label="Prioridade (1 a 10)" :error="errors.priority" class="min-w-0" v-slot="{ controlProps }">
                 <Select v-model="plan.priority" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="priorityOptions" option-label="label" option-value="value"
                   :pt:label:aria-describedby="controlProps['aria-describedby']" show-clear :disabled="locked" placeholder="Não definida" class="w-full" />
               </FormField>
             </div>
-            <div class="mt-4 grid gap-4 sm:grid-cols-3">
-              <FormField v-for="field in hourFields" :key="field" :id="prefix + '-' + field" :label="planningLabels[field] ?? field" :error="errors[field]" class="min-w-0" v-slot="{ controlProps }">
-                <InputNumber v-if="field === 'completed_hours'" v-model="completed" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
-                  show-buttons button-layout="stacked" :step="1" :max-fraction-digits="2" locale="pt-BR"
-                  :pt:incrementButton:aria-label="'Aumentar ' + (planningLabels[field] ?? field)" :pt:decrementButton:aria-label="'Diminuir ' + (planningLabels[field] ?? field)"
-                  :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" class="w-full" pt:pcInputText:root:class="min-w-0 w-full pr-12" />
-                <InputNumber v-else v-model="plan[field]" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
-                  show-buttons button-layout="stacked" :step="1" :max-fraction-digits="2" locale="pt-BR"
-                  :pt:incrementButton:aria-label="'Aumentar ' + (planningLabels[field] ?? field)" :pt:decrementButton:aria-label="'Diminuir ' + (planningLabels[field] ?? field)"
-                  :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informado" class="w-full" pt:pcInputText:root:class="min-w-0 w-full pr-12" />
+            <Message v-if="data.can_reassign && owners.isError.value" severity="error" class="mt-3">Não foi possível carregar os responsáveis.
+              <SecondaryButton type="button" label="Tentar novamente" :disabled="locked || owners.isFetching.value" @click="owners.refetch()" />
+            </Message>
+            <p v-else-if="data.can_reassign && !owners.isPending.value && !owners.data.value?.items.length" class="mt-3 text-xs text-dj-muted">Nenhum responsável ativo disponível. O responsável atual pode ser mantido.</p>
+            <template v-if="data.kind !== 'aviso'">
+              <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                <FormField v-for="field in hourFields" :key="field" :id="prefix + '-' + field" :label="planningLabels[field] ?? field" :error="errors[field]" class="min-w-0" v-slot="{ controlProps }">
+                  <InputNumber v-if="field === 'completed_hours'" v-model="completed" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
+                    show-buttons button-layout="stacked" :step="1" :max-fraction-digits="2" locale="pt-BR"
+                    :pt:incrementButton:aria-label="'Aumentar ' + (planningLabels[field] ?? field)" :pt:decrementButton:aria-label="'Diminuir ' + (planningLabels[field] ?? field)"
+                    :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" class="w-full" pt:pcInputText:root:class="min-w-0 w-full pr-12" />
+                  <InputNumber v-else v-model="plan[field]" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
+                    show-buttons button-layout="stacked" :step="1" :max-fraction-digits="2" locale="pt-BR"
+                    :pt:incrementButton:aria-label="'Aumentar ' + (planningLabels[field] ?? field)" :pt:decrementButton:aria-label="'Diminuir ' + (planningLabels[field] ?? field)"
+                    :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informado" class="w-full" pt:pcInputText:root:class="min-w-0 w-full pr-12" />
+                </FormField>
+              </div>
+              <p class="mt-2 text-xs leading-5 text-dj-muted">Prioridade 1 é a mais alta. Os tempos são informados em horas; o total realizado pode superar a estimativa.</p>
+              <FormField :id="prefix + '-observations'" label="Observações" :error="errors.observations" class="mt-4" v-slot="{ controlProps }">
+                <Textarea v-model="plan.observations" v-bind="controlProps" :rows="4" :maxlength="4000" :disabled="locked" class="w-full" />
               </FormField>
-            </div>
-            <p class="mt-2 text-xs leading-5 text-dj-muted">Prioridade 1 é a mais alta. Os tempos são informados em horas; o total realizado pode superar a estimativa.</p>
-            <FormField :id="prefix + '-observations'" label="Observações" :error="errors.observations" class="mt-4" v-slot="{ controlProps }">
-              <Textarea v-model="plan.observations" v-bind="controlProps" :rows="4" :maxlength="4000" :disabled="locked" class="w-full" />
-            </FormField>
+            </template>
           </form>
         </section>
         <section v-if="tab === 'tasks' && data.kind !== 'aviso'" :id="prefix + '-tasks'" aria-label="Tarefas da demanda">
@@ -299,7 +310,6 @@ async function noticeClosed() {
         </section>
       </template>
     </RequestState>
-    <DemandCreateDialog v-if="editingContent && data" :work="data" @saved="contentSaved" @closed="contentClosed" @uncertain="needsReload = true" />
     <AppDialog :id="prefix + '-notice-confirm'" :visible="noticeConfirm" title="Finalizar aviso" icon="pi pi-check" tone="neutral"
       :busy="actionSaving" :initial-focus-id="prefix + '-notice-cancel'" @update:visible="noticeConfirm = false" @closed="noticeClosed">
       <Message v-if="serverError" severity="error" role="alert" class="mb-4">{{ serverError }}</Message>
@@ -312,11 +322,10 @@ async function noticeClosed() {
     </AppDialog>
     <template #footer>
       <Button v-if="needsReload" :id="prefix + '-reload'" type="button" label="Recarregar detalhes" icon="pi pi-refresh" :loading="reloading" :disabled="busy" @click="reload" />
-      <Button v-else-if="data?.can_update && !isError && tab === 'info' && !actionEditing" type="submit" :form="prefix + '-form'" label="Salvar planejamento" icon="pi pi-save" :loading="saving" :disabled="locked" />
-      <Button v-if="data?.can_edit_content && !isError && tab === 'info' && !actionEditing" :id="prefix + '-edit'" type="button"
-        label="Editar dados e responsável" icon="pi pi-pencil" outlined :disabled="busy || isFetching || needsReload || Boolean(planningDirty)" @click="editingContent = true" />
-      <Button v-if="data?.kind === 'aviso' && data.can_edit_content && !isError && tab === 'info'" :id="prefix + '-finalize'" type="button"
-        label="Finalizar aviso" icon="pi pi-check" outlined :disabled="busy || isFetching || needsReload" @click="serverError = ''; noticeConfirm = true" />
+      <Button v-else-if="(data?.can_update || data?.can_reassign) && !isError && tab === 'info' && !actionEditing" type="submit" :form="prefix + '-form'"
+        :label="data?.kind === 'aviso' ? 'Salvar responsável' : 'Salvar planejamento'" icon="pi pi-save" :loading="saving" :disabled="locked" />
+      <Button v-if="data?.can_finalize_notice && !isError && tab === 'info'" :id="prefix + '-finalize'" type="button"
+        label="Finalizar aviso" icon="pi pi-check" outlined :disabled="busy || isFetching || needsReload || Boolean(planningDirty)" @click="serverError = ''; noticeConfirm = true" />
       <SecondaryButton type="button" label="Fechar" outlined :disabled="busy" @click="close" />
     </template>
   </AppDialog>
