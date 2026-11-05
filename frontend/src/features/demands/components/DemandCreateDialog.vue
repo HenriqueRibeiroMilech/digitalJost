@@ -15,7 +15,7 @@ import { demandsApi, workApi } from '../api'
 import { fileAccept, fileSize, noticeInputTime, urgencyOptions, workKindOptions } from '../presentation'
 import type { WorkCreate, WorkDetail, WorkKind } from '../types'
 
-const props = defineProps<{ ownerId?: string | null; work?: WorkDetail }>()
+const props = defineProps<{ ownerId?: string | null; work?: WorkDetail; initialField?: 'title' | 'responsible' }>()
 const emit = defineEmits<{
   closed: []; busy: [value: boolean]; saved: [item: WorkDetail]; inspect: [kind: WorkKind, owner: string]; uncertain: []
 }>()
@@ -31,6 +31,7 @@ const fields = reactive({ title: props.work?.title ?? '', description: props.wor
 const key = crypto.randomUUID()
 const files = ref<File[]>([])
 const form = ref<HTMLFormElement | null>(null)
+const responsibleFocusPending = ref(Boolean(props.work) && props.initialField === 'responsible')
 const serverError = ref('')
 const errorKeys = ['kind', 'title', 'description', 'responsible_id', 'contributor_id', 'urgency',
   'assumptions', 'current_problems', 'expected_benefits', 'starts_at', 'ends_at', 'hide_after_end', 'files', 'submission_key', 'row_version'] as const
@@ -61,6 +62,12 @@ watch(owners.data, result => {
     fields.responsible_id = null
   }
 }, { immediate: true })
+watch(owners.isPending, async pending => {
+  if (pending || owners.isError.value || !responsibleFocusPending.value) return
+  await nextTick()
+  if (visible.value && responsibleFocusPending.value) document.getElementById('work-create-responsible')?.focus()
+  responsibleFocusPending.value = false
+})
 
 function close() { if (!saving.value) visible.value = false }
 function selectFiles(event: Event) {
@@ -137,8 +144,9 @@ function inspect() {
 <template>
   <AppDialog id="work-create-dialog" :visible="visible" :title="work ? 'Editar dados e responsável' : 'Nova demanda ou aviso'"
     :subtitle="work ? work.source_request_id ? 'Atualize o trabalho da equipe. Os dados enviados na solicitação original serão preservados.' : 'Atualize o conteúdo e as pessoas deste registro.' : 'Escolha o tipo e preencha as informações do cadastro.'"
-    :icon="work ? 'pi pi-pencil' : 'pi pi-plus'" :busy="saving" :initial-focus-id="work ? 'work-create-title' : 'work-create-kind'" @update:visible="close" @closed="emit('closed')">
-    <form id="work-create-form" ref="form" class="space-y-4" novalidate @submit.prevent="submit">
+    :icon="work ? 'pi pi-pencil' : 'pi pi-plus'" :busy="saving" :initial-focus-id="work ? initialField === 'responsible' ? 'work-create-responsible' : 'work-create-title' : 'work-create-kind'" @update:visible="close" @closed="emit('closed')">
+    <form id="work-create-form" ref="form" class="space-y-4" novalidate @submit.prevent="submit"
+      @pointerdown="responsibleFocusPending = false" @keydown="responsibleFocusPending = false">
       <Message v-if="serverError" severity="error" role="alert">{{ serverError }}</Message>
       <Message v-if="uncertain" severity="warn" role="status">{{ work ? 'Feche esta edição e recarregue os detalhes para conferir o resultado antes de salvar novamente.' : 'O resultado do envio precisa ser conferido. Você pode confirmar o mesmo envio sem alterar os dados ou fechar para consultar o quadro antes de iniciar outro cadastro.' }}</Message>
       <FormField v-if="!work" id="work-create-kind" label="Tipo *" :error="errors.kind" v-slot="{ controlProps }">

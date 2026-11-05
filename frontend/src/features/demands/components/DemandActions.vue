@@ -14,7 +14,6 @@ import type { WorkActionName, WorkDetail } from '../types'
 const props = defineProps<{ work: WorkDetail; disabled: boolean }>()
 const emit = defineEmits<{ saved: [item: WorkDetail]; busy: [value: boolean]; editing: [value: boolean]; uncertain: [] }>()
 const action = ref<WorkActionName | null>(null)
-const more = ref(false)
 const saving = ref(false)
 const message = ref('')
 const start = ref('')
@@ -40,10 +39,7 @@ const options: { value: WorkActionName; label: string; icon: string; tone: 'succ
   { value: 'wait_third_party', label: 'Aguardar terceiros', icon: 'pi pi-users', tone: 'neutral', message: 'Pendências com terceiros' },
   { value: 'change_deadline', label: 'Alterar prazo', icon: 'pi pi-calendar', tone: 'brand', message: 'Justificativa do novo prazo' },
 ]
-const primary = computed(() => options.filter(option => ['start', 'resume', 'complete', 'reopen'].includes(option.value)
-  && props.work.available_actions.includes(option.value)))
-const secondary = computed(() => options.filter(option => !['start', 'resume', 'complete', 'reopen'].includes(option.value)
-  && props.work.available_actions.includes(option.value)))
+const available = computed(() => options.filter(option => props.work.available_actions.includes(option.value)))
 const selected = computed(() => options.find(option => option.value === action.value))
 const needsDeadline = computed(() => action.value !== null && ['start', 'schedule', 'change_deadline', 'reopen'].includes(action.value))
 function today() {
@@ -74,7 +70,6 @@ async function back() {
   if (locked.value) return
   const previous = action.value
   action.value = null
-  if (secondary.value.some(option => option.value === previous)) more.value = true
   await nextTick()
   document.getElementById(prefix + '-choose-' + previous)?.focus()
 }
@@ -113,19 +108,12 @@ async function submit() {
 
 <template>
   <section :aria-labelledby="prefix + '-title'">
-    <h5 :id="prefix + '-title'" class="text-xs font-semibold text-dj-muted">Próxima ação</h5>
+    <h5 :id="prefix + '-title'" class="text-xs font-semibold text-dj-muted">Ações da demanda</h5>
     <p v-if="!work.available_actions.length" class="mt-2 text-sm text-dj-muted">Não há ações disponíveis para esta situação.</p>
     <div v-else-if="!action" class="mt-2 flex flex-wrap gap-2" role="group" aria-label="Ações principais">
-      <Button v-for="option in primary" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
+      <Button v-for="option in available" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
         :label="option.label" :icon="option.icon" :disabled="locked" :aria-pressed="action === option.value"
-        :aria-controls="prefix + '-form'" class="demand-work-action flex-1 justify-center rounded-lg" :class="'dj-tone-' + option.tone" @click="choose(option.value)" />
-      <SecondaryButton v-if="secondary.length" type="button" label="Outras ações" :icon="more ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
-        :disabled="locked" :aria-expanded="more" :aria-controls="prefix + '-more'" @click="more = !more" />
-    </div>
-    <div v-show="!action && more && secondary.length" :id="prefix + '-more'" class="mt-2 grid gap-2" role="group" aria-label="Outras ações da demanda">
-      <Button v-for="option in secondary" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
-        :label="option.label" :icon="option.icon" outlined :disabled="locked" :aria-pressed="action === option.value"
-        :aria-controls="prefix + '-form'" :class="{ 'text-dj-danger': option.tone === 'danger' }" @click="choose(option.value)" />
+        :aria-controls="prefix + '-form'" class="demand-work-action justify-center rounded-lg" :class="'dj-tone-' + option.tone" @click="choose(option.value)" />
     </div>
     <form v-if="action && selected" :id="prefix + '-form'" ref="form" novalidate class="mt-3 space-y-3" @submit.prevent="submit">
       <h5 class="text-sm font-semibold">{{ selected.label }}</h5>
