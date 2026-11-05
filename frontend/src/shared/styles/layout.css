@@ -82,6 +82,24 @@
   --dj-tone-border: var(--color-dj-warning-border);
 }
 
+.dj-tone-info {
+  --dj-tone: var(--color-dj-info);
+  --dj-tone-soft: var(--color-dj-info-soft);
+  --dj-tone-border: var(--color-dj-info-border);
+}
+
+.dj-tone-indigo {
+  --dj-tone: var(--color-dj-indigo);
+  --dj-tone-soft: var(--color-dj-indigo-soft);
+  --dj-tone-border: var(--color-dj-indigo-border);
+}
+
+.dj-tone-violet {
+  --dj-tone: var(--color-dj-violet);
+  --dj-tone-soft: var(--color-dj-violet-soft);
+  --dj-tone-border: var(--color-dj-violet-border);
+}
+
 .dj-record-card-surface {
   border-top-color: var(--dj-tone);
   background-image: linear-gradient(145deg, var(--dj-tone-soft), var(--color-dj-surface) 45%);

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import AppDialog from '@/shared/components/AppDialog.vue'
 import RequestState from '@/shared/components/RequestState.vue'
@@ -7,7 +7,7 @@ import Button from '@/volt/Button.vue'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 import Tag from '@/volt/Tag.vue'
 import { demandsApi } from '../api'
-import { displayDate, fileSize, historyLabel, kindLabel, statusLabel } from '../presentation'
+import { displayDate, fileSize, historyLabel, kindLabel, requestStatus } from '../presentation'
 import type { RequestDetail } from '../types'
 import RequestForm from './RequestForm.vue'
 import RequestReviewForm from './RequestReviewForm.vue'
@@ -26,6 +26,7 @@ const { data, isPending, isError, error, refetch } = useQuery({
   queryKey, queryFn: () => props.management ? demandsApi.managementGet(props.id) : demandsApi.get(props.id), retry: false,
   refetchOnWindowFocus: false, refetchOnReconnect: false,
 })
+const status = computed(() => requestStatus(data.value?.status ?? ''))
 const details = [
   { key: 'assumptions', label: 'Premissas' },
   { key: 'current_problems', label: 'Problemas atuais' },
@@ -69,7 +70,7 @@ async function reviewed(request: RequestDetail) {
       not-found-message="Solicitação não encontrada para seu acesso." @retry="refetch()">
       <div v-if="data">
         <div class="flex flex-wrap items-center gap-2">
-          <Tag :value="statusLabel(data.status)" severity="secondary" />
+          <Tag :value="status.label" :icon="status.icon" severity="secondary" class="dj-tone-badge" :class="'dj-tone-' + status.tone" />
           <Tag :value="kindLabel(data.entry_kind)" />
         </div>
         <h3 class="mt-4 break-words text-xl font-semibold text-dj-ink">{{ data.title }}</h3>

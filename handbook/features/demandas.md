@@ -42,6 +42,18 @@ Cada decisão compara `row_version` sob trava, atualiza solicitação e históri
 
 A aba Demandas segue a organização do gerenciador anterior: ações e filtros acima do quadro, **Avisos** em um mural recolhível no topo e seções recolhíveis por responsável logo abaixo, em ordem alfabética. Os componentes, cores, superfícies, cards e diálogos usam o padrão moderno. Cada seção separa projetos/melhorias/erros de atividades nos resultados da página atual. Os cards exibem situação, prioridade, dificuldade, solicitante/origem, tempos e resumo das observações; a edição continua no detalhe.
 
+Cards de demandas e solicitações e etiquetas dos respectivos detalhes compartilham o mapa de cores de `presentation.ts`. Os fundos mantêm degradês suaves; texto e ícones identificam o estado além da cor. Situações desconhecidas usam o tom neutro.
+
+| Situação | Cor |
+|---|---|
+| Em análise / A fazer / Em andamento | Azul JOST |
+| Início agendado / Aguardando terceiros | Índigo |
+| Aguardando informações | Ciano |
+| Em validação | Violeta |
+| Pausado | Laranja amarelado |
+| Concluído | Verde |
+| Cancelado / Recusado | Vermelho suave |
+
 Inicialmente o mural fica aberto quando possui avisos; vazio, mantém apenas o cabeçalho recolhido. Se a pessoa autenticada tem demandas, sua seção fica aberta e as demais recolhidas; caso contrário, os grupos ficam abertos. Somente responsáveis com registros formam seções no quadro; o filtro inclui também integrantes ativos sem registros e preserva pessoas inativas ou sem cadastro que ainda tenham demandas. Abrir/recolher um grupo não esconde os outros; os registros são carregados ao expandi-lo. Cada grupo tem paginação independente de 12 itens no servidor e estados próprios de carregamento, vazio e falha.
 
 `?owner=<id>` filtra os grupos por responsável; `?board=avisos` abre o quadro com os grupos de pessoas recolhidos; `?work=<id>` abre o detalhe da demanda ou aviso. A busca literal por título/número aplica-se aos grupos e ao mural. Tipo, responsável, situação e dificuldade filtram demandas; o filtro do mural permite avisos visíveis, todos, em vigor, agendados, vencidos ou finalizados. Demandas começam em **Em aberto**; **Atrasadas** considera prazo anterior a hoje em Brasília e exclui concluídas/canceladas. Ordenação por prioridade crescente (1 é a mais alta), prazo mais próximo ou registros recentes; valores ausentes ficam ao fim e o ID desempata. Filtros, contagens e paginação são de servidor, inclusive nos grupos recolhidos. Buscar ou limpar filtros expande os grupos. Quadro e grupos abertos consultam novamente a cada minuto, pausando durante operações; isso não executa transições no navegador.

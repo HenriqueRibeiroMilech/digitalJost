@@ -77,7 +77,7 @@ O espaçamento é de 20 px e o limite permanece em quatro colunas. Eventos e Min
 
 - Usar IDs únicos em `titleId` e, quando necessário, `actionId`; informar `actionLabel` e `opensDialog`.
 - Título e resumo têm até duas linhas visuais; o conteúdo completo continua disponível nos detalhes.
-- Tons `brand`, `success`, `neutral` e `warning` acompanham um significado definido pela feature, com texto e ícone além da cor.
+- Tons `brand`, `success`, `neutral`, `warning`, `danger`, `info`, `indigo` e `violet` acompanham um significado definido pela feature, com texto e ícone além da cor.
 - A superfície recebe um gradiente suave no tom do card; título e indicador da ação ganham destaque tanto no hover quanto no foco de teclado. A identificação e o status podem quebrar linha para acomodar cards estreitos.
 - A variante `compact` reduz espaços e alturas mínimas. Demandas a utiliza; Eventos mantém a densidade padrão.
 - O card possui um botão que cobre sua superfície. Não inserir links, botões ou campos nos slots sob essa ação.
@@ -91,7 +91,7 @@ O espaçamento é de 20 px e o limite permanece em quatro colunas. Eventos e Min
 | `description` | Resumo opcional, com quebras de linha e duas linhas visuais. |
 | `icon` ou `marker` | Ícone padrão ou identificação do domínio. |
 | `badge` | Etiqueta/status com significado em texto. |
-| `tone` | `brand`, `success`, `neutral` ou `warning`; padrão `brand`. |
+| `tone` | `brand`, `success`, `neutral`, `warning`, `danger`, `info`, `indigo` ou `violet`; padrão `brand`. |
 | `compact` | Padrão false; altera densidade, não grade/paginação. |
 | Slot padrão | Informações curtas para reconhecer o registro. |
 | `actionLabel`, `actionId`, `opensDialog` | Nome da ação, destino para restaurar foco e indicação de diálogo. |
@@ -114,7 +114,7 @@ Exemplo de composição, seguindo `RequestCard` (recorte de template):
 </RecordCard>
 ```
 
-Imports, props e formatações ficam na feature; não copiar esse recorte como arquivo completo. `EventCard` fornece data/período, com marcador em formato de calendário, e tom do status. `RequestCard` fornece número/tipo, urgência/data e vínculo de contribuinte. Em Demandas, status ativos usam azul, concluído usa verde, pausado usa amarelo suave (`warning`) e cancelado/recusado usam neutro, sempre com rótulo e ícone. Urgência alta recebe destaque de perigo acompanhado do texto. Ambos usam a mesma grade, sem obrigar os mesmos campos ou densidade.
+Imports, props e formatações ficam na feature; não copiar esse recorte como arquivo completo. `EventCard` fornece data/período, com marcador em formato de calendário, e tom do status. `RequestCard` fornece número/tipo, urgência/data e vínculo de contribuinte. Em Demandas, análise/a fazer/em andamento usam azul; agendamento/espera por terceiros, índigo; espera por informações, ciano; validação, violeta; concluído, verde; pausado, laranja amarelado (`warning`); cancelado/recusado, vermelho suave. O mapa de `presentation.ts` também orienta as etiquetas nos detalhes, sempre com rótulo e ícone. Situações desconhecidas usam o tom neutro. Urgência alta recebe destaque de perigo acompanhado do texto. Ambos usam a mesma grade, sem obrigar os mesmos campos ou densidade.
 
 ### Carregamento compartilhado dos cards
 
@@ -231,7 +231,7 @@ O [mapa do frontend](../../frontend/README.md) explica onde implementar cada par
 | Necessidade | Variação adotada |
 |---|---|
 | Card com uma ação principal | RecordCard com densidade padrão ou compacta; o conteúdo vem da feature. |
-| Cor do card | Tons brand, success, neutral ou warning conforme significado do domínio, acompanhados de texto. |
+| Cor do card | Tons brand, success, neutral, warning, danger, info, indigo ou violet conforme significado do domínio, acompanhados de texto. |
 | Ação principal | Button Volt com verbo claro; controles secundários usam SecondaryButton quando apropriado. |
 | Confirmação destrutiva | AppDialog com tom danger, Cancelar no foco inicial e indicação do alcance da exclusão. |
 | Formulário em diálogo | AppDialog com conteúdo/FormField e estado busy coordenados pela feature. |

@@ -14,7 +14,7 @@ import Textarea from '@/volt/Textarea.vue'
 import Message from '@/volt/Message.vue'
 import Tag from '@/volt/Tag.vue'
 import { demandsApi, workApi } from '../api'
-import { displayDate, displayDay, fileSize, noticeStateLabel, planningLabels, statusLabel, workFieldLabels, workHistoryLabel, workHistoryValue, workKind } from '../presentation'
+import { displayDate, displayDay, fileSize, noticeStateLabel, planningLabels, requestStatus, workFieldLabels, workHistoryLabel, workHistoryValue, workKind } from '../presentation'
 import type { WorkDetail, WorkPlanning } from '../types'
 import DemandActions from './DemandActions.vue'
 import DemandTasks from './DemandTasks.vue'
@@ -40,6 +40,7 @@ const client = useQueryClient()
 const queryKey = ['demands', 'work', 'detail', props.id]
 const { data, isPending, isFetching, isError, error, refetch } = useQuery({ queryKey, queryFn: () => workApi.get(props.id),
   retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false })
+const status = computed(() => requestStatus(data.value?.status ?? ''))
 const plan = reactive<WorkPlanning>({ difficulty: null, priority: null, estimated_hours: null, daily_hours: null, completed_hours: 0, observations: null })
 const responsible = ref<string | null>(null)
 const completed = ref<number | null>(0)
@@ -176,7 +177,7 @@ async function noticeClosed() {
       <template v-if="data">
         <div class="flex flex-wrap gap-2">
           <Tag :value="workKind(data.kind).label" />
-          <Tag v-if="data.kind !== 'aviso'" :value="statusLabel(data.status)" severity="secondary" />
+          <Tag v-if="data.kind !== 'aviso'" :value="status.label" :icon="status.icon" severity="secondary" class="dj-tone-badge" :class="'dj-tone-' + status.tone" />
           <Tag v-else :value="noticeStateLabel(data.notice_state)" severity="secondary" />
           <Tag v-if="data.is_overdue" value="Atrasada" severity="danger" icon="pi pi-clock" />
           <Tag v-if="data.source_request_id" :value="'Solicitação #' + data.source_request_id" severity="secondary" />

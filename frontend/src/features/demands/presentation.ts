@@ -7,18 +7,18 @@ export const entryOptions = [
 export const urgencyOptions = ['Alta', 'Média', 'Baixa']
 export const fileAccept = '.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp'
 
-const statuses: Record<string, { label: string; icon: string; tone: 'brand' | 'success' | 'neutral' | 'warning' }> = {
+const statuses: Record<string, { label: string; icon: string; tone: 'brand' | 'success' | 'neutral' | 'warning' | 'danger' | 'info' | 'indigo' | 'violet' }> = {
   em_analise: { label: 'Em análise', icon: 'pi pi-search', tone: 'brand' },
-  aguardando_informacoes: { label: 'Aguardando informações', icon: 'pi pi-comment', tone: 'neutral' },
+  aguardando_informacoes: { label: 'Aguardando informações', icon: 'pi pi-comment', tone: 'info' },
   a_fazer: { label: 'A fazer', icon: 'pi pi-list', tone: 'brand' },
-  agendado: { label: 'Início agendado', icon: 'pi pi-calendar', tone: 'brand' },
+  agendado: { label: 'Início agendado', icon: 'pi pi-calendar', tone: 'indigo' },
   em_andamento: { label: 'Em andamento', icon: 'pi pi-play-circle', tone: 'brand' },
   pausado: { label: 'Pausado', icon: 'pi pi-pause-circle', tone: 'warning' },
-  em_validacao: { label: 'Em validação', icon: 'pi pi-verified', tone: 'brand' },
-  aguardando_terceiros: { label: 'Aguardando terceiros', icon: 'pi pi-users', tone: 'neutral' },
+  em_validacao: { label: 'Em validação', icon: 'pi pi-verified', tone: 'violet' },
+  aguardando_terceiros: { label: 'Aguardando terceiros', icon: 'pi pi-users', tone: 'indigo' },
   concluido: { label: 'Concluído', icon: 'pi pi-check-circle', tone: 'success' },
-  cancelado: { label: 'Cancelado', icon: 'pi pi-times-circle', tone: 'neutral' },
-  recusado: { label: 'Recusado', icon: 'pi pi-ban', tone: 'neutral' },
+  cancelado: { label: 'Cancelado', icon: 'pi pi-times-circle', tone: 'danger' },
+  recusado: { label: 'Recusado', icon: 'pi pi-ban', tone: 'danger' },
 }
 export function requestStatus(status: string) {
   return statuses[status] ?? { label: status, icon: 'pi pi-info-circle', tone: 'neutral' as const }

@@ -18,6 +18,15 @@
   --color-dj-warning: #d97706;
   --color-dj-warning-soft: #fffbeb;
   --color-dj-warning-border: #fbbf24;
+  --color-dj-info: #0e7490;
+  --color-dj-info-soft: #ecfeff;
+  --color-dj-info-border: #a5f3fc;
+  --color-dj-indigo: #4338ca;
+  --color-dj-indigo-soft: #eef2ff;
+  --color-dj-indigo-border: #c7d2fe;
+  --color-dj-violet: #6d28d9;
+  --color-dj-violet-soft: #f5f3ff;
+  --color-dj-violet-border: #ddd6fe;
   --container-dj-page: 110rem;
   --radius-dj-card: 1.25rem;
   --shadow-dj-card: 0 2px 4px rgb(16 38 86 / 2%), 0 8px 24px rgb(16 38 86 / 4%);
