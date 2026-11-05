@@ -223,12 +223,12 @@ function changePage(value: number) { if (!navigationLocked.value) page.value = v
     <RequestState :loading="list.isPending.value" :failed="list.isError.value" :error="list.error.value" :empty="false"
       loading-label="Carregando tarefas…" error-message="Não foi possível carregar as tarefas." @retry="list.refetch()">
       <p v-if="list.data.value?.total === 0" class="mb-4 text-sm text-dj-muted">Nenhuma tarefa para este filtro.</p>
-      <div class="space-y-3">
+      <div class="space-y-2">
         <form v-for="draft in rows" :id="formId(draft)" :key="draft.id" novalidate
-          class="min-w-0 rounded-xl border border-dj-border border-l-4 bg-dj-surface p-4"
+          class="min-w-0 rounded-xl border border-dj-border border-l-4 bg-dj-surface p-3"
           :class="isDirty(draft) ? 'border-l-dj-brand bg-dj-canvas' : draft.fields.completed ? 'border-l-dj-success' : 'border-l-dj-border'"
           :aria-label="draft.task ? 'Tarefa #' + draft.task.id : 'Adicionar tarefa'" @submit.prevent="submit(draft)">
-          <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-3">
               <template v-if="draft.task">
                 <div class="flex items-center gap-2">
@@ -243,7 +243,7 @@ function changePage(value: number) { if (!navigationLocked.value) page.value = v
             </div>
             <Tag v-if="isDirty(draft)" value="Não salvo" severity="warn" rounded />
           </div>
-          <div class="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-12">
+          <div class="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-12">
             <FormField :id="formId(draft) + '-title'" :label="draft.task ? 'Tarefa *' : 'Nova tarefa *'" :error="draft.errors.title" class="min-w-0 sm:col-span-2 lg:col-span-5" v-slot="{ controlProps }">
               <InputText v-if="!draft.task" v-model="draft.fields.title" v-bind="controlProps" required :maxlength="250" :disabled="locked" class="w-full"
                 placeholder="Descreva uma entrega objetiva" />
@@ -286,7 +286,7 @@ function changePage(value: number) { if (!navigationLocked.value) page.value = v
     <fieldset :disabled="navigationLocked" class="min-w-0 border-0 p-0">
       <ListPagination v-if="list.data.value && !list.isError.value" :page="page" :per-page="perPage" :total="list.data.value.total" label="Páginas de tarefas" @update:page="changePage" />
     </fieldset>
-    <AppDialog :id="prefix + '-delete-dialog'" :visible="Boolean(deleting)" title="Excluir tarefa" icon="pi pi-trash" tone="danger" :busy="saving !== null"
+    <AppDialog :id="prefix + '-delete-dialog'" :visible="Boolean(deleting)" title="Excluir tarefa" icon="pi pi-trash" tone="danger" size="small" :busy="saving !== null"
       :initial-focus-id="prefix + '-delete-cancel'" @update:visible="deleting = null" @closed="restoreDeleteFocus">
       <Message v-if="serverError" :id="prefix + '-delete-error'" severity="error" role="alert" tabindex="-1" class="mb-4">{{ serverError }}</Message>
       <p class="break-words text-sm leading-6">Excluir a tarefa “{{ deleting?.task?.title }}”? Somente esta tarefa será removida. A operação ficará registrada no histórico da demanda.</p>

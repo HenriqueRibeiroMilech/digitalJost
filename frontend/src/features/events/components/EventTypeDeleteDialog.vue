@@ -33,7 +33,7 @@ async function confirm() {
 </script>
 
 <template>
-  <AppDialog id="event-type-delete-dialog" v-model:visible="visible" title="Excluir tipo de evento"
+  <AppDialog id="event-type-delete-dialog" v-model:visible="visible" title="Excluir tipo de evento" size="small"
     subtitle="Confira o tipo antes de confirmar a exclusão." icon="pi pi-trash" tone="danger" :busy="deleting"
     description-id="event-type-delete-help" initial-focus-id="event-type-delete-cancel" @closed="emit('closed', deleted)">
     <p class="break-words rounded-2xl border border-dj-border bg-dj-canvas p-5 font-semibold text-dj-ink">{{ eventType.name }}</p>

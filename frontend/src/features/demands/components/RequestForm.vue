@@ -148,13 +148,13 @@ async function submit() {
 
 <template>
   <form ref="formElement" novalidate :aria-busy="saving" @submit.prevent="submit">
-    <div class="mb-6 rounded-2xl border border-dj-border bg-dj-canvas p-4 text-sm leading-6 text-dj-muted">
+    <div class="mb-4 rounded-xl border border-dj-border bg-dj-canvas p-3 text-sm leading-6 text-dj-muted">
       <p>Conte o que você precisa. A equipe analisará as informações antes de definir a execução.</p>
       <p class="mt-1 text-xs">Campos com * são obrigatórios.</p>
     </div>
-    <fieldset class="min-w-0 rounded-2xl border border-dj-border p-4 sm:p-6">
+    <fieldset class="dj-form-section min-w-0 rounded-2xl border border-dj-border p-4 sm:p-6">
       <legend class="px-2 text-xs font-semibold tracking-wide text-dj-muted uppercase">Dados principais</legend>
-      <div class="grid gap-5 md:grid-cols-3">
+      <div class="grid gap-3 md:grid-cols-3">
         <FormField :id="formId + '-entry_kind'" v-slot="{ controlProps }" label="O que deseja fazer? *" :error="errors.entry_kind">
           <Select v-model="fields.entry_kind" :input-id="controlProps.id" :options="entryOptions" option-label="label" option-value="value"
             :invalid="controlProps.invalid" :pt:label:aria-describedby="controlProps['aria-describedby']" pt:label:aria-required="true"
@@ -178,27 +178,27 @@ async function submit() {
       </Message>
       <FormField :id="formId + '-title'" v-slot="{ controlProps }" label="Título *" :error="errors.title" class="mt-5">
         <InputText v-bind="controlProps" v-model="fields.title" required :maxlength="250" :disabled="locked"
-          placeholder="Resuma sua solicitação em uma frase" pt:root:class="w-full rounded-xl py-3" />
+          placeholder="Resuma sua solicitação em uma frase" pt:root:class="w-full rounded-xl" />
       </FormField>
       <FormField :id="formId + '-description'" v-slot="{ controlProps }" :label="isError ? 'Descrição do erro *' : 'Objetivo da demanda *'"
         :error="errors.description" class="mt-5">
-        <Textarea v-bind="controlProps" v-model="fields.description" required :rows="5" :maxlength="4000" :disabled="locked"
+        <Textarea v-bind="controlProps" v-model="fields.description" required :rows="3" :maxlength="4000" :disabled="locked"
           :placeholder="isError ? 'Informe onde ocorreu, os passos para reproduzir, o resultado esperado e o que aconteceu.' : 'Explique o que precisa ser feito e qual é o objetivo.'"
           pt:root:class="w-full rounded-xl" />
       </FormField>
       <p class="mt-1 text-right text-xs text-dj-muted">{{ fields.description.length }} / 4.000</p>
     </fieldset>
-    <fieldset v-show="!isError" class="mt-6 min-w-0 rounded-2xl border border-dj-border p-4 sm:p-6">
+    <fieldset v-show="!isError" class="dj-form-section mt-6 min-w-0 rounded-2xl border border-dj-border p-4 sm:p-6">
       <legend class="px-2 text-xs font-semibold tracking-wide text-dj-muted uppercase">Entenda o cenário</legend>
-      <div class="grid gap-5 lg:grid-cols-3">
+      <div class="grid gap-3 lg:grid-cols-3">
         <FormField v-for="field in detailFields" :id="formId + '-' + field.key" :key="field.key" v-slot="{ controlProps }" :label="field.label" :error="errors[field.key]">
-          <Textarea v-bind="controlProps" v-model="fields[field.key]" :required="!isError" :rows="6" :maxlength="4000"
+          <Textarea v-bind="controlProps" v-model="fields[field.key]" :required="!isError" :rows="3" :maxlength="4000"
             :disabled="locked" :placeholder="field.placeholder" pt:root:class="w-full rounded-xl" />
           <p class="mt-1 text-right text-xs text-dj-muted">{{ fields[field.key]?.length ?? 0 }} / 4.000</p>
         </FormField>
       </div>
     </fieldset>
-    <fieldset v-if="!request" class="mt-6 min-w-0 rounded-2xl border border-dj-border p-4 sm:p-6">
+    <fieldset v-if="!request" class="dj-form-section mt-6 min-w-0 rounded-2xl border border-dj-border p-4 sm:p-6">
       <legend class="px-2 text-xs font-semibold tracking-wide text-dj-muted uppercase">{{ isError ? 'Evidências do erro' : 'Documentos e fluxo' }}</legend>
       <div class="grid items-start gap-6" :class="{ 'lg:grid-cols-2': !isError }">
         <div class="min-w-0">

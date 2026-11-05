@@ -65,7 +65,7 @@ async function confirm() {
 </script>
 
 <template>
-  <AppDialog id="attendance-action-dialog" v-model:visible="visible" :title="title" :subtitle="list.name"
+  <AppDialog id="attendance-action-dialog" v-model:visible="visible" :title="title" :subtitle="list.name" size="small"
     :icon="renaming ? 'pi pi-pencil' : 'pi pi-trash'" :tone="renaming ? 'brand' : 'danger'" :busy="saving"
     description-id="attendance-action-help" :initial-focus-id="renaming ? 'attendance-rename-name' : 'attendance-action-cancel'"
     @closed="emit('closed', changed)">

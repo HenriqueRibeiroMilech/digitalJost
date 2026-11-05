@@ -72,8 +72,8 @@ async function reviewed(request: RequestDetail) {
           <Tag :value="statusLabel(data.status)" severity="secondary" />
           <Tag :value="kindLabel(data.entry_kind)" />
         </div>
-        <h3 class="mt-4 break-words text-xl font-semibold text-dj-ink">{{ data.title }}</h3>
-        <dl class="mt-5 grid gap-4 rounded-2xl border border-dj-border bg-dj-canvas p-4 text-sm sm:grid-cols-2">
+        <h3 class="dj-detail-title">{{ data.title }}</h3>
+        <dl class="dj-detail-grid mt-4">
           <div><dt class="text-xs text-dj-muted">Solicitante</dt><dd class="mt-1">{{ data.requester_name ?? 'Não informado' }}</dd></div>
           <div><dt class="text-xs text-dj-muted">Contribuinte</dt><dd class="mt-1">{{ data.contributor_name ?? 'Sem contribuinte' }}</dd></div>
           <div><dt class="text-xs text-dj-muted">Urgência</dt><dd class="mt-1">{{ data.urgency }}</dd></div>
@@ -82,17 +82,17 @@ async function reviewed(request: RequestDetail) {
           <div v-if="data.classification"><dt class="text-xs text-dj-muted">Classificação</dt><dd class="mt-1">{{ data.classification === 'projeto' ? 'Projeto' : data.classification === 'melhoria' ? 'Melhoria' : data.classification }}</dd></div>
           <div><dt class="text-xs text-dj-muted">Atualizada em</dt><dd class="mt-1">{{ displayDate(data.updated_at) }}</dd></div>
         </dl>
-        <section class="mt-6" :aria-labelledby="'request-description-' + id">
+        <section class="dj-detail-section" :aria-labelledby="'request-description-' + id">
           <h4 :id="'request-description-' + id" class="mb-2 text-sm font-semibold">{{ data.entry_kind === 'erro' ? 'Descrição do erro' : 'Objetivo da demanda' }}</h4>
-          <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-muted">{{ data.description }}</p>
+          <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data.description }}</p>
         </section>
         <template v-if="data.entry_kind === 'demanda'">
-          <section v-for="field in details" :key="field.key" class="mt-5" :aria-labelledby="'request-' + id + '-' + field.key">
+          <section v-for="field in details" :key="field.key" class="dj-detail-section" :aria-labelledby="'request-' + id + '-' + field.key">
             <h4 :id="'request-' + id + '-' + field.key" class="mb-2 text-sm font-semibold">{{ field.label }}</h4>
-            <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-muted">{{ data[field.key] ?? 'Não informado' }}</p>
+            <p class="whitespace-pre-wrap break-words text-sm leading-6 text-dj-muted">{{ data[field.key] ?? 'Não informado' }}</p>
           </section>
         </template>
-        <section class="mt-6" :aria-labelledby="'request-attachments-' + id">
+        <section class="dj-detail-section" :aria-labelledby="'request-attachments-' + id">
           <h4 :id="'request-attachments-' + id" class="mb-3 text-sm font-semibold">Documentos</h4>
           <ul class="space-y-2">
             <li v-for="attachment in data.attachments" :key="attachment.id">
@@ -104,7 +104,7 @@ async function reviewed(request: RequestDetail) {
           </ul>
           <p v-if="!data.attachments.length" class="text-sm text-dj-muted">Nenhum documento disponível.</p>
         </section>
-        <section class="mt-6 border-t border-dj-border pt-5" :aria-labelledby="'request-history-' + id">
+        <section class="dj-detail-section" :aria-labelledby="'request-history-' + id">
           <h4 :id="'request-history-' + id" class="mb-3 text-sm font-semibold">Histórico</h4>
           <ol class="space-y-3 text-sm">
             <li v-for="event in data.history" :key="event.id" class="border-l-2 border-dj-border pl-3">

@@ -112,10 +112,10 @@ async function submit() {
 </script>
 
 <template>
-  <section class="mt-6 rounded-2xl border border-dj-border bg-dj-canvas p-4" :aria-labelledby="prefix + '-title'">
+  <section class="rounded-xl border border-dj-border bg-dj-canvas p-3" :aria-labelledby="prefix + '-title'">
     <h4 :id="prefix + '-title'" class="text-sm font-semibold">Ações da demanda</h4>
     <p v-if="!work.available_actions.length" class="mt-2 text-sm text-dj-muted">Não há ações disponíveis para esta situação.</p>
-    <div v-else class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Ações principais">
+    <div v-else class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Ações principais">
       <Button v-for="option in primary" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
         :label="option.label" :icon="option.icon" :disabled="locked" :aria-pressed="action === option.value"
         :aria-controls="prefix + '-form'" class="demand-work-action rounded-xl px-4 py-2.5" :class="'dj-tone-' + option.tone" @click="choose(option.value)" />
@@ -151,7 +151,7 @@ async function submit() {
         <InputText v-model="expectedReturn" v-bind="controlProps" type="date" :min="today()" max="9999-12-31" required :disabled="locked" class="w-full" />
       </FormField>
       <FormField v-if="selected.message" :id="prefix + '-message'" :label="selected.message + ' *'" :error="errors.message" v-slot="{ controlProps }">
-        <Textarea v-model="message" v-bind="controlProps" required :rows="4" :maxlength="4000" :disabled="locked" class="w-full" />
+        <Textarea v-model="message" v-bind="controlProps" required :rows="3" :maxlength="4000" :disabled="locked" class="w-full" />
       </FormField>
       <p v-if="selected.message" class="text-xs leading-5 text-dj-muted">A mensagem ficará registrada no histórico da demanda.</p>
       <div class="flex flex-wrap gap-3">
