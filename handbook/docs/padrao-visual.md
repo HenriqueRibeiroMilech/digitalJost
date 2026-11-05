@@ -146,6 +146,8 @@ Usar `closed`, emitido após a transição, para restaurar o foco. Em exclusões
 
 Cadastro e edição devem agrupar campos relacionados e manter botões com verbos claros. Regras, requisições, confirmação de sucesso e atualização de cache permanecem na feature.
 
+Botões de execução e análise de solicitações usam `dj-action-soft` junto de `dj-tone-brand`, `dj-tone-success`, `dj-tone-danger` ou `dj-tone-neutral`. O fundo tem degradê suave até a superfície branca, como nos cards, com borda discreta e texto no tom da ação. Hover, seleção e foco são compartilhados em `layout.css`; rótulos e ícones continuam comunicando a ação. O seletor **Outras ações** usa a mesma apresentação, fica por último na linha e abre opções no Select Volt. Em controles sem `disabled` nativo, `data-disabled="true"` impede o tratamento visual de hover enquanto bloqueados. Selecionar uma ação abre a confirmação da feature; manter o foco no formulário após fechar a lista e restaurá-lo ao seletor ao voltar.
+
 ### Campos acessíveis
 
 `FormField` recebe `id`, `label` e `error`; o slot fornece `controlProps` com ID, `invalid`, `aria-invalid` e associação ao erro. Em InputText/Textarea, aplicar essas propriedades ao controle. O Select pode exigir `input-id` e Pass Through para associar a descrição ao elemento que recebe foco; copiar o uso verificado nos formulários atuais.

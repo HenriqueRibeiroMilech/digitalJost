@@ -8,13 +8,15 @@ import SecondaryButton from '@/volt/SecondaryButton.vue'
 import InputText from '@/volt/InputText.vue'
 import Textarea from '@/volt/Textarea.vue'
 import Message from '@/volt/Message.vue'
+import Select from '@/volt/Select.vue'
 import { workApi } from '../api'
 import type { WorkActionName, WorkDetail } from '../types'
 
 const props = defineProps<{ work: WorkDetail; disabled: boolean }>()
 const emit = defineEmits<{ saved: [item: WorkDetail]; busy: [value: boolean]; editing: [value: boolean]; uncertain: [] }>()
 const action = ref<WorkActionName | null>(null)
-const more = ref(false)
+const moreAction = ref<WorkActionName | null>(null)
+const menuFocusPending = ref(false)
 const saving = ref(false)
 const message = ref('')
 const start = ref('')
@@ -58,7 +60,11 @@ const earliestDeadline = computed(() => {
 watch(saving, value => emit('busy', value), { flush: 'sync' })
 watch(action, value => emit('editing', value !== null), { flush: 'sync' })
 
-async function choose(value: WorkActionName) {
+function focusActionForm() {
+  if (!action.value) return
+  document.getElementById(prefix + (action.value === 'schedule' ? '-start' : needsDeadline.value ? '-deadline' : selected.value?.message ? '-message' : '-confirm'))?.focus()
+}
+async function choose(value: WorkActionName, fromMenu = false) {
   if (locked.value || !props.work.available_actions.includes(value)) return
   action.value = value
   message.value = ''
@@ -68,15 +74,28 @@ async function choose(value: WorkActionName) {
   serverError.value = ''
   errorKeys.forEach(key => { errors[key] = '' })
   await nextTick()
-  document.getElementById(prefix + (value === 'schedule' ? '-start' : needsDeadline.value ? '-deadline' : selected.value?.message ? '-message' : '-confirm'))?.focus()
+  if (!fromMenu) focusActionForm()
+}
+async function selectOther(value: WorkActionName | null) {
+  if (locked.value || value === null || !secondary.value.some(option => option.value === value)) return
+  moreAction.value = value
+  menuFocusPending.value = true
+  await choose(value, true)
+  moreAction.value = null
+}
+async function focusAfterMenu() {
+  if (!menuFocusPending.value) return
+  await nextTick()
+  menuFocusPending.value = false
+  focusActionForm()
 }
 async function back() {
   if (locked.value) return
   const previous = action.value
   action.value = null
-  if (secondary.value.some(option => option.value === previous)) more.value = true
+  menuFocusPending.value = false
   await nextTick()
-  document.getElementById(prefix + '-choose-' + previous)?.focus()
+  document.getElementById(prefix + (secondary.value.some(option => option.value === previous) ? '-more' : '-choose-' + previous))?.focus()
 }
 async function focusError() {
   await nextTick()
@@ -112,22 +131,22 @@ async function submit() {
 </script>
 
 <template>
-  <section class="mt-6 rounded-2xl border border-dj-border bg-dj-canvas p-4" :aria-labelledby="prefix + '-title'">
+  <section class="mt-5 border-t border-dj-border pt-4" :aria-labelledby="prefix + '-title'">
     <h4 :id="prefix + '-title'" class="text-sm font-semibold">Ações da demanda</h4>
     <p v-if="!work.available_actions.length" class="mt-2 text-sm text-dj-muted">Não há ações disponíveis para esta situação.</p>
     <div v-else class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Ações principais">
       <Button v-for="option in primary" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
         :label="option.label" :icon="option.icon" :disabled="locked" :aria-pressed="action === option.value"
-        :aria-controls="prefix + '-form'" class="demand-work-action rounded-xl px-4 py-2.5" :class="'dj-tone-' + option.tone" @click="choose(option.value)" />
-      <SecondaryButton v-if="secondary.length" type="button" label="Outras ações" :icon="more ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
-        :disabled="locked" :aria-expanded="more" :aria-controls="prefix + '-more'" @click="more = !more" />
+        :aria-controls="prefix + '-form'" class="dj-action-soft rounded-xl px-4 py-2.5" :class="'dj-tone-' + option.tone" @click="choose(option.value)" />
       <Button v-if="work.available_actions.includes('change_deadline')" :id="prefix + '-choose-change_deadline'" type="button" label="Alterar prazo"
-        icon="pi pi-calendar" outlined :disabled="locked" :aria-pressed="action === 'change_deadline'" :aria-controls="prefix + '-form'" @click="choose('change_deadline')" />
-    </div>
-    <div v-show="more && secondary.length" :id="prefix + '-more'" class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Outras ações da demanda">
-      <Button v-for="option in secondary" :id="prefix + '-choose-' + option.value" :key="option.value" type="button"
-        :label="option.label" :icon="option.icon" outlined :disabled="locked" :aria-pressed="action === option.value"
-        :aria-controls="prefix + '-form'" @click="choose(option.value)" />
+        icon="pi pi-calendar" class="dj-action-soft dj-tone-brand rounded-xl" :disabled="locked" :aria-pressed="action === 'change_deadline'" :aria-controls="prefix + '-form'" @click="choose('change_deadline')" />
+      <Select v-if="secondary.length" :input-id="prefix + '-more'" :model-value="moreAction" :options="secondary" option-label="label" option-value="value"
+        aria-label="Outras ações" placeholder="Outras ações" :disabled="locked" :data-disabled="locked ? 'true' : undefined"
+        class="dj-action-soft dj-tone-neutral min-w-44 rounded-xl" pt:overlay:class="w-72 max-w-[calc(100vw_-_2rem)]"
+        @update:model-value="selectOther" @hide="focusAfterMenu">
+        <template #value><span class="flex items-center gap-2 font-medium text-dj-muted"><i class="pi pi-ellipsis-h" aria-hidden="true" />Outras ações</span></template>
+        <template #option="{ option }"><span class="flex items-center gap-3"><i :class="option.icon" aria-hidden="true" /><span class="whitespace-normal">{{ option.label }}</span></span></template>
+      </Select>
     </div>
     <form v-if="action && selected" :id="prefix + '-form'" ref="form" novalidate class="mt-5 space-y-4 border-t border-dj-border pt-4" @submit.prevent="submit">
       <h5 class="text-sm font-semibold">{{ selected.label }}</h5>
@@ -156,30 +175,9 @@ async function submit() {
       <p v-if="selected.message" class="text-xs leading-5 text-dj-muted">A mensagem ficará registrada no histórico da demanda.</p>
       <div class="flex flex-wrap gap-3">
         <Button :id="prefix + '-confirm'" type="submit" :label="'Confirmar: ' + selected.label.toLowerCase()" :loading="saving" :disabled="locked"
-          class="demand-work-action" :class="'dj-tone-' + selected.tone" />
+          class="dj-action-soft" :class="'dj-tone-' + selected.tone" />
         <SecondaryButton type="button" label="Voltar" outlined :disabled="locked" @click="back" />
       </div>
     </form>
   </section>
 </template>
-
-<style scoped>
-.demand-work-action {
-  color: var(--dj-tone);
-  border-color: color-mix(in srgb, var(--dj-tone) 55%, var(--color-dj-surface));
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--dj-tone) 28%, var(--color-dj-surface)),
-    color-mix(in srgb, var(--dj-tone) 12%, var(--color-dj-surface)));
-}
-.demand-work-action:enabled:hover,
-.demand-work-action[aria-pressed='true'] {
-  border-color: var(--dj-tone);
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--dj-tone) 38%, var(--color-dj-surface)),
-    color-mix(in srgb, var(--dj-tone) 20%, var(--color-dj-surface)));
-}
-.demand-work-action:focus-visible {
-  outline: 2px solid var(--dj-tone);
-  outline-offset: 3px;
-}
-</style>

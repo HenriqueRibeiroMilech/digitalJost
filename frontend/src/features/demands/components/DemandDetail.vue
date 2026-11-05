@@ -50,6 +50,7 @@ const locked = computed(() => busy.value || actionEditing.value || isFetching.va
 const planningDirty = computed(() => data.value && (completed.value !== data.value.completed_hours
   || Object.entries(plan).some(([field, value]) => value !== data.value?.[field as keyof WorkPlanning])))
 const hourFields = ['estimated_hours', 'daily_hours', 'completed_hours'] as const
+const priorityOptions = Array.from({ length: 10 }, (_, index) => ({ label: String(index + 1), value: index + 1 }))
 const contextFields = [{ key: 'assumptions', label: 'Premissas' }, { key: 'current_problems', label: 'Problemas atuais' },
   { key: 'expected_benefits', label: 'Ganhos esperados' }] as const
 watch(data, item => {
@@ -193,31 +194,30 @@ async function noticeClosed() {
             :aria-current="tab === 'history' ? 'page' : undefined" :aria-controls="prefix + '-history'" @click="tab = 'history'" />
         </nav>
         <section v-show="tab === 'info'" :id="prefix + '-info'" aria-label="Informações da demanda">
-          <dl class="grid gap-4 rounded-2xl border border-dj-border bg-dj-canvas p-4 text-sm sm:grid-cols-2">
-            <div><dt class="text-xs text-dj-muted">Responsável</dt><dd class="mt-1">{{ data.responsible_name ?? 'Usuário indisponível' }}</dd></div>
-            <div><dt class="text-xs text-dj-muted">Solicitante</dt><dd class="mt-1">{{ data.requester_name ?? 'Usuário indisponível' }}</dd></div>
-            <div v-if="data.urgency"><dt class="text-xs text-dj-muted">Urgência</dt><dd class="mt-1">{{ data.urgency }}</dd></div>
-            <div v-if="data.contributor_name"><dt class="text-xs text-dj-muted">Contribuinte</dt><dd class="mt-1">{{ data.contributor_name }}</dd></div>
-            <div><dt class="text-xs text-dj-muted">Criada em</dt><dd class="mt-1">{{ displayDate(data.created_at) }}</dd></div>
-            <div><dt class="text-xs text-dj-muted">Atualizada em</dt><dd class="mt-1">{{ displayDate(data.updated_at) }}</dd></div>
-            <template v-if="data.kind === 'aviso'">
-              <div><dt class="text-xs text-dj-muted">Data e hora de início</dt><dd class="mt-1">{{ data.starts_at ? displayDate(data.starts_at) : 'Não informado' }}</dd></div>
-              <div><dt class="text-xs text-dj-muted">Data e hora de fim</dt><dd class="mt-1">{{ data.ends_at ? displayDate(data.ends_at) : 'Não informado' }}</dd></div>
-              <div><dt class="text-xs text-dj-muted">Ocultar após o fim</dt><dd class="mt-1">{{ data.hide_after_end ? 'Sim' : 'Não' }}</dd></div>
-              <div v-if="data.notice_finalized_at"><dt class="text-xs text-dj-muted">Finalizado em</dt><dd class="mt-1">{{ displayDate(data.notice_finalized_at) }}</dd></div>
-            </template>
-            <template v-else>
-              <div v-if="data.scheduled_start_on"><dt class="text-xs text-dj-muted">Início agendado</dt><dd class="mt-1">{{ displayDay(data.scheduled_start_on) }}</dd></div>
-              <div v-if="data.started_on"><dt class="text-xs text-dj-muted">Início realizado</dt><dd class="mt-1">{{ displayDay(data.started_on) }}</dd></div>
-              <div><dt class="text-xs text-dj-muted">Prazo de entrega</dt><dd class="mt-1">{{ data.due_on ? displayDay(data.due_on) : 'Não definido' }}</dd></div>
-              <div v-if="data.closed_at"><dt class="text-xs text-dj-muted">Encerramento</dt><dd class="mt-1">{{ displayDate(data.closed_at) }}</dd></div>
-              <div v-if="data.expected_return_on"><dt class="text-xs text-dj-muted">Previsão de retorno</dt><dd class="mt-1">{{ displayDay(data.expected_return_on) }}</dd></div>
-            </template>
+          <dl class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-primary-100 bg-primary-50/60 p-4">
+              <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-calendar text-dj-brand" aria-hidden="true" />{{ data.kind === 'aviso' ? 'Início do aviso' : !data.started_on && data.scheduled_start_on ? 'Início agendado' : 'Data de início' }}</dt>
+              <dd class="mt-2">
+                <span class="text-lg font-semibold text-dj-ink">{{ data.kind === 'aviso' ? data.starts_at ? displayDate(data.starts_at) : 'Não informado' : data.started_on ? displayDay(data.started_on) : data.scheduled_start_on ? displayDay(data.scheduled_start_on) : 'Não iniciada' }}</span>
+                <p v-if="data.expected_return_on" class="mt-1 text-xs text-dj-muted">Retorno previsto: {{ displayDay(data.expected_return_on) }}</p>
+              </dd>
+            </div>
+            <div class="rounded-xl border p-4" :class="data.is_overdue ? 'border-dj-danger/20 bg-dj-danger-soft' : 'border-primary-100 bg-primary-50/60'">
+              <dt class="flex items-center gap-2 text-xs font-semibold text-dj-muted"><i class="pi pi-clock" :class="data.is_overdue ? 'text-dj-danger' : 'text-dj-brand'" aria-hidden="true" />{{ data.kind === 'aviso' ? 'Fim do aviso' : 'Prazo de entrega' }}</dt>
+              <dd class="mt-2">
+                <span class="text-lg font-semibold" :class="data.is_overdue ? 'text-dj-danger' : 'text-dj-ink'">{{ data.kind === 'aviso' ? data.ends_at ? displayDate(data.ends_at) : 'Não informado' : data.due_on ? displayDay(data.due_on) : 'Não definido' }}</span>
+                <p v-if="data.closed_at" class="mt-1 text-xs text-dj-muted">Encerramento: {{ displayDate(data.closed_at) }}</p>
+              </dd>
+            </div>
           </dl>
-          <p v-if="planningDirty && data.can_update" class="mt-4 text-sm text-dj-muted">Salve o planejamento antes de registrar uma ação, editar o conteúdo ou abrir as tarefas.</p>
-          <DemandActions v-if="data.can_update" :key="data.row_version + ':' + reloadKey" :work="data"
-            :disabled="busy || isFetching || isError || needsReload || Boolean(planningDirty)" @busy="actionSaving = $event"
-            @editing="actionEditing = $event" @uncertain="needsReload = true" @saved="actionSaved" />
+          <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt class="text-xs text-dj-muted">Solicitante</dt><dd class="mt-1 break-words">{{ data.requester_name ?? 'Usuário indisponível' }}
+                <p v-if="data.contributor_name" class="mt-1 text-xs text-dj-muted">Contribuinte: {{ data.contributor_name }}</p>
+              </dd>
+            </div>
+            <div><dt class="text-xs text-dj-muted">Urgência</dt><dd class="mt-1">{{ data.urgency ?? 'Não se aplica' }}</dd></div>
+          </dl>
           <section class="mt-5">
             <h4 class="mb-2 text-sm font-semibold">{{ data.kind === 'erro' ? 'Descrição do erro' : ['projeto', 'melhoria'].includes(data.kind) ? 'Objetivo da demanda' : 'Descrição' }}</h4>
             <p class="whitespace-pre-wrap break-words text-sm leading-7 text-dj-muted">{{ data.description }}</p>
@@ -238,25 +238,39 @@ async function noticeClosed() {
               </li>
             </ul>
           </section>
+          <dl v-if="data.kind === 'aviso'" class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-dj-muted">
+            <div><dt class="inline">Ocultar após o fim: </dt><dd class="inline">{{ data.hide_after_end ? 'Sim' : 'Não' }}</dd></div>
+            <div v-if="data.notice_finalized_at"><dt class="inline">Finalizado em: </dt><dd class="inline">{{ displayDate(data.notice_finalized_at) }}</dd></div>
+          </dl>
+          <p v-if="planningDirty && data.can_update" class="mt-4 text-sm text-dj-muted">Salve o planejamento antes de registrar uma ação, editar o conteúdo ou abrir as tarefas.</p>
+          <DemandActions v-if="data.can_update" :key="data.row_version + ':' + reloadKey" :work="data"
+            :disabled="busy || isFetching || isError || needsReload || Boolean(planningDirty)" @busy="actionSaving = $event"
+            @editing="actionEditing = $event" @uncertain="needsReload = true" @saved="actionSaved" />
           <form v-if="data.kind !== 'aviso'" :id="prefix + '-form'" ref="form" novalidate class="mt-6 border-t border-dj-border pt-5" @submit.prevent="save">
             <h4 class="mb-4 text-sm font-semibold">Planejamento e acompanhamento</h4>
             <p v-if="isFetching" role="status" class="mb-4 text-sm text-dj-muted">Atualizando informações…</p>
             <Message v-if="serverError" severity="error" role="alert" class="mb-4">{{ serverError }}</Message>
             <Message v-if="errors.row_version" severity="error" class="mb-4">{{ errors.row_version }}</Message>
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid gap-4 sm:grid-cols-2">
               <FormField :id="prefix + '-difficulty'" label="Dificuldade" :error="errors.difficulty" v-slot="{ controlProps }">
                 <Select v-model="plan.difficulty" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="['Baixa', 'Média', 'Alta']"
                   :pt:label:aria-describedby="controlProps['aria-describedby']" show-clear :disabled="locked" placeholder="Não informada" class="w-full" />
               </FormField>
               <FormField :id="prefix + '-priority'" label="Prioridade (1 a 10)" :error="errors.priority" v-slot="{ controlProps }">
-                <InputNumber v-model="plan.priority" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="1" :max="10" :max-fraction-digits="0" :use-grouping="false"
-                  :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informada" class="w-full" pt:pcInputText:root:class="w-full" />
+                <Select v-model="plan.priority" :input-id="controlProps.id" :invalid="controlProps.invalid" :options="priorityOptions" option-label="label" option-value="value"
+                  :pt:label:aria-describedby="controlProps['aria-describedby']" show-clear :disabled="locked" placeholder="Não definida" class="w-full" />
               </FormField>
-              <FormField v-for="field in hourFields" :key="field" :id="prefix + '-' + field" :label="planningLabels[field] ?? field" :error="errors[field]" v-slot="{ controlProps }">
+            </div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-3">
+              <FormField v-for="field in hourFields" :key="field" :id="prefix + '-' + field" :label="planningLabels[field] ?? field" :error="errors[field]" class="min-w-0" v-slot="{ controlProps }">
                 <InputNumber v-if="field === 'completed_hours'" v-model="completed" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
-                  :max-fraction-digits="2" locale="pt-BR" :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" class="w-full" pt:pcInputText:root:class="w-full" />
+                  show-buttons button-layout="stacked" :step="1" :max-fraction-digits="2" locale="pt-BR"
+                  :pt:incrementButton:aria-label="'Aumentar ' + (planningLabels[field] ?? field)" :pt:decrementButton:aria-label="'Diminuir ' + (planningLabels[field] ?? field)"
+                  :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" class="w-full" pt:pcInputText:root:class="min-w-0 w-full pr-12" />
                 <InputNumber v-else v-model="plan[field]" :input-id="controlProps.id" :invalid="controlProps.invalid" :min="0" :max="99999.99"
-                  :max-fraction-digits="2" locale="pt-BR" :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informado" class="w-full" pt:pcInputText:root:class="w-full" />
+                  show-buttons button-layout="stacked" :step="1" :max-fraction-digits="2" locale="pt-BR"
+                  :pt:incrementButton:aria-label="'Aumentar ' + (planningLabels[field] ?? field)" :pt:decrementButton:aria-label="'Diminuir ' + (planningLabels[field] ?? field)"
+                  :pt:pcInputText:root:aria-describedby="controlProps['aria-describedby']" :disabled="locked" placeholder="Não informado" class="w-full" pt:pcInputText:root:class="min-w-0 w-full pr-12" />
               </FormField>
             </div>
             <p class="mt-2 text-xs leading-5 text-dj-muted">Prioridade 1 é a mais alta. Os tempos são informados em horas; o total realizado pode superar a estimativa.</p>

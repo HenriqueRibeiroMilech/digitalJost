@@ -86,6 +86,28 @@
   background: var(--dj-tone-soft);
 }
 
+.dj-action-soft {
+  color: color-mix(in srgb, var(--dj-tone) 75%, var(--color-dj-ink));
+  border-color: color-mix(in srgb, var(--dj-tone) 18%, var(--color-dj-border));
+  background: linear-gradient(135deg, var(--dj-tone-soft), var(--color-dj-surface) 70%);
+}
+
+.dj-action-soft:not(:disabled):not([data-disabled='true']):hover {
+  border-color: color-mix(in srgb, var(--dj-tone) 40%, var(--color-dj-border));
+  background: linear-gradient(135deg, var(--dj-tone-soft), var(--color-dj-surface) 90%);
+}
+
+.dj-action-soft[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--dj-tone) 50%, var(--color-dj-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dj-tone) 20%, var(--color-dj-surface));
+}
+
+.dj-action-soft:focus-visible,
+.dj-action-soft:has(:focus-visible) {
+  outline: 2px solid var(--dj-tone);
+  outline-offset: 3px;
+}
+
 .dj-accent-action {
   color: white;
   background: var(--color-dj-accent-action);

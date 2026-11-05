@@ -27,11 +27,12 @@ const errorKeys = ['responsible_id', 'classification', 'message', 'row_version']
 const errors = reactive({ responsible_id: '', classification: '', message: '', row_version: '' })
 const prefix = 'request-review-' + props.request.id
 const classifications = [{ label: 'Melhoria', value: 'melhoria' }, { label: 'Projeto', value: 'projeto' }]
-const actions: { value: ReviewFields['action']; label: string; icon: string }[] = [
-  { value: 'accept', label: 'Aceitar', icon: 'pi pi-check' },
-  { value: 'reject', label: 'Recusar', icon: 'pi pi-times' },
-  { value: 'request_information', label: 'Solicitar mais informações', icon: 'pi pi-comment' },
+const actions: { value: ReviewFields['action']; label: string; icon: string; tone: 'success' | 'danger' | 'neutral' }[] = [
+  { value: 'accept', label: 'Aceitar', icon: 'pi pi-check', tone: 'success' },
+  { value: 'reject', label: 'Recusar', icon: 'pi pi-times', tone: 'danger' },
+  { value: 'request_information', label: 'Solicitar mais informações', icon: 'pi pi-comment', tone: 'neutral' },
 ]
+const selectedTone = computed(() => actions.find(option => option.value === action.value)?.tone ?? 'neutral')
 const { data: responsibles, isPending, isError, refetch } = useQuery({
   queryKey: ['demands', 'management', 'responsibles'], queryFn: demandsApi.responsibles,
   enabled: computed(() => action.value === 'accept'), retry: false,
@@ -94,7 +95,7 @@ async function submit() {
     <p class="mt-2 text-sm leading-6 text-dj-muted">Confira os dados antes de registrar sua decisão.</p>
     <div class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Decisão sobre a solicitação">
       <Button v-for="option in actions" :key="option.value" type="button" :label="option.label" :icon="option.icon"
-        class="demand-review-action rounded-xl px-4 py-2.5" :class="'demand-review-action-' + option.value"
+        class="dj-action-soft rounded-xl px-4 py-2.5" :class="'dj-tone-' + option.tone"
         :aria-pressed="action === option.value" :disabled="locked"
         :aria-controls="prefix + '-form'" @click="choose(option.value)" />
     </div>
@@ -134,51 +135,9 @@ async function submit() {
       <div class="flex flex-wrap gap-3">
         <Button v-if="needsReload" type="button" label="Recarregar detalhes" icon="pi pi-refresh" :disabled="disabled" @click="emit('reload')" />
         <Button v-else type="submit" :label="action === 'accept' ? 'Confirmar aceite' : action === 'reject' ? 'Confirmar recusa' : 'Confirmar pedido de informações'"
-          :loading="saving" :disabled="locked || (action === 'accept' && (isPending || isError || !responsibles?.items.length))" />
+          class="dj-action-soft" :class="'dj-tone-' + selectedTone" :loading="saving" :disabled="locked || (action === 'accept' && (isPending || isError || !responsibles?.items.length))" />
         <SecondaryButton type="button" label="Cancelar" outlined :disabled="locked" @click="action = null" />
       </div>
     </form>
   </section>
 </template>
-
-<style scoped>
-.demand-review-action-accept {
-  --demand-review-fill: var(--color-dj-success);
-  --demand-review-ink: color-mix(in srgb, var(--color-dj-success) 70%, black);
-}
-
-.demand-review-action-reject {
-  --demand-review-fill: var(--color-dj-danger);
-  --demand-review-ink: color-mix(in srgb, var(--color-dj-danger) 70%, black);
-}
-
-.demand-review-action-request_information {
-  --demand-review-fill: var(--color-yellow-400, #facc15);
-  --demand-review-ink: var(--color-yellow-900, #713f12);
-}
-
-.demand-review-action {
-  color: var(--demand-review-ink);
-  border-color: color-mix(in srgb, var(--demand-review-fill) 55%, var(--color-dj-surface));
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--demand-review-fill) 38%, var(--color-dj-surface)),
-    color-mix(in srgb, var(--demand-review-fill) 18%, var(--color-dj-surface)));
-}
-
-.demand-review-action:enabled:hover,
-.demand-review-action[aria-pressed='true'] {
-  border-color: var(--demand-review-ink);
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--demand-review-fill) 48%, var(--color-dj-surface)),
-    color-mix(in srgb, var(--demand-review-fill) 26%, var(--color-dj-surface)));
-}
-
-.demand-review-action[aria-pressed='true'] {
-  box-shadow: inset 0 0 0 1px var(--demand-review-ink);
-}
-
-.demand-review-action:focus-visible {
-  outline: 2px solid var(--demand-review-ink);
-  outline-offset: 3px;
-}
-</style>
