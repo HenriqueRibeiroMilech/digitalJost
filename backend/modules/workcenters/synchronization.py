@@ -9,9 +9,21 @@ from .integration import WorkcenterSyncError, fetch_active_workcenters
 from .models import Workcenter
 
 
+_EXCLUDED_WORKCENTER_CODES = frozenset({
+    "LABORAT", "AUT_01", "MACH2_BACKUP", "MACH2_BACKUP2", "SUBCON",
+})
+
+
 def synchronize_workcenters(sessions, *, username, password):
     # A chamada externa termina antes de abrir a transação de publicação no TD.
     catalog = fetch_active_workcenters(username=username, password=password)
+    # Validar a resposta completa antes de aplicar as exclusões do catálogo local.
+    catalog = [
+        item for item in catalog
+        if item.workcenter_code.upper() not in _EXCLUDED_WORKCENTER_CODES
+    ]
+    if not catalog:
+        raise WorkcenterSyncError("O catálogo ficou vazio após as exclusões; catálogo anterior preservado.")
     synced_at = datetime.now(timezone.utc).replace(tzinfo=None)
     incoming_keys = {item.plex_workcenter_key for item in catalog}
     try:
