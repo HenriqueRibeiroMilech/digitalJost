@@ -2,11 +2,13 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, time, timedelta
+from threading import Lock
+from time import monotonic
 
 from sqlalchemy import bindparam, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from backend.modules.workcenters.models import Workcenter
+from backend.modules.workcenters.models import Workcenter, WorkcenterEvent
 
 
 STATUS_COLUMNS = (
@@ -15,6 +17,12 @@ STATUS_COLUMNS = (
     "Performance", "Availability", "Quality", "OEE", "GoodParts", "TotalParts",
     "ExpectedParts", "TotalRun", "TotalAvail", "TotalStopped", "Goal",
 )
+
+# Cache curto sob demanda, por processo. Não cria thread nem consulta no import.
+# Evita repetir a seleção FTM de 30 dias para cada tela aberta no mesmo instante.
+_snapshot_cache = {}
+_snapshot_lock = Lock()
+_SNAPSHOT_TTL = 5
 
 _RESPONSIBLE_BY_EVENT = {
     "20-Troca de Insumo": "Processos",
@@ -137,19 +145,12 @@ def _result(*, key, code, name, group, started_at, seconds, status, event, event
     }
 
 
-def read_current_status(
-    sessions, *, mach2_engine, ftm_engine, event_catalog, workcenter=None,
-    stops_only=False, exclude_s18=False, require_event_codes=False,
-):
-    """Compõe uma leitura atual; o chamador fornece sessões, fontes e catálogo.
-
-    O catálogo é uma lista de dicionários com Code e Description;
-    Workcenter_Event_Group é opcional.
-    A leitura falha se uma fonte falhar, sem apresentar falha como ausência de paradas.
-    """
-    if not event_catalog:
-        raise CurrentStatusError("O catálogo local de motivos precisa ser carregado antes da leitura atual.")
-    try:
+def _read_snapshot(sessions, mach2_engine, ftm_engine):
+    cache_key = (sessions, mach2_engine, ftm_engine)
+    with _snapshot_lock:
+        cached = _snapshot_cache.get(cache_key)
+        if cached is not None and monotonic() < cached[0]:
+            return cached[1]
         with sessions() as session:
             statement = select(
                 Workcenter.plex_workcenter_key, Workcenter.workcenter_code,
@@ -161,6 +162,41 @@ def read_current_status(
             goals = dict(session.execute(text(
                 "SELECT workcenter, Goal1 FROM PLEX_REGISTER_GOAL"
             )).all())
+            event_catalog = [dict(row) for row in session.execute(select(
+                WorkcenterEvent.description.label("Description"),
+                WorkcenterEvent.code.label("Code"),
+                WorkcenterEvent.workcenter_event_group.label("Workcenter_Event_Group"),
+            )).mappings()]
+            if not event_catalog:
+                raise CurrentStatusError("DJ_WORKCENTER_EVENTS está vazio; importe os motivos ativos antes de consultar.")
+
+        codes = [row["workcenter_code"] for row in catalog if row["workcenter_group"]]
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            mach2_future = executor.submit(
+                _read_rows, mach2_engine, _MACH2_QUERY, {"workcenters": codes},
+            ) if codes else None
+            ftm_future = executor.submit(_read_rows, ftm_engine, _FTM_QUERY)
+            mach2_rows = mach2_future.result() if mach2_future else []
+            ftm_rows = ftm_future.result()
+        snapshot = (catalog, goals, event_catalog, mach2_rows, ftm_rows)
+        _snapshot_cache[cache_key] = (monotonic() + _SNAPSHOT_TTL, snapshot)
+        return snapshot
+
+
+def read_current_status(
+    sessions, *, mach2_engine, ftm_engine, workcenter=None,
+    stops_only=False, exclude_s18=False,
+):
+    """Lê TD/Mach2/FTM; devolve novos registros no contrato legado, sem escrita.
+
+    Motivo ausente do catálogo continua visível com a classificação Mach2, mas
+    sem inventar Event_Code. Código vazio cadastrado também é preservado.
+    Falhas de fonte não são convertidas em ausência de paradas ou cache vencido.
+    """
+    try:
+        catalog, goals, event_catalog, mach2_rows, ftm_rows = _read_snapshot(
+            sessions, mach2_engine, ftm_engine,
+        )
 
         # Os centros sem grupo continuam no cadastro, mas não participavam do S30.
         centers = {
@@ -177,15 +213,6 @@ def read_current_status(
                 _event_code(item.get("Code")),
                 _normalize_status(item["Workcenter_Event_Group"]) if item.get("Workcenter_Event_Group") else None,
             ))
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            mach2_future = executor.submit(
-                _read_rows, mach2_engine, _MACH2_QUERY,
-                {"workcenters": [center["workcenter_code"] for center in centers.values()]},
-            ) if centers else None
-            ftm_future = executor.submit(_read_rows, ftm_engine, _FTM_QUERY)
-            mach2_rows = mach2_future.result() if mach2_future else []
-            ftm_rows = ftm_future.result()
 
         result, current_codes = [], set()
         for row in mach2_rows:
@@ -209,8 +236,6 @@ def read_current_status(
                 status = event_status or status
             elif matches:
                 raise CurrentStatusError("O catálogo contém motivos ambíguos para uma parada atual.")
-            if stopped and require_event_codes and not event_code:
-                raise CurrentStatusError("Há parada atual sem código de motivo; os alertas não foram enviados.")
             event = f"{event_code}-{reason or 'Sem Justificativa'}" if stopped else "-"
             result.append(_result(
                 key=center["plex_workcenter_key"], code=code, name=center["name"],
@@ -231,8 +256,6 @@ def read_current_status(
                 continue
             event = row["Event"] or "-"
             event_code = event.partition("-")[0].strip()
-            if require_event_codes and not event_code:
-                raise CurrentStatusError("Há parada FTM sem código de motivo; os alertas não foram enviados.")
             result.append(_result(
                 key=0, code=code, name=name, group=row["Workcenter_Group"],
                 started_at=row["Log_Date"], seconds=_ftm_seconds(row["Raw_Duration"]),

@@ -40,8 +40,22 @@ from flask_login import current_user
 from app.utils.db_utils import engine_run_query, get_engine
 from app.utils.permissions import get_permission
 from app.utils.dynamic_constants import getPlex
+from backend.modules.monitoring.current_status import CurrentStatusError, STATUS_COLUMNS, read_current_status
+from backend.shared.database import get_td_session_factory
 
 jdt_monitoring_bp = Blueprint('jdt_monitoring', __name__)
+
+
+def _current_status_frame(sessions, **filters):
+    return pd.DataFrame(read_current_status(
+        sessions, mach2_engine=get_engine('plex'), ftm_engine=get_engine('ftm'), **filters,
+    ), columns=STATUS_COLUMNS)
+
+
+@jdt_monitoring_bp.errorhandler(CurrentStatusError)
+def _current_status_error(error):
+    return jsonify({'error': str(error)}), 503
+
 
 @jdt_monitoring_bp.before_request
 def route_auth():
@@ -84,25 +98,12 @@ def monitoring_stop_get():
 
 @jdt_monitoring_bp.route('/monitoramento/paradas', methods=['POST'])
 def monitoring_stop_post():
-
-    engine = get_engine('jdt')
-    with engine.connect() as cnnx:
-
-        query = f"""SELECT 
-                Workcenter_Code
-                , UPPER(CONCAT(Workcenter_Code, '-' + Name)) AS Workcenter
-                , Workcenter_Group
-                , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-                , Log_Duration
-                , Event
-                , LEFT(Event, CHARINDEX('-', Event) - 1) AS Event_Code
-                , Responsible
-            FROM TEMP_WORKCENTER_STATUS
-            WHERE Workcenter_Code NOT IN ('S18')
-
-            ORDER BY Workcenter_Group, Log_Date ASC"""
-        
-        data = pd.read_sql(query, cnnx)
+    data = _current_status_frame(get_td_session_factory(), stops_only=True, exclude_s18=True)
+    data['_started_at'] = pd.to_datetime(data['Log_Date'], format='%d/%m/%Y %H:%M:%S')
+    data = data.sort_values(['Workcenter_Group', '_started_at'])[[
+        'Workcenter_Code', 'Workcenter', 'Workcenter_Group', 'Log_Date',
+        'Log_Duration', 'Event', 'Event_Code', 'Responsible',
+    ]]
 
     return data[data['Responsible'].isin(request.get_json()['statusFilter'])].to_json(orient='records')
 
@@ -114,32 +115,6 @@ def monitoring_overall_get():
 
 @jdt_monitoring_bp.route('/monitoramento/geral', methods=['POST'])
 def monitoring_overall_post():
-
-    query_status = """
-        SELECT
-            Workcenter_Key
-            , Workcenter_Code
-            , UPPER(CONCAT(Workcenter_Code, '-' + Name)) AS Workcenter
-            , Workcenter_Group
-            , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-            , Log_Duration
-            , Event
-            , LEFT(Event, CHARINDEX('-', Event) - 1) AS Event_Code
-            , Responsible
-        FROM TEMP_WORKCENTER_STATUS T1
-
-        WHERE T1.Workcenter_Code NOT IN ('S18')
-
-        ORDER BY Workcenter_Group, Workcenter_Code ASC
-    """
-
-    query_goal = """
-        SELECT
-            workcenter
-            , Goal1 AS Goal
-        FROM PLEX_REGISTER_GOAL
-    """
-
     query_oee = """
         WITH last_oee AS (
             SELECT
@@ -159,19 +134,9 @@ def monitoring_overall_post():
         WHERE rn = 1
     """
 
+    sessions = get_td_session_factory()
     with ThreadPoolExecutor() as executor:
-
-        status_future = executor.submit(
-            engine_run_query,
-            query_status,
-            'jdt'
-        )
-
-        goal_future = executor.submit(
-            engine_run_query,
-            query_goal,
-            'jdt'
-        )
+        status_future = executor.submit(_current_status_frame, sessions, exclude_s18=True)
 
         oee_future = executor.submit(
             engine_run_query,
@@ -179,17 +144,11 @@ def monitoring_overall_post():
             'plex'
         )
 
-    data = status_future.result()
-    goal_data = goal_future.result()
+    data = status_future.result()[[
+        'Workcenter_Key', 'Workcenter_Code', 'Workcenter', 'Workcenter_Group',
+        'Log_Date', 'Log_Duration', 'Event', 'Event_Code', 'Responsible', 'Goal',
+    ]]
     oee_data = oee_future.result()
-
-    data = pd.merge(
-        data,
-        goal_data,
-        left_on='Workcenter_Key',
-        right_on='workcenter',
-        how='left'
-    )
 
     data = pd.merge(
         data,
@@ -361,37 +320,16 @@ def monitoring_frame_post():
                         ORDER BY record_time DESC;
                 """
 
-        status_query = f"""
-                SELECT 
-                    UPPER(CONCAT(Workcenter_Code, '-' + Name)) AS Workcenter
-                    , Workcenter_Group
-                    , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-                    , Log_Duration
-                    , Status
-                    , Event
-                    , LEFT(Event, CHARINDEX('-', Event) - 1) AS Event_Code
-                    , Responsible
-                    , Performance
-                    , Availability
-                    , Quality
-                    , Performance * Availability * Quality / 10000 AS OEE
-                    , Goal1 AS Goal
-                    , GoodParts
-                    , TotalParts
-                    , ExpectedParts
-                    , TotalRun
-                    , TotalAvail
-                    , TotalStopped
-            FROM TEMP_WORKCENTER_STATUS T1
-                JOIN PLEX_REGISTER_GOAL T2 ON T1.Workcenter_Key = T2.workcenter
-            WHERE Workcenter_Code = :workcenter"""
-
+        sessions = get_td_session_factory()
         with ThreadPoolExecutor() as executor:
             shift_info_future = executor.submit(engine_run_query, shift_query, 'plex', params={'workcenter': workcenter_filter})
-            status_query_future = executor.submit(engine_run_query, status_query, 'jdt', params={'workcenter': workcenter_filter})
+            status_query_future = executor.submit(_current_status_frame, sessions, workcenter=workcenter_filter)
 
         shift_info = shift_info_future.result()
         status_info = status_query_future.result()
+
+        if status_info.empty:
+            return jsonify({'error': 'Nenhum estado atual encontrado para o centro de trabalho.'}), 404
 
         if shift_info.empty:
             abort(404, description="No shift information found for the specified work center.")
@@ -511,6 +449,8 @@ def monitoring_frame_post():
             , 'pieces_by_hour': pieces_by_hour.to_dict(orient='records')
         }
 
+    except CurrentStatusError as error:
+        return _current_status_error(error)
     except Exception as e:
         traceback_info = traceback.format_exc()  # Captura o rastreamento completo da exceção
         print("Detalhes do erro:\n", traceback_info, flush=True)
@@ -613,31 +553,6 @@ def monitoring_oee_post():
                     ) AS grade
                 """
         
-        status_query = f"""
-                SELECT 
-                    UPPER(CONCAT(Workcenter_Code, '-' + Name)) AS Workcenter
-                    , Workcenter_Group
-                    , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-                    , Log_Duration
-                    , Status
-                    , Event
-                    , LEFT(Event, CHARINDEX('-', Event) - 1) AS Event_Code
-                    , Responsible
-                    , Performance
-                    , Availability
-                    , Quality
-                    , Performance * Availability * Quality / 10000 AS OEE
-                    , Goal1 AS Goal
-                    , GoodParts
-                    , TotalParts
-                    , ExpectedParts
-                    , TotalRun
-                    , TotalAvail
-                    , TotalStopped
-            FROM TEMP_WORKCENTER_STATUS T1
-                JOIN PLEX_REGISTER_GOAL T2 ON T1.Workcenter_Key = T2.workcenter
-            WHERE Workcenter_Code = :workcenter"""
-
         signal_query = f"""
 
                     SELECT
@@ -735,9 +650,10 @@ def monitoring_oee_post():
                         workcenter LIKE :workcenter AND (({deviation_condition}) OR prodCode = '["Todos"]')
                     """
 
+        sessions = get_td_session_factory()
         with ThreadPoolExecutor() as executor:
             program_5s_medal_data = executor.submit(engine_run_query, program_5s_medal_query, 'jdt', params={'workcenter': workcenter_filter})
-            status_data = executor.submit(engine_run_query, status_query, 'jdt', params={'workcenter': workcenter_filter})
+            status_data = executor.submit(_current_status_frame, sessions, workcenter=workcenter_filter)
             deviation_data = executor.submit(engine_run_query, deviation_query, 'jdt', params={'workcenter': f"%{workcenter_filter}%"})
 
             signal_data = executor.submit(engine_run_query, signal_query, 'plex', params={'record_time': shift_info['record_time'][0], 'workcenter': workcenter_filter})
@@ -746,6 +662,8 @@ def monitoring_oee_post():
 
         program_5s_medal_data = program_5s_medal_data.result()
         status_data = status_data.result()
+        if status_data.empty:
+            return jsonify({'error': 'Nenhum estado atual encontrado para o centro de trabalho.'}), 404
         signal_data = signal_data.result()
         top_stops_data = top_stops_data.result()
         deviation_data = deviation_data.result()
@@ -818,6 +736,8 @@ def monitoring_oee_post():
         }
 
     
+    except CurrentStatusError as error:
+        return _current_status_error(error)
     except Exception as e:
         traceback_info = traceback.format_exc()  # Captura o rastreamento completo da exceção
         print("Detalhes do erro:\n", traceback_info, flush=True)

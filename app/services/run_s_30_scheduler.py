@@ -14,9 +14,6 @@ import win32service
 import win32event
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-
-from app.services.jobs import mon_mon_s_30_monitoringOverall
 from app.utils.teams_utils import send_system_teams_alert
 
 
@@ -74,12 +71,8 @@ class SchedulerService(win32serviceutil.ServiceFramework):
             send_system_teams_alert(f'Erro no job {job_name}', e, 'Digital JOST')
 
     def add_jobs(self):
-        # Job 30 segundos
-        trigger_30s = CronTrigger(second='*/30')
-        self.scheduler.add_job(
-            func=lambda: self.log_and_alert_job('Tabela temporária: OEE Geral', mon_mon_s_30_monitoringOverall.default),
-            trigger=trigger_30s
-        )
+        # Entrada preservada para instalações existentes do serviço Windows.
+        self.logger.info('Consolidação S30 desativada; o monitoramento consulta as fontes diretamente. Nenhum job agendado.')
 
 
 if __name__ == '__main__':

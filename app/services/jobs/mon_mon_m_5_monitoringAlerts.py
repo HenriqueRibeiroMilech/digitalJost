@@ -1,32 +1,53 @@
+import atexit
 import json
+from functools import lru_cache
+
 import pandas as pd
-import urllib
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-from app.utils.constants import CNNX_JDT
+from app.utils.db_utils import get_engine
 from app.utils.teams_utils import send_teams_message
+from backend.config import BackendConfig
+from backend.modules.monitoring.current_status import CurrentStatusError, STATUS_COLUMNS, read_current_status
+
+
+@lru_cache(maxsize=1)
+def _sessions():
+    config = BackendConfig.from_env()
+    engine = create_engine(
+        config.td_database_uri, pool_size=1, max_overflow=0,
+        pool_timeout=config.td_pool_timeout, pool_recycle=config.td_pool_recycle,
+        pool_pre_ping=True, hide_parameters=True,
+    )
+    atexit.register(engine.dispose)
+    return sessionmaker(engine)
+
 
 def default(logger):
+    try:
+        sessions = _sessions()
+        stopped_machines = pd.DataFrame(read_current_status(
+            sessions, mach2_engine=get_engine('plex'), ftm_engine=get_engine('ftm'), stops_only=True,
+        ), columns=STATUS_COLUMNS)
+        with sessions() as session:
+            rows = session.execute(text(
+                'SELECT userId, downtimeId, area, workcenter FROM JDT_DOWNTIME_ALERTS'
+            )).mappings()
+            userData = pd.DataFrame(rows, columns=['userId', 'downtimeId', 'area', 'workcenter'])
+    except CurrentStatusError:
+        raise
+    except Exception:
+        raise CurrentStatusError('Não foi possível carregar as fontes dos alertas de parada.') from None
 
-    engine_jdt = create_engine( f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(CNNX_JDT)}",)
-
-    with engine_jdt.connect() as conn:
-        query = f"""SELECT 
-                        Workcenter_Code
-                        , CONCAT(Workcenter_Code, '-' + Name) AS Workcenter
-                        , Workcenter_Group
-                        , FORMAT(Log_Date, 'dd/MM/yyyy HH:mm:ss') AS Log_Date
-                        , Log_Duration
-                        , Event
-                        , LEFT(Event, CHARINDEX('-', Event) - 1) AS Event_Code
-                FROM TEMP_WORKCENTER_STATUS
-                ORDER BY Workcenter_Group, Log_Date ASC"""
-        stopped_machines = pd.read_sql(query, conn)
-
-        query = f"""SELECT userId, downtimeId, area, workcenter FROM JDT_DOWNTIME_ALERTS"""
-        userData = pd.read_sql(query, conn)
-
+    missing_code = stopped_machines['Event_Code'].eq('')
+    if missing_code.any():
+        logger.info('%s parada(s) sem código de motivo; não serão enviados alertas para elas.', int(missing_code.sum()))
+    stopped_machines = stopped_machines[~missing_code]
+    if stopped_machines.empty or userData.empty:
+        return
+    userData['downtimeId'] = userData['downtimeId'].fillna('').astype(str).str.replace(r'^(\d+)\.0$', r'\1', regex=True)
 
     userData['area'] = userData['area'].apply(json.loads)
     userData['workcenter'] = userData['workcenter'].apply(json.loads)
@@ -189,5 +210,7 @@ def default(logger):
             , message=message_data
         )
 
-    events_by_group.apply(send_data, axis=1)
-    events_by_workcenter.apply(send_data, axis=1)
+    if not events_by_group.empty:
+        events_by_group.apply(send_data, axis=1)
+    if not events_by_workcenter.empty:
+        events_by_workcenter.apply(send_data, axis=1)

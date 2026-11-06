@@ -2,11 +2,11 @@
 
 ## Objetivo e situação atual
 
-Este documento organiza o trabalho necessário para retirar o `PLEX_DSN_JOST`: onde ele é utilizado, o que precisa substituí-lo, o que já existe no projeto e quais frentes devem vir primeiro. O inventário é baseado em leitura do código. A primeira etapa do catálogo de centros está preparada no repositório, conforme a seção 7.5; nenhuma migration ou carga foi executada no banco.
+Este documento organiza o trabalho necessário para retirar o `PLEX_DSN_JOST`. O inventário descreve o levantamento inicial; a implementação posterior dos catálogos e da retirada do S30 está nas seções 7.5 e 7.6. A criação/importação dos motivos e a publicação ainda precisam ser feitas pelo responsável, conforme a seção 15. Nenhuma execução de banco ou sistema foi realizada pelo agente.
 
-**A primeira entrega recomendada é retirar o linked server da atualização de `TEMP_WORKCENTER_STATUS`, junto da substituição da fonte dos catálogos de centros e motivos.** Essa frente reduz o acesso recorrente do S30 e preserva a tabela consumida pelas telas e pelos alertas. Ela não encerra a migração: produção, relatórios e alteração de paradas ainda possuem acessos próprios.
+**A primeira entrega implementada retira a consolidação S30 e o consumo de `TEMP_WORKCENTER_STATUS`: as telas e o M5 consultam as fontes locais diretamente.** Centros vêm de `DJ_WORKCENTERS`; motivos ativos vêm de `DJ_WORKCENTER_EVENTS`, importados manualmente por CSV. Isso não encerra a migração: `getPlex()`, produção, relatórios e alteração de paradas ainda possuem acessos próprios.
 
-A análise encontrou **19 referências diretas ao linked server em 7 arquivos Python**: 13 ocorrências de `OPENQUERY` e 6 de `EXEC ... AT`, estas últimas envolvendo quatro procedimentos distintos. O levantamento exclui cópias e backups do escopo ativo. Há também um script SQL de diagnóstico que utiliza o linked server.
+O levantamento inicial encontrou **19 referências diretas ao linked server em 7 arquivos Python**: 13 ocorrências de `OPENQUERY` e 6 de `EXEC ... AT`, estas últimas envolvendo quatro procedimentos distintos. Os dois `OPENQUERY` do S30 foram retirados nesta implementação. O levantamento exclui cópias e backups do escopo ativo. Há também um script SQL de diagnóstico que utiliza o linked server.
 
 O registro de falha apresentado mostra uma exceção de acesso à memória no módulo `ivoa27`, durante uma consulta ao Plex. Ele identifica um componente envolvido na falha, mas não demonstra, sozinho, que o peso da consulta foi sua causa. A substituição proposta também busca diminuir consultas remotas repetidas e a dependência do provedor dentro do SQL Server.
 
@@ -67,7 +67,7 @@ Não foram encontradas referências diretas ao nome do linked server no backend 
 
 ### 4.1 Consumidores de `TEMP_WORKCENTER_STATUS`
 
-A rotina S30 preenche a tabela com dados Plex e FTM. Os consumidores identificados são:
+A rotina S30 preenchia a tabela com dados Plex e FTM. Os cinco consumidores abaixo foram migrados para `backend/modules/monitoring/current_status.py`; a tabela física foi preservada, mas deixou de ser lida e preenchida pelo código ativo identificado.
 
 | Consumidor | Local | Efeito de uma consolidação desatualizada |
 |---|---|---|
@@ -77,7 +77,7 @@ A rotina S30 preenche a tabela com dados Plex e FTM. Os consumidores identificad
 | Tela de OEE — `/monitoramento/oee` | Mesmo arquivo, `monitoring_oee_post()` | Parte do status exibido depende da tabela. |
 | Notificações de paradas no Teams — M5 | `app/services/jobs/mon_mon_m_5_monitoringAlerts.py` | Notificações podem se basear em dados antigos. Agendamento encontrado: cinco minutos. |
 
-O S30 é agendado por `app/services/run_s_30_scheduler.py`, no serviço `RunS30Scheduler`. Sua execução não depende de alguém abrir uma tela. O M5 tem agendamento próprio em `app/services/run_m_5_scheduler.py`.
+O serviço `RunS30Scheduler`, em `app/services/run_s_30_scheduler.py`, não agenda mais a consolidação. Um processo antigo já iniciado precisa ser parado no servidor: publicar arquivos não altera o código em memória. O M5 mantém seu agendamento próprio em `app/services/run_m_5_scheduler.py`.
 
 ### 4.2 Consumidores dos catálogos de `getPlex()`
 
@@ -147,9 +147,9 @@ Reaproveitar significa manter contratos e regras úteis, não copiar automaticam
 | Centros | `Workcenter_Key`, `Workcenter_Code`, `Name`, `Workcenter_Group`, `Active` | Preservar chaves, tipos e registros necessários ao histórico. Não substituir a chave Plex por um novo identificador sem mapear os consumidores. |
 | Motivos/eventos | `Workcenter_Event_Key`, `Description`, `Workcenter_Event_Group`, `Active`, `Code` | Preservar a chave do evento. Há tratamento de códigos duplicados; `Code` não pode ser presumido único. |
 
-O catálogo de centros passa a ter a proposta de estrutura `dbo.DJ_WORKCENTERS`, no banco `TRANSFORMACAODIGITAL_JOST`, seguindo a nomenclatura `DJ_...` das tabelas modernas. O catálogo de motivos ainda depende de um contrato suficiente e de definição da estrutura.
+O catálogo de centros utiliza `dbo.DJ_WORKCENTERS`, no banco `TRANSFORMACAODIGITAL_JOST`; os motivos atuais utilizam `dbo.DJ_WORKCENTER_EVENTS`. A carga CSV dos motivos não contém a chave Plex do evento e atende somente a classificação atual por descrição/código, sem substituir os contratos históricos que dependem daquela chave.
 
-### 7.2 Mudanças propostas
+### 7.2 Proposta inicial, substituída pela leitura direta da seção 7.6
 
 1. Obter uma fonte aprovada para os dois catálogos, com carga inicial completa e regra para atualizações e inativações.
 2. Disponibilizar os catálogos localmente e manter uma versão válida publicada de forma consistente.
@@ -167,21 +167,21 @@ Por isso, substituir os `OPENQUERY` do S30 diretamente por `getPlex()` pode alte
 
 ### 7.4 O que esta entrega resolve e o que permanece
 
-Ela retira o linked server da consolidação recorrente das paradas e da origem dos catálogos compartilhados. As consultas próprias de produção, relatórios, Quadro Hora, Tela de OEE e validação de alterações ainda precisam ser migradas.
+Ela retira a consolidação recorrente e sua dependência do linked server. As consultas próprias de produção, relatórios, taxas/histórico do Quadro Hora e Tela de OEE, `getPlex()` e validação de alterações ainda precisam ser migradas.
 
-A expressão `ROW_NUMBER()` sobre `Mach_2_Status_Reason_Time` continua existindo até uma eventual otimização específica. Remover o linked server não comprova que todo o custo da consulta local desapareceu. A consulta atual filtra `wc_status_reason_time > 30` antes de escolher a linha por centro; inverter essa ordem pode mudar a regra. Revisão de plano e índices é uma atividade separada com o DBA, em ambiente autorizado.
+O estado atual passa a vir de `Mach_2_Current_Status`, com seleção do registro aberto mais recente antes do filtro de duração das paradas. Isso evita selecionar uma parada antiga quando o centro já está produzindo. Revisão de cobertura, plano e índices é uma atividade separada com o DBA, em ambiente autorizado.
 
 Critérios para considerar a primeira entrega pronta, a verificar futuramente em ambiente autorizado:
 
-- O S30 e o carregamento dos catálogos deixam de executar consultas ao linked server.
+- O S30 deixa de executar consultas e os novos consumidores usam os catálogos locais.
 - O conjunto de centros, motivos, responsáveis e durações corresponde ao comportamento acordado, incluindo registros sem correspondência.
 - Painel Geral, Alerta de Paradas, Quadro Hora, Tela de OEE e M5 continuam recebendo o contrato esperado.
-- Falha de sincronização mantém dados anteriores identificados como desatualizados, conforme política aprovada, sem apresentar ausência de dados como ausência de paradas.
+- Falha de importação/sincronização preserva o catálogo anterior; falha de leitura de status retorna indisponibilidade, sem apresentar ausência de dados como ausência de paradas.
 - A alimentação das tabelas locais utilizadas foi confirmada como independente do linked server.
 
 ### 7.5 Etapa preparada: cadastro moderno e job semanal legado
 
-Esta etapa prepara o armazenamento e a sincronização dos centros. Não altera ainda a origem de `TEMP_WORKCENTER_STATUS`, as telas ou `getPlex()`.
+Esta etapa preparou o armazenamento e a sincronização dos centros. A migração posterior das telas e do M5 está na seção 7.6; `getPlex()` permanece no legado.
 
 | Parte | Implementação preparada |
 |---|---|
@@ -202,13 +202,15 @@ Próximos passos operacionais: revisar/aplicar a migration no ambiente autorizad
 
 O parser espera o contrato de Data Source `tables[0].columns/rows` e `rowLimitExceeded=false`, com linhas posicionais e colunas identificadas por nome; não aceita o `Data.Rows` da tela do navegador. Esse formato precisa de confirmação no teste autorizado. Como referência pública do protocolo, o [exemplo de integração Plex UX da Workday](https://doc.workday.com/adaptive-planning/en-us/workday-adaptive-planning-documentation/integration/managing-data-integration/design-integrations/custom-cloud-data-source-ccds-/ccds-examples/reference--ccds-script-example-plex-ux.html) mostra POST com `inputs`, autenticação Basic, linhas posicionais em `tables[0].rows` e sinalização de limite. Isso não valida o contrato efetivo da conta de produção.
 
-### 7.6 Leitura direta do estado atual — preparação sem ativação
+### 7.6 Leitura direta do estado atual e motivos por CSV
 
-O responsável escolheu retirar a consolidação periódica de `TEMP_WORKCENTER_STATUS`, depois de obter uma fonte local/API dos motivos que preserve os códigos usados pelos alertas. Não utilizar o catálogo legado como alternativa transitória nesta mudança. Enquanto esse pré-requisito não for atendido, as quatro rotas de monitoramento, o M5 e o agendamento S30 continuam com suas implementações atuais.
+As quatro rotas POST de monitoramento e os alertas M5 utilizam a mesma leitura direta. O S30 não agenda mais consultas, e sua antiga entrada foi mantida apenas como operação sem efeito. A atualização automática dos motivos por API fica para uma etapa futura; o cadastro local é carregado pelo CSV original do Plex, somente com `Active=true`.
 
-A preparação em `backend/modules/monitoring/current_status.py` recebe sessões TD, engines Mach2/FTM e um catálogo explícito de motivos. Ela consulta os registros abertos de `Mach_2_Current_Status`, seleciona o mais recente por centro com desempate por ID e combina código, nome e grupo de `DJ_WORKCENTERS`. A duração usa o início original e não reinicia após 24 horas. O modo de paradas aplica `CanRunProduction=0` e duração maior que 30 segundos; o modo de estado atual também representa produção. A leitura FTM mantém os filtros da consolidação anterior, com precedência Mach2 quando ambos retornam o mesmo centro. São consultas diretas a fontes SQL, sem linked server nessa função, gravação de tabela ou thread iniciada no import.
+A leitura em `backend/modules/monitoring/current_status.py` recebe sessões TD e engines Mach2/FTM. Consulta os registros abertos de `Mach_2_Current_Status`, seleciona o mais recente por centro com desempate por ID e combina código, nome e grupo de `DJ_WORKCENTERS`. Os motivos vêm de `DJ_WORKCENTER_EVENTS`. A duração usa o início original e não reinicia após 24 horas. O modo de paradas aplica `CanRunProduction=0` e duração maior que 30 segundos ao Mach2; o estado atual também representa produção. A leitura FTM mantém os filtros anteriores, com precedência Mach2 quando ambos retornam o mesmo centro, inclusive quando o Mach2 indica produção. Há cache de cinco segundos por processo, preenchido sob demanda, sem tarefa periódica, linked server, escrita de status ou thread iniciada no import.
 
-O retorno mantém os nomes de campos usados pelas telas e os indicadores que a consolidação S30 atual preenche com zero. `Event_Code` é explícito, `Responsible` conserva as exceções atuais e os códigos dos motivos não são inferidos a partir de outras chaves. Falha de fonte, catálogo vazio e motivo ambíguo provocam erro; o chamador de alertas pode exigir código para todas as paradas retornadas. O módulo ainda não tem chamadores ativos nem bootstrap HTTP: não é uma migração concluída ou liberada para produção.
+O retorno mantém os campos usados pelas telas, as metas de `PLEX_REGISTER_GOAL` e os indicadores que o S30 preenchia com zero. `Event_Code` é explícito e `Responsible` conserva as exceções anteriores. Falha de fonte, catálogo vazio e motivo ambíguo provocam erro; as rotas retornam 503, sem usar uma cópia vencida. Motivo ausente ou sem código continua visível com a classificação disponível, mas não gera alerta M5 por código; o job registra somente a contagem desses casos. A procedure `TD_OEE_ObterParadas` e os cálculos por período permanecem inalterados.
+
+O importador `backend/modules/workcenters/import_events_csv.py` valida as quatro colunas originais e publica o conjunto ativo em uma transação. Identifica motivos pela descrição: códigos repetidos são permitidos, assim como código vazio. Uma nova importação atualiza os ativos e remove do catálogo os ausentes/inativos; erro reverte a carga. Não há agendamento ou consulta ao Plex nessa importação.
 
 Contratos fornecidos pelo responsável durante a descoberta:
 
@@ -218,9 +220,9 @@ Contratos fornecidos pelo responsável durante a descoberta:
 | 11390 — `Workcenter_Events_By_Status_Get` | Retorna `Description`, `Equipment_Required`, `PLC_Event_Key` e `Workcenter_Event_Key`. | Não fornece `Code`; `PLC_Event_Key` não foi comprovado como equivalente. |
 | 11343 — `Workcenter_Status_Workcenter_Events_Get` | Recebe `Workcenter_Key`; retorna propriedades de status, `Workcenter_Status_Key` e `Events` inteiro entre 25 campos. | Não fornece o código de cada motivo. |
 
-Para prosseguir, localizar uma leitura ou exportação do cadastro que contenha pelo menos `Code` e `Description`. `Workcenter_Event_Group` ajuda a preservar a classificação; quando ausente, o estado nativo do Mach2 fornece a categoria. Conferir códigos e descrições duplicados antes de publicar o catálogo. A procedure `TD_OEE_ObterParadas` continua atendendo consultas por período e não é alterada por esta preparação.
+O CSV fornecido cobre `Description`, `Code`, `Workcenter Event Group` e `Active`, resolvendo a carga inicial. As APIs acima não foram escolhidas como substitutas do CSV porque não comprovam o código usado pelos alertas.
 
-Depois de obter e validar a fonte: implementar a carga do catálogo local, ligar as quatro rotas e o M5 à leitura compartilhada, conferir regras e desempenho em execução autorizada e retirar o agendamento S30. A tabela intermediária só pode ser removida fisicamente em etapa específica posterior, após conferir consumidores externos. A leitura direta troca uma consolidação compartilhada por consultas sob demanda; avaliar índices e quantidade de telas simultâneas, principalmente o custo da seleção FTM dos últimos 30 dias, antes da ativação.
+Para ativar, seguir a seção 15 e conferir regras, cobertura e desempenho em ambiente autorizado, inclusive centros produzindo, paradas maiores que 24 horas, FTM e falha de fonte. Avaliar índices e concorrência, principalmente a seleção FTM dos últimos 30 dias. Não remover fisicamente `TEMP_WORKCENTER_STATUS` sem conferir consumidores externos. Esta implementação não foi executada ou publicada pelo agente.
 
 ## 8. Segunda entrega: taxas padrão e equipe
 
@@ -300,7 +302,7 @@ Confirmar contratos e cobertura; definir frequência, retenção e tratamento de
 
 ### Etapa B — entregar catálogos e S30
 
-Substituir a origem dos catálogos e os dois `OPENQUERY` do S30, mantendo o contrato de `TEMP_WORKCENTER_STATUS`. Verificar também os consumidores indiretos dos catálogos. Registrar duração e atualidade da consolidação.
+Criar/importar o catálogo de motivos e publicar os consumidores diretos conforme a seção 15. O código retira os dois `OPENQUERY` do S30 e dispensa a tabela intermediária. Verificar resultados e desempenho; os consumidores de `getPlex()` continuam em uma etapa posterior.
 
 ### Etapa C — migrar monitoramento, sinal e taxas da produção
 
@@ -330,8 +332,8 @@ Comparações em produção devem ter escopo aprovado: repetir deliberadamente u
 | `main.py` | Registro dos blueprints legados envolvidos. |
 | `app/utils/db_utils.py` | Engines SQL e funções compartilhadas de consulta. |
 | `app/utils/dynamic_constants.py` | Catálogos e interface `getPlex()`. |
-| `app/services/jobs/mon_mon_s_30_monitoringOverall.py` | Consulta identificada no dump e publicação em `TEMP_WORKCENTER_STATUS`. |
-| `app/services/run_s_30_scheduler.py` | Agendamento da consolidação a cada 30 segundos. |
+| `app/services/jobs/mon_mon_s_30_monitoringOverall.py` | Entrada antiga preservada sem consultas ou escrita. |
+| `app/services/run_s_30_scheduler.py` | Serviço preservado sem jobs; desativar após a publicação dos consumidores. |
 | `app/services/jobs/mon_mon_m_5_monitoringAlerts.py` | Consumo das paradas para notificações. |
 | `app/routes/jdt/monitoring.py` | Telas e consultas do monitoramento. |
 | `app/routes/reports/oee.py` | Relatórios de paradas, sinal e Excel. |
@@ -363,3 +365,24 @@ Se o H24 usa `DJ_ENV_FILE`, disponibilizar o mesmo seletor de arquivo privado ne
 Para o agendamento semanal reconhecer o código e a configuração novos, reiniciar o H24 em momento autorizado; o reinício não dispara uma carga imediata. O comando acima foi apenas documentado, não executado pelo agente.
 
 **O sistema não foi executado; a validação foi somente estática.**
+
+## 15. Criar/importar os motivos e desativar o S30
+
+Procedimento para o responsável no servidor; comandos apenas documentados.
+
+1. No SSMS, selecionar `TRANSFORMACAODIGITAL_JOST` e executar [20261106_create_dj_workcenter_events.sql](database/migrations/20261106_create_dj_workcenter_events.sql). O script cria somente `dbo.DJ_WORKCENTER_EVENTS`, sem carregar dados. `DJ_WORKCENTERS` também precisa estar criada e carregada.
+2. Disponibilizar o módulo importador e o CSV original na pasta do projeto. No PowerShell, com a configuração TD privada correta (`DJ_ENV_FILE`, quando utilizado), executar:
+
+```powershell
+Set-Location "I:\IIS\Digital_Jost"
+& "C:\python13\python.exe" -m backend.modules.workcenters.import_events_csv --file ".\Workcenter Event (Setup Table)-2026-11-06T164128.csv" --apply
+```
+
+O comando valida o arquivo e importa somente os ativos. Sem `--apply`, apenas confere o CSV, sem conexão ao banco. O arquivo fornecido contém 45 motivos ativos. Não inicia Flask, scheduler ou notificações, não acessa o Plex e não cria tabelas. Reutiliza a configuração TD moderna. Código repetido ou vazio não é erro; descrições ativas duplicadas são rejeitadas. Para futuras atualizações manuais, repetir com um novo CSV completo; a tabela passa a representar somente o conjunto ativo dessa exportação.
+
+3. Publicar juntos `backend/modules/workcenters/`, `backend/modules/monitoring/`, `app/routes/jdt/monitoring.py`, `app/services/jobs/mon_mon_m_5_monitoringAlerts.py`, `app/services/jobs/mon_mon_s_30_monitoringOverall.py` e `app/services/run_s_30_scheduler.py`, tanto na cópia do IIS quanto na dos serviços que a utilizam. A carga dos dois catálogos deve preceder a ativação dos novos consumidores. O M5 precisa da configuração TD moderna e de acesso às fontes SQL nativas Mach2/FTM, além das integrações que já utilizava.
+4. Reciclar o site e reiniciar o M5 na janela autorizada. Conferir as quatro telas e os alertas, incluindo os casos descritos na seção 7.6. Com os novos consumidores ativos, parar e desabilitar `RunS30Scheduler` no gerenciador de serviços do Windows. Um S30 antigo em memória continua executando o código anterior até ser parado; reiniciar apenas o IIS não o interrompe.
+
+Não excluir a tabela intermediária nesta publicação. Outras consultas de taxas, histórico e `getPlex()` ainda usam o linked server: desativar o serviço S30 não autoriza retirar `PLEX_DSN_JOST`. Para retornar à versão antiga dos consumidores, reativar também o S30 correspondente, pois essa versão depende da consolidação.
+
+**O sistema não foi executado; a validação foi somente estática.** A aplicação do SQL, a importação e a verificação funcional/de desempenho ficam para o ambiente autorizado.
