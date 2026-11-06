@@ -23,7 +23,8 @@ from app.services.jobs import (
     mon_fri_h_24_demandsCheck,
     mon_fri_h_24_wcUpdateRequestCheck,
     mon_fri_h_24_laboratoryCheck,
-    mon_fri_h_24_processDeviationCheck
+    mon_fri_h_24_processDeviationCheck,
+    mon_h_24_workcentersSync
 )
 
 from app.utils.teams_utils import send_system_teams_alert
@@ -107,6 +108,14 @@ class SchedulerService(win32serviceutil.ServiceFramework):
         self.scheduler.add_job(
             func=lambda: self.log_and_alert_job('Desvios: atualização dos status', mon_fri_h_24_processDeviationCheck.default),
             trigger=trigger_mon_fri
+        )
+
+        self.scheduler.add_job(
+            func=lambda: self.log_and_alert_job('Centros: sincronização semanal', mon_h_24_workcentersSync.default),
+            trigger=CronTrigger(day_of_week="mon", hour="6", minute="10", second="0"),
+            id="workcenters_weekly_sync",
+            max_instances=1,
+            coalesce=True
         )
 
 

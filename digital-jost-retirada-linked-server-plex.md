@@ -2,7 +2,7 @@
 
 ## Objetivo e situação atual
 
-Este documento organiza o trabalho necessário para retirar o `PLEX_DSN_JOST`: onde ele é utilizado, o que precisa substituí-lo, o que já existe no projeto e quais frentes devem vir primeiro. É uma proposta para revisão e planejamento, baseada em leitura do código. Nenhuma migração foi implementada ou aplicada.
+Este documento organiza o trabalho necessário para retirar o `PLEX_DSN_JOST`: onde ele é utilizado, o que precisa substituí-lo, o que já existe no projeto e quais frentes devem vir primeiro. O inventário é baseado em leitura do código. A primeira etapa do catálogo de centros está preparada no repositório, conforme a seção 7.5; nenhuma migration ou carga foi executada no banco.
 
 **A primeira entrega recomendada é retirar o linked server da atualização de `TEMP_WORKCENTER_STATUS`, junto da substituição da fonte dos catálogos de centros e motivos.** Essa frente reduz o acesso recorrente do S30 e preserva a tabela consumida pelas telas e pelos alertas. Ela não encerra a migração: produção, relatórios e alteração de paradas ainda possuem acessos próprios.
 
@@ -147,14 +147,14 @@ Reaproveitar significa manter contratos e regras úteis, não copiar automaticam
 | Centros | `Workcenter_Key`, `Workcenter_Code`, `Name`, `Workcenter_Group`, `Active` | Preservar chaves, tipos e registros necessários ao histórico. Não substituir a chave Plex por um novo identificador sem mapear os consumidores. |
 | Motivos/eventos | `Workcenter_Event_Key`, `Description`, `Workcenter_Event_Group`, `Active`, `Code` | Preservar a chave do evento. Há tratamento de códigos duplicados; `Code` não pode ser presumido único. |
 
-Os nomes das tabelas de destino ainda são uma decisão de implementação com o DBA. Não foi definida nem criada uma nova estrutura de banco neste trabalho.
+O catálogo de centros passa a ter a proposta de estrutura `dbo.DJ_WORKCENTERS`, no banco `TRANSFORMACAODIGITAL_JOST`, seguindo a nomenclatura `DJ_...` das tabelas modernas. O catálogo de motivos ainda depende de um contrato suficiente e de definição da estrutura.
 
 ### 7.2 Mudanças propostas
 
 1. Obter uma fonte aprovada para os dois catálogos, com carga inicial completa e regra para atualizações e inativações.
 2. Disponibilizar os catálogos localmente e manter uma versão válida publicada de forma consistente.
 3. Adaptar o `PlexDataManager` para a nova fonte, mantendo `getPlex()` e os contratos esperados pelos consumidores. A frequência de sincronização deve ser definida separadamente da atualização das paradas.
-4. Alterar o S30 para combinar `Mach_2_Status_Reason_Time` com os catálogos locais. Preservar a consulta FTM, a união das fontes e a classificação de `Responsible`.
+4. Alterar o S30 para combinar `[JOST_INTEGRATION_PRD].[dbo].[Mach_2_Current_Status]`, indicada como fonte correta pelo responsável, com os catálogos locais. Usar `WcStatus`, `WcReason`, `StatusBegin` e `StatusEnd` conforme o contrato acordado; preservar a consulta FTM, a união das fontes e a classificação de `Responsible`.
 5. Preservar `TEMP_WORKCENTER_STATUS`, suas colunas e os valores iniciais utilizados pela consolidação. As telas e o M5 continuam consumindo a mesma tabela.
 6. Manter a publicação transacional: uma falha na obtenção ou transformação dos dados não deve publicar uma consolidação parcial ou apagar a última versão válida.
 7. Registrar sucesso, duração, quantidade de registros e idade dos dados, sem credenciais ou conteúdo operacional desnecessário. Definir como os consumidores tratarão dados vencidos, sobretudo alertas.
@@ -178,6 +178,29 @@ Critérios para considerar a primeira entrega pronta, a verificar futuramente em
 - Painel Geral, Alerta de Paradas, Quadro Hora, Tela de OEE e M5 continuam recebendo o contrato esperado.
 - Falha de sincronização mantém dados anteriores identificados como desatualizados, conforme política aprovada, sem apresentar ausência de dados como ausência de paradas.
 - A alimentação das tabelas locais utilizadas foi confirmada como independente do linked server.
+
+### 7.5 Etapa preparada: cadastro moderno e job semanal legado
+
+Esta etapa prepara o armazenamento e a sincronização dos centros. Não altera ainda a origem de `TEMP_WORKCENTER_STATUS`, as telas ou `getPlex()`.
+
+| Parte | Implementação preparada |
+|---|---|
+| Estrutura SQL | `database/migrations/20261106_create_dj_workcenters.sql`, para revisão/aplicação manual no banco solicitado. Não há `create_all()` ou DDL automático. |
+| Modelo ORM | `backend/modules/workcenters/models.py`, sobre a `Base` moderna. |
+| Leitura Plex | `backend/modules/workcenters/integration.py`: POST HTTPS em `/api/datasources/790/execute`, com `inputs.Active=1`, autenticação MES, certificado validado e timeout. |
+| Publicação local | `backend/modules/workcenters/synchronization.py`: uma transação ORM no TD, preservando a última carga válida em caso de erro. |
+| Agendamento | Adaptador `app/services/jobs/mon_h_24_workcentersSync.py`, registrado no H24 existente para segunda-feira às 06:10 no fuso do serviço. |
+| Ativação | `DJ_WORKCENTERS_SYNC_ENABLED=false` por padrão. Reutiliza `DJ_TD_ODBC_CONNECTION_STRING`, `DJ_MES_USER` e `DJ_MES_PASSWORD` do ambiente privado do serviço; a permissão para o 790 ainda precisa ser validada. |
+
+Campos locais: `id` (identidade local), `plex_workcenter_key` (vínculo interno com Plex), `workcenter_code`, `name`, `workcenter_group`, `created_at` e `last_synced_at`. Os horários são UTC. A chave Plex não ganha uma exibição nova; sua preservação interna facilita consumidores que ainda dependem dela. A sincronização identifica os registros por essa chave, permitindo atualizar código, nome e grupo sem recriar o registro local.
+
+A tabela contém somente os centros ativos retornados pela fonte, incluindo os sem grupo. Uma carga completa remove os que deixaram de retornar; essa tabela é um catálogo atual, não um histórico. Filtros de grupo e exclusões específicas serão responsabilidade dos consumidores. Respostas vazias, duplicadas, inválidas, com limite excedido ou com 1.000 linhas são rejeitadas antes de abrir a transação de escrita. O payload não é salvo nem registrado em log.
+
+O contrato informado para o Data Source **790 — Workcenters_Get** cobre código, nome, grupo e chave. O **11942 — Workcenter_Events_Get_All** informa somente descrição e chave do evento: não comprova cobertura de `Code`, `Workcenter_Event_Group`, atividade ou regras de responsáveis. Esses dados ainda devem ser mapeados antes de substituir integralmente o catálogo de motivos e os alertas. A tabela local de status pode fornecer a situação e o motivo atuais, mas isso não comprova equivalência com todos os usos do catálogo Plex.
+
+Próximos passos operacionais: revisar/aplicar a migration no ambiente autorizado; validar conta/unidade, resposta real do 790 e primeira carga; habilitar o job no H24; então migrar o S30 e os consumidores. Não há primeira carga automática ao importar ou iniciar o serviço: o próximo horário semanal é a primeira execução após habilitar. Um disparo antecipado depende de execução especificamente autorizada.
+
+O parser espera o contrato de Data Source `tables[0].columns/rows` e `rowLimitExceeded=false`, com linhas posicionais e colunas identificadas por nome; não aceita o `Data.Rows` da tela do navegador. Esse formato precisa de confirmação no teste autorizado. Como referência pública do protocolo, o [exemplo de integração Plex UX da Workday](https://doc.workday.com/adaptive-planning/en-us/workday-adaptive-planning-documentation/integration/managing-data-integration/design-integrations/custom-cloud-data-source-ccds-/ccds-examples/reference--ccds-script-example-plex-ux.html) mostra POST com `inputs`, autenticação Basic, linhas posicionais em `tables[0].rows` e sinalização de limite. Isso não valida o contrato efetivo da conta de produção.
 
 ## 8. Segunda entrega: taxas padrão e equipe
 

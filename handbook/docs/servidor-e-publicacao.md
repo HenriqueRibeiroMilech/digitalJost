@@ -20,7 +20,7 @@ S30 acompanha monitoramento; M5 processa alertas/ponto; H24 executa rotinas diá
 |---|---|---|
 | `RunS30Scheduler` | [run_s_30_scheduler.py](../../app/services/run_s_30_scheduler.py) | Monitoramento a cada 30 segundos. |
 | `RunM5Scheduler` | [run_m_5_scheduler.py](../../app/services/run_m_5_scheduler.py) | Alertas/ponto a cada cinco minutos. |
-| `RunH24Scheduler` | [run_h_24_scheduler.py](../../app/services/run_h_24_scheduler.py) | Jobs diários de vários domínios. |
+| `RunH24Scheduler` | [run_h_24_scheduler.py](../../app/services/run_h_24_scheduler.py) | Jobs diários e sincronização semanal opcional do catálogo moderno de centros. |
 | `RunAutoScheduler` | [run_auto_scheduler.py](../../app/services/run_auto_scheduler.py) | Agendamentos de laboratório e demandas. |
 
 Não utilizar arquivos BKP como referência ativa. Se um serviço usa outra cópia do projeto, o pacote compartilhado `backend/` e a configuração precisam existir nela também. Identificar executável, conta, diretório de trabalho e versão de código de cada processo; não instalar uma dependência na `.venv` do site presumindo corrigir o H24.
@@ -90,7 +90,7 @@ Quando `DJ_ENV_FILE` é definido, ausência do arquivo, caminho inválido ou fal
 |---|---|---|
 | Compartilhado | `DJ_TD_ODBC_CONNECTION_STRING`, `DJ_SESSION_SECRET_KEY` | Backend TD, constantes/factory legadas e sessão do portal. |
 | Bancos legados | `DJ_FTM_ODBC_CONNECTION_STRING`, `DJ_PLEX_ODBC_CONNECTION_STRING`, `DJ_PLEX_TEST_ODBC_CONNECTION_STRING`, `DJ_TRACE_QR_ODBC_CONNECTION_STRING` | Constantes e acessos antigos. Plex de teste ainda é resolvido no import, sem consumidor ativo confirmado. |
-| MES | `DJ_MES_USER`, `DJ_MES_PASSWORD` | Integração antiga de alteração de paradas e constantes. |
+| MES | `DJ_MES_USER`, `DJ_MES_PASSWORD` | Alteração de paradas, constantes legadas e leitura semanal do Data Source 790, quando habilitada e permitida para essa conta. |
 | LDAP | `DJ_LDAP_USER`, `DJ_LDAP_PASSWORD` | Login/usuários/H24 antigos e consulta moderna de presença, em clientes separados. |
 | Microsoft | `DJ_MICROSOFT_TENANT_ID`, `DJ_MICROSOFT_CLIENT_ID`, `DJ_MICROSOFT_CLIENT_SECRET`, `DJ_MICROSOFT_USERNAME`, `DJ_MICROSOFT_PASSWORD` | Tokens/Teams/rotinas antigas; a infraestrutura global pode alcançar esses módulos. |
 | SAP | `DJ_SAP_USER`, `DJ_SAP_PASSWORD` | Relatórios legados de manutenção. |
@@ -122,10 +122,15 @@ Não imprimir todo o ambiente para diagnóstico. No Windows, fornecer o arquivo 
 | `DJ_LDAP_PORT` | 389 sem SSL, 636 com SSL; de 1 a 65.535. |
 | `DJ_LDAP_CONNECT_TIMEOUT`, `DJ_LDAP_RECEIVE_TIMEOUT` | Dois segundos cada; inteiros positivos. |
 | `DJ_DEMAND_WORK_AUTOSTART_ENABLED` | false; aceita true/false/1/0. Habilita o início agendado moderno no processo `RunAutoScheduler`, após aplicar a migration específica de Demandas. |
+| `DJ_WORKCENTERS_SYNC_ENABLED` | false; aceita true/false/1/0. Habilita a sincronização de `dbo.DJ_WORKCENTERS` no `RunH24Scheduler`, segunda-feira às 06:10 no fuso local do serviço. |
 
 Pool é por instância/processo, separado do legado. Essas opções não alteram automaticamente os pools antigos. Se faltar usuário ou senha LDAP, o adaptador moderno fica sem configuração e presenças retornam indisponibilidade; não presumir que isso permite iniciar todo o legado ou registrar presença sem identificação.
 
 O início automático moderno usa a configuração TD do ambiente do `RunAutoScheduler`, com pool próprio de uma conexão, criado no primeiro ciclo habilitado. Não inicializa Flask ou chama `create_app()`. Aplicar a migration de [evolução do trabalho](../../database/migrations/20261101_expand_demand_work.sql), publicar backend/build compatíveis e configurar a opção no ambiente privado do serviço antes da ativação autorizada. O ciclo verifica até 100 demandas por minuto; detalhes e condições ficam em [Demandas](../features/demandas.md).
+
+O catálogo moderno de centros usa um adaptador no H24 e um pool TD próprio de uma conexão, criado somente no primeiro ciclo habilitado. Antes da ativação, revisar/aplicar manualmente [20261106_create_dj_workcenters.sql](../../database/migrations/20261106_create_dj_workcenters.sql) no banco `TRANSFORMACAODIGITAL_JOST` e validar em execução autorizada o contrato JSON e a permissão de leitura do Data Source 790 na unidade correta. A migration não é executada pela aplicação. Publicar também `backend/modules/workcenters/` na cópia utilizada pelo serviço.
+
+O job usa HTTPS com autenticação MES e filtro `Active=1`; não usa cookies do navegador nem linked server. A carga completa válida inclui centros sem grupo e publica somente os ativos, removendo do catálogo os ausentes nessa carga. Uma falha reverte a transação; resposta vazia, incompleta, duplicada ou no limite de 1.000 linhas é rejeitada antes da escrita. As datas `created_at` e `last_synced_at` são UTC. Ainda não há consumidor HTTP novo: S30, `TEMP_WORKCENTER_STATUS` e `getPlex()` precisam de uma etapa posterior de migração. Desabilitar a opção interrompe futuras cargas, preservando o último catálogo. Manter uma única instância do H24; não há disparo de primeira carga no startup, e o primeiro ciclo ocorre no próximo horário semanal.
 
 O histórico também registra `PYTHON_DOTENV_DISABLED`, controle da biblioteca que pode impedir leitura por `load_dotenv`; ele não é um seletor implementado pela aplicação. Se existir no ambiente, conferir seu efeito na versão instalada em verificação autorizada. Não confundi-lo com `FLASK_SKIP_DOTENV`.
 
