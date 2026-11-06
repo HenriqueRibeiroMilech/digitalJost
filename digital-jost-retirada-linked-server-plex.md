@@ -327,4 +327,19 @@ Comparações em produção devem ter escopo aprovado: repetir deliberadamente u
 
 Não foram acessados SQL Server, Plex, IIS ou serviços corporativos. Não foram obtidos planos de execução, métricas de volume, contratos privados de APIs ou definições completas dos procedimentos remotos. As classificações de facilidade e as alternativas de arquitetura são propostas; os usos descritos são observações estáticas do código consultado.
 
+## 14. Disparo manual único da sincronização de centros
+
+Conforme o [guia do servidor](handbook/docs/servidor-e-publicacao.md#1-ambientes-e-processos), o ambiente informado do H24 usa `C:\python13\pythonservice.exe`, com `C:\python13\python.exe` para chamadas pelo terminal. A pasta informada do projeto é `I:\IIS\Digital_Jost`; a `.venv` do site é um ambiente separado. Esses caminhos foram conferidos na documentação, sem acesso ao servidor.
+
+Após aplicar a tabela e publicar o código, executar no **PowerShell do servidor**, com a mesma configuração privada do H24 e `DJ_WORKCENTERS_SYNC_ENABLED=true`:
+
+```powershell
+Set-Location "I:\IIS\Digital_Jost"
+& "C:\python13\python.exe" -c "import logging; from app.services.jobs.mon_h_24_workcentersSync import default; logging.basicConfig(level=logging.INFO); default(logging.getLogger('workcenters-manual'))"
+```
+
+Se o H24 usa `DJ_ENV_FILE`, disponibilizar o mesmo seletor de arquivo privado nesse PowerShell antes da chamada. Alterar `.env.example` não habilita o job. O comando executa somente a sincronização uma vez: consulta o Plex de produção e publica o catálogo em `dbo.DJ_WORKCENTERS`, sem iniciar o agendador completo. A mensagem de sucesso informa a quantidade de centros e a duração. Se a opção estiver desabilitada, o job retorna sem executar a carga ou emitir essa mensagem.
+
+Para o agendamento semanal reconhecer o código e a configuração novos, reiniciar o H24 em momento autorizado; o reinício não dispara uma carga imediata. O comando acima foi apenas documentado, não executado pelo agente.
+
 **O sistema não foi executado; a validação foi somente estática.**
