@@ -202,6 +202,26 @@ Próximos passos operacionais: revisar/aplicar a migration no ambiente autorizad
 
 O parser espera o contrato de Data Source `tables[0].columns/rows` e `rowLimitExceeded=false`, com linhas posicionais e colunas identificadas por nome; não aceita o `Data.Rows` da tela do navegador. Esse formato precisa de confirmação no teste autorizado. Como referência pública do protocolo, o [exemplo de integração Plex UX da Workday](https://doc.workday.com/adaptive-planning/en-us/workday-adaptive-planning-documentation/integration/managing-data-integration/design-integrations/custom-cloud-data-source-ccds-/ccds-examples/reference--ccds-script-example-plex-ux.html) mostra POST com `inputs`, autenticação Basic, linhas posicionais em `tables[0].rows` e sinalização de limite. Isso não valida o contrato efetivo da conta de produção.
 
+### 7.6 Leitura direta do estado atual — preparação sem ativação
+
+O responsável escolheu retirar a consolidação periódica de `TEMP_WORKCENTER_STATUS`, depois de obter uma fonte local/API dos motivos que preserve os códigos usados pelos alertas. Não utilizar o catálogo legado como alternativa transitória nesta mudança. Enquanto esse pré-requisito não for atendido, as quatro rotas de monitoramento, o M5 e o agendamento S30 continuam com suas implementações atuais.
+
+A preparação em `backend/modules/monitoring/current_status.py` recebe sessões TD, engines Mach2/FTM e um catálogo explícito de motivos. Ela consulta os registros abertos de `Mach_2_Current_Status`, seleciona o mais recente por centro com desempate por ID e combina código, nome e grupo de `DJ_WORKCENTERS`. A duração usa o início original e não reinicia após 24 horas. O modo de paradas aplica `CanRunProduction=0` e duração maior que 30 segundos; o modo de estado atual também representa produção. A leitura FTM mantém os filtros da consolidação anterior, com precedência Mach2 quando ambos retornam o mesmo centro. São consultas diretas a fontes SQL, sem linked server nessa função, gravação de tabela ou thread iniciada no import.
+
+O retorno mantém os nomes de campos usados pelas telas e os indicadores que a consolidação S30 atual preenche com zero. `Event_Code` é explícito, `Responsible` conserva as exceções atuais e os códigos dos motivos não são inferidos a partir de outras chaves. Falha de fonte, catálogo vazio e motivo ambíguo provocam erro; o chamador de alertas pode exigir código para todas as paradas retornadas. O módulo ainda não tem chamadores ativos nem bootstrap HTTP: não é uma migração concluída ou liberada para produção.
+
+Contratos fornecidos pelo responsável durante a descoberta:
+
+| Data Source | Evidência | Conclusão para os alertas |
+|---|---|---|
+| 11942 — `Workcenter_Events_Get_All` | Retorna `Description` e `Workcenter_Event_Key`. | Não fornece `Code`. |
+| 11390 — `Workcenter_Events_By_Status_Get` | Retorna `Description`, `Equipment_Required`, `PLC_Event_Key` e `Workcenter_Event_Key`. | Não fornece `Code`; `PLC_Event_Key` não foi comprovado como equivalente. |
+| 11343 — `Workcenter_Status_Workcenter_Events_Get` | Recebe `Workcenter_Key`; retorna propriedades de status, `Workcenter_Status_Key` e `Events` inteiro entre 25 campos. | Não fornece o código de cada motivo. |
+
+Para prosseguir, localizar uma leitura ou exportação do cadastro que contenha pelo menos `Code` e `Description`. `Workcenter_Event_Group` ajuda a preservar a classificação; quando ausente, o estado nativo do Mach2 fornece a categoria. Conferir códigos e descrições duplicados antes de publicar o catálogo. A procedure `TD_OEE_ObterParadas` continua atendendo consultas por período e não é alterada por esta preparação.
+
+Depois de obter e validar a fonte: implementar a carga do catálogo local, ligar as quatro rotas e o M5 à leitura compartilhada, conferir regras e desempenho em execução autorizada e retirar o agendamento S30. A tabela intermediária só pode ser removida fisicamente em etapa específica posterior, após conferir consumidores externos. A leitura direta troca uma consolidação compartilhada por consultas sob demanda; avaliar índices e quantidade de telas simultâneas, principalmente o custo da seleção FTM dos últimos 30 dias, antes da ativação.
+
 ## 8. Segunda entrega: taxas padrão e equipe
 
 As consultas atuais usam os relacionamentos entre `Part_v_Part`, `Part_v_Approved_Workcenter`, `Part_v_Workcenter` e, em alguns casos, `Part_v_Part_Operation`.
